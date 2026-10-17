@@ -58,9 +58,10 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
 
         _stop.Cancel();
         var allStopped = true;
+        var deadline = DateTime.UtcNow + StopTimeout; // one deadline for all threads, so N stuck providers cost 3 s, not 3·N s
         foreach (var (provider, thread) in running)
         {
-            if (!thread.Join(StopTimeout))
+            if (!thread.Join(TimeSpan.FromTicks(Math.Max(0, (deadline - DateTime.UtcNow).Ticks))))
             {
                 // A poll stuck in a driver call must not hang shutdown. Provider threads are background threads, so
                 // this one ends with the process. Disposing the provider under a running poll would be worse.

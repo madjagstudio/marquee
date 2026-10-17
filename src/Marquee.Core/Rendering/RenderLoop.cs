@@ -146,7 +146,8 @@ public sealed class RenderLoop : IDisposable
         }
         catch (Exception ex)
         {
-            ReportDevice(ex);
+            // Not ReportDevice: it ends with "Retrying every N s.", which is wrong while shutting down.
+            _log.Error($"Closing the screen failed: {ex.Message}");
         }
     }
 

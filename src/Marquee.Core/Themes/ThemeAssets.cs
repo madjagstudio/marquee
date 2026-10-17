@@ -65,8 +65,17 @@ public sealed class ThemeAssets : IDisposable
 
         if (!_families.TryGetValue((font, weight), out var typeface))
         {
-            typeface = SKFontManager.Default.MatchFamily(font, new SKFontStyle(weight, (int)SKFontStyleWidth.Normal, SKFontStyleSlant.Upright))
-                ?? BundledFonts.ForWeight(weight);
+            try
+            {
+                typeface = SKFontManager.Default.MatchFamily(font, new SKFontStyle(weight, (int)SKFontStyleWidth.Normal, SKFontStyleSlant.Upright))
+                    ?? BundledFonts.ForWeight(weight);
+            }
+            catch (Exception)
+            {
+                // Called every frame: a font manager failure must not fail every one of them.
+                typeface = BundledFonts.ForWeight(weight);
+            }
+
             _families[(font, weight)] = typeface;
         }
 

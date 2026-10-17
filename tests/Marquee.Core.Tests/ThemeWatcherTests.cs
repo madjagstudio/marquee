@@ -93,6 +93,24 @@ public class ThemeWatcherTests
     }
 
     [Fact]
+    public void A_throwing_loaded_callback_is_reported_through_failed_during_a_hot_reload()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        var failed = new BlockingCollection<ThemeException>();
+        using var watcher = new ThemeWatcher(folder.Folder, theme =>
+        {
+            theme.Dispose();
+            throw new InvalidOperationException("boom");
+        }, failed.Add);
+        watcher.Start();
+
+        folder.Write(Fill("#0000FF"));
+
+        Assert.True(failed.TryTake(out var error, Timeout), "No error after the loaded callback threw");
+        Assert.StartsWith("Could not apply the theme:", error!.Reason);
+    }
+
+    [Fact]
     public void A_broken_save_reports_the_error_and_the_fix_reloads()
     {
         using var folder = new TempTheme(Fill("#FF0000"));

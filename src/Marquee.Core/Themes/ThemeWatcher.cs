@@ -101,10 +101,12 @@ public sealed class ThemeWatcher : IDisposable
         {
             Reload();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // This runs on a thread-pool thread, where an unhandled exception ends the process: a throwing
-            // `loaded`/`failed` callback must not take the process down.
+            // `loaded`/`failed` callback must not take the process down. Load failures already reached `failed`
+            // inside Reload, so this is a callback failing; make one best-effort report so the reload isn't silent.
+            try { _failed(new ThemeException($"Could not apply the theme: {ex.Message}")); } catch { /* a failing callback must not take the process down */ }
         }
     }
 
