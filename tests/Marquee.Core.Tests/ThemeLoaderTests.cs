@@ -168,4 +168,39 @@ public class ThemeLoaderTests
         Assert.True(theme.IsDisposed);
         Assert.Null(theme.Assets.Image("a.png"));
     }
+
+    [Fact]
+    public void Disposing_one_theme_leaves_another_themes_installed_font_usable()
+    {
+        using var firstFolder = new TempTheme(Canvas);
+        using var secondFolder = new TempTheme(Canvas);
+        var first = firstFolder.Load();
+        using var second = secondFolder.Load();
+        var kept = second.Assets.Typeface("Arial", 400);
+        first.Assets.Typeface("Arial", 400);
+
+        first.Dispose();
+
+        Assert.NotEqual(IntPtr.Zero, kept.Handle);
+        using var font = new SKFont(kept, 24);
+        Assert.True(font.MeasureText("Marquee") > 0);
+    }
+
+    [Fact]
+    public void Loading_a_theme_does_not_dispose_a_live_themes_installed_font()
+    {
+        using var liveFolder = new TempTheme(Canvas);
+        using var live = liveFolder.Load();
+        var typeface = live.Assets.Typeface("Arial", 400);
+
+        using var nextFolder = new TempTheme(Canvas + """
+            widgets:
+              - { type: text, at: [0, 0], size: [10, 10], text: hi, style: { font: Arial } }
+            """);
+        using var next = nextFolder.Load();
+
+        Assert.NotEqual(IntPtr.Zero, typeface.Handle);
+        using var font = new SKFont(typeface, 24);
+        Assert.True(font.MeasureText("Marquee") > 0);
+    }
 }

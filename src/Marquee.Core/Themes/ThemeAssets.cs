@@ -37,7 +37,8 @@ public sealed class ThemeAssets : IDisposable
             }
             else if (!IsBundled(font))
             {
-                using var match = SKFontManager.Default.MatchFamily(font);
+                // The font manager owns this typeface, and other themes may share it, so it is never disposed here.
+                var match = SKFontManager.Default.MatchFamily(font);
                 if (match is null)
                     warnings.Add($"Font '{font}' is not installed on this PC; using {BundledFonts.Family} instead.");
             }
@@ -68,12 +69,9 @@ public sealed class ThemeAssets : IDisposable
     {
         foreach (var image in _images.Values) image.Dispose();
         foreach (var typeface in _fontFiles.Values) typeface.Dispose();
-        foreach (var typeface in _families.Values)
-            if (typeface != BundledFonts.Regular && typeface != BundledFonts.Bold)
-                typeface.Dispose();
         _images.Clear();
         _fontFiles.Clear();
-        _families.Clear();
+        _families.Clear(); // installed-font typefaces belong to the font manager and may be shared with other themes
     }
 
     static IEnumerable<WidgetSpec> Flatten(IEnumerable<WidgetSpec> widgets) =>
