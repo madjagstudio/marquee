@@ -58,8 +58,29 @@ public class StatusLinePipeTests
     }
 
     [Fact]
-    public void Empty_and_oversized_messages_are_not_sent() =>
-        Assert.False(StatusLinePipe.TrySend([], Connect, UniquePipe()) || StatusLinePipe.TrySend(new byte[ClaudeStatusLine.MaxBytes + 1], Connect, UniquePipe()));
+    public void Empty_and_oversized_messages_are_not_sent()
+    {
+        Assert.False(StatusLinePipe.TrySend([], Connect, UniquePipe()), "an empty message was sent");
+        Assert.False(StatusLinePipe.TrySend(new byte[ClaudeStatusLine.MaxBytes + 1], Connect, UniquePipe()), "an oversized message was sent");
+    }
+
+    [Fact]
+    public async Task Sending_to_a_server_that_never_reads_gives_up_at_the_timeout()
+    {
+        var name = UniquePipe();
+        using var server = new System.IO.Pipes.NamedPipeServerStream(name, System.IO.Pipes.PipeDirection.In, 1,
+            System.IO.Pipes.PipeTransmissionMode.Byte, System.IO.Pipes.PipeOptions.Asynchronous);
+        _ = server.WaitForConnectionAsync();
+        var clock = Stopwatch.StartNew();
+
+        // Run off-thread so a hang fails the test (instead of hanging the run).
+        var send = Task.Run(() => StatusLinePipe.TrySend(new byte[60_000], TimeSpan.FromMilliseconds(300), name));
+        var finished = await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(5))) == send;
+
+        Assert.True(finished, "TrySend hung writing to a server that never reads");
+        Assert.False(await send);
+        Assert.True(clock.ElapsedMilliseconds < 2000, $"took {clock.ElapsedMilliseconds} ms");
+    }
 
     [Fact]
     public void A_malformed_message_is_warned_about_once_and_the_next_good_one_works()
@@ -99,6 +120,24 @@ public class StatusLinePipeTests
         Assert.True(Wait.Until(() => log.Entries.Count > 0));
         Assert.Equal(["warn: Ignored a Claude Code status-line update: a status-line message was larger than 64 KB. The limits keep their last values."], log.Entries);
         Assert.Empty(store.Snapshot().Keys);
+    }
+
+    [Fact]
+    public void Dispose_during_a_stalled_message_is_clean()
+    {
+        var name = UniquePipe();
+        var server = new StatusLineServer(new SensorStore(), new ListLog(), name);
+        server.Start();
+        using var stalled = new System.IO.Pipes.NamedPipeClientStream(".", name, System.IO.Pipes.PipeDirection.Out);
+        stalled.Connect(2000);
+        Thread.Sleep(200); // the server is now waiting for the rest of the message
+
+        server.Dispose();
+        server.Dispose();
+
+        var clock = Stopwatch.StartNew();
+        Assert.False(StatusLinePipe.TrySend(Json("{}"), TimeSpan.FromMilliseconds(100), name));
+        Assert.True(clock.ElapsedMilliseconds < 1000, $"took {clock.ElapsedMilliseconds} ms");
     }
 
     [Fact]

@@ -17,6 +17,7 @@ public sealed class StatusLineServer(SensorStore store, ILog log, string? pipeNa
     readonly CancellationTokenSource _stop = new();
     string? _lastProblem;
     Task? _loop;
+    bool _disposed;
 
     /// Starts listening. False (with an error logged) if the pipe can't be created; the rest of Marquee runs on.
     public bool Start()
@@ -38,9 +39,22 @@ public sealed class StatusLineServer(SensorStore store, ILog log, string? pipeNa
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
+
         _stop.Cancel();
+        var stopped = true;
+        try
+        {
+            stopped = _loop is null || _loop.Wait(TimeSpan.FromSeconds(2));
+        }
+        catch (AggregateException)
+        {
+            // The loop reports its own failures; shutting down never throws.
+        }
+
         // A loop stuck past the wait still holds the token; leave the source to the finalizer in that case.
-        if (_loop is null || _loop.Wait(TimeSpan.FromSeconds(2))) _stop.Dispose();
+        if (stopped) _stop.Dispose();
     }
 
     NamedPipeServerStream CreatePipe() => new(_pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances,
@@ -58,41 +72,52 @@ public sealed class StatusLineServer(SensorStore store, ILog log, string? pipeNa
         }
     }
 
-    async Task AcceptLoop(NamedPipeServerStream pipe, CancellationToken stop)
+    async Task AcceptLoop(NamedPipeServerStream first, CancellationToken stop)
     {
-        while (true)
+        // The instance listening for the next client. Whatever way the loop ends, it must not stay open unread.
+        NamedPipeServerStream? pending = first;
+        try
         {
-            try
+            while (true)
             {
-                await pipe.WaitForConnectionAsync(stop);
-            }
-            catch (OperationCanceledException)
-            {
-                await pipe.DisposeAsync();
-                return;
-            }
-            catch (IOException)
-            {
-                // The client gave up before the connection completed; wait for the next one.
-                await pipe.DisposeAsync();
-                pipe = CreatePipe();
-                continue;
-            }
+                try
+                {
+                    await pending.WaitForConnectionAsync(stop);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch (IOException)
+                {
+                    // The client gave up before the connection completed; wait for the next one.
+                    var abandoned = pending;
+                    pending = null;
+                    await abandoned.DisposeAsync();
+                    pending = CreatePipe();
+                    continue;
+                }
 
-            // Open the next instance before reading, so the next client can connect meanwhile. Messages are still
-            // handled one at a time, in the order they arrived.
-            var connected = pipe;
-            try
-            {
-                pipe = CreatePipe();
-            }
-            catch
-            {
-                await connected.DisposeAsync();
-                throw;
-            }
+                // Open the next instance before reading, so the next client can connect meanwhile. Messages are still
+                // handled one at a time, in the order they arrived. Receive owns (and disposes) the connected one.
+                var connected = pending;
+                pending = null;
+                try
+                {
+                    pending = CreatePipe();
+                }
+                catch
+                {
+                    await connected.DisposeAsync();
+                    throw;
+                }
 
-            await Receive(connected, stop);
+                await Receive(connected, stop);
+            }
+        }
+        finally
+        {
+            if (pending is not null) await pending.DisposeAsync();
         }
     }
 
@@ -105,9 +130,10 @@ public sealed class StatusLineServer(SensorStore store, ILog log, string? pipeNa
             {
                 message = await ReadAll(pipe, stop);
             }
-            catch (OperationCanceledException) when (!stop.IsCancellationRequested)
+            catch (OperationCanceledException)
             {
-                Problem("a status-line message took too long to arrive");
+                // Shutting down is not a problem; otherwise the client was too slow.
+                if (!stop.IsCancellationRequested) Problem("a status-line message took too long to arrive");
                 return;
             }
             catch (IOException)
