@@ -18,6 +18,12 @@ Pick the orientation that matches how the screen is mounted. A vertical mount is
 mount is `landscape` (the default). If the picture comes out upside down, use the `-flipped` variant.
 Layouts are designed at 480×1920 (portrait) or 1920×480 (landscape).
 
+## Verified hardware
+
+| Device | Firmware | Notes |
+|---|---|---|
+| 8.8" Universal Screen (`1CBE:A088`) | `lianli88_0001_0023` | `portrait` is upright when mounted vertically; brightness works; the image persists after Marquee exits; about 21 ms per frame (~47 fps) including JPEG encoding |
+
 ## Credits
 
 The panel protocol was documented by the community, notably
