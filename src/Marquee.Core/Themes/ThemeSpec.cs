@@ -4,7 +4,7 @@ using SkiaSharp;
 namespace Marquee.Core.Themes;
 
 /// A parsed layout.yaml: what to draw, before any assets are loaded.
-public sealed record ThemeSpec(CanvasSpec Canvas, IReadOnlyList<BackgroundLayer> Background);
+public sealed record ThemeSpec(CanvasSpec Canvas, IReadOnlyList<BackgroundLayer> Background, IReadOnlyList<WidgetSpec> Widgets);
 
 /// The orientation family a theme is designed for. It fits both the plain and -flipped device orientations.
 public enum ThemeOrientation { Portrait, Landscape }
