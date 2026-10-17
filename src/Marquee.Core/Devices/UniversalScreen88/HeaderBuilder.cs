@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Diagnostics;
 using System.Security.Cryptography;
 
 namespace Marquee.Core.Devices.UniversalScreen88;
@@ -17,7 +16,9 @@ public sealed class HeaderBuilder
     uint _lastTimestamp;
     bool _hasTimestamp;
 
-    public HeaderBuilder() : this(StopwatchClock()) { }
+    // Milliseconds since boot, not a per-process Stopwatch: the panel may expect timestamps to keep
+    // increasing across host processes, and a Stopwatch restarts near zero on every CLI run.
+    public HeaderBuilder() : this(() => Environment.TickCount64) { }
 
     public HeaderBuilder(Func<long> clockMs) => _clockMs = clockMs;
 
@@ -58,11 +59,5 @@ public sealed class HeaderBuilder
         packet[510] = 0xA1;
         packet[511] = 0x1A;
         return packet;
-    }
-
-    static Func<long> StopwatchClock()
-    {
-        var stopwatch = Stopwatch.StartNew();
-        return () => stopwatch.ElapsedMilliseconds;
     }
 }
