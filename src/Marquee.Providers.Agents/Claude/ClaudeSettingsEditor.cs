@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Text.Json.Nodes;
 
 namespace Marquee.Providers.Agents.Claude;
@@ -21,17 +22,24 @@ public static class ClaudeSettingsEditor
     /// Git Bash takes forward slashes; PowerShell needs the call operator to run a quoted path.
     public static string BridgeCommand(string exePath, bool gitBash) => gitBash
         ? $"\"{exePath.Replace('\\', '/').Replace("\"", "\\\"").Replace("$", "\\$").Replace("`", "\\`")}\" statusline"
-        : $"& '{exePath.Replace("'", "''")}' statusline";
+        : $"& '{DoubleSingleQuotes(exePath)}' statusline";
 
-    /// True for a statusLine that runs `marquee statusline` (from any install location).
+    /// PowerShell treats the curly and low/reversed single quotes as single quotes too; each is doubled as itself.
+    static string DoubleSingleQuotes(string text) =>
+        text.Replace("'", "''").Replace("‘", "‘‘").Replace("’", "’’")
+            .Replace("‚", "‚‚").Replace("‛", "‛‛");
+
+    /// The program run by the bridge command is named marquee (or marquee.exe), optionally quoted, then `statusline`.
+    static readonly Regex BridgeEnding = new("""marquee(\.exe)?["']?\s+statusline\s*$""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    /// True for a statusLine that runs `marquee statusline` (from any install location). A script that merely has
+    /// marquee in its path (`bash ~/marquee/run.sh statusline`) is the user's own and isn't taken for the bridge.
     public static bool IsBridge(JsonNode? statusLine) =>
-        SavedStatusLine.Command(statusLine as JsonObject) is { } command
-        && command.Contains("marquee", StringComparison.OrdinalIgnoreCase)
-        && command.TrimEnd().EndsWith(" statusline", StringComparison.Ordinal);
+        SavedStatusLine.Command(statusLine as JsonObject) is { } command && BridgeEnding.IsMatch(command);
 
     public static SettingsChange Install(string settingsPath, string savedPath, string bridgeCommand, DateTimeOffset now, bool dryRun = false)
     {
-        var (root, original) = Load(settingsPath);
+        var (root, original, crlf) = Load(settingsPath);
         var current = root["statusLine"];
 
         if (IsBridge(current))
@@ -41,7 +49,7 @@ public static class ClaudeSettingsEditor
 
             // Set up before from another install location: point it here, and keep the status line saved back then.
             current!["command"] = bridgeCommand;
-            return Finish(settingsPath, root, original, now, dryRun, "Claude Code's status line now runs this copy of Marquee.");
+            return Finish(settingsPath, root, original, crlf, now, dryRun, "Claude Code's status line now runs this copy of Marquee.");
         }
 
         if (current is not null and not JsonObject)
@@ -57,7 +65,7 @@ public static class ClaudeSettingsEditor
             ? $"Claude Code's status line now goes through Marquee. It still shows what it showed before: marquee statusline runs `{before}` and prints its output."
             : "Claude Code's status line now goes through Marquee. There was no status line before, so it stays blank.";
         if (!dryRun) SavedStatusLine.Save(savedPath, previous);
-        return Finish(settingsPath, root, original, now, dryRun, message);
+        return Finish(settingsPath, root, original, crlf, now, dryRun, message);
     }
 
     public static SettingsChange Undo(string settingsPath, string savedPath, DateTimeOffset now, bool dryRun = false)
@@ -66,7 +74,7 @@ public static class ClaudeSettingsEditor
             return new SettingsChange(false, "Nothing to undo: marquee setup-claude hasn't changed Claude Code's settings.", null);
 
         var saved = SavedStatusLine.LoadStrict(savedPath);
-        var (root, original) = Load(settingsPath);
+        var (root, original, crlf) = Load(settingsPath);
         if (!IsBridge(root["statusLine"]))
             throw new ClaudeSetupException($"statusLine in {settingsPath} no longer runs marquee statusline, so it was changed since setup; " +
                 $"leaving it alone. The status line from before setup is saved in {savedPath}.");
@@ -74,42 +82,71 @@ public static class ClaudeSettingsEditor
         if (saved is null) root.Remove("statusLine");
         else root["statusLine"] = saved.DeepClone();
 
-        var change = Finish(settingsPath, root, original, now, dryRun,
+        var change = Finish(settingsPath, root, original, crlf, now, dryRun,
             saved is null ? "Removed Marquee's status line; Claude Code has no status line again." : "Restored Claude Code's previous status line.");
         if (!dryRun) File.Delete(savedPath);
         return change;
     }
 
-    static (JsonObject Root, byte[]? Original) Load(string path)
+    /// Strict: only no BOM or the UTF-8 BOM, and bytes that are valid UTF-8, so decoding can never change a value.
+    static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
+    static (JsonObject Root, byte[]? Original, bool Crlf) Load(string path)
     {
-        if (!File.Exists(path)) return ([], null);
+        if (!File.Exists(path)) return ([], null, false);
+
+        if (new FileInfo(path).LinkTarget is not null)
+            throw new ClaudeSetupException($"{path} is a link; Marquee won't replace it. Nothing was changed.");
 
         var original = File.ReadAllBytes(path);
+        if (original.AsSpan().StartsWith<byte>([0xFF, 0xFE]) || original.AsSpan().StartsWith<byte>([0xFE, 0xFF]))
+            throw new ClaudeSetupException($"{path} isn't UTF-8 text (it starts with a UTF-16 or UTF-32 byte order mark). Nothing was changed; " +
+                "save it as UTF-8 and run the command again.");
+
         string text;
-        using (var reader = new StreamReader(new MemoryStream(original), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
-            text = reader.ReadToEnd();
+        try
+        {
+            var skip = original.AsSpan().StartsWith<byte>([0xEF, 0xBB, 0xBF]) ? 3 : 0;
+            text = StrictUtf8.GetString(original, skip, original.Length - skip);
+        }
+        catch (DecoderFallbackException)
+        {
+            throw new ClaudeSetupException($"{path} isn't UTF-8 text (it has bytes that aren't valid UTF-8), so Marquee can't rewrite it exactly. " +
+                "Nothing was changed; save it as UTF-8 and run the command again.");
+        }
 
         try
         {
-            return JsonNode.Parse(text, documentOptions: Strict) is JsonObject root
-                ? (root, original)
-                : throw new ClaudeSetupException($"{path} is not a JSON object. Nothing was changed.");
+            if (JsonNode.Parse(text, documentOptions: Strict) is not JsonObject root)
+                throw new ClaudeSetupException($"{path} is not a JSON object. Nothing was changed.");
+
+            // Parsing is lazy: duplicate keys and unwritable text (a lone surrogate) only fail once the object is
+            // materialized or written. Find out now, before anything is saved or replaced.
+            _ = root.Count;
+            _ = root.ToJsonString(SavedStatusLine.Format);
+            return (root, original, text.Contains("\r\n", StringComparison.Ordinal));
         }
         catch (JsonException ex)
         {
             throw new ClaudeSetupException($"{path} isn't plain JSON that Marquee can rewrite exactly ({ex.Message}). Nothing was changed; " +
                 "add the statusLine setting by hand, or fix the file and run the command again.");
         }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            throw new ClaudeSetupException($"{path} has something Marquee can't rewrite exactly, such as a repeated key or an invalid character ({ex.Message}). " +
+                "Nothing was changed; add the statusLine setting by hand, or fix the file and run the command again.");
+        }
     }
 
-    static SettingsChange Finish(string path, JsonObject root, byte[]? original, DateTimeOffset now, bool dryRun, string message)
+    static SettingsChange Finish(string path, JsonObject root, byte[]? original, bool crlf, DateTimeOffset now, bool dryRun, string message)
     {
-        var text = Serialize(root, original);
+        var text = Serialize(root, crlf);
         if (dryRun) return new SettingsChange(true, message, text);
 
         if (original is null)
         {
-            AtomicFile.WriteAllText(path, text);
+            // Nothing was there when we looked: don't overwrite a settings.json created since.
+            AtomicFile.WriteAllText(path, text, overwrite: false);
             return new SettingsChange(true, $"{message} Created {path}.", text);
         }
 
@@ -124,10 +161,9 @@ public static class ClaudeSettingsEditor
     }
 
     /// Two-space indents; line endings follow the original file (LF for a new one), with a final newline.
-    static string Serialize(JsonObject root, byte[]? original)
+    static string Serialize(JsonObject root, bool crlf)
     {
         var text = root.ToJsonString(SavedStatusLine.Format).ReplaceLineEndings("\n") + "\n";
-        var crlf = original is not null && Encoding.UTF8.GetString(original).Contains("\r\n", StringComparison.Ordinal);
         return crlf ? text.ReplaceLineEndings("\r\n") : text;
     }
 }

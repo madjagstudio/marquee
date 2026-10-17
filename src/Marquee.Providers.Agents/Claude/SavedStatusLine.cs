@@ -46,6 +46,10 @@ public static class SavedStatusLine
         {
             throw new ClaudeSetupException($"{path} is not valid JSON ({ex.Message}).");
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new ClaudeSetupException($"{path} can't be read ({ex.Message}).");
+        }
     }
 
     /// The command line of a `{ "type": "command", "command": "…" }` setting (type may be left out), or null.

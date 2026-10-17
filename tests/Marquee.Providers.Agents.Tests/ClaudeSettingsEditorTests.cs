@@ -30,6 +30,7 @@ public class ClaudeSettingsEditorTests : IDisposable
     [InlineData(@"C:\odd$dir\marquee.exe", true, "\"C:/odd\\$dir/marquee.exe\" statusline")]
     [InlineData(@"C:\Users\Dana\My Apps\marquee.exe", false, "& 'C:\\Users\\Dana\\My Apps\\marquee.exe' statusline")]
     [InlineData(@"C:\Users\O'Neil\marquee.exe", false, "& 'C:\\Users\\O''Neil\\marquee.exe' statusline")]
+    [InlineData("C:\\Users\\O\u2019Neil\\marquee.exe", false, "& 'C:\\Users\\O\u2019\u2019Neil\\marquee.exe' statusline")]
     public void Bridge_command_is_quoted_for_the_shell(string exe, bool gitBash, string expected) =>
         Assert.Equal(expected, ClaudeSettingsEditor.BridgeCommand(exe, gitBash));
 
@@ -39,6 +40,7 @@ public class ClaudeSettingsEditorTests : IDisposable
     [InlineData("""{ "type": "command", "command": "bash ~/.claude/statusline.sh" }""", false)]
     [InlineData("""{ "type": "command", "command": "~/marquee-statusline.sh" }""", false)]
     [InlineData("\"marquee statusline\"", false)]
+    [InlineData("""{ "type": "command", "command": "bash ~/marquee/run.sh statusline" }""", false)]
     public void Recognizes_its_own_status_line(string json, bool expected) =>
         Assert.Equal(expected, ClaudeSettingsEditor.IsBridge(JsonNode.Parse(json)));
 
@@ -156,7 +158,7 @@ public class ClaudeSettingsEditorTests : IDisposable
         var text = File.ReadAllText(Settings);
         Assert.Contains("\"theme\": \"dark\",\r\n", text);
         Assert.DoesNotContain("\n", text.Replace("\r\n", "")); // every newline is CRLF
-        Assert.False(text.StartsWith('﻿'));
+        Assert.NotEqual(0xEF, File.ReadAllBytes(Settings)[0]);
     }
 
     [Fact]
@@ -171,6 +173,20 @@ public class ClaudeSettingsEditorTests : IDisposable
         Assert.Equal("""{"statusLine":{"type":"command","command":"bash ~/sl.sh","padding":2},"theme":"dark"}""", Read().ToJsonString());
         Assert.False(File.Exists(Saved));
         Assert.Equal(2, Backups().Length); // one per write, even within the same second
+    }
+
+    [Fact]
+    public void Undo_dry_run_changes_nothing()
+    {
+        File.WriteAllText(Settings, """{ "theme": "dark" }""");
+        Install();
+        var installed = File.ReadAllText(Settings);
+
+        var change = Undo(dryRun: true);
+
+        Assert.True(change.Changed);
+        Assert.Equal(installed, File.ReadAllText(Settings));
+        Assert.True(File.Exists(Saved));
     }
 
     [Fact]
@@ -218,5 +234,67 @@ public class ClaudeSettingsEditorTests : IDisposable
 
         Assert.Throws<ClaudeSetupException>(() => Undo());
         Assert.True(ClaudeSettingsEditor.IsBridge(Read()["statusLine"]));
+    }
+
+    [Fact]
+    public void Invalid_utf8_is_refused_untouched()
+    {
+        byte[] bytes = [.. "{\"a\":\"caf"u8, 0xE9, .. "\"}"u8];
+        File.WriteAllBytes(Settings, bytes);
+
+        var ex = Assert.Throws<ClaudeSetupException>(() => Install());
+
+        Assert.Contains("Nothing was changed", ex.Message);
+        Assert.Equal(bytes, File.ReadAllBytes(Settings));
+        Assert.False(File.Exists(Saved));
+    }
+
+    [Fact]
+    public void A_utf16_file_is_refused_untouched()
+    {
+        byte[] bytes = [0xFF, 0xFE, .. System.Text.Encoding.Unicode.GetBytes("{\"a\":1}")];
+        File.WriteAllBytes(Settings, bytes);
+
+        var ex = Assert.Throws<ClaudeSetupException>(() => Install());
+
+        Assert.Contains("Nothing was changed", ex.Message);
+        Assert.Equal(bytes, File.ReadAllBytes(Settings));
+        Assert.False(File.Exists(Saved));
+    }
+
+    [Theory]
+    [InlineData("""{"a":1,"a":2}""")]
+    [InlineData("""{"a":"\ud800"}""")]
+    public void Settings_that_fail_to_load_or_write_are_refused_untouched(string contents)
+    {
+        File.WriteAllText(Settings, contents);
+
+        var ex = Assert.Throws<ClaudeSetupException>(() => Install());
+
+        Assert.Contains("Nothing was changed", ex.Message);
+        Assert.Equal(contents, File.ReadAllText(Settings));
+        Assert.False(File.Exists(Saved));
+        Assert.Empty(Backups());
+    }
+
+    [Fact]
+    public void A_symlinked_settings_file_is_refused_untouched()
+    {
+        var target = _dir.Write("real/settings.json", """{ "theme": "dark" }""");
+        try
+        {
+            File.CreateSymbolicLink(Settings, target);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            return; // symlinks need Developer Mode or elevation on Windows
+        }
+
+        var error = Assert.Throws<ClaudeSetupException>(() => Install());
+
+        Assert.Contains("Nothing was changed", error.Message);
+        Assert.Equal("""{ "theme": "dark" }""", File.ReadAllText(target));
+        Assert.False(File.Exists(Saved));
+        Assert.Empty(Directory.GetFiles(_dir.Path, "*.marquee-tmp"));
     }
 }
