@@ -4,8 +4,16 @@ using Marquee.Core.Devices.UniversalScreen88;
 using Marquee.Core.Usb;
 using SkiaSharp;
 
-// Messages use characters such as "—", "·" and "×"; the default console code page would mangle them.
-Console.OutputEncoding = System.Text.Encoding.UTF8;
+// Messages use characters such as "—", "·" and "×"; the default console code page would mangle them. Setting it
+// throws when there is no console at all (a detached process); Claude Code runs `marquee statusline` that way from
+// some hosts, and it writes raw bytes anyway, so carry on without it.
+try
+{
+    Console.OutputEncoding = System.Text.Encoding.UTF8;
+}
+catch (IOException)
+{
+}
 
 return args switch
 {
