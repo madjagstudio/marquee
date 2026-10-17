@@ -4,10 +4,14 @@ using Marquee.Core.Devices.UniversalScreen88;
 using Marquee.Core.Usb;
 using SkiaSharp;
 
+// Messages use characters such as "—", "·" and "×"; the default console code page would mangle them.
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 return args switch
 {
     ["devices"] => ListDevices(),
     ["show-image", var file, .. var options] => ShowImage(file, options),
+    ["sensors", .. var options] => SensorsCommand.Run(options) ?? Usage(),
     _ => Usage(),
 };
 
@@ -109,6 +113,7 @@ static int Usage()
         Usage:
           marquee devices
           marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
+          marquee sensors [--sensors lhm|hwinfo]
         """);
     return 2;
 }
