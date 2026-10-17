@@ -74,6 +74,12 @@ static class RunCommand
         {
             for (var i = 0; i < count; i++)
                 loop.Step(TimeSpan.FromSeconds(i / (double)loop.Fps));
+            if (loop.FramesPushed < count)
+            {
+                log.Error($"only {loop.FramesPushed} of {count} frame(s) reached {device.Info.Name}.");
+                return 1;
+            }
+
             log.Info($"Rendered {count} frame(s) to {device.Info.Name}.");
             return 0;
         }

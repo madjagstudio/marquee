@@ -140,7 +140,14 @@ public sealed class RenderLoop : IDisposable
             else token.WaitHandle.WaitOne(next - now);
         }
 
-        CloseDevice();
+        try
+        {
+            CloseDevice();
+        }
+        catch (Exception ex)
+        {
+            ReportDevice(ex);
+        }
     }
 
     void TakePendingTheme(TimeSpan time)
@@ -149,7 +156,17 @@ public sealed class RenderLoop : IDisposable
         if (theme is null) return;
 
         // Build the new renderer first: if it throws, the old renderer is still intact.
-        var renderer = new ThemeRenderer(theme);
+        ThemeRenderer renderer;
+        try
+        {
+            renderer = new ThemeRenderer(theme);
+        }
+        catch
+        {
+            theme.Dispose(); // the loop owns it now, and nothing else will
+            throw;
+        }
+
         _renderer?.Dispose();
         _theme?.Dispose();
         _theme = theme;

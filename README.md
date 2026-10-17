@@ -17,7 +17,8 @@ Only one program can drive the screen at a time. Quit L-Connect 3 before running
 `marquee run themes/example-landscape --preview` shows a theme on the screen and in a preview window (press `1` for 1:1).
 Edit `layout.yaml` and save: the screen updates within a second. If the file has a mistake, the last good layout stays
 on screen and the error, with its line number, shows in the console and the preview. `--sink <folder>` writes PNG
-frames instead of using the screen, and `--frames N` renders N frames and exits.
+frames instead of using the screen, and keeps writing them until stopped (Ctrl+C) unless `--frames N` is given;
+`--frames N` renders N frames and exits.
 
 ## Orientation
 
