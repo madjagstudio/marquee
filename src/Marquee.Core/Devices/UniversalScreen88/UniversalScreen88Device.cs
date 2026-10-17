@@ -40,21 +40,31 @@ public sealed class UniversalScreen88Device : IDisplayDevice
 
     public void Open()
     {
+        Close();
+        FirmwareVersion = null;
         _usb = _openTransport();
 
-        Send(Command.StopPlay);
-        Thread.Sleep(150);
-        if (Send(Command.GetVer) is { Body.Length: > 0 } version)
-            FirmwareVersion = ReadAscii(version.Body);
-        Send(Command.FrameRate, CommandParams.Byte(120));
-        Send(Command.Brightness, CommandParams.Byte(100));
-        Send(Command.SetClock, CommandParams.Clock(_now()));
-        Send(Command.StopClock, CommandParams.Byte(0));
+        try
+        {
+            Send(Command.StopPlay);
+            Thread.Sleep(150);
+            if (Send(Command.GetVer) is { Command: (byte)Command.GetVer, Ok: true, Body.Length: > 0 } version)
+                FirmwareVersion = ReadAscii(version.Body);
+            Send(Command.FrameRate, CommandParams.Byte(120));
+            Send(Command.Brightness, CommandParams.Byte(100));
+            Send(Command.SetClock, CommandParams.Clock(_now()));
+            Send(Command.StopClock, CommandParams.Byte(0));
 
-        using var transparent = FrameEncoder.Blank(SKColors.Transparent);
-        SendWithPayload(Command.PushPng, FrameEncoder.EncodePng(transparent), InitReplyTimeoutMs);
-        using var black = FrameEncoder.Blank(SKColors.Black);
-        SendWithPayload(Command.PushJpg, FrameEncoder.EncodeJpeg(black, quality: 95), InitReplyTimeoutMs);
+            using var transparent = FrameEncoder.Blank(SKColors.Transparent);
+            SendWithPayload(Command.PushPng, FrameEncoder.EncodePng(transparent), InitReplyTimeoutMs);
+            using var black = FrameEncoder.Blank(SKColors.Black);
+            SendWithPayload(Command.PushJpg, FrameEncoder.EncodeJpeg(black, quality: 95), InitReplyTimeoutMs);
+        }
+        catch
+        {
+            Close();
+            throw;
+        }
     }
 
     public void PushFrame(SKImage frame)

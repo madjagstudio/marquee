@@ -19,11 +19,11 @@ public class UniversalScreen88DeviceTests
     static byte[] Params(byte[] write) => Packets.DecryptHeader(write)[8..];
     static byte[] Payload(byte[] write) => write[512..];
 
-    static byte[] GetVerReply(string firmware)
+    static byte[] GetVerReply(string firmware, byte status = 0xC8)
     {
         var reply = new byte[512];
         reply[0] = 0x0A;
-        reply[1] = 0xC8;
+        reply[1] = status;
         Encoding.ASCII.GetBytes(firmware).CopyTo(reply, 8);
         return reply;
     }
@@ -61,6 +61,50 @@ public class UniversalScreen88DeviceTests
         device.Open();
 
         Assert.Equal("US88-1.0", device.FirmwareVersion);
+    }
+
+    [Fact]
+    public void Open_ignores_GetVer_reply_that_is_not_ok()
+    {
+        _usb.Responder = write => Cmd(write) == 0x0A ? GetVerReply("US88-1.0", status: 0x00) : null;
+        using var device = CreateDevice();
+
+        device.Open();
+
+        Assert.Null(device.FirmwareVersion);
+    }
+
+    [Fact]
+    public void Second_Open_disposes_first_transport()
+    {
+        var transports = new List<FakeUsbTransport>();
+        using var device = new UniversalScreen88Device(
+            () =>
+            {
+                var transport = new FakeUsbTransport();
+                transports.Add(transport);
+                return transport;
+            },
+            Rotation.Clockwise, new HeaderBuilder(() => 1), () => FixedNow);
+
+        device.Open();
+        device.Open();
+
+        Assert.Equal(2, transports.Count);
+        Assert.True(transports[0].Disposed);
+        Assert.False(transports[1].Disposed);
+    }
+
+    [Fact]
+    public void Failed_Open_disposes_transport_and_leaves_device_closed()
+    {
+        _usb.WriteFault = _ => new IOException("boom");
+        using var device = CreateDevice();
+
+        Assert.Throws<IOException>(() => device.Open());
+
+        Assert.True(_usb.Disposed);
+        Assert.Throws<InvalidOperationException>(() => device.PushFrame(Images.Landscape(SKColors.Red)));
     }
 
     [Fact]

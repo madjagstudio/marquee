@@ -10,10 +10,12 @@ sealed class FakeUsbTransport : IUsbTransport
 
     public List<byte[]> Writes { get; } = [];
     public Func<byte[], byte[]?> Responder { get; set; } = _ => null;
+    public Func<byte[], Exception?> WriteFault { get; set; } = _ => null;
     public bool Disposed { get; private set; }
 
     public void Write(byte[] data, int timeoutMs)
     {
+        if (WriteFault(data) is { } fault) throw fault;
         Writes.Add(data.ToArray());
         _pending = Responder(data);
     }
