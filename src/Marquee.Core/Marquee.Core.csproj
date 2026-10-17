@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="SkiaSharp" Version="3.116.1" />
+    <PackageReference Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Marquee.Core.Tests" />
