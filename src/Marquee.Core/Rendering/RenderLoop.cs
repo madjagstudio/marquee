@@ -33,7 +33,8 @@ public sealed class RenderLoop : IDisposable
     SKSurface? _fitSurface;
     bool _deviceOpen;
     TimeSpan _nextOpenAttempt;
-    string? _lastError;
+    string? _lastDeviceError;
+    string? _lastRenderError;
     TimeSpan _themeStart;
     bool _capWarned;
     double _renderMs;
@@ -130,7 +131,7 @@ public sealed class RenderLoop : IDisposable
             }
             catch (Exception ex)
             {
-                Report($"Rendering a frame failed: {ex.Message}");
+                ReportRender($"Rendering a frame failed: {ex.Message}");
             }
 
             next += TimeSpan.FromSeconds(1.0 / Fps);
@@ -147,10 +148,12 @@ public sealed class RenderLoop : IDisposable
         var theme = Interlocked.Exchange(ref _pending, null);
         if (theme is null) return;
 
+        // Build the new renderer first: if it throws, the old renderer is still intact.
+        var renderer = new ThemeRenderer(theme);
         _renderer?.Dispose();
         _theme?.Dispose();
         _theme = theme;
-        _renderer = new ThemeRenderer(theme);
+        _renderer = renderer;
         _themeStart = time;
         _capWarned = false;
 
@@ -202,9 +205,9 @@ public sealed class RenderLoop : IDisposable
             _device.PushFrame(frame);
             Interlocked.Increment(ref _framesPushed);
             // Announce recovery only once a frame actually got through, so a flapping screen doesn't spam the log.
-            if (_lastError is not null)
+            if (_lastDeviceError is not null)
             {
-                _lastError = null;
+                _lastDeviceError = null;
                 _log.Info($"Connected to {_device.Info.Name}.");
             }
         }
@@ -219,14 +222,18 @@ public sealed class RenderLoop : IDisposable
     void ReportDevice(Exception ex)
     {
         var hint = ex is DeviceBusyException && LConnectDetector.IsRunning() ? " L-Connect 3 is running; quit it from its tray icon." : "";
-        Report($"The screen is unavailable: {ex.Message}{hint} Retrying every {ReconnectDelay.TotalSeconds:0} s.");
+        var message = $"The screen is unavailable: {ex.Message}{hint} Retrying every {ReconnectDelay.TotalSeconds:0} s.";
+        if (message == _lastDeviceError) return;
+        _lastDeviceError = message;
+        _log.Error(message);
     }
 
-    /// Logs an error once, not once per frame, until something else goes wrong or the screen reconnects.
-    void Report(string message)
+    /// Logs each distinct render error once, not once per frame. Kept apart from device errors so a failing frame is
+    /// never mistaken for a screen that needs a "Connected" announcement.
+    void ReportRender(string message)
     {
-        if (message == _lastError) return;
-        _lastError = message;
+        if (message == _lastRenderError) return;
+        _lastRenderError = message;
         _log.Error(message);
     }
 

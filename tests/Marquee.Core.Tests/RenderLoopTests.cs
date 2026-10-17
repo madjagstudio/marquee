@@ -160,6 +160,29 @@ public class RenderLoopTests
     }
 
     [Fact]
+    public void A_render_failure_is_logged_once_and_never_announced_as_a_reconnect()
+    {
+        using var folder = new TempTheme(Fill("#FF0000", fps: 30));
+        using var device = new RecordingDevice();
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log);
+        var calls = 0;
+        loop.FrameRendered += _ =>
+        {
+            if (++calls == 1) throw new InvalidOperationException("boom");
+        };
+        loop.SetTheme(folder.Load());
+
+        loop.Start();
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (device.FramesPushed < 3 && DateTime.UtcNow < deadline) Thread.Sleep(10);
+        loop.Stop();
+
+        Assert.True(device.FramesPushed >= 3);
+        Assert.Equal(["error: Rendering a frame failed: boom"], log.Entries);
+    }
+
+    [Fact]
     public void Stats_report_the_frame_rate_over_the_last_second()
     {
         using var folder = new TempTheme(Fill("#FF0000"));
