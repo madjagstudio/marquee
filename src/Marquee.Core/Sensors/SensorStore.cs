@@ -1,7 +1,7 @@
 namespace Marquee.Core.Sensors;
 
 /// Latest value per key. Providers write from their own threads; the render loop takes one snapshot per frame.
-/// Numeric values also keep a fixed-length history, oldest first, for graph widgets.
+/// Numeric values also keep a fixed-length history, oldest first, for graph widgets. A string write clears that history.
 public sealed class SensorStore(Func<DateTimeOffset>? now = null, int historyLength = SensorStore.DefaultHistoryLength)
 {
     public const int DefaultHistoryLength = 300;
@@ -26,9 +26,9 @@ public sealed class SensorStore(Func<DateTimeOffset>? now = null, int historyLen
         var at = _now();
         lock (_gate)
         {
-            var history = _entries.TryGetValue(key, out var previous) ? previous.History : [];
+            double[] history = [];
             if (value.Number is { } number)
-                history = Append(history, number);
+                history = Append(_entries.TryGetValue(key, out var previous) ? previous.History : [], number);
             _entries[key] = new SensorEntry(value, at, at + ttl, history);
         }
     }

@@ -106,6 +106,21 @@ public class SensorStoreTests
     }
 
     [Fact]
+    public void A_string_write_clears_the_numeric_history()
+    {
+        var store = new SensorStore(() => T0);
+        store.Set("gpu.temp", 70);
+        store.Set("gpu.temp", 71);
+
+        store.Set("gpu.temp", "N/A");
+
+        var snapshot = store.Snapshot();
+        Assert.Empty(snapshot.History("gpu.temp"));
+        Assert.True(snapshot.TryGet("gpu.temp", out var value));
+        Assert.Equal("N/A", value.Text);
+    }
+
+    [Fact]
     public void Concurrent_writers_and_readers_do_not_corrupt_the_store()
     {
         var store = new SensorStore();
