@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Nodes;
 using Marquee.Providers.Agents.Claude;
@@ -102,9 +103,52 @@ public class StatusLineBridgeTests
     [Fact]
     public void A_hung_command_is_stopped_at_the_timeout()
     {
+        var watch = Stopwatch.StartNew();
         var result = ShellCommand.PowerShell.Run("Start-Sleep -Seconds 30", [], TimeSpan.FromMilliseconds(1500));
 
         Assert.True(result.TimedOut);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"took {watch.Elapsed}");
+    }
+
+    [Fact]
+    public async Task A_background_child_holding_output_does_not_hold_up_the_result()
+    {
+        using var dir = new TempDir();
+        var pidFile = dir.File("child.pid");
+        // The child inherits stdout, so the pipe stays open after the shell exits; its pid goes to a file so the test can end it.
+        var command = $"$p = Start-Process -NoNewWindow -PassThru powershell -ArgumentList '-NoProfile','-Command','Start-Sleep 30'; " +
+                      $"Set-Content -Path '{pidFile}' -Value $p.Id; Write-Output done";
+        var watch = Stopwatch.StartNew();
+        var run = Task.Run(() => ShellCommand.PowerShell.Run(command, [], TimeSpan.FromSeconds(3)));
+        try
+        {
+            var finished = await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(20)));
+            Assert.Same(run, finished);
+
+            var result = await run;
+            Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"took {watch.Elapsed}");
+            Assert.False(result.TimedOut);
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains("done", Encoding.UTF8.GetString(result.Output));
+        }
+        finally
+        {
+            KillChild(pidFile);
+        }
+    }
+
+    static void KillChild(string pidFile)
+    {
+        try
+        {
+            if (!File.Exists(pidFile) || !int.TryParse(File.ReadAllText(pidFile).Trim(), out var pid)) return;
+            using var child = Process.GetProcessById(pid);
+            child.Kill(entireProcessTree: true);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or System.ComponentModel.Win32Exception)
+        {
+            // Already gone.
+        }
     }
 
     [Fact]

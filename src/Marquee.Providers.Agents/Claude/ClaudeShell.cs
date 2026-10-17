@@ -27,7 +27,7 @@ public static class ClaudeShell
             }
         }
 
-        foreach (var programFiles in new[] { environment("ProgramFiles"), environment("ProgramW6432") })
+        foreach (var programFiles in new[] { environment("ProgramFiles"), environment("ProgramW6432"), environment("ProgramFiles(x86)") })
         {
             if (programFiles is not { Length: > 0 }) continue;
             var bash = Path.Combine(programFiles, "Git", "bin", "bash.exe");

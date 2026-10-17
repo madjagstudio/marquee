@@ -38,6 +38,15 @@ public class ClaudeShellTests
     }
 
     [Fact]
+    public void Bash_is_found_in_the_32_bit_program_files_folder()
+    {
+        var shell = Resolve(new() { ["PATH"] = @"C:\Windows", ["ProgramFiles(x86)"] = @"C:\Program Files (x86)" },
+            @"C:\Program Files (x86)\Git\bin\bash.exe");
+
+        Assert.Equal(@"C:\Program Files (x86)\Git\bin\bash.exe", shell.FileName);
+    }
+
+    [Fact]
     public void A_missing_configured_bash_falls_back_to_the_search()
     {
         var shell = Resolve(new() { ["CLAUDE_CODE_GIT_BASH_PATH"] = @"D:\gone\bash.exe", ["ProgramFiles"] = @"C:\Program Files" },

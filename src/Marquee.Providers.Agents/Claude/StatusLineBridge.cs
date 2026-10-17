@@ -15,6 +15,7 @@ public static class StatusLineBridge
     public static readonly TimeSpan PreviousTimeout = TimeSpan.FromSeconds(10);
 
     /// Returns the exit code: the previous command's, or 0 when there is none (the status line stays blank, as it was).
+    /// Returns 1 when the shell can't start or the command times out.
     public static int Run(Stream stdin, Stream stdout, TextWriter stderr, string? previousCommand, ShellCommand shell, Func<byte[], bool> forward)
     {
         var input = ReadCapped(stdin);
