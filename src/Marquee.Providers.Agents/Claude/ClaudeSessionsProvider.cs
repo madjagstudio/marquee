@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using Marquee.Core.Sensors;
@@ -39,9 +40,13 @@ public readonly record struct RunningProcess(DateTime? StartUtc);
 
 /// Counts Claude Code sessions from ~/.claude/sessions: claude.sessions.total, .busy and .idle. A file whose process
 /// has exited (or whose pid now belongs to a different process) is a leftover and isn't counted. A status other than
-/// busy or idle counts toward the total only.
-public sealed class ClaudeSessionsProvider(string folder, Func<int, RunningProcess?> findProcess, string machineName) : ISensorProvider
+/// busy or idle counts toward the total only. `hostNames` are the names this PC answers to: a file whose `pidDomain`
+/// names another host is from another PC and isn't counted.
+public sealed class ClaudeSessionsProvider(string folder, Func<int, RunningProcess?> findProcess, IReadOnlyCollection<string> hostNames) : ISensorProvider
 {
+    /// Windows truncates the NetBIOS name (Environment.MachineName) to 15 characters; Claude Code may write the full host name.
+    const int NetBiosLength = 15;
+
     /// Session files are under a kilobyte; anything much larger isn't one.
     const int MaxFileBytes = 64 * 1024;
     const int MaxFiles = 1000;
@@ -51,7 +56,11 @@ public sealed class ClaudeSessionsProvider(string folder, Func<int, RunningProce
 
     static readonly TimeSpan Ttl = TimeSpan.FromSeconds(10);
 
-    public ClaudeSessionsProvider() : this(AgentPaths.ClaudeSessions, FindProcess, Environment.MachineName) { }
+    public ClaudeSessionsProvider() : this(AgentPaths.ClaudeSessions, FindProcess, ThisPc()) { }
+
+    /// The names this PC answers to: the NetBIOS name and the full host name (they differ on a PC whose name is over 15 characters).
+    internal static IReadOnlyCollection<string> ThisPc() =>
+        new[] { Environment.MachineName, Dns.GetHostName() }.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
     public string Name => "Claude Code sessions";
     public TimeSpan Interval => TimeSpan.FromSeconds(2);
@@ -63,7 +72,8 @@ public sealed class ClaudeSessionsProvider(string folder, Func<int, RunningProce
         {
             foreach (var path in Directory.EnumerateFiles(folder, "*.json").Take(MaxFiles))
             {
-                if (Read(path) is not { } text) continue; // gone, or being rewritten; next poll sees it
+                // Gone, or being rewritten (read as empty); the next poll sees it.
+                if (Read(path) is not { } text || string.IsNullOrWhiteSpace(text)) continue;
                 files++;
                 if (ClaudeSessionFile.Parse(text) is not { } session)
                 {
@@ -93,7 +103,7 @@ public sealed class ClaudeSessionsProvider(string folder, Func<int, RunningProce
     {
         // A session file from another PC (a synced home folder, say) names a pid that means nothing here.
         if (session.PidDomain is { } domain && domain.StartsWith("win32:", StringComparison.Ordinal)
-            && !domain[6..].Equals(machineName, StringComparison.OrdinalIgnoreCase))
+            && !IsThisPc(domain[6..]))
             return false;
 
         if (findProcess(session.Pid) is not { } process) return false;
@@ -101,13 +111,18 @@ public sealed class ClaudeSessionsProvider(string folder, Func<int, RunningProce
         return Math.Abs(started.ToFileTimeUtc() - fileTime) <= StartTolerance;
     }
 
+    /// True when `host` is one of this PC's names, or a longer name whose first 15 characters are one (its NetBIOS form).
+    bool IsThisPc(string host) =>
+        hostNames.Any(name => name.Equals(host, StringComparison.OrdinalIgnoreCase)
+            || (host.Length > NetBiosLength && name.Equals(host[..NetBiosLength], StringComparison.OrdinalIgnoreCase)));
+
     static string? Read(string path)
     {
         try
         {
             // Share everything, so Claude Code can rewrite or delete the file while it is open here.
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            if (stream.Length > MaxFileBytes) return "";
+            if (stream.Length > MaxFileBytes) return "{}"; // too big to be a session: unreadable, not empty
             using var reader = new StreamReader(stream, Encoding.UTF8);
             return reader.ReadToEnd();
         }
@@ -124,11 +139,13 @@ public sealed class ClaudeSessionsProvider(string folder, Func<int, RunningProce
             using var process = Process.GetProcessById(pid);
             try
             {
+                // GetProcessById can return a process that has exited but whose handle is still held elsewhere.
+                if (process.HasExited) return null;
                 return new RunningProcess(process.StartTime.ToUniversalTime());
             }
             catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or NotSupportedException)
             {
-                return new RunningProcess(null);
+                return new RunningProcess(null); // running, but Windows won't say more (access denied)
             }
         }
         catch (ArgumentException)

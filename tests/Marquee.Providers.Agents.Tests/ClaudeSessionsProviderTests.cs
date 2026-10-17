@@ -27,11 +27,11 @@ public class ClaudeSessionsProviderTests : IDisposable
             File.Copy(Fixture.Path($"claude-sessions/{name}"), _dir.File(name));
     }
 
-    (object? Total, object? Busy, object? Idle) Poll(string? folder = null)
+    (object? Total, object? Busy, object? Idle) Poll(string? folder = null, params string[] hostNames)
     {
         var store = new SensorStore(() => Clock.T0);
         using var provider = new ClaudeSessionsProvider(folder ?? _dir.Path,
-            pid => _processes.TryGetValue(pid, out var p) ? p : null, "DEVBOX");
+            pid => _processes.TryGetValue(pid, out var p) ? p : null, hostNames.Length > 0 ? hostNames : ["DEVBOX"]);
         provider.Poll(store);
         return (Clock.Read(store, "claude.sessions.total"), Clock.Read(store, "claude.sessions.busy"), Clock.Read(store, "claude.sessions.idle"));
     }
@@ -101,6 +101,41 @@ public class ClaudeSessionsProviderTests : IDisposable
         Assert.Equal((0.0, 0.0, 0.0), Poll());
     }
 
+    [Theory]
+    [InlineData("MY-VERY-LONG-WO")] // the 15-character NetBIOS form of the name
+    [InlineData("my-very-long-workstation-name")] // the full host name
+    [InlineData("OTHER", "MY-VERY-LONG-WORKSTATION-NAME")] // any of this PC's names will do, in any case
+    public void A_long_host_name_is_this_pc_by_either_of_its_names(params string[] hostNames)
+    {
+        File.WriteAllText(_dir.File("1.json"), Fixture.Text("claude-sessions/busy.json").Replace("win32:devbox", "win32:my-very-long-workstation-name"));
+
+        Assert.Equal((1.0, 1.0, 0.0), Poll(null, hostNames));
+    }
+
+    [Fact]
+    public void A_different_long_host_name_is_not_this_pc()
+    {
+        File.WriteAllText(_dir.File("1.json"), Fixture.Text("claude-sessions/busy.json").Replace("win32:devbox", "win32:other-long-workstation"));
+
+        Assert.Equal((0.0, 0.0, 0.0), Poll(null, "MY-VERY-LONG-WO"));
+    }
+
+    [Fact]
+    public void An_empty_file_is_skipped_like_a_vanished_one_not_taken_for_a_format_change()
+    {
+        File.WriteAllText(_dir.File("rewriting.json"), "");
+
+        Assert.Equal((0.0, 0.0, 0.0), Poll());
+    }
+
+    [Fact]
+    public void A_blank_file_is_skipped_too()
+    {
+        File.WriteAllText(_dir.File("blank.json"), "  \r\n ");
+
+        Assert.Equal((0.0, 0.0, 0.0), Poll());
+    }
+
     [Fact]
     public void Other_files_are_ignored_and_a_bad_file_is_skipped()
     {
@@ -131,7 +166,7 @@ public class ClaudeSessionsProviderTests : IDisposable
         Copy("busy.json");
         var now = Clock.T0;
         var store = new SensorStore(() => now);
-        new ClaudeSessionsProvider(_dir.Path, pid => _processes.TryGetValue(pid, out var p) ? p : null, "devbox").Poll(store);
+        new ClaudeSessionsProvider(_dir.Path, pid => _processes.TryGetValue(pid, out var p) ? p : null, ["devbox"]).Poll(store);
 
         now = Clock.T0.AddSeconds(10);
 
@@ -145,10 +180,10 @@ public class ClaudeSessionsProviderTests : IDisposable
         using var self = System.Diagnostics.Process.GetCurrentProcess();
         var folder = _dir.Path;
         File.WriteAllText(Path.Combine(folder, "me.json"),
-            $"{{\"pid\":{self.Id},\"procStart\":\"{self.StartTime.ToUniversalTime().ToFileTimeUtc()}\",\"pidDomain\":\"win32:{Environment.MachineName.ToLowerInvariant()}\",\"status\":\"idle\"}}");
+            $"{{\"pid\":{self.Id},\"procStart\":\"{self.StartTime.ToUniversalTime().ToFileTimeUtc()}\",\"pidDomain\":\"win32:{System.Net.Dns.GetHostName().ToLowerInvariant()}\",\"status\":\"idle\"}}");
         var store = new SensorStore(() => Clock.T0);
 
-        new ClaudeSessionsProvider(folder, ClaudeSessionsProvider.FindProcess, Environment.MachineName).Poll(store);
+        new ClaudeSessionsProvider(folder, ClaudeSessionsProvider.FindProcess, ClaudeSessionsProvider.ThisPc()).Poll(store);
 
         Assert.Equal(1.0, Clock.Read(store, "claude.sessions.idle"));
     }
