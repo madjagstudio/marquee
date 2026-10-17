@@ -19,15 +19,24 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
 {
     public static readonly TimeSpan MaxRetry = TimeSpan.FromSeconds(60);
 
+    /// A provider that reports a zero or negative interval is polled at this rate instead of spinning.
+    static readonly TimeSpan MinWait = TimeSpan.FromMilliseconds(50);
+
     readonly TimeSpan _firstRetry = firstRetry ?? TimeSpan.FromSeconds(1);
     readonly CancellationTokenSource _stop = new();
     readonly List<(ISensorProvider Provider, Thread Thread)> _running = [];
+    bool _disposed;
 
     public void Start(ISensorProvider provider)
     {
-        var thread = new Thread(() => Run(provider)) { IsBackground = true, Name = $"Marquee provider: {provider.Name}" };
-        lock (_running) _running.Add((provider, thread));
-        thread.Start();
+        lock (_running)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            var token = _stop.Token;
+            var thread = new Thread(() => Run(provider, token)) { IsBackground = true, Name = $"Marquee provider: {provider.Name}" };
+            thread.Start();
+            _running.Add((provider, thread));
+        }
     }
 
     /// 1 s, 2 s, 4 s, … capped at 60 s (with the default first retry).
@@ -36,21 +45,33 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
 
     public void Dispose()
     {
-        _stop.Cancel();
         List<(ISensorProvider Provider, Thread Thread)> running;
-        lock (_running) running = [.. _running];
-        foreach (var (provider, thread) in running)
+        lock (_running)
         {
-            thread.Join();
-            provider.Dispose();
+            if (_disposed) return;
+            _disposed = true;
+            running = [.. _running];
+        }
+
+        _stop.Cancel();
+        foreach (var (_, thread) in running) thread.Join();
+        foreach (var (provider, _) in running)
+        {
+            try
+            {
+                provider.Dispose();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"{provider.Name} failed to shut down: {ex.Message}");
+            }
         }
 
         _stop.Dispose();
     }
 
-    void Run(ISensorProvider provider)
+    void Run(ISensorProvider provider, CancellationToken token)
     {
-        var token = _stop.Token;
         var failures = 0;
         string? lastError = null;
 
@@ -77,7 +98,7 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
                 wait = Backoff(_firstRetry, failures);
             }
 
-            token.WaitHandle.WaitOne(wait);
+            token.WaitHandle.WaitOne(wait < MinWait ? MinWait : wait);
         }
     }
 }

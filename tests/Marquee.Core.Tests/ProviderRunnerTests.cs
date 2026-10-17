@@ -5,7 +5,7 @@ namespace Marquee.Core.Tests;
 
 public class ProviderRunnerTests
 {
-    sealed class FakeProvider(string name, Action<int, SensorStore> poll) : ISensorProvider
+    sealed class FakeProvider(string name, Action<int, SensorStore> poll, Action? onDispose = null) : ISensorProvider
     {
         int _polls;
 
@@ -16,7 +16,11 @@ public class ProviderRunnerTests
 
         public void Poll(SensorStore store) => poll(Interlocked.Increment(ref _polls), store);
 
-        public void Dispose() => Disposed = true;
+        public void Dispose()
+        {
+            Disposed = true;
+            onDispose?.Invoke();
+        }
     }
 
     [Fact]
@@ -90,6 +94,50 @@ public class ProviderRunnerTests
 
         Assert.True(provider.Disposed);
         Assert.Equal(polls, provider.Polls);
+    }
+
+    [Fact]
+    public void Dispose_twice_is_safe()
+    {
+        var provider = new FakeProvider("fake", (_, _) => { });
+        var runner = new ProviderRunner(new SensorStore(), new ListLog());
+        runner.Start(provider);
+        Assert.True(Wait.Until(() => provider.Polls >= 1));
+
+        runner.Dispose();
+        runner.Dispose();
+
+        Assert.True(provider.Disposed);
+    }
+
+    [Fact]
+    public void Start_after_dispose_throws()
+    {
+        var provider = new FakeProvider("fake", (_, _) => { });
+        var runner = new ProviderRunner(new SensorStore(), new ListLog());
+        runner.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => runner.Start(provider));
+        Thread.Sleep(50);
+
+        Assert.Equal(0, provider.Polls);
+    }
+
+    [Fact]
+    public void One_provider_failing_to_shut_down_does_not_stop_the_others()
+    {
+        var log = new ListLog();
+        var first = new FakeProvider("first", (_, _) => { }, () => throw new IOException("stuck"));
+        var second = new FakeProvider("second", (_, _) => { });
+        var runner = new ProviderRunner(new SensorStore(), log);
+        runner.Start(first);
+        runner.Start(second);
+        Assert.True(Wait.Until(() => first.Polls >= 1 && second.Polls >= 1));
+
+        runner.Dispose();
+
+        Assert.True(second.Disposed);
+        Assert.Contains("error: first failed to shut down: stuck", log.Entries);
     }
 
     [Theory]
