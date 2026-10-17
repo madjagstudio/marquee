@@ -64,6 +64,7 @@ public class TemplateTests
     [InlineData("{gpu.load|kelvin}", "Unknown helper 'kelvin' (use duration or bytes)", 11)]
     [InlineData("{gpu.load:0|bytes}", "A placeholder takes a format after ':' or a helper after '|', not both", 10)]
     [InlineData("{gpu.load:}", "Empty format after ':'", 10)]
+    [InlineData("{gpu.load:X}", "Invalid number format 'X'", 11)]
     public void Malformed_templates_report_the_character(string template, string reason, int character)
     {
         var ex = Assert.Throws<ExpressionException>(() => Template.Parse(template));

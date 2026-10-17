@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Marquee.Core.Sensors;
 
@@ -118,6 +119,14 @@ public sealed class Template
             expressionText = content[..colon];
             format = content[(colon + 1)..];
             if (format.Length == 0) throw new ExpressionException("Empty format after ':'", start + colon);
+            try
+            {
+                _ = 0.0.ToString(format, CultureInfo.InvariantCulture);
+            }
+            catch (FormatException)
+            {
+                throw new ExpressionException($"Invalid number format '{format}'", start + colon + 1);
+            }
         }
 
         try
