@@ -37,7 +37,7 @@ public class DeviceRegistryTests
         var device = DeviceRegistry.Create(
             UsbDeviceEntry.FromPath(ScreenPath)!,
             _ => { opened = true; throw new InvalidOperationException(); },
-            Rotation.Clockwise);
+            Orientation.Landscape);
 
         Assert.IsType<UniversalScreen88Device>(device);
         Assert.False(opened);
@@ -46,5 +46,5 @@ public class DeviceRegistryTests
     [Fact]
     public void Create_rejects_unsupported_device() =>
         Assert.Throws<NotSupportedException>(() => DeviceRegistry.Create(
-            new UsbDeviceEntry(0x0416, 0x8050, "x"), _ => throw new InvalidOperationException(), Rotation.Clockwise));
+            new UsbDeviceEntry(0x0416, 0x8050, "x"), _ => throw new InvalidOperationException(), Orientation.Landscape));
 }

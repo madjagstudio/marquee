@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using Marquee.Core.Devices;
 using Marquee.Core.Devices.UniversalScreen88;
 using Marquee.Core.Tests.TestSupport;
 using SkiaSharp;
@@ -13,7 +14,7 @@ public class UniversalScreen88DeviceTests
     readonly FakeUsbTransport _usb = new();
 
     UniversalScreen88Device CreateDevice() =>
-        new(() => _usb, Rotation.Clockwise, new HeaderBuilder(() => 1), () => FixedNow);
+        new(() => _usb, Orientation.Landscape, new HeaderBuilder(() => 1), () => FixedNow);
 
     static byte Cmd(byte[] write) => Packets.DecryptHeader(write)[0];
     static byte[] Params(byte[] write) => Packets.DecryptHeader(write)[8..];
@@ -85,7 +86,7 @@ public class UniversalScreen88DeviceTests
                 transports.Add(transport);
                 return transport;
             },
-            Rotation.Clockwise, new HeaderBuilder(() => 1), () => FixedNow);
+            Orientation.Landscape, new HeaderBuilder(() => 1), () => FixedNow);
 
         device.Open();
         device.Open();
@@ -144,6 +145,19 @@ public class UniversalScreen88DeviceTests
     }
 
     [Fact]
+    public void PushFrame_in_portrait_sends_unrotated_panel_jpeg()
+    {
+        using var device = new UniversalScreen88Device(() => _usb, Orientation.Portrait, new HeaderBuilder(() => 1), () => FixedNow);
+        device.Open();
+
+        device.PushFrame(Images.Portrait(SKColors.Red));
+
+        using var image = SKImage.FromEncodedData(Payload(_usb.Writes[^1]));
+        var pixel = Images.PixelAt(image, 50, 50);
+        Assert.True(pixel.Red > 200 && pixel.Green < 50 && pixel.Blue < 50);
+    }
+
+    [Fact]
     public void SetBrightness_clamps_to_100()
     {
         using var device = CreateDevice();
@@ -174,12 +188,14 @@ public class UniversalScreen88DeviceTests
         Assert.True(_usb.Disposed);
     }
 
-    [Fact]
-    public void Info_reports_landscape_canvas()
+    [Theory]
+    [InlineData(Orientation.Portrait, 480, 1920)]
+    [InlineData(Orientation.Landscape, 1920, 480)]
+    public void Info_reports_canvas_for_orientation(Orientation orientation, int width, int height)
     {
-        using var device = CreateDevice();
+        using var device = new UniversalScreen88Device(() => _usb, orientation, new HeaderBuilder(() => 1), () => FixedNow);
 
-        Assert.Equal(1920, device.Info.Width);
-        Assert.Equal(480, device.Info.Height);
+        Assert.Equal(width, device.Info.Width);
+        Assert.Equal(height, device.Info.Height);
     }
 }

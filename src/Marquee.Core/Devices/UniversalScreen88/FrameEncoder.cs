@@ -2,39 +2,40 @@ using SkiaSharp;
 
 namespace Marquee.Core.Devices.UniversalScreen88;
 
-/// Which way the landscape canvas is turned to fit the portrait panel buffer.
-public enum Rotation { Clockwise, CounterClockwise }
-
-/// Turns a 1920×480 landscape canvas into what the panel firmware accepts:
-/// a 480×1920 portrait image, encoded as JPEG no larger than 512,000 bytes.
+/// Turns a canvas (480×1920 portrait or 1920×480 landscape, per the mount orientation) into what
+/// the panel firmware accepts: a 480×1920 image, encoded as JPEG no larger than 512,000 bytes.
 public static class FrameEncoder
 {
     public const int PanelWidth = 480;
     public const int PanelHeight = 1920;
     public const int MaxJpegBytes = 512_000;
 
-    const int CanvasWidth = PanelHeight;
-    const int CanvasHeight = PanelWidth;
     const int MinQuality = 30;
 
-    public static SKImage ToPanel(SKImage landscape, Rotation rotation)
+    public static SKImage ToPanel(SKImage canvasImage, Orientation orientation)
     {
         using var surface = CreatePanelSurface();
         var canvas = surface.Canvas;
         canvas.Clear(SKColors.Black);
 
-        if (rotation == Rotation.Clockwise)
+        switch (orientation)
         {
-            canvas.Translate(PanelWidth, 0);
-            canvas.RotateDegrees(90);
-        }
-        else
-        {
-            canvas.Translate(0, PanelHeight);
-            canvas.RotateDegrees(-90);
+            case Orientation.PortraitFlipped:
+                canvas.Translate(PanelWidth, PanelHeight);
+                canvas.RotateDegrees(180);
+                break;
+            case Orientation.Landscape:
+                canvas.Translate(PanelWidth, 0);
+                canvas.RotateDegrees(90);
+                break;
+            case Orientation.LandscapeFlipped:
+                canvas.Translate(0, PanelHeight);
+                canvas.RotateDegrees(-90);
+                break;
         }
 
-        canvas.DrawImage(landscape, SKRect.Create(CanvasWidth, CanvasHeight), new SKSamplingOptions(SKFilterMode.Linear));
+        var size = orientation.CanvasSize();
+        canvas.DrawImage(canvasImage, SKRect.Create(size.Width, size.Height), new SKSamplingOptions(SKFilterMode.Linear));
         return surface.Snapshot();
     }
 

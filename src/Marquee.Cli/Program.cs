@@ -30,7 +30,7 @@ static int ListDevices()
 
 static int ShowImage(string file, string[] options)
 {
-    var rotation = Rotation.Clockwise;
+    var orientation = Orientation.Landscape;
     int? brightness = null;
     string? sink = null;
     var repeat = 1;
@@ -40,8 +40,10 @@ static int ShowImage(string file, string[] options)
         var value = i + 1 < options.Length ? options[i + 1] : null;
         switch (options[i])
         {
-            case "--rotation" when value is "cw": rotation = Rotation.Clockwise; i++; break;
-            case "--rotation" when value is "ccw": rotation = Rotation.CounterClockwise; i++; break;
+            case "--orientation" when value is "portrait": orientation = Orientation.Portrait; i++; break;
+            case "--orientation" when value is "portrait-flipped": orientation = Orientation.PortraitFlipped; i++; break;
+            case "--orientation" when value is "landscape": orientation = Orientation.Landscape; i++; break;
+            case "--orientation" when value is "landscape-flipped": orientation = Orientation.LandscapeFlipped; i++; break;
             case "--brightness" when int.TryParse(value, out var b): brightness = b; i++; break;
             case "--sink" when value is not null: sink = value; i++; break;
             case "--repeat" when int.TryParse(value, out var n) && n > 0: repeat = n; i++; break;
@@ -56,7 +58,13 @@ static int ShowImage(string file, string[] options)
         return 1;
     }
 
-    IDisplayDevice? device = sink is not null ? new FileSinkDevice(sink) : FindScreen(rotation);
+    var size = orientation.CanvasSize();
+    var wrongShape = orientation.IsPortrait() ? image.Width > image.Height : image.Height > image.Width;
+    if (wrongShape)
+        Console.Error.WriteLine(
+            $"Warning: image is {image.Width}x{image.Height} but the {(orientation.IsPortrait() ? "portrait" : "landscape")} canvas is {size.Width}x{size.Height}; it will be stretched.");
+
+    IDisplayDevice? device = sink is not null ? new FileSinkDevice(sink, size.Width, size.Height) : FindScreen(orientation);
     if (device is null)
     {
         Console.Error.WriteLine("No supported screen found. Run `marquee devices` to check.");
@@ -89,10 +97,10 @@ static int ShowImage(string file, string[] options)
     }
 }
 
-static IDisplayDevice? FindScreen(Rotation rotation) =>
+static IDisplayDevice? FindScreen(Orientation orientation) =>
     WinUsbTransport.Enumerate()
         .Where(e => DeviceRegistry.IsSupported(e.VendorId, e.ProductId))
-        .Select(e => DeviceRegistry.Create(e, WinUsbTransport.Open, rotation))
+        .Select(e => DeviceRegistry.Create(e, WinUsbTransport.Open, orientation))
         .FirstOrDefault();
 
 static int Usage()
@@ -100,7 +108,7 @@ static int Usage()
     Console.Error.WriteLine("""
         Usage:
           marquee devices
-          marquee show-image <file> [--rotation cw|ccw] [--brightness 0-100] [--sink <folder>] [--repeat N]
+          marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
         """);
     return 2;
 }

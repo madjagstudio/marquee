@@ -4,8 +4,8 @@ using SkiaSharp;
 
 namespace Marquee.Core.Devices.UniversalScreen88;
 
-/// The 8.8" Universal Screen (USB 1CBE:A088): 1920×480 landscape canvas,
-/// sent as 480×1920 portrait JPEGs behind encrypted command headers.
+/// The 8.8" Universal Screen (USB 1CBE:A088): a 480×1920 or 1920×480 canvas depending on mount orientation,
+/// sent as 480×1920 panel JPEGs behind encrypted command headers.
 public sealed class UniversalScreen88Device : IDisplayDevice
 {
     public const ushort VendorId = 0x1CBE;
@@ -17,24 +17,26 @@ public sealed class UniversalScreen88Device : IDisplayDevice
     const int MaxReplyLength = 512;
 
     readonly Func<IUsbTransport> _openTransport;
-    readonly Rotation _rotation;
+    readonly Orientation _orientation;
     readonly HeaderBuilder _headers;
     readonly Func<DateTime> _now;
     IUsbTransport? _usb;
 
     public UniversalScreen88Device(
         Func<IUsbTransport> openTransport,
-        Rotation rotation = Rotation.Clockwise,
+        Orientation orientation = Orientation.Landscape,
         HeaderBuilder? headers = null,
         Func<DateTime>? now = null)
     {
         _openTransport = openTransport;
-        _rotation = rotation;
+        _orientation = orientation;
+        var canvas = orientation.CanvasSize();
+        Info = new("Universal Screen 8.8\"", canvas.Width, canvas.Height);
         _headers = headers ?? new HeaderBuilder();
         _now = now ?? (() => DateTime.Now);
     }
 
-    public DeviceInfo Info { get; } = new("Universal Screen 8.8\"", FrameEncoder.PanelHeight, FrameEncoder.PanelWidth);
+    public DeviceInfo Info { get; }
 
     public string? FirmwareVersion { get; private set; }
 
@@ -70,7 +72,7 @@ public sealed class UniversalScreen88Device : IDisplayDevice
     public void PushFrame(SKImage frame)
     {
         EnsureOpen();
-        using var panel = FrameEncoder.ToPanel(frame, _rotation);
+        using var panel = FrameEncoder.ToPanel(frame, _orientation);
         SendWithPayload(Command.PushJpg, FrameEncoder.EncodeJpeg(panel), FrameReplyTimeoutMs);
     }
 

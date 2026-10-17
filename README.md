@@ -8,9 +8,15 @@ First supported device: the 8.8" Universal Screen (USB `1CBE:A088`).
 ## Usage
 
     marquee devices
-    marquee show-image picture.png [--rotation cw|ccw] [--brightness 0-100] [--sink <folder>] [--repeat N]
+    marquee show-image picture.png [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
 
 Only one program can drive the screen at a time. Quit L-Connect 3 before running Marquee.
+
+## Orientation
+
+Pick the orientation that matches how the screen is mounted. A vertical mount is `portrait`; a horizontal
+mount is `landscape` (the default). If the picture comes out upside down, use the `-flipped` variant.
+Layouts are designed at 480×1920 (portrait) or 1920×480 (landscape).
 
 ## Credits
 

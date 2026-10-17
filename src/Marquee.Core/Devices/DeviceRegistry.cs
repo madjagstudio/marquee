@@ -9,8 +9,8 @@ public static class DeviceRegistry
     public static bool IsSupported(ushort vendorId, ushort productId) =>
         (vendorId, productId) is (UniversalScreen88Device.VendorId, UniversalScreen88Device.ProductId);
 
-    public static IDisplayDevice Create(UsbDeviceEntry entry, Func<string, IUsbTransport> openTransport, Rotation rotation) =>
+    public static IDisplayDevice Create(UsbDeviceEntry entry, Func<string, IUsbTransport> openTransport, Orientation orientation) =>
         IsSupported(entry.VendorId, entry.ProductId)
-            ? new UniversalScreen88Device(() => openTransport(entry.Path), rotation)
+            ? new UniversalScreen88Device(() => openTransport(entry.Path), orientation)
             : throw new NotSupportedException($"No driver for USB {entry.VendorId:X4}:{entry.ProductId:X4}.");
 }
