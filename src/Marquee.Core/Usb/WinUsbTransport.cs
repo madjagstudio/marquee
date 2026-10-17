@@ -15,6 +15,7 @@ public sealed class WinUsbTransport : IUsbTransport
     readonly SafeFileHandle _file;
     readonly IntPtr _winUsb;
     readonly Dictionary<byte, uint> _timeouts = new();
+    bool _disposed;
 
     WinUsbTransport(SafeFileHandle file, IntPtr winUsb)
     {
@@ -88,6 +89,8 @@ public sealed class WinUsbTransport : IUsbTransport
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
         WinUsb_Free(_winUsb);
         _file.Dispose();
     }
