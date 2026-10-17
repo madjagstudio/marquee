@@ -27,15 +27,21 @@ static class JsonFields
     public static bool Has(JsonElement parent, string name) =>
         parent.ValueKind == JsonValueKind.Object && parent.TryGetProperty(name, out var value) && value.ValueKind != JsonValueKind.Null;
 
+    // Unix seconds up to the year 2286; later times are treated as garbage.
+    const double MaxUnixSeconds = 10_000_000_000;
+
     /// A point in time as Unix seconds: a number of seconds (or milliseconds, if it is too large to be seconds),
-    /// or an ISO 8601 string.
+    /// or an ISO 8601 string. Times that are zero, negative or absurdly far away read as null.
     public static double? UnixSeconds(JsonElement parent, string name)
     {
+        double? seconds;
         if (Number(parent, name) is { } number)
-            return number > 100_000_000_000 ? number / 1000 : number;
-        return String(parent, name) is { } text
-               && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var time)
-            ? time.ToUnixTimeMilliseconds() / 1000.0
-            : null;
+            seconds = number > 100_000_000_000 ? number / 1000 : number;
+        else
+            seconds = String(parent, name) is { } text
+                      && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var time)
+                ? time.ToUnixTimeMilliseconds() / 1000.0
+                : null;
+        return seconds is > 0 and <= MaxUnixSeconds ? seconds : null;
     }
 }

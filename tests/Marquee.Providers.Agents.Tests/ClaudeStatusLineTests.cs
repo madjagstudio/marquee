@@ -40,6 +40,9 @@ public class ClaudeStatusLineTests
     [InlineData("""{"rate_limits":{"five_hour":{"used_percentage":5,"resets_at":"2026-10-17T14:30:00Z"}}}""", 1792247400.0)]
     [InlineData("""{"rate_limits":{"five_hour":{"used_percentage":5,"resets_at":1792247400000}}}""", 1792247400.0)]
     [InlineData("""{"rate_limits":{"five_hour":{"used_percentage":5}}}""", null)]
+    [InlineData("""{"rate_limits":{"five_hour":{"used_percentage":5,"resets_at":1e30}}}""", null)]
+    [InlineData("""{"rate_limits":{"five_hour":{"used_percentage":5,"resets_at":-5}}}""", null)]
+    [InlineData("""{"rate_limits":{"five_hour":{"used_percentage":5,"resets_at":0}}}""", null)]
     public void Resets_at_may_be_seconds_milliseconds_iso_or_missing(string json, double? expected) =>
         Assert.Equal(expected, Parse(json).FiveHour!.ResetsAt);
 
@@ -104,6 +107,17 @@ public class ClaudeStatusLineTests
 
         Assert.Equal(12.0, Clock.Read(store, "claude.five_hour.pct"));
         Assert.Null(Clock.Read(store, "claude.five_hour.resets_at"));
+    }
+
+    [Fact]
+    public void Apply_survives_an_absurd_reset_time()
+    {
+        var store = new SensorStore(() => Clock.T0);
+        var status = Parse("""{"rate_limits":{"five_hour":{"used_percentage":5,"resets_at":1e30}}}""");
+
+        ClaudeStatusLine.Apply(status, store, Clock.T0);
+
+        Assert.Equal(5.0, Clock.Read(store, "claude.five_hour.pct"));
     }
 
     [Fact]
