@@ -53,6 +53,14 @@ public static class RolloutFile
         if (stop == 0 && pending.Count > 0 && Line([], 0, 0, pending) is { } first) yield return first;
     }
 
+    /// The file's current length, asked of an open handle. The length in a directory listing (FileInfo.Length) lags for
+    /// a log Codex keeps open, like its write time. Throws IOException (e.g. FileNotFoundException) if the log is gone.
+    public static long Length(string path)
+    {
+        using var stream = Open(path);
+        return stream.Length;
+    }
+
     /// The first line, if it is shorter than `maxBytes`. Codex starts each log with a session_meta event of ~20 KB.
     /// Throws IOException (e.g. FileNotFoundException) if the log disappears or shrinks while being read; callers
     /// (providers) let ProviderRunner handle it.

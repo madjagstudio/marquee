@@ -169,6 +169,60 @@ public class CodexLimitsTests : IDisposable
         Assert.Equal(60.0, Clock.Read(store, "codex.primary.pct"));
     }
 
+    static string TokenCountAt(string time, int pct) =>
+        $"{{\"timestamp\":\"2026-10-17T{time}.000Z\",\"type\":\"event_msg\",\"payload\":{{\"type\":\"token_count\",\"info\":null," +
+        $"\"rate_limits\":{{\"limit_id\":\"codex\",\"primary\":{{\"used_percent\":{pct},\"window_minutes\":10080,\"resets_at\":1792573200}}}}}}}}";
+
+    string AddLog(string name, DateTime written, params string[] lines)
+    {
+        var path = _dir.Write($"2026/10/17/rollout-{name}.jsonl", string.Concat(lines.Select(l => l + "\n")));
+        File.SetLastWriteTimeUtc(path, written);
+        return path;
+    }
+
+    static DateTime At(int hour, int minute, int second = 0) => new(2026, 10, 17, hour, minute, second, DateTimeKind.Utc);
+
+    [Fact]
+    public void Provider_applies_the_newest_event_even_from_a_log_that_sorts_later()
+    {
+        // NTFS write times of logs that stay open lag, so the log listed first can hold the older event.
+        AddLog("listed-first", At(11, 59, 50), TokenCountAt("11:50:00", 40));
+        AddLog("listed-second", At(11, 58), TokenCountAt("11:59:00", 55));
+        var store = new SensorStore(() => Clock.T0);
+
+        new CodexLimitsProvider(_dir.Path, () => Clock.T0).Poll(store);
+
+        Assert.Equal(55.0, Clock.Read(store, "codex.primary.pct"));
+    }
+
+    [Fact]
+    public void Provider_looks_past_the_three_newest_logs_for_a_lagging_active_one()
+    {
+        for (var i = 0; i < 3; i++)
+            AddLog($"quiet{i}", At(11, 59, i), TokenCountAt("11:40:00", 10 + i));
+        AddLog("active", At(11, 30), TokenCountAt("11:59:40", 66));
+        var store = new SensorStore(() => Clock.T0);
+
+        new CodexLimitsProvider(_dir.Path, () => Clock.T0).Poll(store);
+
+        Assert.Equal(66.0, Clock.Read(store, "codex.primary.pct"));
+    }
+
+    [Fact]
+    public void Provider_rereads_a_log_that_grew_while_its_write_time_stayed_put()
+    {
+        var path = AddLog("active", At(11, 59), TokenCountAt("11:58:00", 20));
+        var store = new SensorStore(() => Clock.T0);
+        var provider = new CodexLimitsProvider(_dir.Path, () => Clock.T0);
+        provider.Poll(store);
+
+        File.AppendAllText(path, TokenCountAt("11:59:30", 25) + "\n");
+        File.SetLastWriteTimeUtc(path, At(11, 59));
+        provider.Poll(store);
+
+        Assert.Equal(25.0, Clock.Read(store, "codex.primary.pct"));
+    }
+
     [Fact]
     public void Provider_without_codex_writes_nothing()
     {
