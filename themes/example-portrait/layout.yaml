@@ -1,0 +1,92 @@
+# Example theme for a vertically mounted 8.8" Universal Screen (480×1920).
+# Run it with:  marquee run themes/example-portrait --orientation portrait --preview
+canvas:
+  orientation: portrait
+  fps: 30
+
+styles:
+  label: { size: 28, weight: semibold, color: "#8B95AA", align: center }
+  reading: { size: 96, weight: bold, color: "#F4F6FA", align: center }
+  panel: { fill: "#FFFFFF08", radius: 32, stroke: { width: 2, color: "#FFFFFF18" } }
+  ring: { fill: { linear: ["#36D1DC", "#FF5A36"] }, track: "#FFFFFF14", stroke: { cap: round } }
+  bar: { radius: 18, track: "#FFFFFF14", fill: { linear: ["#36D1DC", "#5B86E5"] } }
+  hot:
+    color: "#FF5A36"
+    glow: { color: "#FF5A36", radius: 20 }
+    pulse: { property: glow, period: 1200, min: 0.3 }
+  stale: { color: "#5A6275" }
+
+background:
+  - fill: { linear: ["#070A12", "#141B2E"], angle: 90 }
+
+widgets:
+  - type: group
+    at: [30, 40]
+    size: [420, 500]
+    style: panel
+    children:
+      - { type: text, at: [0, 28], size: [420, 40], text: CPU, style: label }
+      - { type: gauge, at: [40, 90], size: [340, 340], source: cpu.temp, min: 20, max: 100, thickness: 30, smooth: 400, style: ring }
+      - type: value
+        at: [40, 200]
+        size: [340, 120]
+        source: cpu.temp
+        format: "{0:0}°"
+        smooth: 400
+        style: reading
+        when:
+          - { above: 85, style: hot }
+          - { stale: true, style: stale }
+      - type: text
+        at: [0, 440]
+        size: [420, 36]
+        text: "{cpu.load:0}% · {cpu.clock / 1000:0.0} GHz"
+        style: { extends: label, size: 26, weight: normal }
+
+  - type: group
+    at: [30, 580]
+    size: [420, 500]
+    style: panel
+    children:
+      - { type: text, at: [0, 28], size: [420, 40], text: GPU, style: label }
+      - { type: gauge, at: [40, 90], size: [340, 340], source: gpu.temp, min: 20, max: 100, thickness: 30, smooth: 400, style: ring }
+      - type: value
+        at: [40, 200]
+        size: [340, 120]
+        source: gpu.temp
+        format: "{0:0}°"
+        smooth: 400
+        style: reading
+        when:
+          - { above: 80, style: hot }
+          - { stale: true, style: stale }
+      - type: text
+        at: [0, 440]
+        size: [420, 36]
+        text: "{gpu.load:0}% · {gpu.vram_used|bytes}"
+        style: { extends: label, size: 26, weight: normal }
+
+  - { type: text, at: [30, 1130], size: [420, 40], text: GPU LOAD, style: label }
+  - type: graph
+    at: [30, 1180]
+    size: [420, 300]
+    source: gpu.load
+    min: 0
+    max: 100
+    points: 60
+    style: { stroke: { width: 3, color: "#36D1DC" }, fill: { linear: ["#36D1DC50", "#36D1DC00"], angle: 90 } }
+
+  - { type: text, at: [30, 1540], size: [200, 40], text: RAM, style: { extends: label, align: left } }
+  - { type: value, at: [250, 1540], size: [200, 40], source: ram.used_pct, format: "{0:0}%", style: { size: 32, weight: semibold, align: right } }
+  - type: bar
+    at: [30, 1600]
+    size: [420, 40]
+    source: ram.used_pct
+    smooth: 400
+    style: bar
+    when:
+      - { above: 90, style: { fill: "#FF5A36" } }
+
+  - { type: text, at: [30, 1700], size: [200, 40], text: CPU, style: { extends: label, align: left } }
+  - { type: value, at: [250, 1700], size: [200, 40], source: cpu.load, format: "{0:0}%", style: { size: 32, weight: semibold, align: right } }
+  - { type: bar, at: [30, 1760], size: [420, 40], source: cpu.load, smooth: 400, style: bar }

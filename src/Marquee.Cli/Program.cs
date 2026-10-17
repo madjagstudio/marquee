@@ -12,6 +12,7 @@ return args switch
     ["devices"] => ListDevices(),
     ["show-image", var file, .. var options] => ShowImage(file, options),
     ["sensors", .. var options] => SensorsCommand.Run(options) ?? Usage(),
+    ["run", var folder, .. var options] => RunCommand.Run(folder, options) ?? Usage(),
     _ => Usage(),
 };
 
@@ -44,10 +45,7 @@ static int ShowImage(string file, string[] options)
         var value = i + 1 < options.Length ? options[i + 1] : null;
         switch (options[i])
         {
-            case "--orientation" when value is "portrait": orientation = Orientation.Portrait; i++; break;
-            case "--orientation" when value is "portrait-flipped": orientation = Orientation.PortraitFlipped; i++; break;
-            case "--orientation" when value is "landscape": orientation = Orientation.Landscape; i++; break;
-            case "--orientation" when value is "landscape-flipped": orientation = Orientation.LandscapeFlipped; i++; break;
+            case "--orientation" when Screens.ParseOrientation(value) is { } o: orientation = o; i++; break;
             case "--brightness" when int.TryParse(value, out var b): brightness = b; i++; break;
             case "--sink" when value is not null: sink = value; i++; break;
             case "--repeat" when int.TryParse(value, out var n) && n > 0: repeat = n; i++; break;
@@ -68,7 +66,7 @@ static int ShowImage(string file, string[] options)
         Console.Error.WriteLine(
             $"Warning: image is {image.Width}x{image.Height} but the {(orientation.IsPortrait() ? "portrait" : "landscape")} canvas is {size.Width}x{size.Height}; it will be stretched.");
 
-    IDisplayDevice? device = sink is not null ? new FileSinkDevice(sink, size.Width, size.Height) : FindScreen(orientation);
+    IDisplayDevice? device = sink is not null ? new FileSinkDevice(sink, size.Width, size.Height) : Screens.Find(orientation);
     if (device is null)
     {
         Console.Error.WriteLine("No supported screen found. Run `marquee devices` to check.");
@@ -101,12 +99,6 @@ static int ShowImage(string file, string[] options)
     }
 }
 
-static IDisplayDevice? FindScreen(Orientation orientation) =>
-    WinUsbTransport.Enumerate()
-        .Where(e => DeviceRegistry.IsSupported(e.VendorId, e.ProductId))
-        .Select(e => DeviceRegistry.Create(e, WinUsbTransport.Open, orientation))
-        .FirstOrDefault();
-
 static int Usage()
 {
     Console.Error.WriteLine("""
@@ -114,6 +106,7 @@ static int Usage()
           marquee devices
           marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
           marquee sensors [--sensors lhm|hwinfo]
+          marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
         """);
     return 2;
 }

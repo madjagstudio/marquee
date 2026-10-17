@@ -6,5 +6,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Marquee.Core\Marquee.Core.csproj" />
     <ProjectReference Include="..\Marquee.Providers.Hardware\Marquee.Providers.Hardware.csproj" />
+    <ProjectReference Include="..\Marquee.Preview\Marquee.Preview.csproj" />
   </ItemGroup>
 </Project>
