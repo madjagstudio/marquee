@@ -71,6 +71,19 @@ public class ShaderParsingTests
             Error($"  - shader: a.sksl\n    uniforms:\n      m: [{string.Join(", ", Enumerable.Repeat("1", 17))}]").Reason);
 
     [Fact]
+    public void At_most_4_shader_layers()
+    {
+        // Each shader layer is compiled and may keep its own offscreen surface; other layers don't count.
+        Assert.Equal(4, Layouts.Parse("canvas: { orientation: landscape }\nbackground:\n" +
+            string.Concat(Enumerable.Repeat("  - shader: a.sksl\n  - fill: \"#000\"\n", 4))).Background.Count(l => l is ShaderLayer));
+
+        var ex = Error(string.Concat(Enumerable.Repeat("  - shader: a.sksl\n  - fill: \"#000\"\n", 5)));
+
+        Assert.Equal("a background can have at most 4 shader layers", ex.Reason);
+        Assert.Equal(11, ex.Line); // the fifth shader layer
+    }
+
+    [Fact]
     public void At_most_32_uniforms() =>
         Assert.Equal("a shader layer can bind at most 32 uniforms",
             Error("  - shader: a.sksl\n    uniforms:\n" + string.Concat(Enumerable.Range(0, 33).Select(i => $"      u{i}: 1\n"))).Reason);

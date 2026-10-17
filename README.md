@@ -65,7 +65,8 @@ widgets:
 
 - **Widgets:** `text` (templates like `"{gpu.load:0}% · {gpu.vram_used|bytes}"`), `value`, `bar`, `gauge`, `graph`, `image`, `group`.
 - **Styles:** named in `styles:`, layered with `extends:`, changed by `when:` rules (`above`, `below`, `equals`, `stale`), animated with `pulse:`.
-- **Background:** `fill` (color or gradient), `image` and `shader` layers, each with `opacity` and `blend`.
+- **Background:** `fill` (color or gradient), `image` and `shader` layers, each with `opacity` and `blend`; up to 16
+  layers, at most 4 of them shaders.
 - **Colors** are quoted CSS hex (`"#RRGGBB"` or `"#RRGGBBAA"`): an unquoted `#` starts a YAML comment.
 - **Fonts:** the bundled Inter by default, an installed font by name, or a `.ttf`/`.otf` file in the theme folder.
 - **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so

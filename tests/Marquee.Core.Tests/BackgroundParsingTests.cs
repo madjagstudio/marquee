@@ -29,6 +29,17 @@ public class BackgroundParsingTests
     }
 
     [Fact]
+    public void At_most_16_layers()
+    {
+        Assert.Equal(16, Layers(string.Concat(Enumerable.Repeat("  - fill: \"#000\"\n", 16))).Count);
+
+        var ex = LayerError(string.Concat(Enumerable.Repeat("  - fill: \"#000\"\n", 17)));
+
+        Assert.Equal("a background can have at most 16 layers", ex.Reason);
+        Assert.Equal(19, ex.Line); // the 17th layer
+    }
+
+    [Fact]
     public void Image_layer_options()
     {
         var layer = Layers("""

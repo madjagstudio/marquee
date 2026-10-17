@@ -8,15 +8,36 @@ namespace Marquee.Core.Themes.Parsing;
 static partial class BackgroundParser
 {
     /// Uniforms Marquee sets on every shader; a theme can't bind them.
-    public static readonly string[] BuiltInUniforms = ["time", "resolution"];
+    public static readonly IReadOnlyList<string> BuiltInUniforms = ["time", "resolution"];
+
+    /// A theme is untrusted: every layer is drawn each frame, and each shader layer is compiled at load and may keep
+    /// its own offscreen surface (up to ~3.6 MB), so neither can be stacked without limit.
+    public const int MaxLayers = 16;
+    public const int MaxShaderLayers = 4;
 
     const int MaxUniforms = 32;
 
     /// A float4x4 has 16 components, the most any SkSL uniform type has.
     const int MaxComponents = 16;
 
-    public static IReadOnlyList<BackgroundLayer> Parse(YamlNode node) =>
-        Yaml.List(node, "background").Select(Layer).ToList();
+    public static IReadOnlyList<BackgroundLayer> Parse(YamlNode node)
+    {
+        var nodes = Yaml.List(node, "background");
+        if (nodes.Count > MaxLayers)
+            throw Yaml.Error(nodes[MaxLayers], $"a background can have at most {MaxLayers} layers");
+
+        var layers = new List<BackgroundLayer>();
+        var shaders = 0;
+        foreach (var layerNode in nodes)
+        {
+            var layer = Layer(layerNode);
+            if (layer is ShaderLayer && ++shaders > MaxShaderLayers)
+                throw Yaml.Error(layerNode, $"a background can have at most {MaxShaderLayers} shader layers");
+            layers.Add(layer);
+        }
+
+        return layers;
+    }
 
     public static ImageFit Fit(YamlNode node, string what) => Yaml.Choice(node, what,
         ("cover", ImageFit.Cover), ("contain", ImageFit.Contain), ("stretch", ImageFit.Stretch), ("none", ImageFit.None));
