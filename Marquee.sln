@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marquee.Preview", "src\Marq
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marquee.Preview.Tests", "tests\Marquee.Preview.Tests\Marquee.Preview.Tests.csproj", "{E2F3C5DF-E094-4FD3-A7F6-3950A90474B0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marquee.Providers.Agents", "src\Marquee.Providers.Agents\Marquee.Providers.Agents.csproj", "{4499DFBE-0096-4221-A3C6-FF82E21DAF89}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marquee.Providers.Agents.Tests", "tests\Marquee.Providers.Agents.Tests\Marquee.Providers.Agents.Tests.csproj", "{FDB4C1DD-8A92-4FC9-807C-D494E297AF48}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +62,14 @@ Global
 		{E2F3C5DF-E094-4FD3-A7F6-3950A90474B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2F3C5DF-E094-4FD3-A7F6-3950A90474B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2F3C5DF-E094-4FD3-A7F6-3950A90474B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4499DFBE-0096-4221-A3C6-FF82E21DAF89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4499DFBE-0096-4221-A3C6-FF82E21DAF89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4499DFBE-0096-4221-A3C6-FF82E21DAF89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4499DFBE-0096-4221-A3C6-FF82E21DAF89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDB4C1DD-8A92-4FC9-807C-D494E297AF48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDB4C1DD-8A92-4FC9-807C-D494E297AF48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDB4C1DD-8A92-4FC9-807C-D494E297AF48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDB4C1DD-8A92-4FC9-807C-D494E297AF48}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{52BA135E-02B4-46C1-B915-C8639D7C39AE} = {CF349E12-CA48-4EF0-870F-756F7253AB17}
@@ -67,5 +79,7 @@ Global
 		{6CEEBFDF-E986-4687-BC82-332F021D1A68} = {87757601-5AE6-4180-9F0B-2BE255315083}
 		{09BDCCBB-08DC-4575-8931-B20D94A60DD4} = {CF349E12-CA48-4EF0-870F-756F7253AB17}
 		{E2F3C5DF-E094-4FD3-A7F6-3950A90474B0} = {87757601-5AE6-4180-9F0B-2BE255315083}
+		{4499DFBE-0096-4221-A3C6-FF82E21DAF89} = {CF349E12-CA48-4EF0-870F-756F7253AB17}
+		{FDB4C1DD-8A92-4FC9-807C-D494E297AF48} = {87757601-5AE6-4180-9F0B-2BE255315083}
 	EndGlobalSection
 EndGlobal
