@@ -12,9 +12,16 @@ First supported device: the 8.8" Universal Screen (USB `1CBE:A088`).
     marquee sensors [--sensors lhm|hwinfo]
     marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
 
-Only one program can drive the screen at a time. Quit L-Connect 3 before running Marquee. Its background service
-(`L-Connect-Service`) keeps the screen even after the app is closed, so end it in Task Manager too; fans keep their
-last settings, and L-Connect can be started again afterwards.
+Only one program can drive the screen at a time. L-Connect 3's background service holds it, and closing the
+L-Connect 3 window doesn't free it. Ending the service in Task Manager doesn't stick either: a watcher service starts
+it again. To hand the screen to Marquee:
+
+1. Right-click L-Connect's tray icon and choose its stop-service option. Fans keep their last settings meanwhile.
+2. Start Marquee (`marquee run …`) and wait for the picture.
+3. Start the service again from the same tray menu. L-Connect skips the screen and goes on running your fans and RGB.
+
+While Marquee has the screen, L-Connect doesn't control it or its LED ring, and neither shows up in the L-Connect app.
+To give the screen back, quit Marquee, then stop and start the service from the tray again.
 
 `marquee run themes/example-landscape --preview` shows a theme on the screen and in a preview window (press `1` for 1:1).
 Edit `layout.yaml` and save: the screen updates within a second. If the file has a mistake, the last good layout stays

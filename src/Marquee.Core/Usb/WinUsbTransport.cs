@@ -126,5 +126,6 @@ public sealed class WinUsbTransport : IUsbTransport
     static bool IsBusy(int error) => error is ERROR_ACCESS_DENIED or ERROR_SHARING_VIOLATION;
 
     static DeviceBusyException Busy() =>
-        new("The screen is in use by another program (usually L-Connect 3). Close it and try again.");
+        // Neutral on purpose: LConnectDetector says who holds it and how to free it.
+        new("The screen is in use by another program.");
 }
