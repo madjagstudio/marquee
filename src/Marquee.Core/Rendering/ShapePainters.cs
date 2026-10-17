@@ -66,7 +66,14 @@ static class ShapePainters
             (min, max) = (Math.Min(min, history[i]), Math.Max(max, history[i]));
         min = graph.Min ?? min;
         max = graph.Max ?? max;
-        if (max - min < 1e-9) (min, max) = (min - 1, max + 1);
+        // An explicit bound stays authoritative: padding a degenerate or inverted range must not move it.
+        if (max - min < 1e-9)
+            (min, max) = (graph.Min, graph.Max) switch
+            {
+                (null, null) => (min - 1, max + 1),
+                (null, { } hi) => (hi - 1, hi),
+                ({ } lo, _) => (lo, lo + 1),
+            };
 
         var step = bounds.Width / (graph.Points - 1);
         SKPoint Point(int i) => new(

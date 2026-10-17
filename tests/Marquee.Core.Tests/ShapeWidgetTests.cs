@@ -161,6 +161,26 @@ public class ShapeWidgetTests
     }
 
     [Fact]
+    public void Graph_with_one_fixed_bound_below_the_data_pins_the_line_to_that_edge()
+    {
+        var store = TestSensors.Store();
+        store.Set("gpu.load", 55);
+        store.Set("gpu.load", 60);
+        using var frame = Frames.Render(Landscape + """
+            widgets:
+              - type: graph
+                at: [0, 0]
+                size: [200, 100]
+                source: gpu.load
+                max: 50
+                points: 2
+                style: { stroke: { width: 4, color: "#FF0000" } }
+            """, store.Snapshot());
+
+        Pixels.AssertNear(SKColors.Red, At(frame, 100, 1), 60);
+    }
+
+    [Fact]
     public void Graph_with_fewer_than_two_samples_draws_only_its_track()
     {
         using var frame = Render("""
