@@ -5,6 +5,7 @@ using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
 using Marquee.Preview;
 using Marquee.Providers.Agents.Claude;
+using Marquee.Providers.Custom;
 
 /// `marquee run <theme-folder>`: live sensors → theme → screen (or --sink), with hot reload and an optional preview.
 static class RunCommand
@@ -20,6 +21,7 @@ static class RunCommand
         string? sink = null;
         var preview = false;
         int? frames = null;
+        int? httpPort = CustomValuesServer.DefaultPort;
 
         for (var i = 0; i < options.Length; i++)
         {
@@ -32,6 +34,8 @@ static class RunCommand
                 case "--sink" when value is not null: sink = value; i++; break;
                 case "--frames" when int.TryParse(value, out var n) && n > 0: frames = n; i++; break;
                 case "--preview": preview = true; break;
+                case "--http-port" when HttpPort.TryParse(value, out var p): httpPort = p; i++; break;
+                case "--no-http": httpPort = null; break;
                 default: return null;
             }
         }
@@ -41,8 +45,12 @@ static class RunCommand
         using var providers = new ProviderRunner(store, log);
         if (SensorSources.Create(sensors, log) is { } provider)
             providers.Start(provider);
+        foreach (var agent in AgentSources.Create())
+            providers.Start(agent);
         using var statusLine = new StatusLineServer(store, log);
         statusLine.Start();
+        using var custom = httpPort is { } port ? new CustomValuesServer(store, log, port) : null;
+        custom?.Start();
 
         var size = orientation.CanvasSize();
         using var device = sink is not null ? new FileSinkDevice(sink, size.Width, size.Height) : Screens.Find(orientation);
