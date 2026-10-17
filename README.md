@@ -81,7 +81,8 @@ A `shader` layer runs an [SkSL](https://skia.org/docs/user/sksl/) file from the 
 Marquee sets `uniform float time` (seconds) and `uniform float2 resolution` (pixels). `time` wraps back to 0 once a
 day so it stays precise, which shows as one jump a day. Bind any other uniform to a number or an expression, one value
 per component. Marquee binds floats only, so declare bound uniforms as `float`, `float2`, `float3` or `float4`; a layer
-with an `int` uniform is skipped with a warning. A binding whose sensor is missing or stale reads as 0.
+that binds an `int` uniform is skipped with a warning (an unbound one only gets the warning that it stays 0). A binding
+whose sensor is missing or stale reads as 0.
 
 ```yaml
 background:
@@ -116,19 +117,20 @@ A Claude Code session is busy or idle as its session file says. A Codex session 
 (its last turn event is `task_started`) and idle after the turn completes or is interrupted.
 
 Claude Code shares its usage limits only with its status-line command, and only on claude.ai subscriptions (its docs
-name Pro and Max; API-key sessions have none). Run `marquee setup-claude` once, from `marquee.exe` itself (it refuses
-to run from anything else). It points Claude Code's `statusLine` at `marquee statusline`, which hands the data to
-Marquee and then runs your previous status-line command, so your status line looks the same as before. It edits
-only `statusLine` in `~/.claude/settings.json`, keeps a timestamped backup, and `marquee setup-claude --undo` puts the
-old setting back. `--dry-run` shows the change first. If it can't rewrite `settings.json` exactly (comments, trailing
-commas, repeated keys, a file that isn't UTF-8, a link, or a `statusLine` that isn't an object), it changes nothing and
-says why. A project's `.claude/settings.json` or managed settings with their own `statusLine` take precedence over this
-one.
+name Pro and Max; API-key sessions have none). Run `marquee setup-claude` once, from `marquee.exe` itself (setup
+refuses to run from anything else; `--undo` runs from anywhere). It points Claude Code's `statusLine` at
+`marquee statusline`, which hands the data to Marquee and then runs your previous status-line command, so your status
+line looks the same as before. It edits only `statusLine` in `~/.claude/settings.json`, keeps a timestamped backup, and
+`marquee setup-claude --undo` puts the old setting back. `--dry-run` shows the change first. If it can't rewrite
+`settings.json` exactly (comments, trailing commas, repeated keys, a file that isn't UTF-8, a link, or a `statusLine`
+that isn't an object), it changes nothing and says why. A project's `.claude/settings.json` or managed settings with
+their own `statusLine` take precedence over this one.
 
-Limits arrive only while `marquee run` is going and a Claude Code session is updating its status line. They are lost
-when `marquee run` restarts, until a session updates its status line again. In between they keep their last value
-(`claude.updated_at` says how old it is), and each window goes stale (`—`) when it resets. Which Codex window is
-primary depends on the plan: `codex.primary.window_min` is 300 for a 5-hour window and 10080 for a weekly one.
+Limits arrive only while `marquee run` is going (elevated or not) and a Claude Code session is updating its status
+line; only programs running as your Windows account can hand them to Marquee. They are lost when `marquee run`
+restarts, until a session updates its status line again. In between they keep their last value (`claude.updated_at`
+says how old it is), and each window goes stale (`—`) when it resets. Which Codex window is primary depends on the
+plan: `codex.primary.window_min` is 300 for a 5-hour window and 10080 for a weekly one.
 
 The session files and Codex logs are undocumented formats that may change. If Marquee can't read them any more, it
 logs a warning and those keys go stale; everything else keeps working.
@@ -147,10 +149,11 @@ sent as a number; to send text that looks like a number, use HTTP. Over HTTP the
     Invoke-RestMethod -Method Post -Uri http://127.0.0.1:47913/values -ContentType application/json `
       -Body '{"custom.queue": 12, "ttl": "30s"}'
 
-Any HTTP client works. Values are numbers or text (up to 256 characters). Without `ttl` (`--ttl` for `push`) a value
-never goes stale; with it, the value goes stale (`—`) after that long. The endpoint listens on 127.0.0.1 only and
-refuses requests from other machines and from web pages. The default port is 47913; `--http-port` changes it (pass the
-same `--port` to `marquee push`), and `--no-http` turns it off.
+Any HTTP client works if it sends `Content-Type: application/json`. Values are numbers or text (up to 256
+characters). Without `ttl` (`--ttl` for `push`) a value never goes stale; with it, the value goes stale (`—`) after
+that long. The endpoint listens on 127.0.0.1 only and refuses requests from other machines and from web pages. The
+default port is 47913; `--http-port` changes it (pass the same `--port` to `marquee push`), and `--no-http` turns it
+off.
 
 ## Hardware sensors
 
