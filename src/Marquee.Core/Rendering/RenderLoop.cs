@@ -11,15 +11,21 @@ namespace Marquee.Core.Rendering;
 /// Frame rate over the last second, and smoothed per-frame costs.
 public sealed record RenderStats(double Fps, double RenderMs, double PushMs);
 
-/// Renders the current theme at its frame rate and sends each frame to the device. IDisplayDevice is single-threaded,
-/// so the loop owns it: it opens it, pushes every frame from its own thread, reconnects after failures, and closes it
-/// when stopped. The caller still disposes the device. PushFrame is synchronous (about 21 ms on the Universal Screen),
-/// so the device, not the renderer, usually sets the ceiling (about 47 fps).
+/// Renders the current theme at its frame rate and sends each frame to the device. Once started, rendering and sending
+/// run on two threads, so a frame is drawn while the previous one is still going to the screen: the frame time is the
+/// longer of the two, not their sum, which leaves room for CPU-heavy shader backgrounds. IDisplayDevice is
+/// single-threaded, so only the sending thread opens, pushes to, reconnects and closes it. The caller still disposes the
+/// device. PushFrame is synchronous (about 21 ms on the Universal Screen), so the device usually sets the ceiling
+/// (about 47 fps). A frame the sender hasn't picked up when the next one is ready is dropped: the screen always gets the
+/// newest.
 public sealed class RenderLoop : IDisposable
 {
     public static readonly TimeSpan ReconnectDelay = TimeSpan.FromSeconds(2);
     static readonly TimeSpan CapCheckDelay = TimeSpan.FromSeconds(3);
     static readonly TimeSpan StatsWindow = TimeSpan.FromSeconds(1);
+
+    /// A rendered frame on its way to the screen, with what the sender needs to know about how it was made.
+    sealed record Frame(SKImage Image, double RenderMs, int TargetFps, TimeSpan ThemeStart);
 
     readonly IDisplayDevice _device;
     readonly SensorStore _sensors;
@@ -27,19 +33,27 @@ public sealed class RenderLoop : IDisposable
     readonly int? _fpsOverride;
     readonly LConnectDetector _lconnect;
     readonly Queue<TimeSpan> _frameTimes = new();
+    readonly AutoResetEvent _frameReady = new(false);
+    readonly object _renderErrorGate = new();
 
+    // Rendering side (the render thread, or the Step caller).
     LoadedTheme? _pending;
     LoadedTheme? _theme;
     ThemeRenderer? _renderer;
     SKSurface? _fitSurface;
+    TimeSpan _themeStart;
+
+    // Sending side (the sending thread, or the Step caller): the device and the stats.
     bool _deviceOpen;
     TimeSpan _nextOpenAttempt;
     string? _lastDeviceError;
-    string? _lastRenderError;
-    TimeSpan _themeStart;
+    TimeSpan _statsThemeStart = TimeSpan.MinValue;
     bool _capWarned;
     double _renderMs;
     double _pushMs;
+
+    Frame? _handoff;
+    string? _lastRenderError;
     long _framesPushed;
     Thread? _thread;
     CancellationTokenSource? _stop;
@@ -53,7 +67,8 @@ public sealed class RenderLoop : IDisposable
         _lconnect = lconnect ?? LConnectDetector.Default;
     }
 
-    /// Raised on the render thread after each frame is pushed. The image is disposed when handlers return, so copy it.
+    /// Raised on the sending thread after each frame is pushed (or skipped while the screen is away). The image is
+    /// disposed when handlers return, so copy it.
     public event Action<SKImage>? FrameRendered;
 
     /// The target rate: --fps if given, else the theme's canvas.fps, clamped to 1–60.
@@ -67,28 +82,18 @@ public sealed class RenderLoop : IDisposable
     /// A theme offered but replaced before any frame picked it up is disposed straight away.
     public void SetTheme(LoadedTheme theme) => Interlocked.Exchange(ref _pending, theme)?.Dispose();
 
-    /// Renders and pushes one frame. The thread started by Start() calls this; tests call it directly with fixed times.
+    /// Renders and sends one frame on the calling thread. Tests and `--frames` call this directly with fixed times;
+    /// don't mix it with Start().
     public void Step(TimeSpan time)
     {
-        TakePendingTheme(time);
-        if (_renderer is null) return;
-
-        var clock = Stopwatch.StartNew();
-        using var rendered = _renderer.Render(_sensors.Snapshot(), time);
-        var frame = FitToDevice(rendered);
-        var renderMs = clock.Elapsed.TotalMilliseconds;
-
+        if (Render(time) is not { } frame) return;
         try
         {
-            clock.Restart();
-            Push(frame, time);
-            var pushMs = clock.Elapsed.TotalMilliseconds;
-            FrameRendered?.Invoke(frame);
-            Record(time, renderMs, pushMs);
+            Send(frame, time);
         }
         finally
         {
-            if (!ReferenceEquals(frame, rendered)) frame.Dispose();
+            frame.Image.Dispose();
         }
     }
 
@@ -114,22 +119,31 @@ public sealed class RenderLoop : IDisposable
         _renderer?.Dispose();
         _theme?.Dispose();
         Interlocked.Exchange(ref _pending, null)?.Dispose();
+        Interlocked.Exchange(ref _handoff, null)?.Image.Dispose();
         _fitSurface?.Dispose();
         _stop?.Dispose();
+        _frameReady.Dispose();
     }
 
+    /// The render thread: renders at the target rate and hands each frame to the sending thread.
     void Run()
     {
         using var resolution = TimerResolution.Begin();
         var token = _stop!.Token;
         var clock = Stopwatch.StartNew();
+        var sender = new Thread(() => SendLoop(clock, token)) { IsBackground = true, Name = "Marquee screen sender" };
+        sender.Start();
         var next = TimeSpan.Zero;
 
         while (!token.IsCancellationRequested)
         {
             try
             {
-                Step(clock.Elapsed);
+                if (Render(clock.Elapsed) is { } frame)
+                {
+                    Interlocked.Exchange(ref _handoff, frame)?.Image.Dispose(); // the sender never took the last one
+                    _frameReady.Set();
+                }
             }
             catch (Exception ex)
             {
@@ -142,6 +156,31 @@ public sealed class RenderLoop : IDisposable
             else token.WaitHandle.WaitOne(next - now);
         }
 
+        sender.Join();
+    }
+
+    /// The sending thread: pushes each handed-over frame, and closes the device when the loop stops.
+    void SendLoop(Stopwatch clock, CancellationToken token)
+    {
+        WaitHandle[] wake = [_frameReady, token.WaitHandle];
+        while (!token.IsCancellationRequested)
+        {
+            WaitHandle.WaitAny(wake);
+            if (Interlocked.Exchange(ref _handoff, null) is not { } frame) continue;
+            try
+            {
+                Send(frame, clock.Elapsed);
+            }
+            catch (Exception ex)
+            {
+                ReportRender($"Rendering a frame failed: {ex.Message}");
+            }
+            finally
+            {
+                frame.Image.Dispose();
+            }
+        }
+
         try
         {
             CloseDevice();
@@ -151,6 +190,38 @@ public sealed class RenderLoop : IDisposable
             // Not ReportDevice: it ends with "Retrying every N s.", which is wrong while shutting down.
             _log.Error($"Closing the screen failed: {ex.Message}");
         }
+    }
+
+    /// Draws the current theme fitted to the screen, or null before any theme has arrived. The caller owns the image.
+    Frame? Render(TimeSpan time)
+    {
+        TakePendingTheme(time);
+        if (_renderer is null) return null;
+
+        var clock = Stopwatch.StartNew();
+        var rendered = _renderer.Render(_sensors.Snapshot(), time);
+        SKImage image;
+        try
+        {
+            image = FitToDevice(rendered);
+        }
+        catch
+        {
+            rendered.Dispose();
+            throw;
+        }
+
+        if (!ReferenceEquals(image, rendered)) rendered.Dispose();
+        return new Frame(image, clock.Elapsed.TotalMilliseconds, Fps, _themeStart);
+    }
+
+    void Send(Frame frame, TimeSpan time)
+    {
+        var clock = Stopwatch.StartNew();
+        Push(frame.Image, time);
+        var pushMs = clock.Elapsed.TotalMilliseconds;
+        FrameRendered?.Invoke(frame.Image);
+        Record(time, frame, pushMs);
     }
 
     void TakePendingTheme(TimeSpan time)
@@ -175,7 +246,6 @@ public sealed class RenderLoop : IDisposable
         _theme = theme;
         _renderer = renderer;
         _themeStart = time;
-        _capWarned = false;
 
         var design = theme.Spec.Canvas.Size;
         var screen = new SKSizeI(_device.Info.Width, _device.Info.Height);
@@ -250,11 +320,15 @@ public sealed class RenderLoop : IDisposable
     }
 
     /// Logs each distinct render error once, not once per frame. Kept apart from device errors so a failing frame is
-    /// never mistaken for a screen that needs a "Connected" announcement.
+    /// never mistaken for a screen that needs a "Connected" announcement. Both threads report here.
     void ReportRender(string message)
     {
-        if (message == _lastRenderError) return;
-        _lastRenderError = message;
+        lock (_renderErrorGate)
+        {
+            if (message == _lastRenderError) return;
+            _lastRenderError = message;
+        }
+
         _log.Error(message);
     }
 
@@ -265,22 +339,29 @@ public sealed class RenderLoop : IDisposable
         _device.Close();
     }
 
-    void Record(TimeSpan time, double renderMs, double pushMs)
+    void Record(TimeSpan time, Frame frame, double pushMs)
     {
+        if (frame.ThemeStart != _statsThemeStart)
+        {
+            // A new theme gets its own chance to keep up before being warned about.
+            _statsThemeStart = frame.ThemeStart;
+            _capWarned = false;
+        }
+
         _frameTimes.Enqueue(time);
         while (time - _frameTimes.Peek() > StatsWindow) _frameTimes.Dequeue();
         var span = (time - _frameTimes.Peek()).TotalSeconds;
         var fps = _frameTimes.Count > 1 && span > 0 ? (_frameTimes.Count - 1) / span : 0;
 
-        _renderMs = _renderMs == 0 ? renderMs : _renderMs * 0.9 + renderMs * 0.1;
+        _renderMs = _renderMs == 0 ? frame.RenderMs : _renderMs * 0.9 + frame.RenderMs * 0.1;
         _pushMs = _pushMs == 0 ? pushMs : _pushMs * 0.9 + pushMs * 0.1;
         Stats = new RenderStats(fps, _renderMs, _pushMs);
 
-        if (!_capWarned && _frameTimes.Count > 1 && time - _themeStart >= CapCheckDelay && fps < Fps * 0.9)
+        if (!_capWarned && _frameTimes.Count > 1 && time - frame.ThemeStart >= CapCheckDelay && fps < frame.TargetFps * 0.9)
         {
             _capWarned = true;
             _log.Warn(string.Create(CultureInfo.InvariantCulture,
-                $"Running at {fps:0} fps instead of {Fps}: a frame takes {_renderMs:0.0} ms to render and {_pushMs:0.0} ms to send to the screen."));
+                $"Running at {fps:0} fps instead of {frame.TargetFps}: a frame takes {_renderMs:0.0} ms to render and {_pushMs:0.0} ms to send to the screen."));
         }
     }
 }
