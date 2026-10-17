@@ -40,8 +40,9 @@ static class SetupClaudeCommand
                 Console.WriteLine(text);
             }
 
-            Console.WriteLine(change.Message);
-            if (change.Changed && !undo)
+            // A dry run's message says what the real run would do, in the words the real run uses.
+            Console.WriteLine(dryRun && change.Changed ? $"Without --dry-run: {change.Message}" : change.Message);
+            if (change.Changed && !undo && !dryRun)
                 Console.WriteLine("Limits appear once `marquee run` is going and a Claude Code session updates its status line. " +
                     "A project's .claude/settings.json or managed settings with their own statusLine take precedence over this one.");
             return 0;
