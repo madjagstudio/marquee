@@ -77,7 +77,7 @@ public static class CodexTokenCount
 
         var resetsAt = JsonFields.UnixSeconds(window, "resets_at");
         if (resetsAt is null && JsonFields.Number(window, "resets_in_seconds") is { } seconds && at is { } logged)
-            resetsAt = logged + seconds;
+            resetsAt = JsonFields.IsPlausibleUnixSeconds(logged + seconds) ? logged + seconds : null;
         return new CodexWindow(used, JsonFields.Number(window, "window_minutes"), resetsAt);
     }
 

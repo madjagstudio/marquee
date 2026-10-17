@@ -30,6 +30,9 @@ static class JsonFields
     // Unix seconds up to the year 2286; later times are treated as garbage.
     const double MaxUnixSeconds = 10_000_000_000;
 
+    /// True for a time after 1970 and before the year 2286: anything else is not a real timestamp.
+    internal static bool IsPlausibleUnixSeconds(double seconds) => seconds is > 0 and <= MaxUnixSeconds;
+
     /// A point in time as Unix seconds: a number of seconds (or milliseconds, if it is too large to be seconds),
     /// or an ISO 8601 string. Times that are zero, negative or absurdly far away read as null.
     public static double? UnixSeconds(JsonElement parent, string name)
@@ -42,6 +45,6 @@ static class JsonFields
                       && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var time)
                 ? time.ToUnixTimeMilliseconds() / 1000.0
                 : null;
-        return seconds is > 0 and <= MaxUnixSeconds ? seconds : null;
+        return seconds is { } value && IsPlausibleUnixSeconds(value) ? seconds : null;
     }
 }

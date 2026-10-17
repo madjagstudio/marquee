@@ -54,6 +54,17 @@ public class CodexLimitsTests : IDisposable
         Assert.Equal(new CodexWindow(7.5, 10080, WeeklyReset), limits.Secondary);
     }
 
+    [Fact]
+    public void An_absurd_resets_in_seconds_reads_as_unknown_and_still_applies()
+    {
+        var limits = CodexTokenCount.TryParse(TokenCount("{\"limit_id\":\"codex\",\"primary\":{\"used_percent\":20,\"window_minutes\":300,\"resets_in_seconds\":1e300}}"));
+
+        Assert.Null(limits!.Primary!.ResetsAt);
+        var store = new SensorStore(() => Clock.T0);
+        CodexTokenCount.Apply(limits, store, Clock.T0);
+        Assert.Equal(20.0, Clock.Read(store, "codex.primary.pct"));
+    }
+
     [Theory]
     [InlineData(0)] // session_meta
     [InlineData(1)] // task_started
@@ -139,6 +150,23 @@ public class CodexLimitsTests : IDisposable
         provider.Poll(store);
 
         Assert.Equal(52.0, Clock.Read(store, "codex.primary.pct"));
+    }
+
+    [Fact]
+    public void Provider_rereads_a_log_that_changed()
+    {
+        var path = AddRollout("rollout-weekly.jsonl", "17", new DateTime(2026, 10, 17, 11, 59, 31, DateTimeKind.Utc));
+        var store = new SensorStore(() => Clock.T0);
+        var provider = new CodexLimitsProvider(_dir.Path, () => Clock.T0);
+        provider.Poll(store);
+        Assert.Equal(52.0, Clock.Read(store, "codex.primary.pct"));
+
+        var newer = Line("rollout-weekly.jsonl", 7).Replace("11:59:30.000Z", "11:59:45.000Z").Replace("\"used_percent\":52.0", "\"used_percent\":60.0");
+        File.AppendAllText(path, newer + "\n");
+        File.SetLastWriteTimeUtc(path, new DateTime(2026, 10, 17, 11, 59, 32, DateTimeKind.Utc));
+        provider.Poll(store);
+
+        Assert.Equal(60.0, Clock.Read(store, "codex.primary.pct"));
     }
 
     [Fact]
