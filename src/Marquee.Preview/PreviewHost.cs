@@ -17,7 +17,7 @@ public sealed class PreviewHost : IDisposable
         _thread.SetApartmentState(ApartmentState.STA);
     }
 
-    /// Raised on the preview's thread when the user closes the window.
+    /// Raised on the preview's thread when the user closes the window. The handler may call Dispose.
     public event Action? Closed;
 
     public static PreviewHost Open(string title, SKSizeI canvas)
@@ -34,18 +34,35 @@ public sealed class PreviewHost : IDisposable
         if (_window is not { IsHandleCreated: true, IsDisposed: false } window) return;
         if (Interlocked.Exchange(ref _framePending, 1) == 1) return;
 
-        var bitmap = FrameBitmap.ToBitmap(frame);
+        Bitmap bitmap;
+        try
+        {
+            bitmap = FrameBitmap.ToBitmap(frame);
+        }
+        catch
+        {
+            Volatile.Write(ref _framePending, 0);
+            throw;
+        }
+
         try
         {
             window.BeginInvoke(new Action(() =>
             {
-                window.ShowFrame(bitmap);
-                Volatile.Write(ref _framePending, 0);
+                try
+                {
+                    window.ShowFrame(bitmap);
+                }
+                finally
+                {
+                    Volatile.Write(ref _framePending, 0);
+                }
             }));
         }
         catch (InvalidOperationException)
         {
             bitmap.Dispose(); // The window closed in the meantime.
+            Volatile.Write(ref _framePending, 0);
         }
     }
 
@@ -57,8 +74,7 @@ public sealed class PreviewHost : IDisposable
     public void Dispose()
     {
         Post(window => window.Close());
-        _thread.Join(TimeSpan.FromSeconds(2));
-        _ready.Dispose();
+        if (Thread.CurrentThread != _thread) _thread.Join(TimeSpan.FromSeconds(2)); // Joining from the preview thread would wait on itself.
     }
 
     void RunWindow(string title, SKSizeI canvas)
