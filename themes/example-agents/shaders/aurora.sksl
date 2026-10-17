@@ -1,0 +1,20 @@
+// Slow aurora bands for Marquee's example-agents theme.
+// Marquee sets `time` (seconds) and `resolution` (pixels); layout.yaml binds `heat` to the busiest CPU or GPU load.
+uniform float time;
+uniform float2 resolution;
+uniform float heat; // 0 calm … 1 busy: faster, warmer bands
+
+half4 main(float2 p) {
+    float2 uv = p / resolution;
+    float t = time * (0.15 + 0.6 * heat);
+    float glow = 0.0;
+    for (int i = 0; i < 3; i++) {
+        float f = float(i);
+        float y = 0.5 + 0.22 * sin(uv.x * (2.0 + f) + t * (1.0 + 0.4 * f) + f * 1.7);
+        glow += 0.02 / (abs(uv.y - y) + 0.04);
+    }
+    float3 cool = float3(0.21, 0.82, 0.86);
+    float3 warm = float3(1.0, 0.35, 0.21);
+    float3 color = mix(cool, warm, clamp(heat, 0.0, 1.0)) * glow * 0.45;
+    return half4(half3(color), 1.0);
+}

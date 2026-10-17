@@ -3,14 +3,17 @@
 Source-available Windows driver and renderer for USB PC-accessory LCD panels.
 First supported device: the 8.8" Universal Screen (USB `1CBE:A088`).
 
-> Status: early development. Milestone 2 renders YAML themes live from hardware sensors, with hot reload and a preview window.
+> Status: early development. Milestone 3 adds Claude Code and Codex usage limits and sessions, values pushed by
+> scripts, and animated shader backgrounds to the live YAML themes of milestone 2.
 
 ## Usage
 
     marquee devices
     marquee show-image picture.png [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
-    marquee sensors [--sensors lhm|hwinfo]
-    marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
+    marquee sensors [--sensors lhm|hwinfo|none]
+    marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N] [--http-port N | --no-http]
+    marquee setup-claude [--undo] [--dry-run]
+    marquee push <key> <value> [--ttl 30s|5m|2h] [--port N]
 
 Only one program can drive the screen at a time. L-Connect 3's background service holds it, and closing the
 L-Connect 3 window doesn't free it. Ending the service in Task Manager doesn't stick either: a watcher service starts
@@ -62,11 +65,75 @@ widgets:
 
 - **Widgets:** `text` (templates like `"{gpu.load:0}% · {gpu.vram_used|bytes}"`), `value`, `bar`, `gauge`, `graph`, `image`, `group`.
 - **Styles:** named in `styles:`, layered with `extends:`, changed by `when:` rules (`above`, `below`, `equals`, `stale`), animated with `pulse:`.
-- **Background:** `fill` (color or gradient) and `image` layers, each with `opacity` and `blend`.
+- **Background:** `fill` (color or gradient), `image` and `shader` layers, each with `opacity` and `blend`.
 - **Colors** are quoted CSS hex (`"#RRGGBB"` or `"#RRGGBBAA"`): an unquoted `#` starts a YAML comment.
 - **Fonts:** the bundled Inter by default, an installed font by name, or a `.ttf`/`.otf` file in the theme folder.
+- **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so
+  `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m".
 
-See `themes/example-landscape` and `themes/example-portrait`. A full theme authoring guide comes with the public release.
+See `themes/example-landscape`, `themes/example-portrait` and `themes/example-agents`. A full theme authoring guide
+comes with the public release.
+
+### Shader backgrounds
+
+A `shader` layer runs an [SkSL](https://skia.org/docs/user/sksl/) file from the theme folder over the whole canvas.
+Marquee sets `uniform float time` (seconds; it wraps to 0 once a day so it stays precise) and `uniform float2 resolution` (pixels); bind any other uniform to a
+number or an expression, one value per component:
+
+```yaml
+background:
+  - shader: shaders/aurora.sksl
+    uniforms:
+      heat: "clamp(max(cpu.load, gpu.load) / 100, 0, 1)"   # float
+      tint: [0.2, 0.5, "gpu.load / 100"]                 # float3
+    scale: 0.5        # render at half size and stretch it up (0.1–1, default 1)
+    opacity: 0.55
+    blend: screen
+```
+
+Shaders run on the CPU. A smooth full-canvas shader costs about 10–15 ms per frame at `scale: 0.5`; Marquee draws the
+next frame while the last one goes to the screen, so 30 fps holds, and it prints a warning if a theme can't keep up.
+A shader that doesn't compile is skipped with the error in the console and the preview, and editing the `.sksl` file
+reloads the theme like editing `layout.yaml`.
+
+## Claude Code and Codex
+
+`marquee run` reads Claude Code and Codex status on its own; `marquee sensors` shows the current values.
+
+| Keys | Source |
+|---|---|
+| `claude.five_hour.pct`, `claude.five_hour.resets_at`, `claude.seven_day.pct`, `claude.seven_day.resets_at`, `claude.context.pct`, `claude.updated_at` | Claude Code's status line, through `marquee statusline` (below) |
+| `claude.sessions.total`, `claude.sessions.busy`, `claude.sessions.idle` | Running sessions in `~/.claude/sessions` |
+| `codex.primary.pct`, `codex.primary.resets_at`, `codex.primary.window_min`, the same for `codex.secondary`, `codex.updated_at` | The newest usage report in Codex's logs (`~/.codex/sessions`) |
+| `codex.sessions.total`, `codex.sessions.busy`, `codex.sessions.idle` | Codex threads (CLI, desktop app or IDE) that logged anything in the last 10 minutes |
+
+Claude Code shares its usage limits only with its status-line command, and only on claude.ai subscriptions (its docs
+name Pro and Max; API-key sessions have none). Run
+`marquee setup-claude` once: it points Claude Code's `statusLine` at `marquee statusline`, which hands the data to
+Marquee and then runs your previous status-line command, so your status line looks the same as before. It edits
+only `statusLine` in `~/.claude/settings.json`, keeps a timestamped backup, and `marquee setup-claude --undo` puts the
+old setting back. `--dry-run` shows the change first. Limits update while a Claude Code session is working; between
+sessions they keep their last value (`claude.updated_at` says how old it is), and each window goes stale (`—`) when it
+resets. Which Codex window is primary depends on the plan: `codex.primary.window_min` is 300 for a 5-hour window and
+10080 for a weekly one.
+
+The session files and Codex logs are undocumented formats that may change. If Marquee can't read them any more, it
+logs a warning and those keys go stale; everything else keeps working.
+
+## Custom values
+
+Scripts can put their own values on the screen as `custom.*` keys:
+
+    marquee push build "passing" --ttl 10m
+    marquee push queue 12
+
+or over HTTP while `marquee run` is going:
+
+    curl -X POST http://127.0.0.1:47913/values -H "Content-Type: application/json" -d "{\"custom.queue\": 12, \"ttl\": \"30s\"}"
+
+Values are numbers or text (up to 256 characters); `ttl` makes them go stale (`—`) after that long. The endpoint
+listens on 127.0.0.1 only and refuses requests from other machines and from web pages. `--http-port` changes the
+port (pass the same `--port` to `marquee push`), and `--no-http` turns it off.
 
 ## Hardware sensors
 

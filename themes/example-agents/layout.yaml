@@ -1,0 +1,239 @@
+# Example theme: Claude Code and Codex status next to the PC's vitals, on a horizontally mounted 8.8" Universal Screen.
+# Run it with:  marquee run themes/example-agents --preview
+# Claude Code's limits need `marquee setup-claude` once; push your own line with:  marquee push status "deploy ok" --ttl 10m
+canvas:
+  orientation: landscape
+  fps: 30
+
+styles:
+  title: { size: 26, weight: semibold, color: "#8B95AA" }
+  label: { size: 24, color: "#8B95AA" }
+  number: { size: 30, weight: semibold, color: "#F4F6FA", align: right }
+  detail: { size: 22, color: "#8B95AA" }
+  panel: { fill: "#0A0E18B0", radius: 28, stroke: { width: 2, color: "#FFFFFF18" } }
+  bar: { radius: 12, track: "#FFFFFF14", fill: { linear: ["#36D1DC", "#5B86E5"] } }
+  claude: { radius: 12, track: "#FFFFFF14", fill: { linear: ["#F2A65A", "#D97757"] } }
+  codex: { radius: 12, track: "#FFFFFF14", fill: { linear: ["#9F7AEA", "#5B86E5"] } }
+  hot:
+    fill: "#FF5A36"
+    glow: { color: "#FF5A36", radius: 14 }
+    pulse: { property: glow, period: 1200, min: 0.3 }
+  stale: { color: "#5A6275" }
+
+background:
+  - fill: { linear: ["#05070D", "#101626"], angle: 90 }
+  - shader: shaders/aurora.sksl
+    uniforms:
+      heat: "clamp(max(cpu.load, gpu.load) / 100, 0, 1)"
+    scale: 0.5
+    opacity: 0.55
+    blend: screen
+
+widgets:
+  # The PC
+  - type: group
+    at: [30, 30]
+    size: [560, 420]
+    style: panel
+    children:
+      - { type: text, at: [32, 26], size: [496, 36], text: SYSTEM, style: title }
+      - { type: text, at: [32, 96], size: [90, 36], text: CPU, style: label }
+      - { type: bar, at: [130, 100], size: [260, 28], source: cpu.load, smooth: 400, style: bar }
+      - type: text
+        at: [400, 94]
+        size: [128, 40]
+        text: "{cpu.temp:0}°"
+        style: number
+        when:
+          - { stale: true, style: stale }
+      - { type: text, at: [32, 176], size: [90, 36], text: GPU, style: label }
+      - { type: bar, at: [130, 180], size: [260, 28], source: gpu.load, smooth: 400, style: bar }
+      - type: text
+        at: [400, 174]
+        size: [128, 40]
+        text: "{gpu.temp:0}°"
+        style: number
+        when:
+          - { stale: true, style: stale }
+      - { type: text, at: [32, 256], size: [90, 36], text: RAM, style: label }
+      - type: bar
+        at: [130, 260]
+        size: [260, 28]
+        source: ram.used_pct
+        smooth: 400
+        style: bar
+        when:
+          - { above: 90, style: hot }
+      - { type: value, at: [400, 254], size: [128, 40], source: ram.used_pct, format: "{0:0}%", style: number }
+      - type: graph
+        at: [32, 320]
+        size: [496, 76]
+        source: gpu.load
+        min: 0
+        max: 100
+        points: 120
+        style: { stroke: { width: 2, color: "#36D1DC" }, fill: { linear: ["#36D1DC40", "#36D1DC00"], angle: 90 } }
+
+  # Claude Code: limits from the status line, sessions from ~/.claude/sessions
+  - type: group
+    at: [620, 30]
+    size: [620, 420]
+    style: panel
+    children:
+      - { type: text, at: [32, 26], size: [556, 36], text: CLAUDE CODE, style: title }
+      - type: text
+        at: [32, 26]
+        size: [556, 36]
+        text: "{claude.sessions.busy} working · {claude.sessions.idle} idle"
+        style: { extends: detail, align: right }
+      - { type: text, at: [32, 96], size: [200, 36], text: 5-hour, style: label }
+      - type: bar
+        at: [32, 140]
+        size: [430, 28]
+        source: claude.five_hour.pct
+        max: 100
+        smooth: 600
+        style: claude
+        when:
+          - { above: 80, style: hot }
+      - type: value
+        at: [470, 134]
+        size: [118, 40]
+        source: claude.five_hour.pct
+        format: "{0:0}%"
+        style: number
+        when:
+          - { stale: true, style: stale }
+      - type: text
+        at: [232, 96]
+        size: [356, 36]
+        text: "resets in {claude.five_hour.resets_at - now|duration}"
+        style: { extends: detail, align: right }
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - { type: text, at: [32, 206], size: [200, 36], text: Weekly, style: label }
+      - type: bar
+        at: [32, 250]
+        size: [430, 28]
+        source: claude.seven_day.pct
+        max: 100
+        smooth: 600
+        style: claude
+        when:
+          - { above: 80, style: hot }
+      - type: value
+        at: [470, 244]
+        size: [118, 40]
+        source: claude.seven_day.pct
+        format: "{0:0}%"
+        style: number
+        when:
+          - { stale: true, style: stale }
+      - type: text
+        at: [232, 206]
+        size: [356, 36]
+        text: "resets in {claude.seven_day.resets_at - now|duration}"
+        style: { extends: detail, align: right }
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - type: text
+        at: [32, 330]
+        size: [556, 36]
+        text: "context {claude.context.pct:0}% · updated {now - claude.updated_at|duration} ago"
+        style: detail
+        when:
+          - { stale: true, style: { opacity: 0 } }
+
+  # Codex: limits and sessions from ~/.codex/sessions
+  - type: group
+    at: [1270, 30]
+    size: [620, 420]
+    style: panel
+    children:
+      - { type: text, at: [32, 26], size: [556, 36], text: CODEX, style: title }
+      - type: text
+        at: [32, 26]
+        size: [556, 36]
+        text: "{codex.sessions.busy} working · {codex.sessions.idle} idle"
+        style: { extends: detail, align: right }
+      # Which window is primary depends on the plan: a 5-hour one, or only the weekly one.
+      - type: text
+        at: [32, 96]
+        size: [200, 36]
+        text: 5-hour
+        source: codex.primary.window_min
+        style: { extends: label, opacity: 0 }
+        when:
+          - { equals: 300, style: { opacity: 1 } }
+      - type: text
+        at: [32, 96]
+        size: [200, 36]
+        text: Weekly
+        source: codex.primary.window_min
+        style: { extends: label, opacity: 0 }
+        when:
+          - { equals: 10080, style: { opacity: 1 } }
+      - type: bar
+        at: [32, 140]
+        size: [430, 28]
+        source: codex.primary.pct
+        max: 100
+        smooth: 600
+        style: codex
+        when:
+          - { above: 80, style: hot }
+      - type: value
+        at: [470, 134]
+        size: [118, 40]
+        source: codex.primary.pct
+        format: "{0:0}%"
+        style: number
+        when:
+          - { stale: true, style: stale }
+      - type: text
+        at: [232, 96]
+        size: [356, 36]
+        text: "resets in {codex.primary.resets_at - now|duration}"
+        style: { extends: detail, align: right }
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - type: text
+        at: [32, 206]
+        size: [200, 36]
+        text: Weekly
+        source: codex.secondary.pct
+        style: label
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - type: text
+        at: [232, 206]
+        size: [356, 36]
+        text: "resets in {codex.secondary.resets_at - now|duration}"
+        style: { extends: detail, align: right }
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - type: bar
+        at: [32, 250]
+        size: [430, 28]
+        source: codex.secondary.pct
+        max: 100
+        smooth: 600
+        style: codex
+        when:
+          - { above: 80, style: hot }
+          - { stale: true, style: { opacity: 0 } }
+      - type: value
+        at: [470, 244]
+        size: [118, 40]
+        source: codex.secondary.pct
+        format: "{0:0}%"
+        style: number
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - type: text
+        at: [32, 330]
+        size: [556, 36]
+        text: "{custom.status}"
+        style: { extends: detail, color: "#F4F6FA" }
+        when:
+          - { stale: true, style: { opacity: 0 } }
