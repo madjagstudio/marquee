@@ -30,7 +30,9 @@ public static class ClaudeSettingsEditor
             .Replace("‚", "‚‚").Replace("‛", "‛‛");
 
     /// The program run by the bridge command is named marquee (or marquee.exe), optionally quoted, then `statusline`.
-    static readonly Regex BridgeEnding = new("""marquee(\.exe)?["']?\s+statusline\s*$""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    /// The name must start the command or follow a path separator, quote or space: `my-marquee statusline` is someone
+    /// else's program.
+    static readonly Regex BridgeEnding = new("""(?<![\w.-])marquee(\.exe)?["']?\s+statusline\s*$""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     /// True for a statusLine that runs `marquee statusline` (from any install location). A script that merely has
     /// marquee in its path (`bash ~/marquee/run.sh statusline`) is the user's own and isn't taken for the bridge.
@@ -121,8 +123,11 @@ public static class ClaudeSettingsEditor
                 throw new ClaudeSetupException($"{path} is not a JSON object. Nothing was changed.");
 
             // Parsing is lazy: duplicate keys and unwritable text (a lone surrogate) only fail once the object is
-            // materialized or written. Find out now, before anything is saved or replaced.
+            // materialized or written. Find out now, before anything is saved or replaced. Nested objects are written
+            // back verbatim unless touched, so only the top level and statusLine (which setup reads and copies) need
+            // materializing, all the way down.
             _ = root.Count;
+            Materialize(root["statusLine"]);
             _ = root.ToJsonString(SavedStatusLine.Format);
             return (root, original, text.Contains("\r\n", StringComparison.Ordinal));
         }
@@ -135,6 +140,20 @@ public static class ClaudeSettingsEditor
         {
             throw new ClaudeSetupException($"{path} has something Marquee can't rewrite exactly, such as a repeated key or an invalid character ({ex.Message}). " +
                 "Nothing was changed; add the statusLine setting by hand, or fix the file and run the command again.");
+        }
+    }
+
+    /// Visits every object and array under `node`, which makes a lazily parsed one throw for a repeated key now.
+    static void Materialize(JsonNode? node)
+    {
+        switch (node)
+        {
+            case JsonObject obj:
+                foreach (var (_, value) in obj) Materialize(value);
+                break;
+            case JsonArray array:
+                foreach (var item in array) Materialize(item);
+                break;
         }
     }
 

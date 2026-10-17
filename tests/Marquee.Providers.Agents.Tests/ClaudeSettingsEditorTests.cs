@@ -41,6 +41,11 @@ public class ClaudeSettingsEditorTests : IDisposable
     [InlineData("""{ "type": "command", "command": "~/marquee-statusline.sh" }""", false)]
     [InlineData("\"marquee statusline\"", false)]
     [InlineData("""{ "type": "command", "command": "bash ~/marquee/run.sh statusline" }""", false)]
+    [InlineData("""{ "type": "command", "command": "marquee statusline" }""", true)]
+    [InlineData("""{ "type": "command", "command": "notmarquee statusline" }""", false)]
+    [InlineData("""{ "type": "command", "command": "my-marquee statusline" }""", false)]
+    [InlineData("""{ "type": "command", "command": "\"C:/x/my_marquee.exe\" statusline" }""", false)]
+    [InlineData("""{ "type": "command", "command": "~/bin/old.marquee statusline" }""", false)]
     public void Recognizes_its_own_status_line(string json, bool expected) =>
         Assert.Equal(expected, ClaudeSettingsEditor.IsBridge(JsonNode.Parse(json)));
 
@@ -265,6 +270,8 @@ public class ClaudeSettingsEditorTests : IDisposable
     [Theory]
     [InlineData("""{"a":1,"a":2}""")]
     [InlineData("""{"a":"\ud800"}""")]
+    [InlineData("""{"statusLine":{"type":"command","command":"a","command":"b"}}""")]
+    [InlineData("""{"statusLine":{"type":"command","command":"a","extra":{"k":1,"k":2}}}""")]
     public void Settings_that_fail_to_load_or_write_are_refused_untouched(string contents)
     {
         File.WriteAllText(Settings, contents);
@@ -275,6 +282,20 @@ public class ClaudeSettingsEditorTests : IDisposable
         Assert.Equal(contents, File.ReadAllText(Settings));
         Assert.False(File.Exists(Saved));
         Assert.Empty(Backups());
+    }
+
+    [Fact]
+    public void Undo_refuses_a_repeated_key_inside_the_status_line_untouched()
+    {
+        Install();
+        var contents = File.ReadAllText(Settings).Replace("\"type\": \"command\"", "\"type\": \"command\", \"padding\": 1, \"padding\": 2");
+        File.WriteAllText(Settings, contents);
+
+        var ex = Assert.Throws<ClaudeSetupException>(() => Undo());
+
+        Assert.Contains("Nothing was changed", ex.Message);
+        Assert.Equal(contents, File.ReadAllText(Settings));
+        Assert.True(File.Exists(Saved));
     }
 
     [Fact]
