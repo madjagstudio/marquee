@@ -73,6 +73,21 @@ public class CodexSessionsProviderTests : IDisposable
     }
 
     [Fact]
+    public void A_sub_agent_log_seen_before_its_first_line_is_complete_is_recognized_later()
+    {
+        var full = File.ReadAllText(Fixture.Path("codex/rollout-subagent.jsonl"));
+        var path = _dir.Write("2026/10/17/rollout-subagent.jsonl", full[..100]); // session_meta not finished: no newline yet
+        File.SetLastWriteTimeUtc(path, Clock.T0.UtcDateTime.AddMinutes(-1));
+        var provider = new CodexSessionsProvider(_dir.Path, () => Clock.T0);
+        Assert.Equal(1.0, Poll(provider).Total); // unknown for now, so it counts
+
+        File.WriteAllText(path, full);
+        File.SetLastWriteTimeUtc(path, Clock.T0.UtcDateTime.AddMinutes(-1));
+
+        Assert.Equal(0.0, Poll(provider).Total);
+    }
+
+    [Fact]
     public void A_session_that_finishes_its_turn_turns_idle()
     {
         var path = Add("rollout-two-limits.jsonl", 1);

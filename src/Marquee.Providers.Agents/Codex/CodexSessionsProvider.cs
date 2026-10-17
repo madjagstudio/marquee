@@ -21,7 +21,7 @@ public sealed class CodexSessionsProvider(string folder, Func<DateTimeOffset>? n
 
     readonly Func<DateTimeOffset> _now = now ?? (() => DateTimeOffset.UtcNow);
 
-    /// Whether each log is a sub-agent's. A log's first line never changes, so it is read once.
+    /// Whether each log is a sub-agent's. A log's first line never changes once it is complete, so it is read once then.
     readonly Dictionary<string, bool> _subagent = new(StringComparer.OrdinalIgnoreCase);
 
     public CodexSessionsProvider() : this(AgentPaths.CodexSessions) { }
@@ -61,15 +61,18 @@ public sealed class CodexSessionsProvider(string folder, Func<DateTimeOffset>? n
 
     bool IsSubagent(string path)
     {
-        if (!_subagent.TryGetValue(path, out var subagent))
-            _subagent[path] = subagent = HasParent(RolloutFile.FirstLine(path, FirstLineBytes));
-        return subagent;
+        if (_subagent.TryGetValue(path, out var subagent)) return subagent;
+
+        // No complete first line yet (Codex is still writing session_meta) or one too long to read: it counts as a
+        // session of its own for this poll, and the next poll reads it again.
+        if (RolloutFile.FirstLine(path, FirstLineBytes) is not { } firstLine) return false;
+
+        return _subagent[path] = HasParent(firstLine);
     }
 
-    /// True for a session_meta line naming a parent thread. Anything unreadable counts as a session of its own.
-    static bool HasParent(string? firstLine)
+    /// True for a session_meta line naming a parent thread. A line that doesn't parse counts as a session of its own.
+    static bool HasParent(string firstLine)
     {
-        if (firstLine is null) return false;
         try
         {
             using var document = JsonDocument.Parse(firstLine);
