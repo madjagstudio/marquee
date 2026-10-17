@@ -34,7 +34,6 @@ public sealed class RenderLoop : IDisposable
     readonly LConnectDetector _lconnect;
     readonly Queue<TimeSpan> _frameTimes = new();
     readonly AutoResetEvent _frameReady = new(false);
-    readonly object _renderErrorGate = new();
 
     // Rendering side (the render thread, or the Step caller).
     LoadedTheme? _pending;
@@ -53,7 +52,8 @@ public sealed class RenderLoop : IDisposable
     double _pushMs;
 
     Frame? _handoff;
-    string? _lastRenderError;
+    string? _lastRenderError; // the render thread only
+    string? _lastSendError; // the sending thread only
     long _framesPushed;
     Thread? _thread;
     CancellationTokenSource? _stop;
@@ -86,6 +86,7 @@ public sealed class RenderLoop : IDisposable
     /// don't mix it with Start().
     public void Step(TimeSpan time)
     {
+        if (_thread is not null) throw new InvalidOperationException("Step can't be used while the loop is running.");
         if (Render(time) is not { } frame) return;
         try
         {
@@ -110,6 +111,10 @@ public sealed class RenderLoop : IDisposable
         _stop?.Cancel();
         _thread?.Join();
         _thread = null;
+
+        // A frame the sender never took must not go to the screen as the first frame of a restart.
+        Interlocked.Exchange(ref _handoff, null)?.Image.Dispose();
+        _frameReady.Reset();
     }
 
     public void Dispose()
@@ -173,7 +178,13 @@ public sealed class RenderLoop : IDisposable
             }
             catch (Exception ex)
             {
-                ReportRender($"Rendering a frame failed: {ex.Message}");
+                // Push handles device errors itself, so this is a FrameRendered handler, or Close failing inside Push.
+                var message = $"Sending a frame failed: {ex.Message}";
+                if (message != _lastSendError)
+                {
+                    _lastSendError = message;
+                    _log.Error(message);
+                }
             }
             finally
             {
@@ -320,15 +331,11 @@ public sealed class RenderLoop : IDisposable
     }
 
     /// Logs each distinct render error once, not once per frame. Kept apart from device errors so a failing frame is
-    /// never mistaken for a screen that needs a "Connected" announcement. Both threads report here.
+    /// never mistaken for a screen that needs a "Connected" announcement. Render thread only.
     void ReportRender(string message)
     {
-        lock (_renderErrorGate)
-        {
-            if (message == _lastRenderError) return;
-            _lastRenderError = message;
-        }
-
+        if (message == _lastRenderError) return;
+        _lastRenderError = message;
         _log.Error(message);
     }
 
