@@ -1,0 +1,2 @@
+{"timestamp":"2026-10-17T11:00:00.000Z","type":"session_meta","payload":{"id":"00000000-0000-7000-8000-000000000041","timestamp":"2026-10-17T11:00:00.000Z","cwd":"C:\\Users\\example\\project","originator":"codex_cli_rs","cli_version":"0.0.0"}}
+{"timestamp":"2026-10-17T11:00:00.000Z","type":"event_msg","payload":{"type":"token_count","info":null,"rate_limits":{"primary":{"used_percent":20.0,"window_minutes":300,"resets_in_seconds":9000},"secondary":{"used_percent":7.5,"window_minutes":10080,"resets_in_seconds":338400}}}}
