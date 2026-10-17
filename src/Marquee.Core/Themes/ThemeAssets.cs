@@ -6,6 +6,9 @@ namespace Marquee.Core.Themes;
 /// Anything missing becomes a warning and a fallback (no image; the bundled Inter font), never an error.
 public sealed class ThemeAssets : IDisposable
 {
+    /// Widest or tallest image a theme may use. Themes are shared, and a small file can decode to gigabytes of pixels.
+    const int MaxImageSize = 8192;
+
     readonly Dictionary<string, SKImage> _images = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, SKTypeface> _fontFiles = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<(string Family, int Weight), SKTypeface> _families = [];
@@ -122,7 +125,15 @@ public sealed class ThemeAssets : IDisposable
 
         try
         {
-            using var bitmap = SKBitmap.Decode(full);
+            // Read the size from the header before decoding anything.
+            using var codec = SKCodec.Create(full);
+            if (codec is not null && (codec.Info.Width > MaxImageSize || codec.Info.Height > MaxImageSize))
+            {
+                warnings.Add($"Image '{path}' is larger than {MaxImageSize}×{MaxImageSize} and was skipped.");
+                return null;
+            }
+
+            using var bitmap = codec is not null ? SKBitmap.Decode(codec) : null;
             if (bitmap is not null)
                 return SKImage.FromBitmap(bitmap);
         }

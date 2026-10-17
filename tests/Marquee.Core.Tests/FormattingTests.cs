@@ -63,4 +63,25 @@ public class FormattingTests
     [InlineData("{1}", false)]
     public void FormatError_accepts_composite_formats_and_helpers(string format, bool valid) =>
         Assert.Equal(valid, Formatting.FormatError(format) is null);
+
+    [Theory]
+    [InlineData("0.0", null)]
+    [InlineData("F15", null)]
+    [InlineData("N015", null)]
+    [InlineData("X", "Invalid number format 'X'")]
+    [InlineData("F16", "number format 'F16' asks for too many digits (the limit is 15)")]
+    [InlineData("F999999999", "number format 'F999999999' asks for too many digits (the limit is 15)")]
+    [InlineData("00000000000000000000000000000000", null)]
+    [InlineData("000000000000000000000000000000000", "number format '000000000000000000000000000000000' is too long (the limit is 32 characters)")]
+    public void NumberFormatError_bounds_the_digits_a_format_can_ask_for(string format, string? error) =>
+        Assert.Equal(error, Formatting.NumberFormatError(format));
+
+    [Theory]
+    [InlineData("{0:F99}", "number format 'F99' asks for too many digits (the limit is 15)")]
+    [InlineData("{0,1000}", "format \"{0,1000}\" pads the value to 1000 characters (the limit is 100)")]
+    [InlineData("{0,-1000:0.0}", "format \"{0,-1000:0.0}\" pads the value to 1000 characters (the limit is 100)")]
+    [InlineData("{0,100:F15} and {0,-100}", null)]
+    [InlineData("{{0:F99}} {0}", null)]
+    public void FormatError_bounds_every_item(string format, string? error) =>
+        Assert.Equal(error, Formatting.FormatError(format));
 }

@@ -13,17 +13,39 @@ static class WidgetParser
     static readonly (string Name, string Value)[] Types =
         [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"), ("group", "group")];
 
-    public static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what) =>
-        Yaml.List(node, what).Select(w => Parse(w, styles)).ToList();
+    /// Most widgets a layout may have, counting every level. Themes are shared, and YAML aliases can repeat a group
+    /// cheaply: a few hundred bytes of aliased groups would otherwise expand into over a million widgets.
+    public const int MaxWidgets = 2000;
 
-    static WidgetSpec Parse(YamlNode node, StyleTable styles)
+    /// Deepest nesting of groups.
+    public const int MaxGroupDepth = 16;
+
+    /// How many widgets the layout has so far, across all levels.
+    sealed class Counter
     {
+        public int Widgets;
+    }
+
+    public static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what) =>
+        ParseList(node, styles, what, new Counter(), groupDepth: 0);
+
+    static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what, Counter counter, int groupDepth) =>
+        Yaml.List(node, what).Select(w => Parse(w, styles, counter, groupDepth)).ToList();
+
+    /// `groupDepth` is how many groups this widget is inside.
+    static WidgetSpec Parse(YamlNode node, StyleTable styles, Counter counter, int groupDepth)
+    {
+        if (++counter.Widgets > MaxWidgets)
+            throw Yaml.Error(node, $"The layout has more than {MaxWidgets} widgets");
+
         if (node is not YamlMappingNode map)
             throw Yaml.Error(node, "Each widget must be a mapping with a type, e.g. - type: value");
 
         var typeNode = map.Children.FirstOrDefault(kv => kv.Key is YamlScalarNode { Value: "type" }).Value
             ?? throw Yaml.Error(node, "widget is missing 'type'");
         var type = Yaml.Choice(typeNode, "widget type", Types);
+        if (type == "group" && groupDepth + 1 > MaxGroupDepth)
+            throw Yaml.Error(node, $"Groups are nested more than {MaxGroupDepth} levels deep");
         string[] extra = type switch
         {
             "text" => ["text"],
@@ -53,7 +75,7 @@ static class WidgetParser
             "graph" => Graph(f, f.Required("source")),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
-            _ => new GroupWidget(ParseList(f.Required("children"), styles, "children")),
+            _ => new GroupWidget(ParseList(f.Required("children"), styles, "children", counter, groupDepth + 1)),
         };
 
         return widget with

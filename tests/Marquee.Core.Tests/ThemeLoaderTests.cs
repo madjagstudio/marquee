@@ -72,6 +72,21 @@ public class ThemeLoaderTests
     }
 
     [Fact]
+    public void Images_larger_than_8192_pixels_are_skipped()
+    {
+        using var folder = new TempTheme(Canvas + """
+            background:
+              - image: wide.png
+            """);
+        folder.AddImage("wide.png", SKColors.Blue, 8193, 1);
+
+        using var theme = folder.Load();
+
+        Assert.Null(theme.Assets.Image("wide.png"));
+        Assert.Equal(["Image 'wide.png' is larger than 8192×8192 and was skipped."], theme.Warnings);
+    }
+
+    [Fact]
     public void Paths_that_cannot_be_resolved_become_warnings()
     {
         using var folder = new TempTheme(Canvas + """

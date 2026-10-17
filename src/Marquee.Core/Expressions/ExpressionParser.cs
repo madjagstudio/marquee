@@ -10,10 +10,19 @@ namespace Marquee.Core.Expressions;
 /// Keys are dotted names; segments after the first may start with a digit (`fps.1pct_low`).
 static class ExpressionParser
 {
+    /// Longest expression a theme may use. Themes are shared, so this bounds parsing, and with it the depth of the
+    /// tree that evaluation recurses through.
+    public const int MaxLength = 1024;
+
+    /// Deepest nesting of parentheses, unary operators and function arguments.
+    public const int MaxDepth = 32;
+
     public static Expression Parse(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
             throw new ExpressionException("Expression is empty", 0);
+        if (text.Length > MaxLength)
+            throw new ExpressionException($"Expression is too long (the limit is {MaxLength} characters)", MaxLength);
 
         var parser = new Parser(text);
         var expression = parser.ParseExpression();
@@ -24,6 +33,7 @@ static class ExpressionParser
     sealed class Parser(string text)
     {
         int _pos;
+        int _depth;
 
         public Expression ParseExpression()
         {
@@ -50,8 +60,8 @@ static class ExpressionParser
 
         Expression ParseUnary()
         {
-            if (TryConsume("-", out _)) return new NegateExpr(ParseUnary());
-            if (TryConsume("+", out _)) return ParseUnary();
+            if (TryConsume("-", out _)) return Nested(_pos - 1, () => new NegateExpr(ParseUnary()));
+            if (TryConsume("+", out _)) return Nested(_pos - 1, ParseUnary);
             return ParsePrimary();
         }
 
@@ -66,10 +76,12 @@ static class ExpressionParser
             if (char.IsAsciiLetter(c) || c == '_') return ParseName();
             if (c == '(')
             {
-                _pos++;
-                var inner = ParseExpression();
-                Expect(')');
-                return inner;
+                return Nested(_pos++, () =>
+                {
+                    var inner = ParseExpression();
+                    Expect(')');
+                    return inner;
+                });
             }
 
             throw Error($"Unexpected '{c}'");
@@ -121,14 +133,28 @@ static class ExpressionParser
             var args = new List<Expression>();
             if (!TryConsume(")", out _))
             {
-                do args.Add(ParseExpression());
-                while (TryConsume(",", out _));
-                Expect(')');
+                Nested(start, () =>
+                {
+                    do args.Add(ParseExpression());
+                    while (TryConsume(",", out _));
+                    Expect(')');
+                    return args;
+                });
             }
 
             if (args.Count < min || args.Count > max)
                 throw Error($"{name}() takes {takes}, not {args.Count}", start);
             return new CallExpr(name, args);
+        }
+
+        /// Parses one level deeper; `at` is where that level starts, for the error.
+        T Nested<T>(int at, Func<T> parse)
+        {
+            if (++_depth > MaxDepth)
+                throw Error($"Expression is nested too deeply (the limit is {MaxDepth} levels)", at);
+            var result = parse();
+            _depth--;
+            return result;
         }
 
         bool TryConsume(string chars, out char consumed)

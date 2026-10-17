@@ -214,6 +214,8 @@ public class WidgetParsingTests
     [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: cpu.temp +", 9, "source: Expression ended unexpectedly at character 11")]
     [InlineData("- type: text\n  at: [0, 0]\n  size: [10, 10]\n  text: \"{cpu.temp\"", 9, "text: Unclosed '{' at character 1")]
     [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"°C\"", 10, "format \"°C\" never shows the value; include {0}, e.g. \"{0:0.0}°C\"")]
+    [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"{0:F99}\"", 10, "number format 'F99' asks for too many digits (the limit is 15)")]
+    [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"{0,1000}\"", 10, "format \"{0,1000}\" pads the value to 1000 characters (the limit is 100)")]
     [InlineData("- { type: text, at: [0, 0], size: [10, 10], text: hi, format: x }", 6, "Unknown key 'format' in text widget. Expected one of: type, at, size, source, style, when, smooth, text")]
     [InlineData("- { type: value, at: [0, 0], size: [10, 10], source: x, style: hott }", 6, "Unknown style 'hott'. Defined styles: base, hot")]
     [InlineData("- { type: bar, at: [0, 0], size: [10, 10], source: x, min: 50, max: 50 }", 6, "bar widget max must be greater than min")]
@@ -284,5 +286,61 @@ public class WidgetParsingTests
 
         Assert.Equal("value widget is missing 'source'", ex.Reason);
         Assert.Equal(11, ex.Line);
+    }
+
+    const string TinyText = "{ type: text, at: [0, 0], size: [1, 1], text: x }";
+
+    static string ManyWidgets(int count) => string.Concat(Enumerable.Repeat($"- {TinyText}\n", count));
+
+    /// `levels` groups, each inside the one before, with a text widget at the bottom. Group k starts on line 6 + 4k.
+    static string NestedGroups(int levels)
+    {
+        var yaml = new System.Text.StringBuilder();
+        for (var i = 0; i < levels; i++)
+        {
+            var indent = new string(' ', i * 4);
+            yaml.Append($"{indent}- type: group\n{indent}  at: [0, 0]\n{indent}  size: [1, 1]\n{indent}  children:\n");
+        }
+
+        return yaml.Append($"{new string(' ', levels * 4)}- {TinyText}\n").ToString();
+    }
+
+    [Fact]
+    public void A_layout_may_have_2000_widgets() =>
+        Assert.Equal(2000, Widgets(ManyWidgets(2000)).Count);
+
+    [Fact]
+    public void More_than_2000_widgets_is_an_error()
+    {
+        var ex = Error(ManyWidgets(2001));
+
+        Assert.Equal("The layout has more than 2000 widgets", ex.Reason);
+        Assert.Equal(5 + 2001, ex.Line);
+    }
+
+    [Fact]
+    public void Aliased_groups_count_every_copy()
+    {
+        var ex = Error("""
+            - &a { type: group, at: [0, 0], size: [1, 1], children: [ {{TinyText}}, {{TinyText}}, {{TinyText}}, {{TinyText}} ] }
+            - &b { type: group, at: [0, 0], size: [1, 1], children: [ *a, *a, *a, *a, *a, *a, *a, *a, *a, *a ] }
+            - &c { type: group, at: [0, 0], size: [1, 1], children: [ *b, *b, *b, *b, *b, *b, *b, *b, *b, *b ] }
+            - { type: group, at: [0, 0], size: [1, 1], children: [ *c, *c, *c, *c, *c, *c, *c, *c, *c, *c ] }
+            """.Replace("{{TinyText}}", TinyText));
+
+        Assert.Equal("The layout has more than 2000 widgets", ex.Reason);
+    }
+
+    [Fact]
+    public void Groups_may_nest_16_levels_deep() =>
+        Assert.Single(Widgets(NestedGroups(16)));
+
+    [Fact]
+    public void Groups_nested_more_than_16_levels_deep_are_an_error()
+    {
+        var ex = Error(NestedGroups(17));
+
+        Assert.Equal("Groups are nested more than 16 levels deep", ex.Reason);
+        Assert.Equal(6 + 4 * 16, ex.Line);
     }
 }

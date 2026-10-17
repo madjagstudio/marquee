@@ -86,4 +86,31 @@ public class ExpressionTests
         Assert.Equal(character, ex.Position + 1);
         Assert.Equal($"{reason} at character {character}", ex.Message);
     }
+
+    [Fact]
+    public void Overlong_expressions_are_rejected()
+    {
+        var ex = Assert.Throws<ExpressionException>(() => Expression.Parse(new string('1', 2000)));
+
+        Assert.Equal("Expression is too long (the limit is 1024 characters)", ex.Reason);
+        Assert.Equal(1024, ex.Position);
+    }
+
+    [Theory]
+    [InlineData("(", ")")]
+    [InlineData("-", "")]
+    [InlineData("max(", ")")]
+    public void Deeply_nested_expressions_are_rejected(string open, string close)
+    {
+        var text = string.Concat(Enumerable.Repeat(open, 40)) + "1" + string.Concat(Enumerable.Repeat(close, 40));
+
+        var ex = Assert.Throws<ExpressionException>(() => Expression.Parse(text));
+
+        Assert.Equal("Expression is nested too deeply (the limit is 32 levels)", ex.Reason);
+        Assert.Equal(32 * open.Length, ex.Position);
+    }
+
+    [Fact]
+    public void Nesting_up_to_the_limit_is_fine() =>
+        Assert.Equal(1, Eval(new string('(', 32) + "1" + new string(')', 32)));
 }
