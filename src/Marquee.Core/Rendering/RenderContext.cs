@@ -28,7 +28,13 @@ sealed class RenderContext(SKCanvas canvas, SensorSnapshot sensors, TimeSpan tim
     /// A reusable offscreen surface for a scaled shader layer. The renderer owns and disposes these.
     public SKSurface ShaderSurface(ShaderLayer layer, int width, int height)
     {
-        if (shaderSurfaces.TryGetValue(layer, out var surface)) return surface;
+        if (shaderSurfaces.TryGetValue(layer, out var surface))
+        {
+            var bounds = surface.Canvas.DeviceClipBounds;
+            if (bounds.Width == width && bounds.Height == height) return surface;
+            surface.Dispose();
+            shaderSurfaces.Remove(layer);
+        }
         surface = SKSurface.Create(new SKImageInfo(width, height))
             ?? throw new InvalidOperationException($"Could not create a {width}×{height} surface for shader '{layer.Path}'.");
         shaderSurfaces[layer] = surface;

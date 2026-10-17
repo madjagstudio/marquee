@@ -18,13 +18,16 @@ static class ShaderAssets
             return Skip(warnings, $"Shader '{path}' is outside the theme folder");
         if (!File.Exists(full))
             return Skip(warnings, $"Shader '{path}' was not found");
-        if (new FileInfo(full).Length > MaxShaderBytes)
-            return Skip(warnings, $"Shader '{path}' is larger than {MaxShaderBytes / 1024} KB");
 
+        // One open, so a file replaced after the Exists check can't throw out of the load.
         string source;
         try
         {
-            source = File.ReadAllText(full);
+            using var stream = File.OpenRead(full);
+            if (stream.Length > MaxShaderBytes)
+                return Skip(warnings, $"Shader '{path}' is larger than {MaxShaderBytes / 1024} KB");
+            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+            source = reader.ReadToEnd();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -33,7 +36,7 @@ static class ShaderAssets
 
         var effect = SKRuntimeEffect.CreateShader(source, out var errors);
         if (effect is null)
-            return Skip(warnings, $"Shader '{path}' doesn't compile: {errors.Trim().ReplaceLineEndings(" ")}");
+            return Skip(warnings, $"Shader '{path}' doesn't compile: {CompileErrors(errors)}");
 
         if (Problem(effect, layer, warnings) is { } problem)
         {
@@ -63,8 +66,12 @@ static class ShaderAssets
             }
 
             if (!Fits(uniforms, binding.Name, binding.Values.Count))
+            {
+                if (FitsInts(uniforms, binding.Name, binding.Values.Count))
+                    return $"declares uniform '{binding.Name}' as an int; Marquee binds floats, so declare it as float (or float2…)";
                 return $"can't take {binding.Values.Count} value{(binding.Values.Count == 1 ? "" : "s")} for uniform '{binding.Name}'; " +
                     "bind one value per component (3 for a float3)";
+            }
         }
 
         foreach (var name in effect.Uniforms.Except(Parsing.BackgroundParser.BuiltInUniforms).Except(layer.Uniforms.Select(u => u.Name)))
@@ -86,6 +93,32 @@ static class ShaderAssets
         {
             return false;
         }
+    }
+
+    /// Whether the uniform takes `count` ints, which tells an int declaration from a float of the wrong size.
+    static bool FitsInts(SKRuntimeEffectUniforms uniforms, string name, int count)
+    {
+        try
+        {
+            uniforms[name] = count == 1 ? 0 : new int[count];
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
+
+    const int MaxErrorChars = 300;
+
+    /// Skia's compile output repeats the source line and a caret line after every error. Keeps the "error:" lines only,
+    /// on one line, so the warning stays readable in the log and the preview banner.
+    static string CompileErrors(string errors)
+    {
+        var lines = errors.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("error:", StringComparison.Ordinal));
+        var text = string.Join("; ", lines);
+        if (text.Length == 0) text = errors.Trim().ReplaceLineEndings(" ");
+        return text.Length > MaxErrorChars ? text[..MaxErrorChars] + "…" : text;
     }
 
     static SKRuntimeEffect? Skip(List<string> warnings, string problem)

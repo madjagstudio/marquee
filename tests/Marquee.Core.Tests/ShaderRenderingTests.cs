@@ -44,6 +44,15 @@ public class ShaderRenderingTests
     }
 
     [Fact]
+    public void Shader_time_wraps_daily_so_a_float_stays_precise()
+    {
+        using var folder = Theme("  - shader: probe.sksl\n    uniforms: { level: 0 }", ("probe.sksl", Probe));
+        using var frame = Render(folder, TestSensors.Of(), seconds: 86_400 + 5);
+
+        Pixels.AssertNear(new SKColor(128, 128, 0), At(frame, 960, 240), 2);
+    }
+
+    [Fact]
     public void A_stale_binding_is_zero()
     {
         using var folder = Theme("  - shader: probe.sksl\n    uniforms: { level: \"cpu.load / 100\" }", ("probe.sksl", Probe));
@@ -86,6 +95,30 @@ public class ShaderRenderingTests
         Assert.StartsWith("Shader 'broken.sksl' doesn't compile: error: 1: unknown identifier 'glow'", warning);
         Assert.EndsWith("; the layer is skipped.", warning);
         Pixels.AssertNear(new SKColor(0x20, 0x30, 0x40), At(frame, 960, 240), 0);
+    }
+
+    [Fact]
+    public void Compile_errors_keep_the_messages_and_drop_the_echoed_source()
+    {
+        using var folder = Theme("  - shader: two.sksl", ("two.sksl", "half4 main(float2 p) { return glow + dim; }"));
+        using var theme = folder.Load();
+
+        var warning = Assert.Single(theme.Warnings);
+        Assert.Contains("error: 1: unknown identifier 'glow'", warning);
+        Assert.Contains("error: 1: unknown identifier 'dim'", warning);
+        Assert.DoesNotContain('^', warning);
+        Assert.DoesNotContain("half4 main", warning);
+    }
+
+    [Fact]
+    public void An_int_uniform_gets_a_warning_that_says_so()
+    {
+        using var folder = Theme("  - shader: s.sksl\n    uniforms: { mode: 1 }",
+            ("s.sksl", "uniform int mode; half4 main(float2 p) { return half4(half(mode), 0, 0, 1); }"));
+        using var theme = folder.Load();
+
+        Assert.Equal(["Shader 's.sksl' declares uniform 'mode' as an int; Marquee binds floats, so declare it as float (or float2…); the layer is skipped."],
+            theme.Warnings);
     }
 
     [Theory]

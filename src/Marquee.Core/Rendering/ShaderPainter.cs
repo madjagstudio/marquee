@@ -9,13 +9,17 @@ static class ShaderPainter
 {
     static readonly SKSamplingOptions Sampling = new(SKFilterMode.Linear);
 
+    /// Seconds after which shader `time` wraps to 0. A float keeps sub-10 ms precision within a day, but after days of
+    /// uptime consecutive frames would share a value; wrapping daily means one visible jump a day instead.
+    const double ShaderTimePeriod = 86400;
+
     public static void Paint(RenderContext ctx, ShaderLayer layer, SKRuntimeEffect effect, SKRect area)
     {
         var width = Math.Max(1, (int)MathF.Round(area.Width * layer.Scale));
         var height = Math.Max(1, (int)MathF.Round(area.Height * layer.Scale));
 
         using var uniforms = new SKRuntimeEffectUniforms(effect);
-        if (uniforms.Contains("time")) uniforms["time"] = (float)ctx.Time.TotalSeconds;
+        if (uniforms.Contains("time")) uniforms["time"] = (float)(ctx.Time.TotalSeconds % ShaderTimePeriod);
         if (uniforms.Contains("resolution")) uniforms["resolution"] = new float[] { width, height };
         foreach (var binding in layer.Uniforms)
         {
