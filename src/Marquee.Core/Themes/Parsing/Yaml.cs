@@ -72,8 +72,13 @@ static class Yaml
         return value;
     }
 
-    public static float Float(YamlNode node, string what, double min = double.MinValue, double max = double.MaxValue) =>
-        (float)Number(node, what, min, max);
+    public static float Float(YamlNode node, string what, double min = double.MinValue, double max = double.MaxValue)
+    {
+        var result = (float)Number(node, what, min, max);
+        if (!float.IsFinite(result))
+            throw Error(node, $"{what} is too large");
+        return result;
+    }
 
     public static int Integer(YamlNode node, string what, int min, int max)
     {
