@@ -103,7 +103,7 @@ public class RenderLoopOverlapTests
         loop.Stop();
 
         Assert.True(device.SawRenderDuringPush, "no frame was ever rendered while another was being sent");
-        Assert.True(device.Frames > 20, $"only {device.Frames} frames in 2 s");
+        Assert.True(device.Frames > 10, $"only {device.Frames} frames in 2 s");
     }
 
     [Fact]

@@ -6,6 +6,12 @@ using Marquee.Providers.Agents.Tests.TestSupport;
 
 namespace Marquee.Providers.Agents.Tests;
 
+/// Tests that start PowerShell. A cold powershell.exe takes over 3 s on a loaded 4-vCPU CI runner, so they run on their
+/// own, after the parallel tests, and their time limits leave room for a slow start.
+[CollectionDefinition("Starts PowerShell", DisableParallelization = true)]
+public class StartsPowerShellCollection;
+
+[Collection("Starts PowerShell")]
 public class StatusLineBridgeTests
 {
     const string Input = """{"session_id":"x","rate_limits":{"five_hour":{"used_percentage":5}}}""";
@@ -104,10 +110,10 @@ public class StatusLineBridgeTests
     public void A_hung_command_is_stopped_at_the_timeout()
     {
         var watch = Stopwatch.StartNew();
-        var result = ShellCommand.PowerShell.Run("Start-Sleep -Seconds 30", [], TimeSpan.FromMilliseconds(1500));
+        var result = ShellCommand.PowerShell.Run("Start-Sleep -Seconds 30", [], TimeSpan.FromSeconds(3));
 
         Assert.True(result.TimedOut);
-        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"took {watch.Elapsed}");
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(8), $"took {watch.Elapsed}");
     }
 
     [Fact]
@@ -116,17 +122,18 @@ public class StatusLineBridgeTests
         using var dir = new TempDir();
         var pidFile = dir.File("child.pid");
         // The child inherits stdout, so the pipe stays open after the shell exits; its pid goes to a file so the test can end it.
-        var command = $"$p = Start-Process -NoNewWindow -PassThru powershell -ArgumentList '-NoProfile','-Command','Start-Sleep 30'; " +
+        // The child outlives the run's time limit by far, so a run that waited for it would time out (or take 60 s).
+        var command = $"$p = Start-Process -NoNewWindow -PassThru powershell -ArgumentList '-NoProfile','-Command','Start-Sleep 60'; " +
                       $"Set-Content -Path '{pidFile}' -Value $p.Id; Write-Output done";
         var watch = Stopwatch.StartNew();
-        var run = Task.Run(() => ShellCommand.PowerShell.Run(command, [], TimeSpan.FromSeconds(3)));
+        var run = Task.Run(() => ShellCommand.PowerShell.Run(command, [], TimeSpan.FromSeconds(8)));
         try
         {
-            var finished = await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(20)));
+            var finished = await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(30)));
             Assert.Same(run, finished);
 
             var result = await run;
-            Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"took {watch.Elapsed}");
+            Assert.True(watch.Elapsed < TimeSpan.FromSeconds(15), $"took {watch.Elapsed}");
             Assert.False(result.TimedOut);
             Assert.Equal(0, result.ExitCode);
             Assert.Contains("done", Encoding.UTF8.GetString(result.Output));
