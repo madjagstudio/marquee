@@ -64,8 +64,7 @@ public class BackgroundParsingTests
     }
 
     [Theory]
-    [InlineData("  - shader: plasma.sksl", 3, "shader background layers arrive in a later version of Marquee; use fill or image")]
-    [InlineData("  - video: loop.mp4", 3, "video background layers arrive in a later version of Marquee; use fill or image")]
+    [InlineData("  - video: loop.mp4", 3, "video background layers arrive in a later version of Marquee; use fill, image or shader")]
     [InlineData("  - opacity: 1", 3, "background layer needs one of: fill, image, shader, video")]
     [InlineData("  - fill: \"#000\"\n    image: a.png", 3, "background layer can only have one of: fill, image")]
     [InlineData("  - fill: #000000", 3, "fill is empty. Quote colors, e.g. \"#FF0000\": an unquoted # starts a YAML comment")]
@@ -78,7 +77,7 @@ public class BackgroundParsingTests
     [InlineData("  - fill: { radial: [\"#000\", \"#fff\"], angle: 45 }", 3, "fill: angle only applies to linear gradients")]
     [InlineData("  - fill: { linear: [\"#000\", \"#fff\"], angle: 1e39 }", 3, "fill.angle is too large")]
     [InlineData("  - fill: { conic: [\"#000\", \"#fff\"] }", 3, "Unknown key 'conic' in fill. Expected one of: linear, radial, angle")]
-    [InlineData("  - fill: \"#000\"\n    size: 3", 4, "Unknown key 'size' in background layer. Expected one of: fill, image, shader, video, fit, opacity, blend")]
+    [InlineData("  - fill: \"#000\"\n    size: 3", 4, "Unknown key 'size' in background layer. Expected one of: fill, image, shader, video, fit, uniforms, scale, opacity, blend")]
     public void Layer_errors(string background, int line, string reason)
     {
         var ex = LayerError(background);
