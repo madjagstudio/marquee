@@ -89,8 +89,8 @@ static int ShowImage(string file, string[] options)
     catch (DeviceBusyException ex)
     {
         Console.Error.WriteLine(ex.Message);
-        if (LConnectDetector.IsRunning())
-            Console.Error.WriteLine("L-Connect 3 is running. Quit it from its tray icon, then try again.");
+        foreach (var line in LConnectDetector.ConsoleHint(LConnectDetector.Default.Detect()))
+            Console.Error.WriteLine(line);
         return 1;
     }
     finally

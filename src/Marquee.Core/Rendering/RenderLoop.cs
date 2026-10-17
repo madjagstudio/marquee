@@ -25,6 +25,7 @@ public sealed class RenderLoop : IDisposable
     readonly SensorStore _sensors;
     readonly ILog _log;
     readonly int? _fpsOverride;
+    readonly LConnectDetector _lconnect;
     readonly Queue<TimeSpan> _frameTimes = new();
 
     LoadedTheme? _pending;
@@ -43,12 +44,13 @@ public sealed class RenderLoop : IDisposable
     Thread? _thread;
     CancellationTokenSource? _stop;
 
-    public RenderLoop(IDisplayDevice device, SensorStore sensors, ILog log, int? fpsOverride = null)
+    public RenderLoop(IDisplayDevice device, SensorStore sensors, ILog log, int? fpsOverride = null, LConnectDetector? lconnect = null)
     {
         _device = device;
         _sensors = sensors;
         _log = log;
         _fpsOverride = fpsOverride;
+        _lconnect = lconnect ?? LConnectDetector.Default;
     }
 
     /// Raised on the render thread after each frame is pushed. The image is disposed when handlers return, so copy it.
@@ -239,7 +241,8 @@ public sealed class RenderLoop : IDisposable
 
     void ReportDevice(Exception ex)
     {
-        var hint = ex is DeviceBusyException && LConnectDetector.IsRunning() ? " L-Connect 3 is running; quit it from its tray icon." : "";
+        var hint = ex is DeviceBusyException ? LConnectDetector.LogHint(_lconnect.Detect()) : "";
+        if (hint.Length > 0) hint = " " + hint;
         var message = $"The screen is unavailable: {ex.Message}{hint} Retrying every {ReconnectDelay.TotalSeconds:0} s.";
         if (message == _lastDeviceError) return;
         _lastDeviceError = message;

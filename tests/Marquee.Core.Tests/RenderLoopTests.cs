@@ -119,7 +119,7 @@ public class RenderLoopTests
         using var folder = new TempTheme(Fill("#FF0000"));
         using var device = new RecordingDevice { OpenFault = attempt => attempt == 1 ? new DeviceBusyException("The screen is in use by another program.") : null };
         var log = new ListLog();
-        using var loop = new RenderLoop(device, TestSensors.Store(), log);
+        using var loop = new RenderLoop(device, TestSensors.Store(), log, lconnect: FakeLConnectStatus.Detector());
         loop.SetTheme(folder.Load());
 
         loop.Step(TimeSpan.Zero);
@@ -130,6 +130,72 @@ public class RenderLoopTests
         Assert.Equal((2, 1), (device.Opens, device.FramesPushed));
         Assert.StartsWith("error: The screen is unavailable: The screen is in use by another program.", log.Entries[0]);
         Assert.Equal("info: Connected to Recording device.", log.Entries[1]);
+    }
+
+    [Fact]
+    public void A_screen_held_by_the_L_Connect_service_logs_the_tray_handover_in_one_line()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice { OpenFault = _ => new DeviceBusyException("The screen is in use by another program.") };
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log, lconnect: FakeLConnectStatus.Detector(service: true, app: true));
+        loop.SetTheme(folder.Load());
+
+        loop.Step(TimeSpan.Zero);
+
+        var entry = Assert.Single(log.Entries);
+        Assert.Equal(
+            "error: The screen is unavailable: The screen is in use by another program. " +
+            LConnectDetector.LogHint(LConnectState.Service) + " Retrying every 2 s.",
+            entry);
+        Assert.Contains("stop-service option", entry);
+        Assert.DoesNotContain('\n', entry);
+    }
+
+    [Fact]
+    public void A_screen_held_by_the_L_Connect_app_alone_logs_the_short_quit_hint()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice { OpenFault = _ => new DeviceBusyException("The screen is in use by another program.") };
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log, lconnect: FakeLConnectStatus.Detector(app: true));
+        loop.SetTheme(folder.Load());
+
+        loop.Step(TimeSpan.Zero);
+
+        Assert.Equal(
+            ["error: The screen is unavailable: The screen is in use by another program. L-Connect 3 is running; quit it from its tray icon. Retrying every 2 s."],
+            log.Entries);
+    }
+
+    [Fact]
+    public void A_busy_screen_without_L_Connect_logs_no_hint()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice { OpenFault = _ => new DeviceBusyException("The screen is in use by another program.") };
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log, lconnect: FakeLConnectStatus.Detector());
+        loop.SetTheme(folder.Load());
+
+        loop.Step(TimeSpan.Zero);
+
+        Assert.Equal(["error: The screen is unavailable: The screen is in use by another program. Retrying every 2 s."], log.Entries);
+    }
+
+    [Fact]
+    public void Only_a_busy_screen_asks_about_L_Connect()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice { OpenFault = _ => new IOException("USB write failed") };
+        var status = new FakeLConnectStatus(service: true);
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log, lconnect: new LConnectDetector(status));
+        loop.SetTheme(folder.Load());
+
+        loop.Step(TimeSpan.Zero);
+
+        Assert.Equal(0, status.Queries);
+        Assert.Equal(["error: The screen is unavailable: USB write failed Retrying every 2 s."], log.Entries);
     }
 
     [Fact]
@@ -234,7 +300,7 @@ public class RenderLoopTests
     {
         using var folder = new TempTheme(Fill("#FF0000"));
         using var device = new RecordingDevice { OpenFault = _ => new DeviceBusyException("busy") };
-        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog(), lconnect: FakeLConnectStatus.Detector());
         var sizes = new List<(int, int)>();
         loop.FrameRendered += frame => sizes.Add((frame.Width, frame.Height));
         loop.SetTheme(folder.Load());

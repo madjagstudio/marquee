@@ -6,6 +6,7 @@ Marquee is licensed under the PolyForm Noncommercial License 1.0.0. It uses thes
 |---|---|---|
 | [SkiaSharp](https://github.com/mono/SkiaSharp) | 2D rendering | MIT |
 | [YamlDotNet](https://github.com/aaubry/YamlDotNet) | Parsing `layout.yaml` | MIT |
+| [System.ServiceProcess.ServiceController](https://github.com/dotnet/runtime) | Checking whether L-Connect's service holds the screen | MIT |
 | [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) | Hardware sensors, used unmodified as a NuGet library | MPL-2.0 |
 | [Inter](https://github.com/rsms/inter) | Bundled default font (`src/Marquee.Core/Fonts`) | SIL Open Font License 1.1 (`src/Marquee.Core/Fonts/OFL.txt`) |
 
