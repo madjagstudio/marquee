@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.ServiceProcess;
 using Marquee.Core.Devices;
 using Marquee.Core.Tests.TestSupport;
 
@@ -55,6 +57,55 @@ public class LConnectDetectorTests
     [Fact]
     public void No_console_hint_when_L_Connect_is_not_running() =>
         Assert.Empty(LConnectDetector.ConsoleHint(LConnectState.NotRunning));
+
+    [Theory]
+    [InlineData(ServiceControllerStatus.Running, true)]
+    [InlineData(ServiceControllerStatus.StartPending, true)]
+    [InlineData(ServiceControllerStatus.StopPending, true)]
+    [InlineData(ServiceControllerStatus.Paused, true)]
+    [InlineData(ServiceControllerStatus.PausePending, true)]
+    [InlineData(ServiceControllerStatus.ContinuePending, true)]
+    [InlineData(ServiceControllerStatus.Stopped, false)]
+    public void Only_a_fully_stopped_service_counts_as_gone(ServiceControllerStatus status, bool holds)
+    {
+        var asked = new List<string>();
+        var source = new SystemLConnectStatus(
+            name => { asked.Add(name); return status; },
+            _ => throw new InvalidOperationException("The process list shouldn't be needed."));
+
+        Assert.Equal(holds, source.IsServiceRunning());
+        Assert.Equal(["LConnectService"], asked);
+    }
+
+    [Fact]
+    public void A_missing_service_falls_back_to_the_service_process()
+    {
+        var asked = new List<string>();
+        var source = new SystemLConnectStatus(
+            _ => throw new InvalidOperationException("Service LConnectService was not found on computer '.'."),
+            name => { asked.Add(name); return true; });
+
+        Assert.True(source.IsServiceRunning());
+        Assert.Equal(["L-Connect-Service"], asked);
+    }
+
+    [Fact]
+    public void An_SCM_error_falls_back_to_the_service_process()
+    {
+        var source = new SystemLConnectStatus(_ => throw new Win32Exception(5), _ => false);
+
+        Assert.False(source.IsServiceRunning());
+    }
+
+    [Fact]
+    public void The_app_is_found_by_its_process_name()
+    {
+        var asked = new List<string>();
+        var source = new SystemLConnectStatus(_ => ServiceControllerStatus.Stopped, name => { asked.Add(name); return true; });
+
+        Assert.True(source.IsAppRunning());
+        Assert.Equal(["L-Connect 3"], asked);
+    }
 
     [Fact]
     public void The_system_source_answers_without_admin_rights()

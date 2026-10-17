@@ -21,28 +21,38 @@ public interface ILConnectStatusSource
 }
 
 /// Reads the service state from the Service Control Manager (no admin rights needed) and the app from its process.
-public sealed class SystemLConnectStatus : ILConnectStatusSource
+/// Tests pass their own readers for the service state and the process list.
+public sealed class SystemLConnectStatus(Func<string, ServiceControllerStatus>? serviceStatus = null, Func<string, bool>? isProcessRunning = null)
+    : ILConnectStatusSource
 {
-    const string ServiceName = "LConnectService";
-    const string ServiceProcessName = "L-Connect-Service";
-    const string AppProcessName = "L-Connect 3";
+    public const string ServiceName = "LConnectService";
+    public const string ServiceProcessName = "L-Connect-Service";
+    public const string AppProcessName = "L-Connect 3";
+
+    readonly Func<string, ServiceControllerStatus> _serviceStatus = serviceStatus ?? QueryService;
+    readonly Func<string, bool> _isProcessRunning = isProcessRunning ?? IsProcessRunning;
 
     public bool IsServiceRunning()
     {
         try
         {
-            using var service = new ServiceController(ServiceName);
             // Stopping means the screen is about to be released, so only a fully stopped service counts as gone.
-            return service.Status != ServiceControllerStatus.Stopped;
+            return _serviceStatus(ServiceName) != ServiceControllerStatus.Stopped;
         }
         catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)
         {
             // Not installed, or the SCM couldn't be asked: fall back to the service's process.
-            return IsProcessRunning(ServiceProcessName);
+            return _isProcessRunning(ServiceProcessName);
         }
     }
 
-    public bool IsAppRunning() => IsProcessRunning(AppProcessName);
+    public bool IsAppRunning() => _isProcessRunning(AppProcessName);
+
+    static ServiceControllerStatus QueryService(string name)
+    {
+        using var service = new ServiceController(name);
+        return service.Status;
+    }
 
     static bool IsProcessRunning(string name)
     {
