@@ -140,6 +140,34 @@ public class ProviderRunnerTests
         Assert.Contains("error: first failed to shut down: stuck", log.Entries);
     }
 
+    [Fact]
+    public async Task Dispose_leaves_a_provider_that_will_not_stop_running_and_says_so()
+    {
+        var release = new ManualResetEventSlim(); // not disposed: the provider thread may still be waking from it
+        var log = new ListLog();
+        var stuck = new FakeProvider("stuck", (_, _) => release.Wait());
+        var runner = new ProviderRunner(new SensorStore(), log);
+        runner.Start(stuck);
+        Assert.True(Wait.Until(() => stuck.Polls >= 1));
+
+        try
+        {
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            var disposing = Task.Run(runner.Dispose);
+
+            var returned = await Task.WhenAny(disposing, Task.Delay(TimeSpan.FromSeconds(5))) == disposing;
+
+            Assert.True(returned, "Dispose did not return");
+            Assert.InRange(timer.Elapsed, TimeSpan.FromSeconds(2.5), TimeSpan.FromSeconds(5));
+            Assert.False(stuck.Disposed);
+            Assert.Equal(["warn: stuck did not stop within 3 s; leaving it to exit with the process."], log.Entries);
+        }
+        finally
+        {
+            release.Set();
+        }
+    }
+
     [Theory]
     [InlineData(1, 1)]
     [InlineData(2, 2)]

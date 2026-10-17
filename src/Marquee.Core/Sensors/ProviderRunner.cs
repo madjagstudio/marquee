@@ -22,6 +22,9 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
     /// A provider that reports a zero or negative interval is polled at this rate instead of spinning.
     static readonly TimeSpan MinWait = TimeSpan.FromMilliseconds(50);
 
+    /// How long Dispose waits for each provider's thread to finish its current poll.
+    static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(3);
+
     readonly TimeSpan _firstRetry = firstRetry ?? TimeSpan.FromSeconds(1);
     readonly CancellationTokenSource _stop = new();
     readonly List<(ISensorProvider Provider, Thread Thread)> _running = [];
@@ -54,9 +57,18 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
         }
 
         _stop.Cancel();
-        foreach (var (_, thread) in running) thread.Join();
-        foreach (var (provider, _) in running)
+        var allStopped = true;
+        foreach (var (provider, thread) in running)
         {
+            if (!thread.Join(StopTimeout))
+            {
+                // A poll stuck in a driver call must not hang shutdown. Provider threads are background threads, so
+                // this one ends with the process. Disposing the provider under a running poll would be worse.
+                log.Warn($"{provider.Name} did not stop within {StopTimeout.TotalSeconds:0} s; leaving it to exit with the process.");
+                allStopped = false;
+                continue;
+            }
+
             try
             {
                 provider.Dispose();
@@ -67,7 +79,8 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
             }
         }
 
-        _stop.Dispose();
+        // A thread still running reads the token's wait handle after its poll, so keep it alive for that thread.
+        if (allStopped) _stop.Dispose();
     }
 
     void Run(ISensorProvider provider, CancellationToken token)

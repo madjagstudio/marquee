@@ -79,10 +79,14 @@ static class RunCommand
         }
 
         using var stop = new ManualResetEventSlim();
+        var stopping = 0;
         Console.CancelKeyPress += (_, e) =>
         {
-            e.Cancel = true;
-            stop.Set();
+            // The first Ctrl+C stops gracefully. Any later one (shutdown is stuck, or already under way and `stop` may
+            // be disposed) gets the default behavior and ends the process.
+            var first = Interlocked.Exchange(ref stopping, 1) == 0;
+            e.Cancel = first;
+            if (first) stop.Set();
         };
 
         if (preview)
@@ -105,6 +109,7 @@ static class RunCommand
             if (seconds == 5 || seconds % 60 == 0) log.Info(status);
         }
 
+        Interlocked.Exchange(ref stopping, 1); // stopping now (the preview may have closed), so Ctrl+C won't touch `stop`
         loop.Stop();
         previewHost?.Dispose();
         return 0;
