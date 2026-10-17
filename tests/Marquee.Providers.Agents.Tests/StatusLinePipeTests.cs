@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.IO.Pipes;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using Marquee.Core.Sensors;
 using Marquee.Providers.Agents.Claude;
@@ -138,6 +141,64 @@ public class StatusLinePipeTests
         var clock = Stopwatch.StartNew();
         Assert.False(StatusLinePipe.TrySend(Json("{}"), TimeSpan.FromMilliseconds(100), name));
         Assert.True(clock.ElapsedMilliseconds < 1000, $"took {clock.ElapsedMilliseconds} ms");
+    }
+
+    [Fact]
+    public void The_pipe_is_owned_by_the_user_and_open_only_to_the_user()
+    {
+        var name = UniquePipe();
+        using var server = new StatusLineServer(new SensorStore(), new ListLog(), name);
+        Assert.True(server.Start());
+
+        using var client = new NamedPipeClientStream(".", name, PipeDirection.Out);
+        client.Connect(2000);
+        var security = client.GetAccessControl();
+
+        var user = WindowsIdentity.GetCurrent().User;
+        Assert.Equal(user, security.GetOwner(typeof(SecurityIdentifier)));
+        var rule = Assert.Single(security.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>());
+        Assert.Equal((user, AccessControlType.Allow, PipeAccessRights.FullControl), (rule.IdentityReference, rule.AccessControlType, rule.PipeAccessRights));
+    }
+
+    [Fact]
+    public void Server_security_names_the_user_not_the_token_owner()
+    {
+        // An elevated administrator's token owner is BUILTIN\Administrators, which the user's non-elevated bridge can't
+        // use; the user's own SID is the one both sides share.
+        var user = new SecurityIdentifier("S-1-5-21-1000-2000-3000-1001");
+
+        var security = StatusLinePipe.ServerSecurity(user);
+
+        Assert.Equal(user, security.GetOwner(typeof(SecurityIdentifier)));
+        var rule = Assert.Single(security.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>());
+        Assert.Equal((user, AccessControlType.Allow, PipeAccessRights.FullControl), (rule.IdentityReference, rule.AccessControlType, rule.PipeAccessRights));
+    }
+
+    [Fact]
+    public void The_bridge_refuses_a_pipe_owned_by_someone_else()
+    {
+        var name = UniquePipe();
+        var store = new SensorStore(() => Clock.T0);
+        using var server = new StatusLineServer(store, new ListLog(), name, () => Clock.T0);
+        server.Start();
+        var someoneElse = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+        Assert.False(StatusLinePipe.TrySend(Fixture.Bytes("statusline/subscriber.json"), Connect, name, someoneElse));
+
+        // Messages are handled in order: once the next one is in, the refused one would have been too.
+        Assert.True(StatusLinePipe.TrySend(Json("""{"context_window":{"used_percentage":7}}"""), Connect, name));
+        Assert.True(Wait.Until(() => Clock.Read(store, "claude.context.pct") is 7.0));
+        Assert.Null(Clock.Read(store, "claude.five_hour.pct"));
+    }
+
+    [Fact]
+    public void The_server_refuses_a_pipe_someone_else_created_first()
+    {
+        // Another user can create the pipe name first and let anyone add instances; Marquee would then be serving that
+        // user's pipe. Simulated by expecting a different owner than the one the pipe gets.
+        var someoneElse = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+        Assert.Throws<UnauthorizedAccessException>(() => StatusLinePipe.CreateServer(UniquePipe(), someoneElse));
     }
 
     [Fact]

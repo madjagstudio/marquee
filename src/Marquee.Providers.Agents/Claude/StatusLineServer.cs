@@ -57,8 +57,8 @@ public sealed class StatusLineServer(SensorStore store, ILog log, string? pipeNa
         if (stopped) _stop.Dispose();
     }
 
-    NamedPipeServerStream CreatePipe() => new(_pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances,
-        PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+    /// Restricted to this user's processes, elevated or not (see StatusLinePipe).
+    NamedPipeServerStream CreatePipe() => StatusLinePipe.CreateServer(_pipeName);
 
     async Task Listen(NamedPipeServerStream first, CancellationToken stop)
     {
