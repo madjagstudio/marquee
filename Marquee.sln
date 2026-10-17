@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marquee.Core.Tests", "tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marquee.Cli", "src\Marquee.Cli\Marquee.Cli.csproj", "{5334D224-67DD-4A98-9208-AC95956A5030}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marquee.Providers.Hardware", "src\Marquee.Providers.Hardware\Marquee.Providers.Hardware.csproj", "{BA4462BE-3F64-4FDB-A2F3-B0E97C667D13}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marquee.Providers.Hardware.Tests", "tests\Marquee.Providers.Hardware.Tests\Marquee.Providers.Hardware.Tests.csproj", "{6CEEBFDF-E986-4687-BC82-332F021D1A68}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +38,20 @@ Global
 		{5334D224-67DD-4A98-9208-AC95956A5030}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5334D224-67DD-4A98-9208-AC95956A5030}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5334D224-67DD-4A98-9208-AC95956A5030}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA4462BE-3F64-4FDB-A2F3-B0E97C667D13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA4462BE-3F64-4FDB-A2F3-B0E97C667D13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA4462BE-3F64-4FDB-A2F3-B0E97C667D13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA4462BE-3F64-4FDB-A2F3-B0E97C667D13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CEEBFDF-E986-4687-BC82-332F021D1A68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CEEBFDF-E986-4687-BC82-332F021D1A68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CEEBFDF-E986-4687-BC82-332F021D1A68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CEEBFDF-E986-4687-BC82-332F021D1A68}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{52BA135E-02B4-46C1-B915-C8639D7C39AE} = {CF349E12-CA48-4EF0-870F-756F7253AB17}
 		{2A45D1FF-657D-4E63-9864-F30A7D42DF42} = {87757601-5AE6-4180-9F0B-2BE255315083}
 		{5334D224-67DD-4A98-9208-AC95956A5030} = {CF349E12-CA48-4EF0-870F-756F7253AB17}
+		{BA4462BE-3F64-4FDB-A2F3-B0E97C667D13} = {CF349E12-CA48-4EF0-870F-756F7253AB17}
+		{6CEEBFDF-E986-4687-BC82-332F021D1A68} = {87757601-5AE6-4180-9F0B-2BE255315083}
 	EndGlobalSection
 EndGlobal
