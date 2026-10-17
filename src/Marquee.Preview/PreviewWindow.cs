@@ -19,8 +19,16 @@ sealed class PreviewWindow : Form
         Padding = new Padding(8),
         Font = new Font(FontFamily.GenericMonospace, 10),
     };
-    readonly StatusStrip _statusStrip = new();
-    readonly ToolStripStatusLabel _status = new("Waiting for the first frame…");
+    readonly StatusStrip _statusStrip = new()
+    {
+        BackColor = SystemColors.Control,
+        ForeColor = SystemColors.ControlText,
+    };
+    readonly ToolStripStatusLabel _status = new("Waiting for the first frame…")
+    {
+        Spring = true,
+        TextAlign = ContentAlignment.MiddleLeft,
+    };
     Bitmap? _frame;
 
     public PreviewWindow(string title, SKSizeI canvas)
