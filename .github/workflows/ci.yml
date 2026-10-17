@@ -11,3 +11,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - run: dotnet test --configuration Release
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: received-snapshots
+          path: tests/**/Snapshots/*.received.png
+          if-no-files-found: ignore
