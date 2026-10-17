@@ -77,8 +77,10 @@ comes with the public release.
 ### Shader backgrounds
 
 A `shader` layer runs an [SkSL](https://skia.org/docs/user/sksl/) file from the theme folder over the whole canvas.
-Marquee sets `uniform float time` (seconds; it wraps to 0 once a day so it stays precise) and `uniform float2 resolution` (pixels); bind any other uniform to a
-number or an expression, one value per component:
+Marquee sets `uniform float time` (seconds) and `uniform float2 resolution` (pixels). `time` wraps back to 0 once a
+day so it stays precise, which shows as one jump a day. Bind any other uniform to a number or an expression, one value
+per component. Marquee binds floats only, so declare bound uniforms as `float`, `float2`, `float3` or `float4`; a layer
+with an `int` uniform is skipped with a warning. A binding whose sensor is missing or stale reads as 0.
 
 ```yaml
 background:
@@ -98,42 +100,56 @@ reloads the theme like editing `layout.yaml`.
 
 ## Claude Code and Codex
 
-`marquee run` reads Claude Code and Codex status on its own; `marquee sensors` shows the current values.
+`marquee run` reads Claude Code and Codex status on its own. `marquee sensors` prints the session counts and the Codex
+values, but not Claude Code's limits (`claude.five_hour.*`, `claude.seven_day.*`, `claude.context.pct`,
+`claude.updated_at`) or custom values: those exist only inside a running `marquee run`.
 
 | Keys | Source |
 |---|---|
 | `claude.five_hour.pct`, `claude.five_hour.resets_at`, `claude.seven_day.pct`, `claude.seven_day.resets_at`, `claude.context.pct`, `claude.updated_at` | Claude Code's status line, through `marquee statusline` (below) |
 | `claude.sessions.total`, `claude.sessions.busy`, `claude.sessions.idle` | Running sessions in `~/.claude/sessions` |
 | `codex.primary.pct`, `codex.primary.resets_at`, `codex.primary.window_min`, the same for `codex.secondary`, `codex.updated_at` | The newest usage report in Codex's logs (`~/.codex/sessions`) |
-| `codex.sessions.total`, `codex.sessions.busy`, `codex.sessions.idle` | Codex threads (CLI, desktop app or IDE) that logged anything in the last 10 minutes |
+| `codex.sessions.total`, `codex.sessions.busy`, `codex.sessions.idle` | Codex threads (CLI, desktop app or IDE) whose newest log event is under 10 minutes old |
+
+A Claude Code session is busy or idle as its session file says. A Codex session is busy while a turn is in progress
+(its last turn event is `task_started`) and idle after the turn completes or is interrupted.
 
 Claude Code shares its usage limits only with its status-line command, and only on claude.ai subscriptions (its docs
-name Pro and Max; API-key sessions have none). Run
-`marquee setup-claude` once: it points Claude Code's `statusLine` at `marquee statusline`, which hands the data to
+name Pro and Max; API-key sessions have none). Run `marquee setup-claude` once, from `marquee.exe` itself (it refuses
+to run from anything else). It points Claude Code's `statusLine` at `marquee statusline`, which hands the data to
 Marquee and then runs your previous status-line command, so your status line looks the same as before. It edits
 only `statusLine` in `~/.claude/settings.json`, keeps a timestamped backup, and `marquee setup-claude --undo` puts the
-old setting back. `--dry-run` shows the change first. Limits update while a Claude Code session is working; between
-sessions they keep their last value (`claude.updated_at` says how old it is), and each window goes stale (`—`) when it
-resets. Which Codex window is primary depends on the plan: `codex.primary.window_min` is 300 for a 5-hour window and
-10080 for a weekly one.
+old setting back. `--dry-run` shows the change first. If it can't rewrite `settings.json` exactly (comments, trailing
+commas, repeated keys, a file that isn't UTF-8, a link, or a `statusLine` that isn't an object), it changes nothing and
+says why. A project's `.claude/settings.json` or managed settings with their own `statusLine` take precedence over this
+one.
+
+Limits arrive only while `marquee run` is going and a Claude Code session is updating its status line. They are lost
+when `marquee run` restarts, until a session updates its status line again. In between they keep their last value
+(`claude.updated_at` says how old it is), and each window goes stale (`—`) when it resets. Which Codex window is
+primary depends on the plan: `codex.primary.window_min` is 300 for a 5-hour window and 10080 for a weekly one.
 
 The session files and Codex logs are undocumented formats that may change. If Marquee can't read them any more, it
 logs a warning and those keys go stale; everything else keeps working.
 
 ## Custom values
 
-Scripts can put their own values on the screen as `custom.*` keys:
+Scripts can put their own values on the screen as `custom.*` keys. `marquee push` adds the `custom.` prefix, so these
+set `custom.build` and `custom.queue`:
 
     marquee push build "passing" --ttl 10m
     marquee push queue 12
 
-or over HTTP while `marquee run` is going:
+`push` needs `marquee run` to be going, and fails with an explanation if it isn't. A value that reads as a number is
+sent as a number; to send text that looks like a number, use HTTP. Over HTTP the key is written in full:
 
-    curl -X POST http://127.0.0.1:47913/values -H "Content-Type: application/json" -d "{\"custom.queue\": 12, \"ttl\": \"30s\"}"
+    Invoke-RestMethod -Method Post -Uri http://127.0.0.1:47913/values -ContentType application/json `
+      -Body '{"custom.queue": 12, "ttl": "30s"}'
 
-Values are numbers or text (up to 256 characters); `ttl` makes them go stale (`—`) after that long. The endpoint
-listens on 127.0.0.1 only and refuses requests from other machines and from web pages. `--http-port` changes the
-port (pass the same `--port` to `marquee push`), and `--no-http` turns it off.
+Any HTTP client works. Values are numbers or text (up to 256 characters). Without `ttl` (`--ttl` for `push`) a value
+never goes stale; with it, the value goes stale (`—`) after that long. The endpoint listens on 127.0.0.1 only and
+refuses requests from other machines and from web pages. The default port is 47913; `--http-port` changes it (pass the
+same `--port` to `marquee push`), and `--no-http` turns it off.
 
 ## Hardware sensors
 

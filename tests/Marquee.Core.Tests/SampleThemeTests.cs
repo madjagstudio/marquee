@@ -24,7 +24,9 @@ public class SampleThemeTests
     }
 
     /// Typical vitals plus Claude Code and Codex mid-week: one session of each working, limits partly used.
-    static SensorSnapshot Agents()
+    static SensorSnapshot Agents() => AgentsStore().Snapshot();
+
+    static SensorStore AgentsStore()
     {
         var store = TypicalStore();
         var now = TestSensors.UnixTime;
@@ -39,7 +41,7 @@ public class SampleThemeTests
         })
             store.Set(key, value);
         store.Set("custom.status", "deploy ok");
-        return store.Snapshot();
+        return store;
     }
 
     /// CPU over its hot threshold, RAM nearly full, and the GPU provider gone quiet.
@@ -85,6 +87,24 @@ public class SampleThemeTests
         using var frame = Frames.Render(theme, Agents(), TimeSpan.FromSeconds(12));
 
         Snapshots.Match(frame, "example-agents");
+    }
+
+    /// A plan whose Codex limits are a 5-hour window (primary) and a weekly one (secondary).
+    [Fact]
+    public void Agents_theme_with_a_five_hour_and_a_weekly_codex_window()
+    {
+        var store = AgentsStore();
+        var now = TestSensors.UnixTime;
+        foreach (var (key, value) in new (string, double)[]
+        {
+            ("codex.primary.pct", 12), ("codex.primary.window_min", 300), ("codex.primary.resets_at", now + 2 * 3600 + 30 * 60),
+            ("codex.secondary.pct", 30), ("codex.secondary.window_min", 10080), ("codex.secondary.resets_at", now + 3 * 86400 + 21 * 3600),
+        })
+            store.Set(key, value);
+        using var theme = ThemeLoader.Load(ThemeFolder("example-agents"));
+        using var frame = Frames.Render(theme, store.Snapshot(), TimeSpan.FromSeconds(12));
+
+        Snapshots.Match(frame, "example-agents-two-windows");
     }
 
     [Fact]
