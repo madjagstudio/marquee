@@ -45,7 +45,7 @@ static class RunCommand
         using var providers = new ProviderRunner(store, log);
         if (SensorSources.Create(sensors, log) is { } provider)
             providers.Start(provider);
-        foreach (var agent in AgentSources.Create())
+        foreach (var agent in AgentSources.Create(log))
             providers.Start(agent);
         using var statusLine = new StatusLineServer(store, log);
         statusLine.Start();

@@ -33,7 +33,7 @@ static class SensorsCommand
                 return 1;
         }
 
-        foreach (var agent in AgentSources.Create())
+        foreach (var agent in AgentSources.Create(log))
         {
             using (agent)
                 TryPoll(agent, store, log, twice: false);

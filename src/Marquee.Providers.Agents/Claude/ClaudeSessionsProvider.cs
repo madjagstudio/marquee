@@ -59,8 +59,21 @@ public sealed class ClaudeSessionsProvider(string folder, Func<int, RunningProce
     public ClaudeSessionsProvider() : this(AgentPaths.ClaudeSessions, FindProcess, ThisPc()) { }
 
     /// The names this PC answers to: the NetBIOS name and the full host name (they differ on a PC whose name is over 15 characters).
-    internal static IReadOnlyCollection<string> ThisPc() =>
-        new[] { Environment.MachineName, Dns.GetHostName() }.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    internal static IReadOnlyCollection<string> ThisPc()
+    {
+        string host;
+        try
+        {
+            host = Dns.GetHostName();
+        }
+        catch (Exception)
+        {
+            // Name resolution can fail (SocketException on a broken network stack); the NetBIOS name alone still works.
+            return [Environment.MachineName];
+        }
+
+        return new[] { Environment.MachineName, host }.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    }
 
     public string Name => "Claude Code sessions";
     public TimeSpan Interval => TimeSpan.FromSeconds(2);
