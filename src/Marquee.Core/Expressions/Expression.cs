@@ -16,13 +16,15 @@ public abstract record Expression
 
 sealed record NumberExpr(double Value) : Expression
 {
-    public override SensorValue? Evaluate(SensorSnapshot sensors) => SensorValue.Of(Value);
+    public override SensorValue? Evaluate(SensorSnapshot sensors) => Numeric(Value);
 }
 
 sealed record KeyExpr(string Key) : Expression
 {
     public override SensorValue? Evaluate(SensorSnapshot sensors) =>
-        sensors.TryGet(Key, out var value) ? value : null;
+        !sensors.TryGet(Key, out var value) ? null
+        : value.Number is { } number ? Numeric(number)
+        : value;
 }
 
 /// The frame time as Unix seconds, so `claude.five_hour.resets_at - now` is the seconds remaining.

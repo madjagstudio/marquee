@@ -1,4 +1,5 @@
 using Marquee.Core.Expressions;
+using Marquee.Core.Sensors;
 using Marquee.Core.Tests.TestSupport;
 
 namespace Marquee.Core.Tests;
@@ -113,4 +114,22 @@ public class ExpressionTests
     [Fact]
     public void Nesting_up_to_the_limit_is_fine() =>
         Assert.Equal(1, Eval(new string('(', 32) + "1" + new string(')', 32)));
+
+    [Fact]
+    public void A_number_too_large_for_a_double_evaluates_to_null() =>
+        Assert.Null(Eval(new string('9', 400)));
+
+    [Fact]
+    public void A_non_finite_key_evaluates_to_null()
+    {
+        var entries = new Dictionary<string, SensorEntry>
+        {
+            ["gpu.temp"] = new(SensorValue.Of(double.NaN), TestSensors.Time, null, []),
+            ["cpu.name"] = new(SensorValue.Of("Ryzen 9"), TestSensors.Time, null, []),
+        };
+        var snapshot = new SensorSnapshot(TestSensors.Time, entries);
+
+        Assert.Null(Expression.Parse("gpu.temp").Evaluate(snapshot));
+        Assert.Equal("Ryzen 9", Expression.Parse("cpu.name").Evaluate(snapshot)?.Text);
+    }
 }

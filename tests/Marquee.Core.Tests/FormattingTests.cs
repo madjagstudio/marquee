@@ -23,6 +23,15 @@ public class FormattingTests
     [InlineData(-1, "0 B")]
     public void Bytes(double bytes, string expected) => Assert.Equal(expected, Formatting.Bytes(bytes));
 
+    [Fact]
+    public void Helpers_show_missing_for_non_finite_numbers()
+    {
+        Assert.Equal(Formatting.Missing, Formatting.Duration(double.NaN));
+        Assert.Equal(Formatting.Missing, Formatting.Duration(double.PositiveInfinity));
+        Assert.Equal(Formatting.Missing, Formatting.Bytes(double.PositiveInfinity));
+        Assert.Equal(Formatting.Missing, Formatting.Bytes(double.NaN));
+    }
+
     [Theory]
     [InlineData(null, 72.456, "72.46")]
     [InlineData("{0:0.0}°C", 72.26, "72.3°C")]

@@ -11,7 +11,8 @@ sealed class Smoother
 
     public double Next(double target, TimeSpan now, double durationMs)
     {
-        if (!_started || durationMs <= 0)
+        // A current value that isn't finite re-seeds (snaps) too, so one bad value can never stick.
+        if (!_started || durationMs <= 0 || !double.IsFinite(_current))
         {
             _started = true;
             _from = _to = _current = target;

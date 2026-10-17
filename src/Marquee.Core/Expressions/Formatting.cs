@@ -84,9 +84,11 @@ public static class Formatting
         _ => null,
     };
 
-    /// Seconds as "2h 14m". Days show hours, hours show minutes, under a minute shows seconds. Negative is "0s".
+    /// Seconds as "2h 14m". Days show hours, hours show minutes, under a minute shows seconds. Negative is "0s";
+    /// NaN or infinite is Missing.
     public static string Duration(double seconds)
     {
+        if (!double.IsFinite(seconds)) return Missing;
         var total = (long)Math.Max(0, Math.Floor(seconds));
         var (d, h, m, s) = (total / 86400, total % 86400 / 3600, total % 3600 / 60, total % 60);
         return d > 0 ? string.Create(Invariant, $"{d}d {h}h")
@@ -95,9 +97,10 @@ public static class Formatting
             : string.Create(Invariant, $"{s}s");
     }
 
-    /// Bytes in binary units: "512 B", "1.5 KB", "8.5 GB", "120 GB".
+    /// Bytes in binary units: "512 B", "1.5 KB", "8.5 GB", "120 GB". NaN or infinite is Missing.
     public static string Bytes(double bytes)
     {
+        if (!double.IsFinite(bytes)) return Missing;
         string[] units = ["B", "KB", "MB", "GB", "TB"];
         var value = Math.Max(0, bytes);
         var unit = 0;

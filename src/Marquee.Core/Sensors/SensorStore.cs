@@ -11,7 +11,13 @@ public sealed class SensorStore(Func<DateTimeOffset>? now = null, int historyLen
     readonly Dictionary<string, SensorEntry> _entries = new(StringComparer.Ordinal);
 
     /// Stores a number. With a ttl, the value counts as stale once that much time has passed without a new write.
-    public void Set(string key, double value, TimeSpan? ttl = null) => Write(key, SensorValue.Of(value), ttl);
+    /// NaN and infinities (a provider reporting a sensor it couldn't read) are ignored: the previous value stays until
+    /// its ttl, then goes stale.
+    public void Set(string key, double value, TimeSpan? ttl = null)
+    {
+        if (double.IsFinite(value))
+            Write(key, SensorValue.Of(value), ttl);
+    }
 
     public void Set(string key, string value, TimeSpan? ttl = null) => Write(key, SensorValue.Of(value), ttl);
 

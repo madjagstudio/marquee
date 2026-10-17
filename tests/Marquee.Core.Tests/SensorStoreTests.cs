@@ -142,4 +142,23 @@ public class SensorStoreTests
             Assert.Equal(SensorStore.DefaultHistoryLength, snapshot.History($"key.{writer}").Count);
         }
     }
+
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void Non_finite_writes_are_ignored(double unreadable)
+    {
+        var store = new SensorStore(() => T0);
+        store.Set("cpu.temp", 60);
+
+        store.Set("cpu.temp", unreadable);
+        store.Set("gpu.temp", unreadable);
+
+        var snapshot = store.Snapshot();
+        Assert.True(snapshot.TryGet("cpu.temp", out var value));
+        Assert.Equal(60, value.Number);
+        Assert.Equal(new double[] { 60 }, snapshot.History("cpu.temp"));
+        Assert.False(snapshot.TryGet("gpu.temp", out _));
+    }
 }

@@ -43,4 +43,13 @@ public class SmootherTests
 
         Assert.Equal(100, smoother.Next(100, Ms(1), 0));
     }
+
+    [Fact]
+    public void A_non_finite_value_never_sticks()
+    {
+        var smoother = new Smoother();
+        smoother.Next(double.NaN, Ms(0), 500);
+
+        Assert.Equal(50, smoother.Next(50, Ms(100), 500));
+    }
 }
