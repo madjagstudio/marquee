@@ -1,0 +1,266 @@
+using Marquee.Core.Devices;
+using Marquee.Core.Rendering;
+using Marquee.Core.Tests.TestSupport;
+using SkiaSharp;
+
+namespace Marquee.Core.Tests;
+
+public class RenderLoopTests
+{
+    static string Fill(string color, string orientation = "landscape", int fps = 30) =>
+        $"canvas: {{ orientation: {orientation}, fps: {fps} }}\nbackground:\n  - fill: \"{color}\"\n";
+
+    static TimeSpan Seconds(double s) => TimeSpan.FromSeconds(s);
+
+    [Fact]
+    public void Step_renders_the_theme_and_pushes_it_through_a_file_sink()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "marquee-loop-" + Guid.NewGuid().ToString("N")[..8]);
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var sink = new FileSinkDevice(dir);
+        using var loop = new RenderLoop(sink, TestSensors.Store(), new ListLog());
+
+        loop.SetTheme(folder.Load());
+        loop.Step(TimeSpan.Zero);
+
+        using var frame = SKImage.FromEncodedData(File.ReadAllBytes(Path.Combine(dir, "frame_000001.png")));
+        Assert.Equal((1920, 480), (frame.Width, frame.Height));
+        Pixels.AssertNear(SKColors.Red, Images.PixelAt(frame, 960, 240), 0);
+        Assert.Equal(1, loop.FramesPushed);
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public void Nothing_is_pushed_before_a_theme_arrives()
+    {
+        using var device = new RecordingDevice();
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+
+        loop.Step(TimeSpan.Zero);
+
+        Assert.Equal(0, device.Opens);
+        Assert.Equal(0, device.FramesPushed);
+    }
+
+    [Fact]
+    public void A_new_theme_is_swapped_in_at_the_next_frame_and_the_old_one_disposed()
+    {
+        using var red = new TempTheme(Fill("#FF0000"));
+        using var blue = new TempTheme(Fill("#0000FF"));
+        using var device = new RecordingDevice();
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        var first = red.Load();
+        loop.SetTheme(first);
+        loop.Step(TimeSpan.Zero);
+
+        loop.SetTheme(blue.Load());
+        Assert.False(first.IsDisposed);
+        loop.Step(Seconds(0.1));
+
+        Assert.True(first.IsDisposed);
+        Pixels.AssertNear(SKColors.Blue, device.LastFrame!.GetPixel(10, 10), 0);
+    }
+
+    [Fact]
+    public void A_theme_replaced_before_it_was_shown_is_disposed()
+    {
+        using var red = new TempTheme(Fill("#FF0000"));
+        using var blue = new TempTheme(Fill("#0000FF"));
+        using var device = new RecordingDevice();
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        var skipped = red.Load();
+
+        loop.SetTheme(skipped);
+        loop.SetTheme(blue.Load());
+        loop.Step(TimeSpan.Zero);
+
+        Assert.True(skipped.IsDisposed);
+        Pixels.AssertNear(SKColors.Blue, device.LastFrame!.GetPixel(10, 10), 0);
+    }
+
+    [Fact]
+    public void A_landscape_theme_on_a_portrait_screen_is_letterboxed_with_one_warning()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice(480, 1920);
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log);
+
+        loop.SetTheme(folder.Load());
+        loop.Step(TimeSpan.Zero);
+        loop.Step(Seconds(0.1));
+
+        var frame = device.LastFrame!;
+        Assert.Equal((480, 1920), (frame.Width, frame.Height));
+        Pixels.AssertNear(SKColors.Red, frame.GetPixel(240, 960), 0);
+        Pixels.AssertNear(SKColors.Black, frame.GetPixel(240, 100), 0);
+        var warning = Assert.Single(log.Entries);
+        Assert.StartsWith("warn: Theme '", warning);
+        Assert.Contains("is designed for landscape (1920×480), but the screen is set up for portrait (480×1920)", warning);
+    }
+
+    [Fact]
+    public void A_matching_theme_is_not_warned_about()
+    {
+        using var folder = new TempTheme(Fill("#FF0000", "portrait"));
+        using var device = new RecordingDevice(480, 1920);
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log);
+
+        loop.SetTheme(folder.Load());
+        loop.Step(TimeSpan.Zero);
+
+        Assert.Empty(log.Entries);
+    }
+
+    [Fact]
+    public void A_busy_screen_is_retried_after_the_reconnect_delay()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice { OpenFault = attempt => attempt == 1 ? new DeviceBusyException("The screen is in use by another program.") : null };
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log);
+        loop.SetTheme(folder.Load());
+
+        loop.Step(TimeSpan.Zero);
+        loop.Step(Seconds(1));
+        Assert.Equal((1, 0), (device.Opens, device.FramesPushed));
+
+        loop.Step(Seconds(2));
+        Assert.Equal((2, 1), (device.Opens, device.FramesPushed));
+        Assert.StartsWith("error: The screen is unavailable: The screen is in use by another program.", log.Entries[0]);
+        Assert.Equal("info: Connected to Recording device.", log.Entries[1]);
+    }
+
+    [Fact]
+    public void A_failed_push_closes_the_device_and_reconnects_later()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice { PushFault = attempt => attempt is 2 or 3 ? new IOException("USB write failed") : null };
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log);
+        loop.SetTheme(folder.Load());
+
+        loop.Step(TimeSpan.Zero);
+        loop.Step(Seconds(0.1));
+        Assert.Equal(1, device.Closes);
+
+        loop.Step(Seconds(1));
+        Assert.Equal(1, device.Opens);
+
+        loop.Step(Seconds(2.1));
+        Assert.Equal((2, 2), (device.Opens, device.Closes));
+
+        loop.Step(Seconds(4.2));
+        Assert.Equal((3, 2), (device.Opens, device.FramesPushed));
+        // The same failure twice in a row is logged once.
+        Assert.Equal(
+            ["error: The screen is unavailable: USB write failed Retrying every 2 s.", "info: Connected to Recording device."],
+            log.Entries);
+    }
+
+    [Fact]
+    public void A_render_failure_is_logged_once_and_never_announced_as_a_reconnect()
+    {
+        using var folder = new TempTheme(Fill("#FF0000", fps: 30));
+        using var device = new RecordingDevice();
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log);
+        var calls = 0;
+        loop.FrameRendered += _ =>
+        {
+            if (++calls == 1) throw new InvalidOperationException("boom");
+        };
+        loop.SetTheme(folder.Load());
+
+        loop.Start();
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (device.FramesPushed < 3 && DateTime.UtcNow < deadline) Thread.Sleep(10);
+        loop.Stop();
+
+        Assert.True(device.FramesPushed >= 3);
+        Assert.Equal(["error: Rendering a frame failed: boom"], log.Entries);
+    }
+
+    [Fact]
+    public void Stats_report_the_frame_rate_over_the_last_second()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice();
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        loop.SetTheme(folder.Load());
+
+        for (var i = 0; i <= 60; i++)
+            loop.Step(Seconds(i / 30.0));
+
+        Assert.Equal(30, loop.Stats.Fps, 0.5);
+        Assert.True(loop.Stats.RenderMs > 0);
+    }
+
+    [Fact]
+    public void Warns_once_when_frames_come_slower_than_the_theme_asks()
+    {
+        using var folder = new TempTheme(Fill("#FF0000", fps: 30));
+        using var device = new RecordingDevice();
+        var log = new ListLog();
+        using var loop = new RenderLoop(device, TestSensors.Store(), log);
+        loop.SetTheme(folder.Load());
+
+        for (var i = 0; i <= 100; i++)
+            loop.Step(Seconds(i * 0.05));
+
+        var warning = Assert.Single(log.Entries);
+        Assert.StartsWith("warn: Running at 20 fps instead of 30: a frame takes ", warning);
+    }
+
+    [Fact]
+    public void Fps_comes_from_the_override_or_the_theme_and_is_clamped()
+    {
+        using var folder = new TempTheme(Fill("#FF0000", fps: 15));
+        using var device = new RecordingDevice();
+        using var themed = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        using var overridden = new RenderLoop(device, TestSensors.Store(), new ListLog(), fpsOverride: 90);
+
+        Assert.Equal(30, themed.Fps);
+        themed.SetTheme(folder.Load());
+        themed.Step(TimeSpan.Zero);
+
+        Assert.Equal(15, themed.Fps);
+        Assert.Equal(60, overridden.Fps);
+    }
+
+    [Fact]
+    public void FrameRendered_sees_every_frame_even_while_the_screen_is_away()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        using var device = new RecordingDevice { OpenFault = _ => new DeviceBusyException("busy") };
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        var sizes = new List<(int, int)>();
+        loop.FrameRendered += frame => sizes.Add((frame.Width, frame.Height));
+        loop.SetTheme(folder.Load());
+
+        loop.Step(TimeSpan.Zero);
+        loop.Step(Seconds(0.1));
+
+        Assert.Equal([(1920, 480), (1920, 480)], sizes);
+    }
+
+    [Fact]
+    public void Start_runs_frames_on_its_own_thread_until_stopped()
+    {
+        using var folder = new TempTheme(Fill("#FF0000", fps: 30));
+        using var device = new RecordingDevice();
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        loop.SetTheme(folder.Load());
+
+        loop.Start();
+        Thread.Sleep(700);
+        loop.Stop();
+        var pushed = device.FramesPushed;
+        Thread.Sleep(100);
+
+        Assert.InRange(pushed, 8, 30);
+        Assert.Equal(pushed, device.FramesPushed);
+        Assert.Equal((1, 1), (device.Opens, device.Closes));
+    }
+}
