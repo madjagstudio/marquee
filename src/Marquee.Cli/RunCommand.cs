@@ -62,20 +62,23 @@ static class RunCommand
 
         using var loop = new RenderLoop(device, store, log, fps);
         PreviewHost? previewHost = null;
+        string? banner = null; // what the preview's banner shows: the theme's warnings (a shader error, say), or a layout error
         var showing = false;
         using var watcher = new ThemeWatcher(folder,
             theme =>
             {
                 foreach (var warning in theme.Warnings) log.Warn(warning);
                 log.Info($"Showing theme '{theme.Name}'.");
-                previewHost?.ShowError(null);
+                banner = theme.Warnings.Count > 0 ? string.Join(Environment.NewLine, theme.Warnings) : null;
+                previewHost?.ShowError(banner);
                 loop.SetTheme(theme);
                 showing = true;
             },
             error =>
             {
                 log.Error(showing ? $"{error.Message} (the last good layout stays on screen until the file is fixed)" : error.Message);
-                previewHost?.ShowError(error.Message);
+                banner = error.Message;
+                previewHost?.ShowError(banner);
             });
 
         // With no last good layout yet, a broken theme at startup has nothing to fall back to.
@@ -111,6 +114,7 @@ static class RunCommand
             previewHost = PreviewHost.Open(Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder))), size);
             previewHost.Closed += stop.Set;
             loop.FrameRendered += previewHost.ShowFrame;
+            previewHost.ShowError(banner); // the startup load happened before the window opened
         }
 
         watcher.Start();

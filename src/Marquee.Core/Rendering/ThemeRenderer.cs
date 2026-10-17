@@ -11,6 +11,7 @@ public sealed class ThemeRenderer : IDisposable
     readonly LoadedTheme _theme;
     readonly SKSurface _surface;
     readonly Dictionary<WidgetSpec, Smoother> _smoothers = new(ReferenceEqualityComparer.Instance);
+    readonly Dictionary<ShaderLayer, SKSurface> _shaderSurfaces = new(ReferenceEqualityComparer.Instance);
 
     public ThemeRenderer(LoadedTheme theme)
     {
@@ -27,7 +28,7 @@ public sealed class ThemeRenderer : IDisposable
         var canvas = _surface.Canvas;
         canvas.Clear(SKColors.Black);
 
-        var ctx = new RenderContext(canvas, sensors, time, _theme.Assets, _smoothers);
+        var ctx = new RenderContext(canvas, sensors, time, _theme.Assets, _smoothers, _shaderSurfaces);
         BackgroundPainter.Paint(ctx, _theme.Spec.Background, SKRect.Create(Size.Width, Size.Height));
         foreach (var widget in _theme.Spec.Widgets)
             WidgetPainter.Paint(ctx, widget, StyleSpec.Empty);
@@ -36,5 +37,9 @@ public sealed class ThemeRenderer : IDisposable
         return _surface.Snapshot();
     }
 
-    public void Dispose() => _surface.Dispose();
+    public void Dispose()
+    {
+        _surface.Dispose();
+        foreach (var surface in _shaderSurfaces.Values) surface.Dispose();
+    }
 }

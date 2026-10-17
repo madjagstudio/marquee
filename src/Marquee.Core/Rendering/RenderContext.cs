@@ -5,12 +5,13 @@ using SkiaSharp;
 namespace Marquee.Core.Rendering;
 
 /// Everything a painter needs for one frame.
-sealed class RenderContext(SKCanvas canvas, SensorSnapshot sensors, TimeSpan time, ThemeAssets assets, Dictionary<WidgetSpec, Smoother> smoothers)
+sealed class RenderContext(SKCanvas canvas, SensorSnapshot sensors, TimeSpan time, ThemeAssets assets,
+    Dictionary<WidgetSpec, Smoother> smoothers, Dictionary<ShaderLayer, SKSurface> shaderSurfaces)
 {
     public SKCanvas Canvas { get; } = canvas;
     public SensorSnapshot Sensors { get; } = sensors;
 
-    /// Animation time: drives pulse and smoothing. Expressions use Sensors.Now instead.
+    /// Animation time: drives pulse, smoothing and shaders' `time`. Expressions use Sensors.Now instead.
     public TimeSpan Time { get; } = time;
 
     public ThemeAssets Assets { get; } = assets;
@@ -22,5 +23,15 @@ sealed class RenderContext(SKCanvas canvas, SensorSnapshot sensors, TimeSpan tim
         if (!smoothers.TryGetValue(widget, out var smoother))
             smoothers[widget] = smoother = new Smoother();
         return smoother.Next(target, Time, widget.SmoothMs);
+    }
+
+    /// A reusable offscreen surface for a scaled shader layer. The renderer owns and disposes these.
+    public SKSurface ShaderSurface(ShaderLayer layer, int width, int height)
+    {
+        if (shaderSurfaces.TryGetValue(layer, out var surface)) return surface;
+        surface = SKSurface.Create(new SKImageInfo(width, height))
+            ?? throw new InvalidOperationException($"Could not create a {width}×{height} surface for shader '{layer.Path}'.");
+        shaderSurfaces[layer] = surface;
+        return surface;
     }
 }
