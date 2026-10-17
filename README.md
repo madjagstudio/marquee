@@ -12,7 +12,9 @@ First supported device: the 8.8" Universal Screen (USB `1CBE:A088`).
     marquee sensors [--sensors lhm|hwinfo]
     marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
 
-Only one program can drive the screen at a time. Quit L-Connect 3 before running Marquee.
+Only one program can drive the screen at a time. Quit L-Connect 3 before running Marquee. Its background service
+(`L-Connect-Service`) keeps the screen even after the app is closed, so end it in Task Manager too; fans keep their
+last settings, and L-Connect can be started again afterwards.
 
 `marquee run themes/example-landscape --preview` shows a theme on the screen and in a preview window (press `1` for 1:1).
 Edit `layout.yaml` and save: the screen updates within a second. If the file has a mistake, the last good layout stays
@@ -67,6 +69,8 @@ See `themes/example-landscape` and `themes/example-portrait`. A full theme autho
 
 - **LibreHardwareMonitor** (`--sensors lhm`, the default) reads sensors directly. CPU temperatures and motherboard
   sensors need an elevated terminal and the [PawnIO](https://pawnio.eu/) driver; without them those keys show `—`.
+  On some AMD cards (verified: Radeon RX 7800 XT) it reports only GPU load and memory, so `gpu.temp`, `gpu.clock`
+  and `gpu.power` stay `—`; use HWiNFO for those.
 - **HWiNFO** (`--sensors hwinfo`) reads HWiNFO's shared memory instead. Start HWiNFO and turn on
   Settings → Shared Memory Support.
 
@@ -75,6 +79,7 @@ See `themes/example-landscape` and `themes/example-portrait`. A full theme autho
 | Device | Firmware | Notes |
 |---|---|---|
 | 8.8" Universal Screen (`1CBE:A088`) | `lianli88_0001_0023` | `portrait` is upright when mounted vertically; brightness works; the image persists after Marquee exits; about 21 ms per frame (~47 fps) including JPEG encoding |
+| 8.8" Universal Screen (`1CBE:A088`) with `marquee run` | `lianli88_0001_0023` | example themes at 30 fps for 12 min (render ~2.5 ms, send ~18 ms); `--fps 60` tops out at ~51 fps; hot reload in ~2 s with the last good layout kept on errors; letterboxing on an orientation mismatch; reconnects after unplugging |
 
 ## Credits
 
