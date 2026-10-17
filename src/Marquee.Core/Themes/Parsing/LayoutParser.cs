@@ -8,9 +8,11 @@ public static class LayoutParser
     public static ThemeSpec Parse(string yaml)
     {
         var root = Yaml.Load(yaml) ?? throw new ThemeException("layout.yaml is empty. It needs at least a canvas section.");
-        var fields = Yaml.Map(root, "layout.yaml", "canvas", "background");
+        var fields = Yaml.Map(root, "layout.yaml", "canvas", "styles", "background");
 
         var canvas = Canvas(fields.Required("canvas"));
+        // Parsed (and its extends chains checked) even before any widget uses it, so a broken style always reports.
+        _ = StyleTable.Parse(fields.Optional("styles"));
         var background = fields.Optional("background") is { } b ? BackgroundParser.Parse(b) : [];
         return new ThemeSpec(canvas, background);
     }
