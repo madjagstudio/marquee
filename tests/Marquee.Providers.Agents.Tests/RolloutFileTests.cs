@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Marquee.Providers.Agents.Codex;
 using Marquee.Providers.Agents.Tests.TestSupport;
@@ -39,15 +40,49 @@ public class RolloutFileTests : IDisposable
     [Fact]
     public void The_line_cut_by_the_limit_is_skipped()
     {
-        var path = Write("aaaaaaaaaa\nbbb\nccc\n"); // the last 9 bytes are "bbb\nccc\n" plus one 'a'
+        var path = Write("aaaaaaaaaa\nbbb\nccc\n"); // the last 10 bytes are "a\nbbb\nccc\n": the window starts mid-line, so that "a" is cut
 
-        Assert.Equal(["ccc", "bbb"], RolloutFile.LinesFromEnd(path, 9));
+        Assert.Equal(["ccc", "bbb"], RolloutFile.LinesFromEnd(path, 10));
+    }
+
+    [Fact]
+    public void A_window_with_no_newline_yields_nothing()
+    {
+        var path = Write("one\n" + new string('a', 50) + "\n"); // the last 10 bytes are all of one long line's tail
+
+        Assert.Empty(RolloutFile.LinesFromEnd(path, 10));
+    }
+
+    [Fact]
+    public void A_crlf_split_across_a_chunk_boundary_still_loses_its_cr()
+    {
+        // Chunks are read from the end of the file in 64 KB steps, so the first chunk starts at the '\n' (index 6)
+        // and the next one ends with the '\r'.
+        var tail = new string('x', 64 * 1024 - 2);
+        var path = Write($"alpha\r\n{tail}\n");
+        Assert.Equal(64 * 1024 + 6, new FileInfo(path).Length);
+
+        Assert.Equal([tail, "alpha"], RolloutFile.LinesFromEnd(path, 10_000_000));
+    }
+
+    [Fact]
+    public void A_multi_megabyte_line_is_read_in_linear_time()
+    {
+        var huge = new string('y', 3_000_000);
+        var path = Write($"{huge}\ntail\n");
+
+        var watch = Stopwatch.StartNew();
+        var lines = RolloutFile.LinesFromEnd(path, 8 * 1024 * 1024).ToList();
+        watch.Stop();
+
+        Assert.Equal(["tail", huge], lines);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(2), $"took {watch.Elapsed}");
     }
 
     [Fact]
     public void Lines_longer_than_a_chunk_and_multibyte_text_survive_chunk_boundaries()
     {
-        var long1 = string.Concat(Enumerable.Repeat("é—€", 40_000)); // 7 bytes each: 280 KB, several chunks
+        var long1 = string.Concat(Enumerable.Repeat("é—€", 40_000)); // 8 bytes each (2+3+3): 320 KB, several chunks
         var long2 = new string('x', 70_000);
         var path = Write($"{long1}\nshort\n{long2}\n");
 
