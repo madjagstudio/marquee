@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Marquee.Core.Devices;
 using Marquee.Core.Devices.UniversalScreen88;
 using Marquee.Core.Usb;
@@ -32,6 +33,7 @@ static int ShowImage(string file, string[] options)
     var rotation = Rotation.Clockwise;
     int? brightness = null;
     string? sink = null;
+    var repeat = 1;
 
     for (var i = 0; i < options.Length; i++)
     {
@@ -42,6 +44,7 @@ static int ShowImage(string file, string[] options)
             case "--rotation" when value is "ccw": rotation = Rotation.CounterClockwise; i++; break;
             case "--brightness" when int.TryParse(value, out var b): brightness = b; i++; break;
             case "--sink" when value is not null: sink = value; i++; break;
+            case "--repeat" when int.TryParse(value, out var n) && n > 0: repeat = n; i++; break;
             default: return Usage();
         }
     }
@@ -64,9 +67,13 @@ static int ShowImage(string file, string[] options)
     {
         device.Open();
         if (brightness is { } level) device.SetBrightness(level);
-        device.PushFrame(image);
+        var stopwatch = Stopwatch.StartNew();
+        for (var i = 0; i < repeat; i++) device.PushFrame(image);
+        stopwatch.Stop();
         var firmware = device is UniversalScreen88Device screen && screen.FirmwareVersion is { } v ? $" (firmware {v})" : "";
         Console.WriteLine($"Sent {file} to {device.Info.Name}{firmware}.");
+        if (repeat > 1)
+            Console.WriteLine($"Pushed {repeat} frames, average {stopwatch.Elapsed.TotalMilliseconds / repeat:F1} ms per frame");
         return 0;
     }
     catch (DeviceBusyException ex)
@@ -93,7 +100,7 @@ static int Usage()
     Console.Error.WriteLine("""
         Usage:
           marquee devices
-          marquee show-image <file> [--rotation cw|ccw] [--brightness 0-100] [--sink <folder>]
+          marquee show-image <file> [--rotation cw|ccw] [--brightness 0-100] [--sink <folder>] [--repeat N]
         """);
     return 2;
 }

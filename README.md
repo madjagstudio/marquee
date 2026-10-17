@@ -8,7 +8,7 @@ First supported device: the 8.8" Universal Screen (USB `1CBE:A088`).
 ## Usage
 
     marquee devices
-    marquee show-image picture.png [--rotation cw|ccw] [--brightness 0-100] [--sink <folder>]
+    marquee show-image picture.png [--rotation cw|ccw] [--brightness 0-100] [--sink <folder>] [--repeat N]
 
 Only one program can drive the screen at a time. Quit L-Connect 3 before running Marquee.
 
