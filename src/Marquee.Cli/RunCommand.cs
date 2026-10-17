@@ -4,6 +4,7 @@ using Marquee.Core.Rendering;
 using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
 using Marquee.Preview;
+using Marquee.Providers.Agents.Claude;
 
 /// `marquee run <theme-folder>`: live sensors → theme → screen (or --sink), with hot reload and an optional preview.
 static class RunCommand
@@ -40,6 +41,8 @@ static class RunCommand
         using var providers = new ProviderRunner(store, log);
         if (SensorSources.Create(sensors, log) is { } provider)
             providers.Start(provider);
+        using var statusLine = new StatusLineServer(store, log);
+        statusLine.Start();
 
         var size = orientation.CanvasSize();
         using var device = sink is not null ? new FileSinkDevice(sink, size.Width, size.Height) : Screens.Find(orientation);

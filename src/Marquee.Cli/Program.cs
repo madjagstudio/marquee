@@ -13,6 +13,8 @@ return args switch
     ["show-image", var file, .. var options] => ShowImage(file, options),
     ["sensors", .. var options] => SensorsCommand.Run(options) ?? Usage(),
     ["run", var folder, .. var options] => RunCommand.Run(folder, options) ?? Usage(),
+    ["statusline"] => StatusLineCommand.Run(),
+    ["setup-claude", .. var options] => SetupClaudeCommand.Run(options) ?? Usage(),
     _ => Usage(),
 };
 
@@ -107,6 +109,8 @@ static int Usage()
           marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
           marquee sensors [--sensors lhm|hwinfo]
           marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
+          marquee setup-claude [--undo] [--dry-run]
+          marquee statusline        (Claude Code runs this; see setup-claude)
         """);
     return 2;
 }
