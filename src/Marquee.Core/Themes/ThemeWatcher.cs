@@ -24,11 +24,12 @@ public sealed class ThemeWatcher : IDisposable
         _loaded = loaded;
         _failed = failed;
         _debounce = debounce ?? DefaultDebounce;
-        _timer = new Timer(_ => Reload(), null, Timeout.Infinite, Timeout.Infinite);
+        _timer = new Timer(_ => ReloadFromTimer(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
-    /// Loads the theme now and reports it through the callbacks. True if it loaded.
-    public bool Reload()
+    /// Loads the theme now and reports it through the callbacks. True if it loaded. With `retryIfLocked` false (the
+    /// startup load), a locked or unreadable file is reported through `failed` at once instead of being retried.
+    public bool Reload(bool retryIfLocked = true)
     {
         lock (_gate)
         {
@@ -47,7 +48,7 @@ public sealed class ThemeWatcher : IDisposable
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 // Usually the editor still has the file open mid-save. Try again shortly before calling it an error.
-                if (++_lockedRetries <= MaxLockedRetries)
+                if (retryIfLocked && ++_lockedRetries <= MaxLockedRetries)
                 {
                     Schedule();
                     return false;
@@ -55,6 +56,13 @@ public sealed class ThemeWatcher : IDisposable
 
                 _lockedRetries = 0;
                 _failed(new ThemeException($"Could not read the theme: {ex.Message}"));
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // Anything else (a path the OS rejects, a codec bug) is still just a broken theme, not a crash.
+                _lockedRetries = 0;
+                _failed(new ThemeException($"Could not load the theme: {ex.Message}"));
                 return false;
             }
 
@@ -85,6 +93,19 @@ public sealed class ThemeWatcher : IDisposable
         _watcher?.Dispose();
         _timer.Dispose();
         lock (_gate) _disposed = true;
+    }
+
+    void ReloadFromTimer()
+    {
+        try
+        {
+            Reload();
+        }
+        catch (Exception)
+        {
+            // This runs on a thread-pool thread, where an unhandled exception ends the process: a throwing
+            // `loaded`/`failed` callback must not take the process down.
+        }
     }
 
     void Schedule()

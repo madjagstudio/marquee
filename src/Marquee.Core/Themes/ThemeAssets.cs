@@ -15,33 +15,38 @@ public sealed class ThemeAssets : IDisposable
     internal static ThemeAssets Load(string folder, ThemeSpec spec, List<string> warnings)
     {
         var assets = new ThemeAssets();
-        var widgets = Flatten(spec.Widgets).ToList();
-
-        var imagePaths = spec.Background.OfType<ImageLayer>().Select(l => l.Path)
-            .Concat(widgets.OfType<ImageWidget>().Select(w => w.Path))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-        foreach (var path in imagePaths)
-            if (LoadImage(folder, path, warnings) is { } image)
-                assets._images[path] = image;
-
-        var fonts = widgets.SelectMany(w => w.When.Select(r => r.Style).Prepend(w.Style))
-            .Select(s => s.Font)
-            .OfType<string>()
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-        foreach (var font in fonts)
+        try
         {
-            if (IsFontFile(font))
+            var widgets = Flatten(spec.Widgets).ToList();
+
+            var imagePaths = spec.Background.OfType<ImageLayer>().Select(l => l.Path)
+                .Concat(widgets.OfType<ImageWidget>().Select(w => w.Path))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            foreach (var path in imagePaths)
+                if (LoadImage(folder, path, warnings) is { } image)
+                    assets._images[path] = image;
+
+            var fonts = widgets.SelectMany(w => w.When.Select(r => r.Style).Prepend(w.Style))
+                .Select(s => s.Font)
+                .OfType<string>()
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            foreach (var font in fonts)
             {
-                if (LoadFontFile(folder, font, warnings) is { } typeface)
-                    assets._fontFiles[font] = typeface;
-            }
-            else if (!IsBundled(font))
-            {
-                // The font manager owns this typeface, and other themes may share it, so it is never disposed here.
-                var match = SKFontManager.Default.MatchFamily(font);
-                if (match is null)
+                if (IsFontFile(font))
+                {
+                    if (LoadFontFile(folder, font, warnings) is { } typeface)
+                        assets._fontFiles[font] = typeface;
+                }
+                else if (!IsBundled(font) && !IsInstalled(font))
+                {
                     warnings.Add($"Font '{font}' is not installed on this PC; using {BundledFonts.Family} instead.");
+                }
             }
+        }
+        catch
+        {
+            assets.Dispose();
+            throw;
         }
 
         return assets;
@@ -82,9 +87,28 @@ public sealed class ThemeAssets : IDisposable
     static bool IsFontFile(string font) =>
         Path.GetExtension(font).ToLowerInvariant() is ".ttf" or ".otf" or ".ttc";
 
+    static bool IsInstalled(string font)
+    {
+        try
+        {
+            // The font manager owns this typeface, and other themes may share it, so it is never disposed here.
+            return SKFontManager.Default.MatchFamily(font) is not null;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     static SKImage? LoadImage(string folder, string path, List<string> warnings)
     {
-        if (InsideFolder(folder, path) is not { } full)
+        if (!TryInsideFolder(folder, path, out var full))
+        {
+            warnings.Add($"Image '{path}' is not a valid path and was skipped.");
+            return null;
+        }
+
+        if (full is null)
         {
             warnings.Add($"Image '{path}' is outside the theme folder and was skipped.");
             return null;
@@ -96,23 +120,58 @@ public sealed class ThemeAssets : IDisposable
             return null;
         }
 
-        using var bitmap = SKBitmap.Decode(full);
-        if (bitmap is null)
+        try
         {
-            warnings.Add($"Image '{path}' could not be read and was skipped.");
-            return null;
+            using var bitmap = SKBitmap.Decode(full);
+            if (bitmap is not null)
+                return SKImage.FromBitmap(bitmap);
+        }
+        catch (Exception)
+        {
+            // Reported below like any other unreadable image.
         }
 
-        return SKImage.FromBitmap(bitmap);
+        warnings.Add($"Image '{path}' could not be read and was skipped.");
+        return null;
     }
 
     static SKTypeface? LoadFontFile(string folder, string font, List<string> warnings)
     {
-        var full = InsideFolder(folder, font);
-        var typeface = full is not null && File.Exists(full) ? SKTypeface.FromFile(full) : null;
+        if (!TryInsideFolder(folder, font, out var full))
+        {
+            warnings.Add($"Font file '{font}' is not a valid path; using {BundledFonts.Family} instead.");
+            return null;
+        }
+
+        SKTypeface? typeface = null;
+        try
+        {
+            typeface = full is not null && File.Exists(full) ? SKTypeface.FromFile(full) : null;
+        }
+        catch (Exception)
+        {
+            // Reported below like any other unreadable font file.
+        }
+
         if (typeface is null)
             warnings.Add($"Font file '{font}' was not found or could not be read; using {BundledFonts.Family} instead.");
         return typeface;
+    }
+
+    /// False if `relative` can't be resolved as a path at all (a NUL character, say). Otherwise `full` is the
+    /// full path, or null when it leaves the theme folder.
+    static bool TryInsideFolder(string folder, string relative, out string? full)
+    {
+        try
+        {
+            full = InsideFolder(folder, relative);
+            return true;
+        }
+        catch (Exception)
+        {
+            full = null;
+            return false;
+        }
     }
 
     /// The full path, if `relative` stays inside the theme folder. Shared themes must not reach elsewhere on disk.

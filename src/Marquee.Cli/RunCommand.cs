@@ -68,7 +68,7 @@ static class RunCommand
             });
 
         // With no last good layout yet, a broken theme at startup has nothing to fall back to.
-        if (!watcher.Reload()) return 1;
+        if (!watcher.Reload(retryIfLocked: false)) return 1;
 
         if (frames is { } count)
         {

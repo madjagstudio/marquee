@@ -50,6 +50,34 @@ public class ThemeWatcherTests
     }
 
     [Fact]
+    public void Reload_reports_a_theme_with_an_unresolvable_image_path_as_loaded()
+    {
+        using var folder = new TempTheme(Fill("#FF0000") + "  - image: \"a\\0.png\"\n");
+        var events = new Events();
+        using var watcher = events.Watch(folder.Folder);
+
+        Assert.True(watcher.Reload());
+
+        using var theme = Assert.Single(events.Loaded);
+        Assert.Equal(["Image 'a\0.png' is not a valid path and was skipped."], theme.Warnings);
+        Assert.Empty(events.Failed);
+    }
+
+    [Fact]
+    public void Reload_without_retrying_reports_a_locked_layout_as_failed()
+    {
+        using var folder = new TempTheme(Fill("#FF0000"));
+        var events = new Events();
+        using var watcher = events.Watch(folder.Folder);
+
+        using (File.Open(folder.LayoutPath, FileMode.Open, FileAccess.Read, FileShare.None))
+            Assert.False(watcher.Reload(retryIfLocked: false));
+
+        Assert.StartsWith("Could not read the theme: ", Assert.Single(events.Failed).Message);
+        Assert.Empty(events.Loaded);
+    }
+
+    [Fact]
     public void Saving_the_layout_reloads_it()
     {
         using var folder = new TempTheme(Fill("#FF0000"));

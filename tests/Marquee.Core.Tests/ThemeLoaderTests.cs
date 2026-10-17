@@ -72,6 +72,28 @@ public class ThemeLoaderTests
     }
 
     [Fact]
+    public void Paths_that_cannot_be_resolved_become_warnings()
+    {
+        using var folder = new TempTheme(Canvas + """
+            background:
+              - image: "a\0.png"
+            widgets:
+              - { type: text, at: [0, 0], size: [10, 10], text: hi, style: { font: "b\0.ttf" } }
+            """);
+
+        using var theme = folder.Load();
+
+        Assert.Null(theme.Assets.Image("a\0.png"));
+        Assert.Same(BundledFonts.Regular, theme.Assets.Typeface("b\0.ttf", 400));
+        Assert.Equal(
+            [
+                "Image 'a\0.png' is not a valid path and was skipped.",
+                "Font file 'b\0.ttf' is not a valid path; using Inter instead.",
+            ],
+            theme.Warnings);
+    }
+
+    [Fact]
     public void Default_font_is_the_bundled_inter()
     {
         using var folder = new TempTheme(Canvas);
