@@ -156,6 +156,11 @@ public sealed class StatusLineServer(SensorStore store, ILog log, string? pipeNa
             {
                 Problem(ex.Message);
             }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Defense in depth: whatever else a message provokes must not stop the pipe server.
+                Problem(ex.Message);
+            }
         }
     }
 

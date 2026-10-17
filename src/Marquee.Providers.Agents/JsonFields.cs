@@ -18,10 +18,19 @@ static class JsonFields
             ? number
             : null;
 
-    public static string? String(JsonElement parent, string name) =>
-        parent.ValueKind == JsonValueKind.Object && parent.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
+    public static string? String(JsonElement parent, string name)
+    {
+        if (parent.ValueKind != JsonValueKind.Object || !parent.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.String)
+            return null;
+        try
+        {
+            return value.GetString();
+        }
+        catch (InvalidOperationException)
+        {
+            return null; // text that isn't valid UTF-16 (a lone surrogate escape) reads as missing
+        }
+    }
 
     /// True when the field exists and is not JSON null.
     public static bool Has(JsonElement parent, string name) =>

@@ -17,6 +17,7 @@ public sealed class CustomValuesServer(SensorStore store, ILog log, int port = C
 {
     public const int DefaultPort = 47913;
     public const int MaxBodyBytes = 64 * 1024;
+    static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(5);
 
     readonly HttpListener _listener = new();
     readonly HashSet<string> _keys = new(StringComparer.Ordinal);
@@ -29,6 +30,17 @@ public sealed class CustomValuesServer(SensorStore store, ILog log, int port = C
     public bool Start()
     {
         _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        try
+        {
+            // One stalled local client must not hold up everyone else's pushes for minutes.
+            _listener.TimeoutManager.EntityBody = ClientTimeout;
+            _listener.TimeoutManager.HeaderWait = ClientTimeout;
+        }
+        catch (PlatformNotSupportedException)
+        {
+            // Only Windows' HTTP server has these limits; elsewhere the defaults apply.
+        }
+
         try
         {
             _listener.Start();
@@ -47,9 +59,19 @@ public sealed class CustomValuesServer(SensorStore store, ILog log, int port = C
     public void Dispose()
     {
         _stopping = true;
-        if (_listener.IsListening) _listener.Stop();
-        _loop?.Wait(TimeSpan.FromSeconds(2)); // Listen never faults: it catches everything
-        _listener.Close();
+        try
+        {
+            if (_listener.IsListening) _listener.Stop();
+            _loop?.Wait(TimeSpan.FromSeconds(2));
+        }
+        catch (AggregateException)
+        {
+            // Listen reports its own failures; shutting down never throws.
+        }
+        finally
+        {
+            _listener.Close();
+        }
     }
 
     async Task Listen()
@@ -77,6 +99,19 @@ public sealed class CustomValuesServer(SensorStore store, ILog log, int port = C
             catch (Exception ex) when (ex is HttpListenerException or IOException or ObjectDisposedException)
             {
                 // The client hung up, or Marquee is stopping; nothing to tell anyone.
+            }
+            catch (Exception ex)
+            {
+                // Nothing a request provokes may stop the loop: say so, answer 500 if it can still be answered, go on.
+                log.Error($"Custom values: a request failed: {ex.Message}");
+                try
+                {
+                    Respond(context.Response, 500, "Marquee could not handle the request.");
+                }
+                catch
+                {
+                    // The answer failed too (the client is gone); the loop carries on.
+                }
             }
         }
     }

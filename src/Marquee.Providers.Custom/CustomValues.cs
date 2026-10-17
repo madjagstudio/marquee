@@ -22,7 +22,8 @@ public sealed record CustomUpdate(IReadOnlyList<KeyValuePair<string, SensorValue
 
 /// The JSON body of `POST /values`: `{"custom.build": "ok", "custom.queue": 12, "ttl": "30s"}`. Keys start with
 /// "custom." and are made of the characters theme expressions accept in a key; values are numbers or short strings;
-/// `ttl` is seconds or a duration such as "30s", "5m", "2h". An update is applied whole or not at all.
+/// `ttl` is seconds or a duration such as "30s", "5m", "2h". An update is validated whole before anything is
+/// written; the writes are then made one key at a time, so a frame drawn meanwhile may see part of an update.
 public static partial class CustomValues
 {
     public const string Prefix = "custom.";
@@ -45,6 +46,7 @@ public static partial class CustomValues
         }
 
         using (document)
+        try
         {
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object)
@@ -70,11 +72,17 @@ public static partial class CustomValues
             if (values.Count > MaxKeysPerUpdate) throw new CustomValuesException($"At most {MaxKeysPerUpdate} values can be set at once.");
             return new CustomUpdate(values, ttl);
         }
+        catch (InvalidOperationException ex)
+        {
+            // Text that parses as JSON but isn't valid UTF-16 (a lone surrogate escape) throws when it is read.
+            throw new CustomValuesException($"The body is not valid JSON text: {ex.Message}");
+        }
     }
 
     static SensorValue Value(string key, JsonElement value) => value.ValueKind switch
     {
         JsonValueKind.Number when value.TryGetDouble(out var number) && double.IsFinite(number) => SensorValue.Of(number),
+        JsonValueKind.Number => throw new CustomValuesException($"{key}: numbers must be finite."),
         JsonValueKind.String when value.GetString()!.Length <= MaxTextLength => SensorValue.Of(value.GetString()!),
         JsonValueKind.String => throw new CustomValuesException($"{key}: text values are at most {MaxTextLength} characters."),
         _ => throw new CustomValuesException($"{key}: values must be numbers or text, not {value.ValueKind.ToString().ToLowerInvariant()}."),

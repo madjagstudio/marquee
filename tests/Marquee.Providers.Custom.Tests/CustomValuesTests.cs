@@ -72,6 +72,11 @@ public class CustomValuesTests
     [InlineData("""{"custom.a":{"b":1}}""", "custom.a: values must be numbers or text, not object.")]
     [InlineData("""{"custom.a":1,"ttl":"soon"}""", "ttl must be a positive number of seconds")]
     [InlineData("""{"custom.a":1,"ttl":0}""", "ttl must be a positive number of seconds")]
+    [InlineData("""{"custom.a":"\uD800"}""", "The body is not valid JSON text")]
+    [InlineData("""{"custom.\uD800":1}""", "The body is not valid JSON text")]
+    [InlineData("""{"custom.a":1,"ttl":"\uDC00"}""", "The body is not valid JSON text")]
+    [InlineData("""{"custom.a":1e400}""", "custom.a: numbers must be finite.")]
+    [InlineData("""{"custom.a":1,"ttl":1e400}""", "ttl must be a positive number of seconds")]
     public void Refuses_bad_updates(string json, string message) =>
         Assert.StartsWith(message, Assert.Throws<CustomValuesException>(() => CustomValues.Parse(json)).Message);
 

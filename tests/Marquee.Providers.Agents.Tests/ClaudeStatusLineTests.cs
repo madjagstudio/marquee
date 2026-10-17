@@ -46,8 +46,16 @@ public class ClaudeStatusLineTests
     public void Resets_at_may_be_seconds_milliseconds_iso_or_missing(string json, double? expected) =>
         Assert.Equal(expected, Parse(json).FiveHour!.ResetsAt);
 
+    [Fact]
+    public void A_lone_surrogate_in_a_text_field_reads_as_missing()
+    {
+        var status = Parse("""{"rate_limits":{"five_hour":{"used_percentage":5,"resets_at":"\uD800"}}}""");
+
+        Assert.Null(status.FiveHour!.ResetsAt);
+    }
+
     [Theory]
-    [InlineData("not json", "the status-line input is not valid JSON")]
+    [InlineData("not json","the status-line input is not valid JSON")]
     [InlineData("[1, 2]", "the status-line input is not a JSON object")]
     [InlineData("""{"rate_limits":{"five_hour":"42%"}}""", "rate_limits.five_hour is not an object")]
     [InlineData("""{"rate_limits":{"seven_day":{"used":17}}}""", "rate_limits.seven_day has no used_percentage number")]

@@ -130,7 +130,20 @@ public sealed class CustomValuesServerTests : IDisposable
     }
 
     [Fact]
-    public void Requests_from_the_network_are_refused()
+    public void A_bad_request_does_not_stop_the_server()
+    {
+        // A lone surrogate escape parses as JSON but throws when read as text.
+        using (var bad = Post("""{"custom.a":"\uD800"}""")) Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+
+        using var good = Post("""{"custom.b":2}""");
+
+        Assert.Equal(HttpStatusCode.NoContent, good.StatusCode);
+        Assert.Equal(2.0, Read("custom.b"));
+        // The fixture's Dispose must not throw either.
+    }
+
+    [Fact]
+    public async Task Requests_from_the_network_are_refused()
     {
         // Windows routes `Host: localhost` to a localhost listener on every interface; this PC's own LAN address
         // stands in for another machine. With only the 127.0.0.1 prefix the connection is refused outright; if it
@@ -148,9 +161,12 @@ public sealed class CustomValuesServerTests : IDisposable
             using var client = new TcpClient();
             try
             {
-                client.Connect(lan, _server.Port);
+                // A firewalled PC drops the connection instead of refusing it, so don't wait for the OS timeout.
+                var connect = client.ConnectAsync(lan, _server.Port);
+                if (await Task.WhenAny(connect, Task.Delay(3000)) != connect) continue; // unreachable
+                await connect;
             }
-            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionRefused)
+            catch (SocketException ex) when (ex.SocketErrorCode is SocketError.ConnectionRefused or SocketError.TimedOut)
             {
                 continue;
             }
