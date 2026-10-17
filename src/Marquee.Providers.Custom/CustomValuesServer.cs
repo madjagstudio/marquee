@@ -17,7 +17,7 @@ public sealed class CustomValuesServer(SensorStore store, ILog log, int port = C
 {
     public const int DefaultPort = 47913;
     public const int MaxBodyBytes = 64 * 1024;
-    static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(5);
+    internal static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(5);
 
     readonly HttpListener _listener = new();
     readonly HashSet<string> _keys = new(StringComparer.Ordinal);

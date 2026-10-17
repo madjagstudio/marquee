@@ -8,6 +8,10 @@ namespace Marquee.Providers.Custom;
 /// `marquee push`: sends one value to a running Marquee's custom-values endpoint.
 public static class CustomValuesClient
 {
+    /// How long a push waits for an answer. The server takes one request at a time and gives each client up to 5 s
+    /// to send its body, so a push queued behind a stalled client needs more than that.
+    public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
+
     /// The update as JSON. A value that reads as a number is sent as one; anything else is text.
     public static string Body(string key, string value, TimeSpan? ttl)
     {
@@ -29,7 +33,7 @@ public static class CustomValuesClient
     /// Null on success, or what went wrong in words.
     public static string? Push(int port, string key, string value, TimeSpan? ttl)
     {
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        using var http = new HttpClient { Timeout = Timeout };
         using var content = new StringContent(Body(key, value, ttl), Encoding.UTF8);
         content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         try
@@ -45,7 +49,7 @@ public static class CustomValuesClient
         }
         catch (TaskCanceledException)
         {
-            return $"Marquee didn't answer on 127.0.0.1:{port} within 5 s.";
+            return $"Marquee didn't answer on 127.0.0.1:{port} within {(int)Timeout.TotalSeconds} s.";
         }
     }
 }

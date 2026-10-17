@@ -81,6 +81,15 @@ public sealed class CustomValuesServerTests : IDisposable
     }
 
     [Fact]
+    public void Push_client_waits_out_another_clients_stall()
+    {
+        // The server handles one request at a time and gives a stalled client the full body timeout, so a push queued
+        // behind one needs that long plus its own.
+        Assert.True(CustomValuesClient.Timeout >= 2 * CustomValuesServer.ClientTimeout + TimeSpan.FromSeconds(5),
+            $"push gives up after {CustomValuesClient.Timeout}, the server allows {CustomValuesServer.ClientTimeout} per client");
+    }
+
+    [Fact]
     public void Push_client_explains_that_nothing_is_listening() =>
         Assert.StartsWith("Marquee isn't running", CustomValuesClient.Push(FreePort(), "custom.a", "1", null));
 
