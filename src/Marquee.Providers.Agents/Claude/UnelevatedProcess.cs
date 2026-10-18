@@ -53,7 +53,7 @@ internal static class UnelevatedProcess
     }
 
     static InvalidOperationException CannotStart(string detail) =>
-        new($"Marquee is running elevated and couldn't start claude without elevation ({detail}); Claude Code limits come only from the status line");
+        new($"Marquee is running elevated and couldn't start claude without elevation ({detail}); Claude Code limits come only from the status line.");
 
     static Win32Exception Failed(string call)
     {
@@ -82,6 +82,8 @@ internal static class UnelevatedProcess
                 using var shellUser = new WindowsIdentity(token.DangerousGetHandle());
                 using var marqueeUser = WindowsIdentity.GetCurrent();
                 if (shellUser.User != marqueeUser.User) throw CannotStart("the desktop shell runs as another Windows account");
+                if (!MayRunClaudeAs(ProcessElevation.ElevationType(token)))
+                    throw CannotStart("the desktop shell is itself elevated, so its token isn't an unelevated one");
                 return token;
             }
             catch
@@ -91,6 +93,12 @@ internal static class UnelevatedProcess
             }
         }
     }
+
+    /// Whether a token of this TokenElevationType may start `claude`: Limited (the unelevated half of an administrator's
+    /// split token) and Default (UAC is off or a standard user, so there is no boundary to protect) are fine. Full means
+    /// Explorer itself is elevated (restarted from an elevated Task Manager, say), and anything unknown is refused too.
+    internal static bool MayRunClaudeAs(int elevationType) =>
+        elevationType is TokenElevationTypeDefault or TokenElevationTypeLimited;
 
     static ProcessResult Run(KernelHandle? userToken, string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout)
     {

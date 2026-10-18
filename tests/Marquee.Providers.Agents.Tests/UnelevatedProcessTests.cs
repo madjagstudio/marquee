@@ -69,6 +69,32 @@ public class UnelevatedProcessTests(ITestOutputHelper output) : IDisposable
         }
     }
 
+    [Theory]
+    [InlineData(NativeMethods.TokenElevationTypeDefault, true)]  // UAC off (or a standard user): no boundary to protect
+    [InlineData(NativeMethods.TokenElevationTypeLimited, true)]  // an administrator's filtered token
+    [InlineData(NativeMethods.TokenElevationTypeFull, false)]    // Explorer itself is elevated
+    [InlineData(0, false)]
+    [InlineData(4, false)]
+    public void Only_a_default_or_limited_shell_token_may_start_claude(int elevationType, bool allowed) =>
+        Assert.Equal(allowed, UnelevatedProcess.MayRunClaudeAs(elevationType));
+
+    [Fact]
+    public void The_shell_tokens_elevation_type_is_readable_and_allowed_here()
+    {
+        // The dev PC's Explorer is unelevated (Limited, or Default with UAC off). A CI service session has no shell.
+        NativeMethods.KernelHandle token;
+        try
+        {
+            token = UnelevatedProcess.ShellUserToken();
+        }
+        catch (InvalidOperationException) when (NativeMethods.GetShellWindow() == IntPtr.Zero)
+        {
+            return;
+        }
+
+        using (token) Assert.True(UnelevatedProcess.MayRunClaudeAs(ProcessElevation.ElevationType(token)));
+    }
+
     [Fact]
     public void Run_starts_the_child_with_the_shell_token_when_elevated_and_refuses_cleanly_otherwise()
     {
@@ -91,7 +117,7 @@ public class UnelevatedProcessTests(ITestOutputHelper output) : IDisposable
         {
             output.WriteLine(ex.Message);
             Assert.StartsWith("Marquee is running elevated and couldn't start claude without elevation (", ex.Message);
-            Assert.EndsWith("); Claude Code limits come only from the status line", ex.Message);
+            Assert.EndsWith("); Claude Code limits come only from the status line.", ex.Message);
             Assert.True(!elevated || NativeMethods.GetShellWindow() == IntPtr.Zero, ex.Message);
         }
     }

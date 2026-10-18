@@ -228,7 +228,7 @@ public class ClaudeUsageTests : IDisposable
         var ex = Assert.Throws<InvalidOperationException>(() => h.Provider.Poll(h.Store));
 
         Assert.Equal(
-            "claude -p /usage listed no limits (an API-key login, or Claude Code couldn't fetch them and showed its last-known values); keeping the last values",
+            "claude -p /usage listed no limits (an API-key login, or Claude Code couldn't fetch them and showed its last-known values); the last values stay until they reset.",
             ex.Message);
         Assert.Equal(1, h.Fetches);
         Assert.Null(Clock.Read(h.Store, "claude.updated_at"));
@@ -482,7 +482,7 @@ public class ClaudeUsageTests : IDisposable
         var ex = Assert.Throws<InvalidOperationException>(() => h.Fetch());
 
         Assert.Equal(
-            "claude.exe wasn't found on PATH, in ~/.local/bin or in the desktop app; Claude Code limits come only from the status line",
+            "claude.exe wasn't found on PATH, in ~/.local/bin or in the desktop app; Claude Code limits come only from the status line.",
             ex.Message);
         Assert.Empty(h.Runs);
         Assert.Empty(h.Log.Entries);
@@ -775,7 +775,7 @@ public class ClaudeUsageTests : IDisposable
     {
         var folder = _dir.File(@"made\here");
 
-        var output = ClaudeCli.RunUsage("powershell.exe", PowerShell("(Get-Location).Path"), folder, TimeSpan.FromSeconds(30));
+        var output = ClaudeCli.RunUsage("powershell.exe", PowerShell("(Get-Location).Path"), folder, TimeSpan.FromSeconds(30), ClaudeCli.RunProcess);
 
         Assert.True(Directory.Exists(folder));
         Assert.EndsWith(@"made\here", output.Trim());
@@ -787,7 +787,7 @@ public class ClaudeUsageTests : IDisposable
         var script = """Write-Output '{"type":"result","is_error":true,"result":"Not logged in"}'; exit 3""";
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            ClaudeCli.RunUsage("powershell.exe", PowerShell(script), _dir.Path, TimeSpan.FromSeconds(30)));
+            ClaudeCli.RunUsage("powershell.exe", PowerShell(script), _dir.Path, TimeSpan.FromSeconds(30), ClaudeCli.RunProcess));
 
         Assert.Contains("3", ex.Message);
         Assert.Contains("Not logged in", ex.Message);

@@ -18,10 +18,10 @@ public sealed class ClaudeUsageProvider : ISensorProvider
     public static readonly TimeSpan MaxNoLimitsWait = TimeSpan.FromMinutes(30);
 
     internal const string NoLimitsMessage =
-        "claude -p /usage listed no limits (an API-key login, or Claude Code couldn't fetch them and showed its last-known values); keeping the last values";
+        "claude -p /usage listed no limits (an API-key login, or Claude Code couldn't fetch them and showed its last-known values); the last values stay until they reset.";
 
     internal const string NotFoundMessage =
-        "claude.exe wasn't found on PATH, in ~/.local/bin or in the desktop app; Claude Code limits come only from the status line";
+        "claude.exe wasn't found on PATH, in ~/.local/bin or in the desktop app; Claude Code limits come only from the status line.";
 
     readonly Func<string> _fetch;
     readonly Func<DateTimeOffset> _now;

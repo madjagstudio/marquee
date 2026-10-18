@@ -24,4 +24,13 @@ internal static class ProcessElevation
             throw new Win32Exception(Marshal.GetLastWin32Error(), "GetTokenInformation(TokenElevation) failed");
         return elevated != 0;
     }
+
+    /// The token's TokenElevationType: TokenElevationTypeDefault (UAC off, or a standard user), Full (an elevated
+    /// administrator) or Limited (an administrator's filtered token).
+    public static int ElevationType(KernelHandle token)
+    {
+        if (!GetTokenInformation(token, TokenElevationType, out var type, sizeof(int), out _))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "GetTokenInformation(TokenElevationType) failed");
+        return type;
+    }
 }

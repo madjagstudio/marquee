@@ -101,11 +101,11 @@ public static class ClaudeCli
     /// How to start `claude`: never elevated, so through UnelevatedProcess when Marquee is elevated.
     internal static ProcessRunner Runner(bool elevated) => elevated ? UnelevatedProcess.Run : RunProcess;
 
-    /// `run` defaults to RunProcess.
-    internal static string RunUsage(string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout, ProcessRunner? run = null)
+    /// `run` is required so that the elevation choice (see Runner) is never skipped by accident.
+    internal static string RunUsage(string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout, ProcessRunner run)
     {
         Directory.CreateDirectory(workingDirectory);
-        var result = (run ?? RunProcess)(exe, arguments, workingDirectory, timeout);
+        var result = run(exe, arguments, workingDirectory, timeout);
         if (result.ExitCode == 0) return result.Output;
 
         // "Not logged in" may come with a failing exit code; say what claude printed so the log shows why.

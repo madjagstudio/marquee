@@ -16,7 +16,12 @@ internal static class NativeMethods
 
     public const int SecurityImpersonation = 2;
     public const int TokenPrimary = 1;
+    public const int TokenElevationType = 18;
     public const int TokenElevation = 20;
+
+    public const int TokenElevationTypeDefault = 1;
+    public const int TokenElevationTypeFull = 2;
+    public const int TokenElevationTypeLimited = 3;
 
     public const uint CREATE_SUSPENDED = 0x00000004;
     public const uint CREATE_UNICODE_ENVIRONMENT = 0x00000400;

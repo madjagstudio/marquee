@@ -123,7 +123,7 @@ Claude Code installed (`claude.exe` on `PATH`, in `~/.local/bin`, or the desktop
 subscription, and it works for every Claude Code surface, so limits show up for desktop-app users too. An npm install
 provides only `claude.cmd`, which Marquee doesn't run; use the native installer or the desktop app. Add
 `--no-claude-usage` to `marquee run` or `marquee sensors` if you don't want Marquee starting `claude`. Marquee never
-starts `claude` elevated: when Marquee runs elevated, it starts `claude` with your normal unelevated rights (taken from
+starts `claude` elevated (unless Windows' UAC is off, where there is no boundary to protect): when Marquee runs elevated, it starts `claude` with your normal unelevated rights (taken from
 Explorer), and if it can't (no Explorer yet, for example), it logs that once and uses only the status line. `claude`
 runs with its auto-updater turned off, and one still running when Marquee exits is stopped with it.
 
