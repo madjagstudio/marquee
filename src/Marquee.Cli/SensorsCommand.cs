@@ -4,8 +4,9 @@ using Marquee.Core.Sensors;
 
 /// `marquee sensors`: reads the hardware source twice (load percentages need two samples) and the agent providers
 /// once, and prints every key, so theme authors can see what's available and the providers can be checked on a real PC.
-/// Claude Code's limits are read by running `claude -p /usage` (skipped with --no-claude-usage). The context percentage, which only the
-/// status line carries, and custom values come from other programs while `marquee run` is going, so they aren't listed.
+/// Claude Code's limits are read by running `claude -p /usage` (skipped with --no-claude-usage). The context
+/// percentage, which only the status line carries, and custom values come from other programs while `marquee run` is
+/// going, so they aren't listed.
 static class SensorsCommand
 {
     /// Null means the options were wrong and the caller should print usage.

@@ -108,7 +108,7 @@ only inside a running `marquee run`.
 
 | Keys | Source |
 |---|---|
-| `claude.five_hour.pct`, `claude.five_hour.resets_at`, `claude.seven_day.pct`, `claude.seven_day.resets_at`, `claude.updated_at` | Claude Code's `/usage`, which Marquee polls every 5 minutes (when it has fresh limits), and its status line, through `marquee statusline` (below); the newest write wins |
+| `claude.five_hour.pct`, `claude.five_hour.resets_at`, `claude.seven_day.pct`, `claude.seven_day.resets_at`, `claude.updated_at` | Claude Code's `/usage`, which Marquee polls (every 5 minutes while it lists fresh limits), and its status line, through `marquee statusline` (below); the newest write wins |
 | `claude.context.pct` | Claude Code's status line, through `marquee statusline` (below) |
 | `claude.sessions.total`, `claude.sessions.busy`, `claude.sessions.idle` | Running sessions in `~/.claude/sessions` |
 | `codex.primary.pct`, `codex.primary.resets_at`, `codex.primary.window_min`, the same for `codex.secondary`, `codex.updated_at` | The newest usage report in Codex's logs (`~/.codex/sessions`) |
@@ -119,15 +119,22 @@ A Claude Code session is busy or idle as its session file says. A Codex session 
 
 Claude Code's usage limits exist only on claude.ai subscriptions (its docs name Pro and Max; API-key sessions have
 none). Marquee checks them every 5 minutes by running `claude -p /usage` (no model call and no cost). That needs
-Claude Code installed (found on `PATH`, in `~/.local/bin`, or in the desktop app's bundled copy) and logged in to a
-subscription, and it works for every Claude Code surface, so limits show up for desktop-app users too. Add
-`--no-claude-usage` to `marquee run` or `marquee sensors` if you don't want Marquee starting `claude`. When Claude Code
-can't fetch fresh limits (`/usage` then falls back to its last-known bars and lists none), Marquee writes nothing and
-keeps the last values until they reset.
+Claude Code installed (`claude.exe` on `PATH`, in `~/.local/bin`, or the desktop app's bundled copy) and logged in to a
+subscription, and it works for every Claude Code surface, so limits show up for desktop-app users too. An npm install
+provides only `claude.cmd`, which Marquee doesn't run; use the native installer or the desktop app. Add
+`--no-claude-usage` to `marquee run` or `marquee sensors` if you don't want Marquee starting `claude`. Marquee never
+starts `claude` elevated: when Marquee runs elevated, it starts `claude` with your normal unelevated rights (taken from
+Explorer), and if it can't (no Explorer yet, for example), it logs that once and uses only the status line. `claude`
+runs with its auto-updater turned off, and one still running when Marquee exits is stopped with it.
+
+When Claude Code can't fetch fresh limits (`/usage` then falls back to its last-known bars and lists none), Marquee
+writes nothing, keeps the last values until they reset, and logs that once. It then checks less often, after 5, 10 and
+20 minutes and then every 30, and goes back to every 5 minutes once fresh limits arrive (and logs that it is working
+again).
 
 Claude Code also hands its limits, and the context-window percentage, to its status-line command as a session runs,
-which updates them sooner than the 5-minute poll. To use that, run `marquee setup-claude` once, from `marquee.exe` itself (setup
-refuses to run from anything else; `--undo` runs from anywhere). It points Claude Code's `statusLine` at
+which updates them sooner than the 5-minute poll. To use that, run `marquee setup-claude` once, from `marquee.exe`
+itself (setup refuses to run from anything else; `--undo` runs from anywhere). It points Claude Code's `statusLine` at
 `marquee statusline`, which hands the data to Marquee and then runs your previous status-line command, so your status
 line looks the same as before. It edits only `statusLine` in `~/.claude/settings.json`, keeps a timestamped backup, and
 `marquee setup-claude --undo` puts the old setting back. `--dry-run` shows the change first. If it can't rewrite
@@ -138,10 +145,11 @@ their own `statusLine` take precedence over this one.
 Status-line updates arrive only while `marquee run` is going (elevated or not) and a Claude Code session is updating
 its status line; only programs running as your Windows account can hand them to Marquee. Terminal sessions (`claude`)
 run the status line; the Claude desktop app's Code tab doesn't, which is why Marquee also polls `/usage`. Limits are
-lost when `marquee run` restarts, until a `/usage` poll with fresh limits (the first is a few seconds after start) or a status-line update.
-In between they keep their last value (`claude.updated_at` says how old it is), and each window goes stale (`—`) when
-it resets. If `claude` can't be found, isn't logged in or fails, Marquee logs that once and tries again after 5 minutes. Which Codex window is primary depends on the
-plan: `codex.primary.window_min` is 300 for a 5-hour window and 10080 for a weekly one.
+lost when `marquee run` restarts, until a `/usage` poll with fresh limits (the first is a few seconds after start) or a
+status-line update. In between they keep their last value (`claude.updated_at` says how old it is), and each window
+goes stale (`—`) when it resets. If `claude` can't be found, isn't logged in or fails, Marquee logs that once and tries
+again after 5 minutes. Which Codex window is primary depends on the plan: `codex.primary.window_min` is 300 for a
+5-hour window and 10080 for a weekly one.
 
 The session files and Codex logs are undocumented formats that may change. If Marquee can't read them any more, it
 logs a warning and those keys go stale; everything else keeps working.
