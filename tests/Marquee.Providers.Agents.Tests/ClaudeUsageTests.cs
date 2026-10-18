@@ -174,7 +174,17 @@ public class ClaudeUsageTests : IDisposable
             {
                 Fetches++;
                 return Fetch();
-            }, () => Now);
+            }, () => Now, () => Now - Clock.T0);
+        }
+
+        /// Polls at T0 + `minutes` and says whether it ran `claude`. The poll must fail with the no-limits message.
+        public bool PollWithoutLimitsAt(double minutes)
+        {
+            Now = Clock.T0.AddMinutes(minutes);
+            var before = Fetches;
+            var ex = Assert.Throws<InvalidOperationException>(() => Provider.Poll(Store));
+            Assert.Equal(ClaudeUsageProvider.NoLimitsMessage, ex.Message);
+            return Fetches > before;
         }
     }
 
@@ -208,13 +218,18 @@ public class ClaudeUsageTests : IDisposable
         Assert.Equal(34.5, Clock.Read(h.Store, "claude.seven_day.pct"));
     }
 
-    [Fact]
-    public void A_poll_with_no_windows_writes_nothing_not_even_updated_at()
+    [Theory]
+    [InlineData("no-fresh-limits.jsonl")]
+    [InlineData("api-key.jsonl")]
+    public void A_poll_with_no_windows_writes_nothing_and_fails_saying_why(string fixture)
     {
-        var h = new Harness { Fetch = () => Usage("no-fresh-limits.jsonl") };
+        var h = new Harness { Fetch = () => Usage(fixture) };
 
-        h.Provider.Poll(h.Store);
+        var ex = Assert.Throws<InvalidOperationException>(() => h.Provider.Poll(h.Store));
 
+        Assert.Equal(
+            "claude -p /usage listed no limits (an API-key login, or Claude Code couldn't fetch them and showed its last-known values); keeping the last values",
+            ex.Message);
         Assert.Equal(1, h.Fetches);
         Assert.Null(Clock.Read(h.Store, "claude.updated_at"));
         Assert.Empty(h.Store.Snapshot().Keys);
@@ -226,9 +241,8 @@ public class ClaudeUsageTests : IDisposable
         var h = new Harness { Fetch = () => Usage("subscriber.jsonl") };
         h.Provider.Poll(h.Store);
 
-        h.Now = Clock.T0 + ClaudeUsageProvider.DefaultInterval;
         h.Fetch = () => Usage("no-fresh-limits.jsonl");
-        h.Provider.Poll(h.Store);
+        Assert.True(h.PollWithoutLimitsAt(ClaudeUsageProvider.DefaultInterval.TotalMinutes));
 
         Assert.Equal(2, h.Fetches);
         Assert.Equal(12.0, Clock.Read(h.Store, "claude.five_hour.pct"));
@@ -295,10 +309,123 @@ public class ClaudeUsageTests : IDisposable
 
         // With the cooldown cleared, the very next poll runs instead of waiting out another interval.
         h.Now += TimeSpan.FromSeconds(1);
-        h.Fetch = () => Usage("api-key.jsonl");
         h.Provider.Poll(h.Store);
 
         Assert.Equal(3, h.Fetches);
+    }
+
+    [Fact]
+    public void The_wait_after_polls_without_limits_doubles_from_5_minutes_up_to_30() =>
+        Assert.Equal(
+            new[] { 5.0, 10, 20, 30, 30, 30 },
+            Enumerable.Range(1, 6).Select(n => ClaudeUsageProvider.NoLimitsWait(n).TotalMinutes));
+
+    [Fact]
+    public void Polls_without_limits_back_off_5_10_20_then_30_minutes_and_rethrow_in_between()
+    {
+        var h = new Harness { Fetch = () => Usage("no-fresh-limits.jsonl") };
+
+        // Each attempt, then a poll a second before the next one is due (only rethrows), then the due one (runs claude).
+        Assert.True(h.PollWithoutLimitsAt(0));
+        Assert.False(h.PollWithoutLimitsAt(5 - 1 / 60.0));
+        Assert.True(h.PollWithoutLimitsAt(5));
+        Assert.False(h.PollWithoutLimitsAt(15 - 1 / 60.0));
+        Assert.True(h.PollWithoutLimitsAt(15));
+        Assert.False(h.PollWithoutLimitsAt(35 - 1 / 60.0));
+        Assert.True(h.PollWithoutLimitsAt(35));
+        Assert.False(h.PollWithoutLimitsAt(65 - 1 / 60.0));
+        Assert.True(h.PollWithoutLimitsAt(65));
+        Assert.False(h.PollWithoutLimitsAt(95 - 1 / 60.0));
+        Assert.True(h.PollWithoutLimitsAt(95)); // capped at 30
+
+        Assert.Equal(6, h.Fetches);
+        Assert.Empty(h.Store.Snapshot().Keys);
+    }
+
+    [Fact]
+    public void While_waiting_the_same_no_limits_failure_is_rethrown()
+    {
+        var h = new Harness { Fetch = () => Usage("no-fresh-limits.jsonl") };
+        var first = Assert.Throws<InvalidOperationException>(() => h.Provider.Poll(h.Store));
+
+        h.Now = Clock.T0.AddMinutes(1);
+        var second = Assert.Throws<InvalidOperationException>(() => h.Provider.Poll(h.Store));
+
+        Assert.Same(first, second);
+        Assert.Equal(1, h.Fetches);
+    }
+
+    [Fact]
+    public void A_fresh_reading_resets_the_back_off_to_5_minutes()
+    {
+        var h = new Harness { Fetch = () => Usage("no-fresh-limits.jsonl") };
+        Assert.True(h.PollWithoutLimitsAt(0));
+        Assert.True(h.PollWithoutLimitsAt(5));
+        Assert.True(h.PollWithoutLimitsAt(15)); // the next wait would be 20 minutes
+
+        h.Now = Clock.T0.AddMinutes(35);
+        h.Fetch = () => Usage("subscriber.jsonl");
+        h.Provider.Poll(h.Store);
+        Assert.Equal(12.0, Clock.Read(h.Store, "claude.five_hour.pct"));
+
+        h.Fetch = () => Usage("no-fresh-limits.jsonl");
+        Assert.True(h.PollWithoutLimitsAt(40));
+        Assert.False(h.PollWithoutLimitsAt(45 - 1 / 60.0));
+        Assert.True(h.PollWithoutLimitsAt(45)); // 5 minutes again, not 30
+    }
+
+    [Fact]
+    public void Other_failures_wait_5_minutes_and_keep_the_no_limits_back_off()
+    {
+        var h = new Harness { Fetch = () => Usage("no-fresh-limits.jsonl") };
+        Assert.True(h.PollWithoutLimitsAt(0));
+        Assert.True(h.PollWithoutLimitsAt(5)); // next wait 10
+
+        h.Now = Clock.T0.AddMinutes(15);
+        h.Fetch = () => throw new TimeoutException("slow");
+        Assert.Throws<TimeoutException>(() => h.Provider.Poll(h.Store));
+        h.Now = Clock.T0.AddMinutes(20) - TimeSpan.FromSeconds(1);
+        Assert.Throws<TimeoutException>(() => h.Provider.Poll(h.Store));
+        Assert.Equal(3, h.Fetches);
+
+        h.Fetch = () => Usage("no-fresh-limits.jsonl");
+        Assert.True(h.PollWithoutLimitsAt(20)); // a failure isn't a fresh reading: the next wait is 20
+        Assert.False(h.PollWithoutLimitsAt(40 - 1 / 60.0));
+        Assert.True(h.PollWithoutLimitsAt(40));
+    }
+
+    [Fact]
+    public void The_runner_logs_no_limits_once_and_says_when_limits_are_back()
+    {
+        // ProviderRunner retries a failing provider every few milliseconds here; the provider rethrows without running
+        // claude, and the runner logs a repeated message once.
+        long minutes = 0;
+        var fetches = 0;
+        var fetch = (Func<string>)(() => Usage("no-fresh-limits.jsonl"));
+        var provider = new ClaudeUsageProvider(() =>
+        {
+            Interlocked.Increment(ref fetches);
+            return Volatile.Read(ref fetch)();
+        }, () => Clock.T0, () => TimeSpan.FromMinutes(Interlocked.Read(ref minutes)));
+        var log = new ListLog();
+        var store = new SensorStore(() => Clock.T0);
+
+        using (var runner = new ProviderRunner(store, log, firstRetry: TimeSpan.FromMilliseconds(5)))
+        {
+            runner.Start(provider);
+            Assert.True(Wait.Until(() => log.Entries.Count >= 1));
+            Thread.Sleep(300); // several retries
+            Assert.Equal(1, Volatile.Read(ref fetches));
+
+            Volatile.Write(ref fetch, () => Usage("subscriber.jsonl"));
+            Interlocked.Exchange(ref minutes, 5);
+            Assert.True(Wait.Until(() => log.Entries.Any(e => e.Contains("working again"))));
+        }
+
+        var errors = log.Entries.Where(e => e.StartsWith("error:")).ToList();
+        Assert.Single(errors);
+        Assert.Contains(ClaudeUsageProvider.NoLimitsMessage, errors[0]);
+        Assert.Equal(12.0, Clock.Read(store, "claude.five_hour.pct"));
     }
 
     // ---- ClaudeCli.Find ----
