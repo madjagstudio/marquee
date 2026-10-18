@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using Marquee.Core.Sensors;
@@ -507,7 +508,60 @@ public class ClaudeUsageTests : IDisposable
     [Fact]
     public void RunProcess_reports_a_program_that_cannot_start()
     {
-        Assert.ThrowsAny<Exception>(() => ClaudeCli.RunProcess(_dir.File("missing.exe"), [], _dir.Path, TimeSpan.FromSeconds(5)));
+        Assert.Throws<Win32Exception>(() => ClaudeCli.RunProcess(_dir.File("missing.exe"), [], _dir.Path, TimeSpan.FromSeconds(5)));
+    }
+
+    [Fact]
+    public void RunProcess_turns_off_Claude_Codes_autoupdater_in_the_child()
+    {
+        // Marquee's own value must not decide it (a Claude Code session running these tests sets it to 1 already).
+        var saved = Environment.GetEnvironmentVariable("DISABLE_AUTOUPDATER");
+        Environment.SetEnvironmentVariable("DISABLE_AUTOUPDATER", "0");
+        try
+        {
+            var result = ClaudeCli.RunProcess("powershell.exe", PowerShell("$env:DISABLE_AUTOUPDATER"), _dir.Path, TimeSpan.FromSeconds(30));
+
+            Assert.Equal("1", result.Output.Trim());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("DISABLE_AUTOUPDATER", saved);
+        }
+    }
+
+    [Fact]
+    public async Task RunProcess_puts_the_child_in_the_job_that_dies_with_Marquee()
+    {
+        var pidFile = _dir.File("child.pid");
+        var script = $"Set-Content -Path '{pidFile}' -Value $PID; Start-Sleep -Seconds 3";
+
+        var running = Task.Run(() => ClaudeCli.RunProcess("powershell.exe", PowerShell(script), _dir.Path, TimeSpan.FromSeconds(30)));
+
+        var pid = WaitForPid(pidFile);
+        using (var child = Process.GetProcessById(pid))
+            Assert.True(ChildProcessJob.Shared.Contains(child.SafeHandle), $"process {pid} is not in Marquee's job");
+        Assert.Equal(0, (await running).ExitCode);
+    }
+
+    /// The process id a child script wrote to the file, once it has.
+    internal static int WaitForPid(string pidFile)
+    {
+        var deadline = Stopwatch.StartNew();
+        while (deadline.Elapsed < TimeSpan.FromSeconds(20))
+        {
+            try
+            {
+                if (File.Exists(pidFile) && int.TryParse(File.ReadAllText(pidFile).Trim(), out var pid)) return pid;
+            }
+            catch (IOException)
+            {
+                // Still being written.
+            }
+
+            Thread.Sleep(50);
+        }
+
+        throw new TimeoutException($"no process id in {pidFile} after 20 seconds");
     }
 
     [Fact]

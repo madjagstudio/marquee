@@ -33,7 +33,13 @@ public static class ClaudeCli
 
     /// How long to wait, once the child has exited, for its output to finish arriving. A background child of the
     /// command can hold the pipes open long after the command itself is done.
-    static readonly TimeSpan DrainTimeout = TimeSpan.FromSeconds(2);
+    internal static readonly TimeSpan DrainTimeout = TimeSpan.FromSeconds(2);
+
+    /// Set in the child's environment: a poll must never start a Claude Code self-update.
+    internal static readonly IReadOnlyDictionary<string, string> ChildEnvironment = new Dictionary<string, string>
+    {
+        ["DISABLE_AUTOUPDATER"] = "1",
+    };
 
     /// The path of `claude.exe` on this PC, or null. Searched in order: each PATH folder (full paths only: a relative one
     /// would depend on Marquee's current folder); the native installer's
@@ -100,10 +106,12 @@ public static class ClaudeCli
             : message);
     }
 
-    /// Starts `exe` with the arguments (no shell), closes its stdin, reads stdout (up to MaxOutputBytes) and stderr (thrown
-    /// away, but read so its pipe can't fill), and waits. At the timeout the process tree is killed.
+    /// Starts `exe` with the arguments (no shell) and ChildEnvironment, puts it in ChildProcessJob.Shared so it dies with
+    /// Marquee, closes its stdin, reads stdout (up to MaxOutputBytes) and stderr (thrown away, but read so its pipe can't
+    /// fill), and waits. At the timeout the process tree is killed.
     internal static ProcessResult RunProcess(string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout)
     {
+        var job = ChildProcessJob.Shared; // first, so a job that can't be made starts nothing
         var start = new ProcessStartInfo(exe)
         {
             WorkingDirectory = workingDirectory,
@@ -114,10 +122,15 @@ public static class ClaudeCli
             CreateNoWindow = true,
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
+        foreach (var (name, value) in ChildEnvironment) start.Environment[name] = value;
 
         using var process = Process.Start(start) ?? throw new InvalidOperationException($"{Path.GetFileName(exe)} did not start");
         try
         {
+            // Straight after the start, so the kernel kills the child if Marquee exits or crashes while it runs. A child
+            // that can't be put in the job is killed by the finally below rather than run without that guarantee.
+            job.Assign(process.SafeHandle);
+
             try
             {
                 process.StandardInput.Close();
@@ -127,9 +140,12 @@ public static class ClaudeCli
                 // It exited before taking its input; the wait below sees that.
             }
 
+            // Taken here, not inside the tasks, so a task that starts late never touches the Process object.
+            var stdout = process.StandardOutput.BaseStream;
+            var stderr = process.StandardError.BaseStream;
             var output = new CappedBuffer(MaxOutputBytes);
-            var reading = Task.Run(() => output.ReadAll(process.StandardOutput.BaseStream));
-            var errors = Task.Run(() => new CappedBuffer(0).ReadAll(process.StandardError.BaseStream));
+            var reading = Task.Run(() => output.ReadAll(stdout));
+            var errors = Task.Run(() => new CappedBuffer(0).ReadAll(stderr));
 
             using var limit = new CancellationTokenSource(timeout);
             try
@@ -184,7 +200,7 @@ public static class ClaudeCli
     }
 
     /// Output collected on a reader task, safe to copy at any moment. Bytes past the cap are read and discarded.
-    sealed class CappedBuffer(int cap)
+    internal sealed class CappedBuffer(int cap)
     {
         readonly object gate = new();
         readonly MemoryStream bytes = new();
