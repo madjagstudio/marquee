@@ -79,6 +79,22 @@ public class RendererTests
     }
 
     [Fact]
+    public void A_theme_with_a_video_layer_renders_its_other_layers()
+    {
+        // Video playback isn't wired in yet: the layer parses and is skipped, and nothing else is disturbed.
+        using var frame = Render(Landscape + """
+            background:
+              - fill: "#FF0000"
+              - video: clips/rain.mp4
+                opacity: 0.5
+              - fill: "#0000FF"
+                opacity: 0.5
+            """);
+
+        Pixels.AssertNear(new SKColor(128, 0, 127), At(frame, 960, 240), 2);
+    }
+
+    [Fact]
     public void Value_widget_draws_its_box_and_text()
     {
         using var frame = Render(Landscape + """

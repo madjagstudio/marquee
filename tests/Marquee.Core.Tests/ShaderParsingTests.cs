@@ -54,7 +54,7 @@ public class ShaderParsingTests
     [InlineData("  - shader: a.sksl\n    uniforms:\n      glow: { a: 1 }", 5, "uniform 'glow' must be a single value, not a list or mapping")]
     [InlineData("  - shader: a.sksl\n    uniforms: [1, 2]", 4, "uniforms must be a mapping of uniform names to values, e.g. { intensity: \"gpu.load / 100\" }")]
     [InlineData("  - shader: a.sksl\n    scale: 0.05", 4, "scale must be between 0.1 and 1")]
-    [InlineData("  - shader: a.sksl\n    fit: cover", 4, "fit only applies to image layers")]
+    [InlineData("  - shader: a.sksl\n    fit: cover", 4, "fit only applies to image and video layers")]
     [InlineData("  - fill: \"#000\"\n    uniforms: { a: 1 }", 4, "uniforms only applies to shader layers")]
     [InlineData("  - image: a.png\n    scale: 0.5", 4, "scale only applies to shader layers")]
     [InlineData("  - shader: [a.sksl]", 3, "shader must be a single value, not a list or mapping")]
