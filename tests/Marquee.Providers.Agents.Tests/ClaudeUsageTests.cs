@@ -428,6 +428,85 @@ public class ClaudeUsageTests : IDisposable
         Assert.Equal(12.0, Clock.Read(store, "claude.five_hour.pct"));
     }
 
+    // ---- The real fetch ----
+
+    sealed class FetchHarness
+    {
+        public string? Exe = @"C:\Users\test\.local\bin\claude.exe";
+        public bool Elevated;
+        public readonly List<(string Runner, string Exe, IReadOnlyList<string> Arguments, string Directory, TimeSpan Timeout)> Runs = [];
+        public readonly ListLog Log = new();
+        public Func<string> Fetch { get; }
+
+        public FetchHarness(string workingDirectory) =>
+            Fetch = ClaudeUsageProvider.RealFetch(Log, () => Exe, () => Elevated, workingDirectory, Runner("normal"), Runner("unelevated"));
+
+        ProcessRunner Runner(string name) => (exe, arguments, directory, timeout) =>
+        {
+            Runs.Add((name, exe, arguments, directory, timeout));
+            return new ProcessResult(0, $"output of {name}");
+        };
+    }
+
+    [Fact]
+    public void The_real_fetch_runs_claude_normally_when_Marquee_is_not_elevated()
+    {
+        var h = new FetchHarness(_dir.File("data"));
+
+        Assert.Equal("output of normal", h.Fetch());
+
+        var run = Assert.Single(h.Runs);
+        Assert.Equal("normal", run.Runner);
+        Assert.Equal(h.Exe, run.Exe);
+        Assert.Equal(ClaudeCli.UsageArguments, run.Arguments);
+        Assert.Equal(_dir.File("data"), run.Directory);
+        Assert.Equal(ClaudeCli.UsageTimeout, run.Timeout);
+        Assert.True(Directory.Exists(_dir.File("data")));
+    }
+
+    [Fact]
+    public void The_real_fetch_runs_claude_unelevated_when_Marquee_is_elevated()
+    {
+        var h = new FetchHarness(_dir.Path) { Elevated = true };
+
+        Assert.Equal("output of unelevated", h.Fetch());
+
+        Assert.Equal("unelevated", Assert.Single(h.Runs).Runner);
+    }
+
+    [Fact]
+    public void The_real_fetch_fails_without_running_anything_when_claude_is_not_found()
+    {
+        var h = new FetchHarness(_dir.Path) { Exe = null };
+
+        var ex = Assert.Throws<InvalidOperationException>(() => h.Fetch());
+
+        Assert.Equal(
+            "claude.exe wasn't found on PATH, in ~/.local/bin or in the desktop app; Claude Code limits come only from the status line",
+            ex.Message);
+        Assert.Empty(h.Runs);
+        Assert.Empty(h.Log.Entries);
+    }
+
+    [Fact]
+    public void The_real_fetch_logs_which_claude_it_runs_once_and_again_if_it_changes()
+    {
+        var h = new FetchHarness(_dir.Path);
+
+        h.Fetch();
+        h.Fetch();
+        var desktopApp = @"C:\Users\test\AppData\Roaming\Claude\claude-code\2.1.300\f0584be0fbaf\claude.exe";
+        h.Exe = desktopApp;
+        h.Fetch();
+
+        Assert.Equal(
+            [
+                @"info: Claude Code limits: running C:\Users\test\.local\bin\claude.exe for /usage.",
+                $"info: Claude Code limits: running {desktopApp} for /usage.",
+            ],
+            h.Log.Entries);
+    }
+
     // ---- ClaudeCli.Find ----
 
     sealed class FakePc

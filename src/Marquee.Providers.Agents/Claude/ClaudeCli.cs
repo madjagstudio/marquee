@@ -7,6 +7,10 @@ namespace Marquee.Providers.Agents.Claude;
 /// What a finished child process printed on stdout (at most ClaudeCli.MaxOutputBytes of it) and how it ended.
 internal sealed record ProcessResult(int ExitCode, string Output);
 
+/// Starts a program with the arguments in the working directory, waits at most `timeout`, and never leaves it running:
+/// ClaudeCli.RunProcess, or UnelevatedProcess.Run while Marquee is elevated.
+internal delegate ProcessResult ProcessRunner(string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout);
+
 /// Finds `claude.exe` and runs `claude -p /usage` with it. Print mode runs `/usage` without a model request, so it
 /// costs nothing; it works for every Claude Code surface, including the desktop app, which doesn't run status lines.
 public static class ClaudeCli
@@ -89,14 +93,19 @@ public static class ClaudeCli
 
     /// Runs `exe -p /usage …` in `workingDirectory` (created if missing) and returns its stdout. Throws TimeoutException
     /// after `timeout` (the process and its children are killed) and InvalidOperationException naming the exit code when it
-    /// fails. Never leaves the process running.
+    /// fails. Never leaves the process running. While Marquee is elevated, `exe` runs with the user's unelevated token, or
+    /// not at all (InvalidOperationException).
     public static string RunUsage(string exe, string workingDirectory, TimeSpan timeout) =>
-        RunUsage(exe, UsageArguments, workingDirectory, timeout);
+        RunUsage(exe, UsageArguments, workingDirectory, timeout, Runner(ProcessElevation.IsCurrentProcessElevated()));
 
-    internal static string RunUsage(string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout)
+    /// How to start `claude`: never elevated, so through UnelevatedProcess when Marquee is elevated.
+    internal static ProcessRunner Runner(bool elevated) => elevated ? UnelevatedProcess.Run : RunProcess;
+
+    /// `run` defaults to RunProcess.
+    internal static string RunUsage(string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout, ProcessRunner? run = null)
     {
         Directory.CreateDirectory(workingDirectory);
-        var result = RunProcess(exe, arguments, workingDirectory, timeout);
+        var result = (run ?? RunProcess)(exe, arguments, workingDirectory, timeout);
         if (result.ExitCode == 0) return result.Output;
 
         // "Not logged in" may come with a failing exit code; say what claude printed so the log shows why.

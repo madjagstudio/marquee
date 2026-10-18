@@ -12,7 +12,7 @@ static class AgentSources
     {
         var providers = new List<ISensorProvider>();
         Add(providers, log, "Claude Code sessions", () => new ClaudeSessionsProvider());
-        if (claudeUsage) Add(providers, log, "Claude Code limits", () => new ClaudeUsageProvider());
+        if (claudeUsage) Add(providers, log, "Claude Code limits", () => new ClaudeUsageProvider(log));
         Add(providers, log, "Codex limits", () => new CodexLimitsProvider());
         Add(providers, log, "Codex sessions", () => new CodexSessionsProvider());
         return providers;

@@ -1,4 +1,5 @@
 using System.Runtime.ExceptionServices;
+using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
 
 namespace Marquee.Providers.Agents.Claude;
@@ -38,8 +39,11 @@ public sealed class ClaudeUsageProvider : ISensorProvider
         _elapsed = elapsed ?? (() => TimeSpan.FromMilliseconds(Environment.TickCount64));
     }
 
-    /// Runs the real `claude.exe`, wherever ClaudeCli.Find finds it.
-    public ClaudeUsageProvider() : this(RunClaude) { }
+    /// Runs the real `claude.exe`, wherever ClaudeCli.Find finds it, never elevated, and logs which one it runs.
+    public ClaudeUsageProvider(ILog log)
+        : this(RealFetch(log, ClaudeCli.Find, ProcessElevation.IsCurrentProcessElevated, AgentPaths.MarqueeData, ClaudeCli.RunProcess, UnelevatedProcess.Run))
+    {
+    }
 
     public string Name => "Claude Code limits (/usage)";
     public TimeSpan Interval => DefaultInterval;
@@ -84,9 +88,22 @@ public sealed class ClaudeUsageProvider : ISensorProvider
     internal static TimeSpan NoLimitsWait(int polls) =>
         TimeSpan.FromTicks(Math.Min(MaxNoLimitsWait.Ticks, DefaultInterval.Ticks << Math.Clamp(polls - 1, 0, 10)));
 
-    static string RunClaude()
+    /// The fetch the ILog constructor uses: finds `claude.exe` on every poll (so installing Claude later works), logs the
+    /// path the first time and whenever it changes, and runs `/usage` through `runUnelevated` while Marquee is elevated.
+    internal static Func<string> RealFetch(ILog log, Func<string?> find, Func<bool> isElevated, string workingDirectory,
+        ProcessRunner run, ProcessRunner runUnelevated)
     {
-        var exe = ClaudeCli.Find() ?? throw new InvalidOperationException(NotFoundMessage);
-        return ClaudeCli.RunUsage(exe, AgentPaths.MarqueeData, ClaudeCli.UsageTimeout);
+        string? announced = null;
+        return () =>
+        {
+            var exe = find() ?? throw new InvalidOperationException(NotFoundMessage);
+            if (exe != announced)
+            {
+                log.Info($"Claude Code limits: running {exe} for /usage.");
+                announced = exe;
+            }
+
+            return ClaudeCli.RunUsage(exe, ClaudeCli.UsageArguments, workingDirectory, ClaudeCli.UsageTimeout, isElevated() ? runUnelevated : run);
+        };
     }
 }
