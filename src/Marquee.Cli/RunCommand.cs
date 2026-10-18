@@ -22,6 +22,7 @@ static class RunCommand
         var preview = false;
         int? frames = null;
         int? httpPort = CustomValuesServer.DefaultPort;
+        var claudeUsage = true;
 
         for (var i = 0; i < options.Length; i++)
         {
@@ -36,6 +37,7 @@ static class RunCommand
                 case "--preview": preview = true; break;
                 case "--http-port" when HttpPort.TryParse(value, out var p): httpPort = p; i++; break;
                 case "--no-http": httpPort = null; break;
+                case "--no-claude-usage": claudeUsage = false; break;
                 default: return null;
             }
         }
@@ -45,7 +47,7 @@ static class RunCommand
         using var providers = new ProviderRunner(store, log);
         if (SensorSources.Create(sensors, log) is { } provider)
             providers.Start(provider);
-        foreach (var agent in AgentSources.Create(log))
+        foreach (var agent in AgentSources.Create(log, claudeUsage))
             providers.Start(agent);
         using var statusLine = new StatusLineServer(store, log);
         statusLine.Start();

@@ -3,14 +3,16 @@ using Marquee.Core.Sensors;
 using Marquee.Providers.Agents.Claude;
 using Marquee.Providers.Agents.Codex;
 
-/// The file-based agent providers. Claude Code's limits arrive through the status-line pipe instead (StatusLineServer).
+/// The agent providers: Claude Code sessions, Codex limits and sessions from files, and Claude Code limits from `claude -p /usage`.
+/// The status-line pipe (StatusLineServer) also delivers Claude Code limits, from sessions that run a status line.
 static class AgentSources
 {
     /// Builds each provider on its own, so one that can't start is logged and skipped rather than stopping the rest.
-    public static IReadOnlyList<ISensorProvider> Create(ILog log)
+    public static IReadOnlyList<ISensorProvider> Create(ILog log, bool claudeUsage = true)
     {
         var providers = new List<ISensorProvider>();
         Add(providers, log, "Claude Code sessions", () => new ClaudeSessionsProvider());
+        if (claudeUsage) Add(providers, log, "Claude Code limits", () => new ClaudeUsageProvider());
         Add(providers, log, "Codex limits", () => new CodexLimitsProvider());
         Add(providers, log, "Codex sessions", () => new CodexSessionsProvider());
         return providers;

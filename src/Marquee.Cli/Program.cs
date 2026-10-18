@@ -116,9 +116,9 @@ static int Usage()
         Usage:
           marquee devices
           marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
-          marquee sensors [--sensors lhm|hwinfo|none]
+          marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage]
           marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
-                      [--http-port 1024-65535 | --no-http]
+                      [--http-port 1024-65535 | --no-http] [--no-claude-usage]
           marquee push <key> <value> [--ttl 30s|5m|2h] [--port 1024-65535]
           marquee setup-claude [--undo] [--dry-run]
           marquee statusline        (Claude Code runs this; see setup-claude)

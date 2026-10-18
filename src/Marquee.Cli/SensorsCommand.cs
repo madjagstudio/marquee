@@ -4,13 +4,15 @@ using Marquee.Core.Sensors;
 
 /// `marquee sensors`: reads the hardware source twice (load percentages need two samples) and the agent providers
 /// once, and prints every key, so theme authors can see what's available and the providers can be checked on a real PC.
-/// Claude Code's limits and custom values come from other programs while `marquee run` is going, so they aren't listed.
+/// Claude Code's limits are read by running `claude -p /usage` (skipped with --no-claude-usage). The context percentage, which only the
+/// status line carries, and custom values come from other programs while `marquee run` is going, so they aren't listed.
 static class SensorsCommand
 {
     /// Null means the options were wrong and the caller should print usage.
     public static int? Run(string[] options)
     {
         var source = SensorSources.Default;
+        var claudeUsage = true;
         for (var i = 0; i < options.Length; i++)
         {
             var value = i + 1 < options.Length ? options[i + 1] : null;
@@ -19,6 +21,9 @@ static class SensorsCommand
                 case "--sensors" when SensorSources.IsValid(value):
                     source = value!;
                     i++;
+                    break;
+                case "--no-claude-usage":
+                    claudeUsage = false;
                     break;
                 default:
                     return null;
@@ -33,7 +38,7 @@ static class SensorsCommand
                 return 1;
         }
 
-        foreach (var agent in AgentSources.Create(log))
+        foreach (var agent in AgentSources.Create(log, claudeUsage))
         {
             using (agent)
                 TryPoll(agent, store, log, twice: false);
