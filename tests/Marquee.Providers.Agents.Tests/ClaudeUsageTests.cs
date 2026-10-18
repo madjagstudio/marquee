@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Marquee.Core.Sensors;
 using Marquee.Providers.Agents.Claude;
 using Marquee.Providers.Agents.Tests.TestSupport;
@@ -18,6 +19,21 @@ public class ClaudeUsageTests : IDisposable
     static string Usage(string name) => Fixture.Text($"usage/{name}");
 
     // ---- Parser ----
+
+    [Theory]
+    [InlineData("subscriber.jsonl")]
+    [InlineData("api-key.jsonl")]
+    [InlineData("no-fresh-limits.jsonl")]
+    [InlineData("not-logged-in.jsonl")]
+    public void Every_line_of_each_fixture_is_a_json_object(string name)
+    {
+        // A line the parser skips as unreadable would make a fixture test pass for the wrong reason.
+        foreach (var line in Usage(name).Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+        {
+            using var document = JsonDocument.Parse(line);
+            Assert.Equal(JsonValueKind.Object, document.RootElement.ValueKind);
+        }
+    }
 
     [Fact]
     public void A_subscriber_report_has_both_windows_and_no_context()
