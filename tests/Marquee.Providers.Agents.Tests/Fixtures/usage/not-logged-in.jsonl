@@ -1,0 +1,2 @@
+{"type":"system","subtype":"init","cwd":"C:\\Example","session_id":"00000000-0000-0000-0000-000000000000","tools":[],"model":"example-model"}
+{"type":"result","subtype":"success","is_error":true,"num_turns":0,"result":"Not logged in · Please run /login","total_cost_usd":0,"session_id":"00000000-0000-0000-0000-000000000000"}

@@ -7,5 +7,7 @@
     <ProjectReference Include="..\Marquee.Core\Marquee.Core.csproj" />
     <ProjectReference Include="..\Marquee.Providers.Hardware\Marquee.Providers.Hardware.csproj" />
     <ProjectReference Include="..\Marquee.Preview\Marquee.Preview.csproj" />
+    <ProjectReference Include="..\Marquee.Providers.Agents\Marquee.Providers.Agents.csproj" />
+    <ProjectReference Include="..\Marquee.Providers.Custom\Marquee.Providers.Custom.csproj" />
   </ItemGroup>
 </Project>

@@ -12,6 +12,7 @@ public sealed class ThemeAssets : IDisposable
     readonly Dictionary<string, SKImage> _images = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, SKTypeface> _fontFiles = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<(string Family, int Weight), SKTypeface> _families = [];
+    readonly Dictionary<ShaderLayer, SKRuntimeEffect> _shaders = new(ReferenceEqualityComparer.Instance);
 
     ThemeAssets() { }
 
@@ -28,6 +29,10 @@ public sealed class ThemeAssets : IDisposable
             foreach (var path in imagePaths)
                 if (LoadImage(folder, path, warnings) is { } image)
                     assets._images[path] = image;
+
+            foreach (var layer in spec.Background.OfType<ShaderLayer>())
+                if (ShaderAssets.Load(folder, layer, warnings) is { } effect)
+                    assets._shaders[layer] = effect;
 
             var fonts = widgets.SelectMany(w => w.When.Select(r => r.Style).Prepend(w.Style))
                 .Select(s => s.Font)
@@ -56,6 +61,9 @@ public sealed class ThemeAssets : IDisposable
     }
 
     public SKImage? Image(string path) => _images.GetValueOrDefault(path);
+
+    /// The compiled shader for a layer, or null if it was skipped (see the theme's warnings).
+    public SKRuntimeEffect? Shader(ShaderLayer layer) => _shaders.GetValueOrDefault(layer);
 
     /// The typeface for a style's font (a family name, or a .ttf/.otf file in the theme folder) at a weight.
     public SKTypeface Typeface(string? font, int weight)
@@ -86,8 +94,10 @@ public sealed class ThemeAssets : IDisposable
     {
         foreach (var image in _images.Values) image.Dispose();
         foreach (var typeface in _fontFiles.Values) typeface.Dispose();
+        foreach (var effect in _shaders.Values) effect.Dispose();
         _images.Clear();
         _fontFiles.Clear();
+        _shaders.Clear();
         _families.Clear(); // installed-font typefaces belong to the font manager and may be shared with other themes
     }
 
@@ -180,7 +190,7 @@ public sealed class ThemeAssets : IDisposable
 
     /// False if `relative` can't be resolved as a path at all (a NUL character, say). Otherwise `full` is the
     /// full path, or null when it leaves the theme folder.
-    static bool TryInsideFolder(string folder, string relative, out string? full)
+    internal static bool TryInsideFolder(string folder, string relative, out string? full)
     {
         try
         {

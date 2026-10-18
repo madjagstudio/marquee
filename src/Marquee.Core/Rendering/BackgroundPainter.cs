@@ -23,6 +23,9 @@ static class BackgroundPainter
                     var (source, destination) = ImageFitting.Fit(image.Fit, picture.Width, picture.Height, area);
                     ctx.Canvas.DrawImage(picture, source, destination, Sampling, paint);
                     break;
+                case ShaderLayer shader when ctx.Assets.Shader(shader) is { } effect:
+                    ShaderPainter.Paint(ctx, shader, effect, area);
+                    break;
             }
         }
     }

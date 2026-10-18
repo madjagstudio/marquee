@@ -1,0 +1,8 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000003",
+  "cwd": "C:/Users/example/project",
+  "version": "2.1.299",
+  "model": { "id": "claude-sonnet-5-5", "display_name": "Sonnet 5.5" },
+  "workspace": { "current_dir": "C:/Users/example/project", "project_dir": "C:/Users/example/project" },
+  "context_window": { "context_window_size": 200000, "used_percentage": null, "current_usage": null }
+}

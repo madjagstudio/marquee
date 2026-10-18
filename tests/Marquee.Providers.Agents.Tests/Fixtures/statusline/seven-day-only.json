@@ -1,0 +1,6 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000004",
+  "version": "2.1.299",
+  "context_window": { "used_percentage": 8 },
+  "rate_limits": { "seven_day": { "used_percentage": 64, "resets_at": 1792573200 } }
+}

@@ -4,8 +4,16 @@ using Marquee.Core.Devices.UniversalScreen88;
 using Marquee.Core.Usb;
 using SkiaSharp;
 
-// Messages use characters such as "—", "·" and "×"; the default console code page would mangle them.
-Console.OutputEncoding = System.Text.Encoding.UTF8;
+// Messages use characters such as "—", "·" and "×"; the default console code page would mangle them. Setting it
+// throws when there is no console at all (a detached process); Claude Code runs `marquee statusline` that way from
+// some hosts, and it writes raw bytes anyway, so carry on without it.
+try
+{
+    Console.OutputEncoding = System.Text.Encoding.UTF8;
+}
+catch (IOException)
+{
+}
 
 return args switch
 {
@@ -13,6 +21,9 @@ return args switch
     ["show-image", var file, .. var options] => ShowImage(file, options),
     ["sensors", .. var options] => SensorsCommand.Run(options) ?? Usage(),
     ["run", var folder, .. var options] => RunCommand.Run(folder, options) ?? Usage(),
+    ["push", var key, var value, .. var options] => PushCommand.Run(key, value, options) ?? Usage(),
+    ["statusline"] => StatusLineCommand.Run(),
+    ["setup-claude", .. var options] => SetupClaudeCommand.Run(options) ?? Usage(),
     _ => Usage(),
 };
 
@@ -105,8 +116,12 @@ static int Usage()
         Usage:
           marquee devices
           marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
-          marquee sensors [--sensors lhm|hwinfo]
+          marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage]
           marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
+                      [--http-port 1024-65535 | --no-http] [--no-claude-usage]
+          marquee push <key> <value> [--ttl 30s|5m|2h] [--port 1024-65535]
+          marquee setup-claude [--undo] [--dry-run]
+          marquee statusline        (Claude Code runs this; see setup-claude)
         """);
     return 2;
 }

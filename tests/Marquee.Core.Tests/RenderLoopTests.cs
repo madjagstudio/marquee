@@ -5,6 +5,7 @@ using SkiaSharp;
 
 namespace Marquee.Core.Tests;
 
+[Collection("Real-time render loop")]
 public class RenderLoopTests
 {
     static string Fill(string color, string orientation = "landscape", int fps = 30) =>
@@ -245,7 +246,7 @@ public class RenderLoopTests
         loop.Stop();
 
         Assert.True(device.FramesPushed >= 3);
-        Assert.Equal(["error: Rendering a frame failed: boom"], log.Entries);
+        Assert.Equal(["error: Sending a frame failed: boom"], log.Entries);
     }
 
     [Fact]
@@ -328,5 +329,23 @@ public class RenderLoopTests
         Assert.InRange(pushed, 8, 30);
         Assert.Equal(pushed, device.FramesPushed);
         Assert.Equal((1, 1), (device.Opens, device.Closes));
+    }
+
+    [Fact]
+    public void Step_cannot_be_used_while_the_loop_is_running()
+    {
+        using var device = new RecordingDevice();
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        loop.Start();
+        try
+        {
+            Assert.Throws<InvalidOperationException>(() => loop.Step(Seconds(0)));
+        }
+        finally
+        {
+            loop.Stop();
+        }
+
+        loop.Step(Seconds(0)); // fine again once stopped
     }
 }
