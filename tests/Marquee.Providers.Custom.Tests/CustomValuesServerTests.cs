@@ -234,6 +234,85 @@ public sealed class CustomValuesServerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_key_stale_for_the_grace_period_frees_its_place()
+    {
+        var now = new DateTimeOffset(2026, 10, 18, 12, 0, 0, TimeSpan.Zero);
+        var store = new SensorStore(() => now);
+        using var server = new CustomValuesServer(store, NullLog.Instance, FreePort(), maxKeys: 3);
+        Assert.True(server.Start());
+        HttpResponseMessage Push(string body) => Post(body, url: $"http://127.0.0.1:{server.Port}/values");
+
+        using (var full = Push("""{"custom.k1":1,"custom.k2":2,"custom.k3":3,"ttl":"30s"}""")) Assert.Equal(HttpStatusCode.NoContent, full.StatusCode);
+        now = now.AddSeconds(30) + CustomValuesServer.StaleGrace - TimeSpan.FromTicks(1);
+        using (var refused = Push("""{"custom.k4":4}"""))
+        {
+            Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+            Assert.Equal("Marquee holds at most 3 different custom keys. A key frees its place once it has been stale for 10 " +
+                "minutes; restarting Marquee clears them all.\n", await refused.Content.ReadAsStringAsync());
+        }
+
+        now = now.AddTicks(1);
+        using var accepted = Push("""{"custom.k4":4}""");
+
+        Assert.Equal(HttpStatusCode.NoContent, accepted.StatusCode);
+        Assert.Equal(["custom.k4"], store.Snapshot().Keys);
+    }
+
+    [Fact]
+    public void Keys_without_a_ttl_keep_their_place()
+    {
+        var now = new DateTimeOffset(2026, 10, 18, 12, 0, 0, TimeSpan.Zero);
+        var store = new SensorStore(() => now);
+        using var server = new CustomValuesServer(store, NullLog.Instance, FreePort(), maxKeys: 3);
+        Assert.True(server.Start());
+        HttpResponseMessage Push(string body) => Post(body, url: $"http://127.0.0.1:{server.Port}/values");
+
+        using (var forever = Push("""{"custom.k1":1,"custom.k2":2}""")) Assert.Equal(HttpStatusCode.NoContent, forever.StatusCode);
+        using (var brief = Push("""{"custom.k3":3,"ttl":1}""")) Assert.Equal(HttpStatusCode.NoContent, brief.StatusCode);
+        now = now.AddDays(30);
+
+        using (var replaces = Push("""{"custom.k4":4}""")) Assert.Equal(HttpStatusCode.NoContent, replaces.StatusCode);
+        using var refused = Push("""{"custom.k5":5}""");
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        Assert.Equal(["custom.k1", "custom.k2", "custom.k4"], store.Snapshot().Keys);
+    }
+
+    [Fact]
+    public void A_new_server_counts_the_custom_keys_already_in_the_store()
+    {
+        // A settings change starts a new server on the same store, which still holds every key pushed so far.
+        var store = new SensorStore();
+        foreach (var key in new[] { "custom.k1", "custom.k2", "custom.k3" }) store.Set(key, 1);
+        using var server = new CustomValuesServer(store, NullLog.Instance, FreePort(), maxKeys: 3);
+        Assert.True(server.Start());
+        HttpResponseMessage Push(string body) => Post(body, url: $"http://127.0.0.1:{server.Port}/values");
+
+        using (var refused = Push("""{"custom.k4":4}""")) Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        using var update = Push("""{"custom.k1":5}""");
+
+        Assert.Equal(HttpStatusCode.NoContent, update.StatusCode);
+        Assert.Equal(["custom.k1", "custom.k2", "custom.k3"], store.Snapshot().Keys);
+    }
+
+    [Fact]
+    public void A_lowered_limit_still_lets_the_keys_already_held_be_set()
+    {
+        var store = new SensorStore();
+        foreach (var key in new[] { "custom.k1", "custom.k2", "custom.k3" }) store.Set(key, 1);
+        using var server = new CustomValuesServer(store, NullLog.Instance, FreePort(), maxKeys: 2);
+        Assert.True(server.Start());
+        HttpResponseMessage Push(string body) => Post(body, url: $"http://127.0.0.1:{server.Port}/values");
+
+        using (var update = Push("""{"custom.k3":7}""")) Assert.Equal(HttpStatusCode.NoContent, update.StatusCode);
+        using var refused = Push("""{"custom.k4":4}""");
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        Assert.True(store.Snapshot().TryGet("custom.k3", out var k3));
+        Assert.Equal(7, k3.Number);
+    }
+
+    [Fact]
     public void A_busy_port_is_reported_not_thrown()
     {
         var log = new Recorder();

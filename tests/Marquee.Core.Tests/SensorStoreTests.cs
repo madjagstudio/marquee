@@ -143,6 +143,74 @@ public class SensorStoreTests
         }
     }
 
+    [Fact]
+    public void RemoveStale_removes_a_key_once_it_has_been_stale_for_the_full_grace()
+    {
+        var now = T0;
+        var store = new SensorStore(() => now);
+        store.Set("custom.build", "ok", TimeSpan.FromSeconds(30));
+        var grace = TimeSpan.FromMinutes(10);
+
+        now = T0.AddSeconds(30) + grace - TimeSpan.FromTicks(1);
+        Assert.Empty(store.RemoveStale("custom.", grace));
+        Assert.Equal(["custom.build"], store.Snapshot().Keys);
+
+        now = T0.AddSeconds(30) + grace;
+        Assert.Equal(["custom.build"], store.RemoveStale("custom.", grace));
+        Assert.Empty(store.Snapshot().Keys);
+        Assert.Empty(store.Snapshot().History("custom.build"));
+        Assert.Empty(store.RemoveStale("custom.", grace));
+    }
+
+    [Fact]
+    public void RemoveStale_keeps_other_prefixes_and_keys_without_a_ttl()
+    {
+        var now = T0;
+        var store = new SensorStore(() => now);
+        store.Set("custom.queue", 3, TimeSpan.FromSeconds(1));
+        store.Set("custom.build", "ok", TimeSpan.FromSeconds(1));
+        store.Set("custom.forever", 1);
+        store.Set("customer.count", 2, TimeSpan.FromSeconds(1));
+        store.Set("cpu.temp", 60, TimeSpan.FromSeconds(1));
+        now = T0.AddDays(30);
+
+        var removed = store.RemoveStale("custom.", TimeSpan.FromMinutes(10));
+
+        Assert.Equal(["custom.build", "custom.queue"], removed.Order(StringComparer.Ordinal));
+        Assert.Equal(["cpu.temp", "custom.forever", "customer.count"], store.Snapshot().Keys);
+    }
+
+    [Fact]
+    public void RemoveStale_keeps_a_key_rewritten_after_it_expired()
+    {
+        var now = T0;
+        var store = new SensorStore(() => now);
+        store.Set("custom.build", "failing", TimeSpan.FromSeconds(1));
+        now = T0.AddMinutes(5);
+        store.Set("custom.build", "ok", TimeSpan.FromSeconds(1));
+
+        // Eleven minutes after the first write expired, but only six after the rewrite did.
+        now = T0.AddMinutes(11);
+
+        Assert.Empty(store.RemoveStale("custom.", TimeSpan.FromMinutes(10)));
+        Assert.Equal(["custom.build"], store.Snapshot().Keys);
+    }
+
+    [Fact]
+    public void Keys_lists_the_keys_with_a_prefix_stale_or_not()
+    {
+        var now = T0;
+        var store = new SensorStore(() => now);
+        store.Set("custom.build", "ok", TimeSpan.FromSeconds(1));
+        store.Set("custom.queue", 3);
+        store.Set("customer.count", 2);
+        store.Set("cpu.temp", 60);
+        now = T0.AddDays(1);
+
+        Assert.Equal(["custom.build", "custom.queue"], store.Keys("custom.").Order(StringComparer.Ordinal));
+        Assert.Empty(store.Keys("gpu."));
+    }
+
     [Theory]
     [InlineData(double.NaN)]
     [InlineData(double.PositiveInfinity)]
