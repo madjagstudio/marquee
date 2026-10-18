@@ -16,7 +16,8 @@ public sealed class ThemeAssets : IDisposable
 
     ThemeAssets() { }
 
-    internal static ThemeAssets Load(string folder, ThemeSpec spec, List<string> warnings)
+    /// `fps` is the rate the theme will run at, which sets the frame budget each shader layer must fit in.
+    internal static ThemeAssets Load(string folder, ThemeSpec spec, List<string> warnings, int fps, ShaderProbe probe)
     {
         var assets = new ThemeAssets();
         try
@@ -31,7 +32,7 @@ public sealed class ThemeAssets : IDisposable
                     assets._images[path] = image;
 
             foreach (var layer in spec.Background.OfType<ShaderLayer>())
-                if (ShaderAssets.Load(folder, layer, warnings) is { } effect)
+                if (ShaderAssets.Load(folder, layer, warnings, spec.Canvas.Size, fps, probe) is { } effect)
                     assets._shaders[layer] = effect;
 
             var fonts = widgets.SelectMany(w => w.When.Select(r => r.Style).Prepend(w.Style))

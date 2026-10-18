@@ -25,18 +25,26 @@ background:
   - shader: shaders/aurora.sksl
     uniforms:
       heat: "clamp(max(cpu.load, gpu.load) / 100, 0, 1)"
-    scale: 0.5
-    opacity: 0.55
+    scale: 0.25 # smooth bands lose nothing, and a quarter of the size keeps it well inside the 30 fps frame budget
+    opacity: 0.9
     blend: screen
 
 widgets:
-  # The PC
+  # The PC, and your own status line (marquee push status ...)
   - type: group
     at: [30, 30]
     size: [560, 420]
     style: panel
     children:
       - { type: text, at: [32, 26], size: [496, 36], text: SYSTEM, style: title }
+      - type: text
+        at: [160, 26]
+        size: [368, 36]
+        text: "{custom.status}"
+        source: custom.status
+        style: { extends: detail, color: "#F4F6FA", align: right }
+        when:
+          - { stale: true, style: { opacity: 0 } }
       - { type: text, at: [32, 96], size: [90, 36], text: CPU, style: label }
       - { type: bar, at: [130, 100], size: [260, 28], source: cpu.load, smooth: 400, style: bar }
       - type: text
@@ -86,9 +94,9 @@ widgets:
         size: [556, 36]
         text: "{claude.sessions.busy} working · {claude.sessions.idle} idle"
         style: { extends: detail, align: right }
-      - { type: text, at: [32, 96], size: [200, 36], text: 5-hour, style: label }
+      - { type: text, at: [32, 80], size: [200, 36], text: 5-hour, style: label }
       - type: bar
-        at: [32, 140]
+        at: [32, 122]
         size: [430, 28]
         source: claude.five_hour.pct
         max: 100
@@ -97,7 +105,7 @@ widgets:
         when:
           - { above: 80, style: hot }
       - type: value
-        at: [470, 134]
+        at: [470, 116]
         size: [118, 40]
         source: claude.five_hour.pct
         format: "{0:0}%"
@@ -105,15 +113,15 @@ widgets:
         when:
           - { stale: true, style: stale }
       - type: text
-        at: [232, 96]
+        at: [232, 80]
         size: [356, 36]
         text: "resets in {claude.five_hour.resets_at - now|duration}"
         style: { extends: detail, align: right }
         when:
           - { stale: true, style: { opacity: 0 } }
-      - { type: text, at: [32, 206], size: [200, 36], text: Weekly, style: label }
+      - { type: text, at: [32, 166], size: [200, 36], text: Weekly, style: label }
       - type: bar
-        at: [32, 250]
+        at: [32, 208]
         size: [430, 28]
         source: claude.seven_day.pct
         max: 100
@@ -122,7 +130,7 @@ widgets:
         when:
           - { above: 80, style: hot }
       - type: value
-        at: [470, 244]
+        at: [470, 202]
         size: [118, 40]
         source: claude.seven_day.pct
         format: "{0:0}%"
@@ -130,14 +138,48 @@ widgets:
         when:
           - { stale: true, style: stale }
       - type: text
-        at: [232, 206]
+        at: [232, 166]
         size: [356, 36]
         text: "resets in {claude.seven_day.resets_at - now|duration}"
         style: { extends: detail, align: right }
         when:
           - { stale: true, style: { opacity: 0 } }
+      # The most used per-model weekly limit, on plans that have them (from /usage); hidden when there is none.
       - type: text
-        at: [32, 330]
+        at: [32, 252]
+        size: [260, 36]
+        text: "{claude.seven_day_model.name} weekly"
+        source: claude.seven_day_model.pct
+        style: label
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - type: bar
+        at: [32, 294]
+        size: [430, 28]
+        source: claude.seven_day_model.pct
+        max: 100
+        smooth: 600
+        style: claude
+        when:
+          - { above: 80, style: hot }
+          - { stale: true, style: { opacity: 0 } }
+      - type: value
+        at: [470, 288]
+        size: [118, 40]
+        source: claude.seven_day_model.pct
+        format: "{0:0}%"
+        style: number
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - type: text
+        at: [292, 252]
+        size: [296, 36]
+        text: "resets in {claude.seven_day_model.resets_at - now|duration}"
+        style: { extends: detail, align: right }
+        when:
+          - { stale: true, style: { opacity: 0 } }
+      - type: text
+        at: [32, 350]
         size: [556, 36]
         text: "context {claude.context.pct:0}% · updated {now - claude.updated_at|duration} ago"
         style: detail
@@ -156,9 +198,10 @@ widgets:
         size: [556, 36]
         text: "{codex.sessions.busy} working · {codex.sessions.idle} idle"
         style: { extends: detail, align: right }
-      # Which window is primary depends on the plan: a 5-hour one, or only the weekly one.
+      # Each window's label comes from its length, which depends on the plan: often a 5-hour primary and a weekly
+      # secondary, or only a weekly primary. Any other length shows as a duration ("1d 0h").
       - type: text
-        at: [32, 96]
+        at: [32, 80]
         size: [200, 36]
         text: 5-hour
         source: codex.primary.window_min
@@ -166,15 +209,25 @@ widgets:
         when:
           - { equals: 300, style: { opacity: 1 } }
       - type: text
-        at: [32, 96]
+        at: [32, 80]
         size: [200, 36]
         text: Weekly
         source: codex.primary.window_min
         style: { extends: label, opacity: 0 }
         when:
           - { equals: 10080, style: { opacity: 1 } }
+      - type: text
+        at: [32, 80]
+        size: [200, 36]
+        text: "{codex.primary.window_min * 60|duration}"
+        source: codex.primary.window_min
+        style: label
+        when:
+          - { equals: 300, style: { opacity: 0 } }
+          - { equals: 10080, style: { opacity: 0 } }
+          - { stale: true, style: { opacity: 0 } }
       - type: bar
-        at: [32, 140]
+        at: [32, 122]
         size: [430, 28]
         source: codex.primary.pct
         max: 100
@@ -183,7 +236,7 @@ widgets:
         when:
           - { above: 80, style: hot }
       - type: value
-        at: [470, 134]
+        at: [470, 116]
         size: [118, 40]
         source: codex.primary.pct
         format: "{0:0}%"
@@ -191,29 +244,47 @@ widgets:
         when:
           - { stale: true, style: stale }
       - type: text
-        at: [232, 96]
+        at: [232, 80]
         size: [356, 36]
         text: "resets in {codex.primary.resets_at - now|duration}"
         style: { extends: detail, align: right }
         when:
           - { stale: true, style: { opacity: 0 } }
       - type: text
-        at: [32, 206]
+        at: [32, 166]
+        size: [200, 36]
+        text: 5-hour
+        source: codex.secondary.window_min
+        style: { extends: label, opacity: 0 }
+        when:
+          - { equals: 300, style: { opacity: 1 } }
+      - type: text
+        at: [32, 166]
         size: [200, 36]
         text: Weekly
-        source: codex.secondary.pct
+        source: codex.secondary.window_min
+        style: { extends: label, opacity: 0 }
+        when:
+          - { equals: 10080, style: { opacity: 1 } }
+      - type: text
+        at: [32, 166]
+        size: [200, 36]
+        text: "{codex.secondary.window_min * 60|duration}"
+        source: codex.secondary.window_min
         style: label
         when:
+          - { equals: 300, style: { opacity: 0 } }
+          - { equals: 10080, style: { opacity: 0 } }
           - { stale: true, style: { opacity: 0 } }
       - type: text
-        at: [232, 206]
+        at: [232, 166]
         size: [356, 36]
         text: "resets in {codex.secondary.resets_at - now|duration}"
         style: { extends: detail, align: right }
         when:
           - { stale: true, style: { opacity: 0 } }
       - type: bar
-        at: [32, 250]
+        at: [32, 208]
         size: [430, 28]
         source: codex.secondary.pct
         max: 100
@@ -223,17 +294,10 @@ widgets:
           - { above: 80, style: hot }
           - { stale: true, style: { opacity: 0 } }
       - type: value
-        at: [470, 244]
+        at: [470, 202]
         size: [118, 40]
         source: codex.secondary.pct
         format: "{0:0}%"
         style: number
-        when:
-          - { stale: true, style: { opacity: 0 } }
-      - type: text
-        at: [32, 330]
-        size: [556, 36]
-        text: "{custom.status}"
-        style: { extends: detail, color: "#F4F6FA" }
         when:
           - { stale: true, style: { opacity: 0 } }

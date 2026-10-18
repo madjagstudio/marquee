@@ -78,8 +78,11 @@ comes with the public release.
 ### Shader backgrounds
 
 A `shader` layer runs an [SkSL](https://skia.org/docs/user/sksl/) file from the theme folder over the whole canvas.
-Marquee sets `uniform float time` (seconds) and `uniform float2 resolution` (pixels). `time` wraps back to 0 once a
-day so it stays precise, which shows as one jump a day. Bind any other uniform to a number or an expression, one value
+Marquee sets `uniform float time` (seconds), `uniform float day` (whole days) and `uniform float2 resolution` (pixels);
+declare only the ones a shader uses. `time` wraps back to 0 once a day so it stays precise, and `day` counts up by one
+at the same moment. A cycle whose period divides a day (a minute, an hour) carries on across the wrap with `time`
+alone; for any other period, add the day's offset: `fract(fract(day * 86400.0 / period) + time / period)`. Bind any
+other uniform to a number or an expression, one value
 per component. Marquee binds floats only, so declare bound uniforms as `float`, `float2`, `float3` or `float4`; a layer
 that binds an `int` uniform is skipped with a warning (an unbound one only gets the warning that it stays 0). A binding
 whose sensor is missing or stale reads as 0.
@@ -97,6 +100,11 @@ background:
 
 Shaders run on the CPU. A smooth full-canvas shader costs about 10–15 ms per frame at `scale: 0.5`; Marquee draws the
 next frame while the last one goes to the screen, so 30 fps holds, and it prints a warning if a theme can't keep up.
+A shader that takes too long would freeze the screen, so when a theme loads Marquee renders each shader layer once at
+1/8 of its size each way and estimates what a full frame costs. A layer whose estimate is over the frame budget
+(1000 ms divided by the fps, from `canvas.fps` or `--fps`) is skipped, with its estimated cost in the console and the
+preview; lower its `scale` or the fps, or simplify the shader. The budget is per layer, and the test frame runs with
+`time`, `day` and bound uniforms at 0. Marquee never lowers a layer's scale on its own.
 A shader that doesn't compile is skipped with the error in the console and the preview, and editing the `.sksl` file
 reloads the theme like editing `layout.yaml`.
 
@@ -109,6 +117,7 @@ only inside a running `marquee run`.
 | Keys | Source |
 |---|---|
 | `claude.five_hour.pct`, `claude.five_hour.resets_at`, `claude.seven_day.pct`, `claude.seven_day.resets_at`, `claude.updated_at` | Claude Code's `/usage`, which Marquee polls (every 5 minutes while it lists fresh limits), and its status line, through `marquee statusline` (below); the newest write wins |
+| `claude.seven_day_model.pct`, `claude.seven_day_model.resets_at`, `claude.seven_day_model.name` | Claude Code's `/usage`: the per-model weekly limit (`weekly_scoped`) on plans that have one, the most used one if there are several; `name` is the model as `/usage` shows it ("Opus", say) |
 | `claude.context.pct` | Claude Code's status line, through `marquee statusline` (below) |
 | `claude.sessions.total`, `claude.sessions.busy`, `claude.sessions.idle` | Running sessions in `~/.claude/sessions` |
 | `codex.primary.pct`, `codex.primary.resets_at`, `codex.primary.window_min`, the same for `codex.secondary`, `codex.updated_at` | The newest usage report in Codex's logs (`~/.codex/sessions`) |
@@ -157,7 +166,8 @@ minutes. Which Codex window is primary depends on the plan: `codex.primary.windo
 each window's percentage and reset time and when they were read (no login or account details). It saves them whenever
 they change and when it stops, and loads them at start, so the bars show at once, with `claude.updated_at` still saying
 how old they are. A window that reset while Marquee was stopped stays stale (`—`), and a window without a reset time
-isn't saved. Fresh values from `/usage` or the status line replace the loaded ones as they arrive. A missing or
+isn't saved, nor is the per-model weekly limit (it shows after the first `/usage` poll). Fresh values from `/usage` or
+the status line replace the loaded ones as they arrive. A missing or
 unreadable file is skipped with one log line; deleting it is safe.
 
 The session files and Codex logs are undocumented formats that may change. If Marquee can't read them any more, it
@@ -183,6 +193,11 @@ that long. The endpoint listens on 127.0.0.1 only and refuses requests from othe
 default port is 47913; `--http-port` changes it (pass the same `--port` to `marquee push`), and `--no-http` turns it
 off.
 
+A running `marquee run` holds at most 1,000 different custom keys, counting every key pushed since it started, even
+ones that went stale. Setting a key it already has always works; a push that would add a key past the limit is refused
+with a message saying so. Restarting `marquee run` is the only way to clear the keys. Reuse a fixed set of key names
+rather than making new ones (per build number, say). A later version may let you set or clear the limit.
+
 ## Hardware sensors
 
 `marquee sensors` lists every key and its current value. Keys include `cpu.temp`, `cpu.load`, `cpu.clock`,
@@ -202,7 +217,7 @@ off.
 |---|---|---|
 | 8.8" Universal Screen (`1CBE:A088`) | `lianli88_0001_0023` | `portrait` is upright when mounted vertically; brightness works; the image persists after Marquee exits; about 21 ms per frame (~47 fps) including JPEG encoding |
 | 8.8" Universal Screen (`1CBE:A088`) with `marquee run` | `lianli88_0001_0023` | example themes at 30 fps for 12 min (render ~2.5 ms, send ~18 ms); `--fps 60` tops out at ~51 fps; hot reload in ~2 s with the last good layout kept on errors; letterboxing on an orientation mismatch; reconnects after unplugging |
-| 8.8" Universal Screen (`1CBE:A088`) with `example-agents` | `lianli88_0001_0023` | shader theme at 30 fps (render ~16 ms and send ~23 ms, overlapped); `--fps 60` tops out at ~43 fps; Claude Code limits through the status line from terminal sessions (the desktop app's Code tab doesn't run status lines), with `marquee run` elevated or not; Codex limits and sessions; `marquee push` |
+| 8.8" Universal Screen (`1CBE:A088`) with `example-agents` | `lianli88_0001_0023` | shader theme at 30 fps (render ~11 ms with the aurora at `scale: 0.25`, send ~26 ms, overlapped); `--fps 60` topped out at ~43 fps with the earlier `scale: 0.5`; Claude Code limits through the status line from terminal sessions (the desktop app's Code tab doesn't run status lines), with `marquee run` elevated or not; Codex limits and sessions; `marquee push` |
 
 ## Credits
 

@@ -9,7 +9,9 @@ static class ShaderAssets
     /// Largest .sksl file a theme may use. Themes are shared; a real shader is a few kilobytes.
     public const int MaxShaderBytes = 64 * 1024;
 
-    public static SKRuntimeEffect? Load(string folder, ShaderLayer layer, List<string> warnings)
+    /// The compiled shader, or null when the layer is skipped: it can't be read or compiled, Marquee can't feed it, or
+    /// `probe` says a frame of it would take longer than a frame at `fps` allows on `canvas`.
+    public static SKRuntimeEffect? Load(string folder, ShaderLayer layer, List<string> warnings, SKSizeI canvas, int fps, ShaderProbe probe)
     {
         var path = layer.Path;
         if (!ThemeAssets.TryInsideFolder(folder, path, out var full))
@@ -44,8 +46,30 @@ static class ShaderAssets
             return Skip(warnings, $"Shader '{path}' {problem}");
         }
 
+        if (TooSlow(effect, layer, canvas, fps, probe) is { } slow)
+        {
+            effect.Dispose();
+            return Skip(warnings, $"Shader '{path}' {slow}");
+        }
+
         return effect;
     }
+
+    /// Why the layer is too slow for the frame rate, or null. A slow test frame is measured again, and the faster of the
+    /// two counts, so a hiccup elsewhere on the PC doesn't cost a theme its background.
+    static string? TooSlow(SKRuntimeEffect effect, ShaderLayer layer, SKSizeI canvas, int fps, ShaderProbe probe)
+    {
+        var budget = TimeSpan.FromSeconds(1.0 / fps);
+        var cost = probe(effect, layer, canvas);
+        if (cost > budget) cost = Min(cost, probe(effect, layer, canvas));
+        if (cost <= budget) return null;
+
+        var invariant = System.Globalization.CultureInfo.InvariantCulture;
+        return $"would take about {cost.TotalMilliseconds.ToString("N0", invariant)} ms to render a frame, " +
+            $"over the {budget.TotalMilliseconds.ToString("0", invariant)} ms budget at {fps} fps (lower its scale or the fps, or simplify it)";
+    }
+
+    static TimeSpan Min(TimeSpan a, TimeSpan b) => a < b ? a : b;
 
     /// Why the layer can't run, or null. Bindings the shader doesn't use, and uniforms nothing binds, are warnings only.
     static string? Problem(SKRuntimeEffect effect, ShaderLayer layer, List<string> warnings)
@@ -55,6 +79,7 @@ static class ShaderAssets
 
         using var uniforms = new SKRuntimeEffectUniforms(effect);
         if (!Fits(uniforms, "time", 1)) return "declares 'time' as something other than a float";
+        if (!Fits(uniforms, "day", 1)) return "declares 'day' as something other than a float";
         if (!Fits(uniforms, "resolution", 2)) return "declares 'resolution' as something other than a float2";
 
         foreach (var binding in layer.Uniforms)

@@ -12,15 +12,19 @@ public sealed class ThemeWatcher : IDisposable
     readonly Action<LoadedTheme> _loaded;
     readonly Action<ThemeException> _failed;
     readonly TimeSpan _debounce;
+    readonly int? _fpsOverride;
     readonly Timer _timer;
     readonly object _gate = new();
     FileSystemWatcher? _watcher;
     int _lockedRetries;
     bool _disposed;
 
-    public ThemeWatcher(string folder, Action<LoadedTheme> loaded, Action<ThemeException> failed, TimeSpan? debounce = null)
+    /// `fpsOverride` is `--fps`, passed to ThemeLoader.Load.
+    public ThemeWatcher(string folder, Action<LoadedTheme> loaded, Action<ThemeException> failed, TimeSpan? debounce = null,
+        int? fpsOverride = null)
     {
         _folder = folder;
+        _fpsOverride = fpsOverride;
         _loaded = loaded;
         _failed = failed;
         _debounce = debounce ?? DefaultDebounce;
@@ -37,7 +41,7 @@ public sealed class ThemeWatcher : IDisposable
             LoadedTheme theme;
             try
             {
-                theme = ThemeLoader.Load(_folder);
+                theme = ThemeLoader.Load(_folder, _fpsOverride);
             }
             catch (ThemeException ex)
             {

@@ -53,6 +53,21 @@ public class ShaderRenderingTests
     }
 
     [Fact]
+    public void Shader_day_counts_whole_days_so_animation_can_run_across_the_wrap()
+    {
+        // Red is day / 10, green is time / 10 s.
+        const string days = """
+            uniform float time;
+            uniform float day;
+            half4 main(float2 p) { return half4(half(day / 10.0), half(time / 10.0), 0, 1); }
+            """;
+        using var folder = Theme("  - shader: days.sksl", ("days.sksl", days));
+        using var frame = Render(folder, TestSensors.Of(), seconds: 3 * 86_400 + 5);
+
+        Pixels.AssertNear(new SKColor(77, 128, 0), At(frame, 960, 240), 2);
+    }
+
+    [Fact]
     public void A_stale_binding_is_zero()
     {
         using var folder = Theme("  - shader: probe.sksl\n    uniforms: { level: \"cpu.load / 100\" }", ("probe.sksl", Probe));
@@ -168,6 +183,7 @@ public class ShaderRenderingTests
     [Theory]
     [InlineData("uniform float2 time; half4 main(float2 p) { return half4(time.x); }", "declares 'time' as something other than a float")]
     [InlineData("uniform float resolution; half4 main(float2 p) { return half4(resolution); }", "declares 'resolution' as something other than a float2")]
+    [InlineData("uniform float2 day; half4 main(float2 p) { return half4(day.x); }", "declares 'day' as something other than a float")]
     [InlineData("uniform shader image; half4 main(float2 p) { return image.eval(p); }", "declares child shaders (image), which Marquee doesn't provide")]
     public void Shaders_marquee_cannot_feed_are_skipped(string source, string problem)
     {

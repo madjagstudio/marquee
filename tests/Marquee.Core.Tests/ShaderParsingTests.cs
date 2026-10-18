@@ -46,6 +46,7 @@ public class ShaderParsingTests
 
     [Theory]
     [InlineData("  - shader: a.sksl\n    uniforms:\n      time: 1", 5, "uniform 'time' is set by Marquee and can't be bound")]
+    [InlineData("  - shader: a.sksl\n    uniforms:\n      day: 1", 5, "uniform 'day' is set by Marquee and can't be bound")]
     [InlineData("  - shader: a.sksl\n    uniforms:\n      resolution: [1, 2]", 5, "uniform 'resolution' is set by Marquee and can't be bound")]
     [InlineData("  - shader: a.sksl\n    uniforms:\n      my-glow: 1", 5, "'my-glow' is not a uniform name: use letters, digits and _, starting with a letter or _")]
     [InlineData("  - shader: a.sksl\n    uniforms:\n      glow: \"gpu.load +\"", 5, "uniform 'glow': Expression ended unexpectedly at character 11")]

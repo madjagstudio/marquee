@@ -36,8 +36,11 @@ public static class ThemeLoader
     public const string LayoutFileName = "layout.yaml";
 
     /// Throws ThemeException for a missing folder or an invalid layout. IOException means the file is
-    /// locked mid-save; the hot-reload watcher retries those.
-    public static LoadedTheme Load(string folder)
+    /// locked mid-save; the hot-reload watcher retries those. `fpsOverride` is `--fps`: with the theme's canvas.fps
+    /// otherwise, it sets the frame budget a shader layer must fit in to be kept.
+    public static LoadedTheme Load(string folder, int? fpsOverride = null) => Load(folder, fpsOverride, ShaderCost.Estimate);
+
+    internal static LoadedTheme Load(string folder, int? fpsOverride, ShaderProbe probe)
     {
         var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
         if (!Directory.Exists(full))
@@ -48,7 +51,8 @@ public static class ThemeLoader
 
         var spec = LayoutParser.Parse(File.ReadAllText(layout));
         var warnings = new List<string>();
-        var assets = ThemeAssets.Load(full, spec, warnings);
+        var fps = Math.Clamp(fpsOverride ?? spec.Canvas.Fps, 1, CanvasSpec.MaxFps); // the rate RenderLoop will run at
+        var assets = ThemeAssets.Load(full, spec, warnings, fps, probe);
         return new LoadedTheme(full, spec, assets, warnings);
     }
 }

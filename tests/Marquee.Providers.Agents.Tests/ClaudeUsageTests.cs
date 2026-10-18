@@ -45,7 +45,26 @@ public class ClaudeUsageTests : IDisposable
         Assert.Equal(FiveHourReset, status.FiveHour.ResetsAt!.Value, 3);
         Assert.Equal(34.5, status.SevenDay!.UsedPct);
         Assert.Equal(SevenDayReset, status.SevenDay.ResetsAt);
+        Assert.Equal(new ClaudeModelWindow("Example", 0, SevenDayReset), status.SevenDayModel);
         Assert.Null(status.ContextPct);
+    }
+
+    [Fact]
+    public void Of_several_per_model_weekly_limits_the_most_used_one_is_read()
+    {
+        var status = ClaudeUsageReport.Parse(
+            """{"type":"assistant","message":{"usage_report":{"rate_limits":{"limits":[{"kind":"weekly_scoped","percent":20,"resets_at":"2026-10-24T10:00:00Z","scope":{"model":{"display_name":"Sonnet"}}},{"kind":"weekly_scoped","percent":61,"resets_at":"2026-10-24T10:00:00Z","scope":{"model":{"display_name":"Opus"}}},{"kind":"weekly_scoped","percent":40,"scope":null}]}}}}""");
+
+        Assert.Equal(new ClaudeModelWindow("Opus", 61, SevenDayReset), status.SevenDayModel);
+    }
+
+    [Fact]
+    public void A_per_model_weekly_limit_without_a_model_name_is_read_without_one()
+    {
+        var status = ClaudeUsageReport.Parse(
+            """{"type":"assistant","message":{"usage_report":{"rate_limits":{"limits":[{"kind":"weekly_scoped","percent":7,"scope":{"model":null}}]}}}}""");
+
+        Assert.Equal(new ClaudeModelWindow(null, 7, null), status.SevenDayModel);
     }
 
     [Fact]
@@ -109,13 +128,15 @@ public class ClaudeUsageTests : IDisposable
     }
 
     [Fact]
-    public void Unknown_kinds_and_entries_that_are_not_objects_are_ignored()
+    public void Unknown_kinds_malformed_per_model_limits_and_entries_that_are_not_objects_are_ignored()
     {
+        // A per-model limit is an extra: one Marquee can't read mustn't cost the 5-hour and weekly ones.
         var status = ClaudeUsageReport.Parse(
             """{"type":"assistant","message":{"usage_report":{"rate_limits":{"limits":[{"kind":"weekly_scoped","percent":"garbage"},{"kind":"something_new"},"text",null,{"kind":"weekly_all","percent":9,"resets_at":"2026-10-24T10:00:00Z"}]}}}}""");
 
         Assert.Null(status.FiveHour);
         Assert.Equal(new ClaudeWindow(9, SevenDayReset), status.SevenDay);
+        Assert.Null(status.SevenDayModel);
     }
 
     [Fact]
@@ -209,6 +230,9 @@ public class ClaudeUsageTests : IDisposable
         Assert.Equal(FiveHourReset, (double)Clock.Read(h.Store, "claude.five_hour.resets_at")!, 3);
         Assert.Equal(34.5, Clock.Read(h.Store, "claude.seven_day.pct"));
         Assert.Equal(SevenDayReset, Clock.Read(h.Store, "claude.seven_day.resets_at"));
+        Assert.Equal(0.0, Clock.Read(h.Store, "claude.seven_day_model.pct"));
+        Assert.Equal(SevenDayReset, Clock.Read(h.Store, "claude.seven_day_model.resets_at"));
+        Assert.Equal("Example", Clock.Read(h.Store, "claude.seven_day_model.name"));
         Assert.Equal(Clock.T0Unix, Clock.Read(h.Store, "claude.updated_at"));
         Assert.Null(Clock.Read(h.Store, "claude.context.pct"));
 
@@ -216,6 +240,11 @@ public class ClaudeUsageTests : IDisposable
         Assert.Null(Clock.Read(h.Store, "claude.five_hour.pct"));
         Assert.Null(Clock.Read(h.Store, "claude.five_hour.resets_at"));
         Assert.Equal(34.5, Clock.Read(h.Store, "claude.seven_day.pct"));
+        Assert.Equal("Example", Clock.Read(h.Store, "claude.seven_day_model.name"));
+
+        h.Now = Clock.T0.AddDays(8); // past the weekly reset: the model's name goes with its percentage
+        Assert.Null(Clock.Read(h.Store, "claude.seven_day_model.pct"));
+        Assert.Null(Clock.Read(h.Store, "claude.seven_day_model.name"));
     }
 
     [Theory]

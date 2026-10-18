@@ -105,6 +105,17 @@ public class ClaudeStatusLineTests
     }
 
     [Fact]
+    public void Apply_skips_a_per_model_window_that_already_reset_name_and_all()
+    {
+        var store = new SensorStore(() => Clock.T0);
+
+        ClaudeStatusLine.Apply(new ClaudeStatus(null, null, null, new ClaudeModelWindow("Opus", 90, Clock.T0Unix - 1)), store, Clock.T0);
+
+        Assert.Null(Clock.Read(store, "claude.seven_day_model.pct"));
+        Assert.Null(Clock.Read(store, "claude.seven_day_model.name"));
+    }
+
+    [Fact]
     public void Apply_keeps_a_window_without_a_reset_time_indefinitely()
     {
         var now = Clock.T0;

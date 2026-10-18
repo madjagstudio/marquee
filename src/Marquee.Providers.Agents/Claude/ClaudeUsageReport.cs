@@ -32,7 +32,7 @@ public static class ClaudeUsageReport
 
             if (report is not { } usage)
                 throw new FormatException(NoReport(resultText));
-            return new ClaudeStatus(Window(usage, "session"), Window(usage, "weekly_all"), ContextPct: null);
+            return new ClaudeStatus(Window(usage, "session"), Window(usage, "weekly_all"), ContextPct: null, ModelWindow(usage));
         }
         finally
         {
@@ -91,14 +91,7 @@ public static class ClaudeUsageReport
 
     static ClaudeWindow? Window(JsonElement report, string kind)
     {
-        if (!JsonFields.Has(report, "rate_limits")) return null; // API-key sessions have no plan limits
-        var limits = JsonFields.Object(report, "rate_limits")
-            ?? throw new FormatException("usage_report.rate_limits is neither null nor an object");
-        if (!JsonFields.Has(limits, "limits")) return null;
-        if (!limits.TryGetProperty("limits", out var list) || list.ValueKind != JsonValueKind.Array)
-            throw new FormatException("usage_report.rate_limits.limits is not a list");
-
-        foreach (var entry in list.EnumerateArray())
+        foreach (var entry in Limits(report))
         {
             if (JsonFields.String(entry, "kind") != kind) continue;
             var percent = JsonFields.Number(entry, "percent")
@@ -107,6 +100,36 @@ public static class ClaudeUsageReport
         }
 
         return null;
+    }
+
+    /// The most used of the per-model weekly limits (`weekly_scoped`, one per model with its own cap), or null. They are
+    /// an extra, so an entry without a numeric percent is skipped rather than failing the poll for the main windows.
+    static ClaudeModelWindow? ModelWindow(JsonElement report)
+    {
+        ClaudeModelWindow? most = null;
+        foreach (var entry in Limits(report))
+        {
+            if (JsonFields.String(entry, "kind") != "weekly_scoped" || JsonFields.Number(entry, "percent") is not { } percent) continue;
+            if (most is not null && percent <= most.UsedPct) continue;
+            var model = JsonFields.Object(entry, "scope") is { } scope && JsonFields.Object(scope, "model") is { } m
+                ? JsonFields.String(m, "display_name")
+                : null;
+            most = new ClaudeModelWindow(model, percent, JsonFields.UnixSeconds(entry, "resets_at"));
+        }
+
+        return most;
+    }
+
+    /// `usage_report.rate_limits.limits`, empty when there is none (API-key sessions have no plan limits).
+    static IEnumerable<JsonElement> Limits(JsonElement report)
+    {
+        if (!JsonFields.Has(report, "rate_limits")) return [];
+        var limits = JsonFields.Object(report, "rate_limits")
+            ?? throw new FormatException("usage_report.rate_limits is neither null nor an object");
+        if (!JsonFields.Has(limits, "limits")) return [];
+        if (!limits.TryGetProperty("limits", out var list) || list.ValueKind != JsonValueKind.Array)
+            throw new FormatException("usage_report.rate_limits.limits is not a list");
+        return list.EnumerateArray();
     }
 
     static string NoReport(string? resultText)
