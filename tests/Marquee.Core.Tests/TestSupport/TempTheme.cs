@@ -35,7 +35,8 @@ sealed class TempTheme : IDisposable
         File.WriteAllBytes(path, contents);
     }
 
-    public LoadedTheme Load() => ThemeLoader.Load(Folder);
+    /// Loads without measuring shader cost (ShaderCostTests covers that), so results don't depend on the machine.
+    public LoadedTheme Load() => ThemeLoader.Load(Folder, null, TestProbes.Free);
 
     public void Dispose()
     {

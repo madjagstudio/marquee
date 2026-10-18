@@ -83,7 +83,8 @@ static class RunCommand
                 log.Error(showing ? $"{error.Message} (the last good layout stays on screen until the file is fixed)" : error.Message);
                 banner = error.Message;
                 previewHost?.ShowError(banner);
-            });
+            },
+            fpsOverride: fps);
 
         // With no last good layout yet, a broken theme at startup has nothing to fall back to.
         if (!watcher.Reload(retryIfLocked: false)) return 1;

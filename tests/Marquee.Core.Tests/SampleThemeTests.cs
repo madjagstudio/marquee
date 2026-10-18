@@ -11,6 +11,10 @@ public class SampleThemeTests
     static string ThemeFolder(string name, [CallerFilePath] string file = "") =>
         Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, "..", "..", "themes", name));
 
+    /// Without the shader cost check: whether a shader fits the frame budget depends on the machine (a slower PC skips
+    /// the aurora by design), and ShaderCostTests covers the check itself.
+    static LoadedTheme Load(string name) => ThemeLoader.Load(ThemeFolder(name), null, TestProbes.Free);
+
     static SensorSnapshot Typical() => TypicalStore().Snapshot();
 
     static SensorStore TypicalStore()
@@ -53,7 +57,7 @@ public class SampleThemeTests
     [InlineData("example-agents")]
     public void Sample_themes_load_without_warnings(string name)
     {
-        using var theme = ThemeLoader.Load(ThemeFolder(name));
+        using var theme = Load(name);
 
         Assert.Empty(theme.Warnings);
     }
@@ -63,7 +67,7 @@ public class SampleThemeTests
     [InlineData("example-portrait")]
     public void Sample_theme_with_typical_values(string name)
     {
-        using var theme = ThemeLoader.Load(ThemeFolder(name));
+        using var theme = Load(name);
         using var frame = Frames.Render(theme, Typical());
 
         Snapshots.Match(frame, name);
@@ -74,7 +78,7 @@ public class SampleThemeTests
     [InlineData("example-portrait")]
     public void Sample_theme_running_hot_with_a_stale_gpu(string name)
     {
-        using var theme = ThemeLoader.Load(ThemeFolder(name));
+        using var theme = Load(name);
         using var frame = Frames.Render(theme, Hot());
 
         Snapshots.Match(frame, $"{name}-hot");
@@ -83,7 +87,7 @@ public class SampleThemeTests
     [Fact]
     public void Agents_theme_with_claude_and_codex_working()
     {
-        using var theme = ThemeLoader.Load(ThemeFolder("example-agents"));
+        using var theme = Load("example-agents");
         using var frame = Frames.Render(theme, Agents(), TimeSpan.FromSeconds(12));
 
         Snapshots.Match(frame, "example-agents");
@@ -101,7 +105,7 @@ public class SampleThemeTests
             ("codex.secondary.pct", 30), ("codex.secondary.window_min", 10080), ("codex.secondary.resets_at", now + 3 * 86400 + 21 * 3600),
         })
             store.Set(key, value);
-        using var theme = ThemeLoader.Load(ThemeFolder("example-agents"));
+        using var theme = Load("example-agents");
         using var frame = Frames.Render(theme, store.Snapshot(), TimeSpan.FromSeconds(12));
 
         Snapshots.Match(frame, "example-agents-two-windows");
@@ -110,7 +114,7 @@ public class SampleThemeTests
     [Fact]
     public void Agents_theme_before_any_agent_data()
     {
-        using var theme = ThemeLoader.Load(ThemeFolder("example-agents"));
+        using var theme = Load("example-agents");
         using var frame = Frames.Render(theme, Typical(), TimeSpan.FromSeconds(12));
 
         Snapshots.Match(frame, "example-agents-no-data");
