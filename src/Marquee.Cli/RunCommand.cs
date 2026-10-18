@@ -44,6 +44,8 @@ static class RunCommand
 
         var log = new ConsoleLog();
         var store = new SensorStore();
+        var claudeLimits = new ClaudeLimitsFile(log);
+        claudeLimits.Restore(store, DateTimeOffset.UtcNow); // before any source starts, so live readings win
         using var providers = new ProviderRunner(store, log);
         if (SensorSources.Create(sensors, log) is { } provider)
             providers.Start(provider);
@@ -130,10 +132,12 @@ static class RunCommand
                 $"{stats.Fps:0.0} fps (target {loop.Fps}) · render {stats.RenderMs:0.0} ms · send {stats.PushMs:0.0} ms · {loop.FramesPushed} frames sent");
             previewHost?.ShowStatus(status);
             if (seconds == 5 || seconds % 60 == 0) log.Info(status);
+            claudeLimits.Save(store.Snapshot()); // writes only when the limits changed
         }
 
         Interlocked.Exchange(ref stopping, 1); // stopping now (the preview may have closed), so Ctrl+C won't touch `stop`
         loop.Stop();
+        claudeLimits.Save(store.Snapshot());
         previewHost?.Dispose();
         return 0;
     }

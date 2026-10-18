@@ -48,14 +48,19 @@ public static class ClaudeStatusLine
 
     /// Writes the readings. A window's keys expire when it resets, since Claude Code stops sending a window then and
     /// its last percentage would be wrong; claude.updated_at says how old the readings are.
-    public static void Apply(ClaudeStatus status, SensorStore store, DateTimeOffset now)
+    public static void Apply(ClaudeStatus status, SensorStore store, DateTimeOffset now) =>
+        Apply(status, store, now, Math.Floor(now.ToUnixTimeMilliseconds() / 1000.0));
+
+    /// Apply, with claude.updated_at set to when the readings were taken (Unix seconds) instead of now: for limits
+    /// restored by ClaudeLimitsFile, so it shows their real age.
+    internal static void Apply(ClaudeStatus status, SensorStore store, DateTimeOffset now, double updatedAt)
     {
         var nowSeconds = now.ToUnixTimeMilliseconds() / 1000.0;
         Write(store, "claude.five_hour", status.FiveHour, nowSeconds);
         Write(store, "claude.seven_day", status.SevenDay, nowSeconds);
         if (status.ContextPct is { } context)
             store.Set("claude.context.pct", context);
-        store.Set("claude.updated_at", Math.Floor(nowSeconds));
+        store.Set("claude.updated_at", updatedAt);
     }
 
     static ClaudeWindow? Window(JsonElement limits, string name)

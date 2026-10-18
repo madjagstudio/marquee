@@ -22,4 +22,7 @@ public static class AgentPaths
 
     /// The status line Claude Code ran before `marquee setup-claude`, which `marquee statusline` runs in turn.
     public static string SavedStatusLine => Path.Combine(MarqueeData, "claude-statusline.json");
+
+    /// The last Claude Code limits `marquee run` saw, which it shows again at its next start (ClaudeLimitsFile).
+    public static string ClaudeLimits => Path.Combine(MarqueeData, "claude-limits.json");
 }

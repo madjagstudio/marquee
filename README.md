@@ -147,12 +147,18 @@ their own `statusLine` take precedence over this one.
 
 Status-line updates arrive only while `marquee run` is going (elevated or not) and a Claude Code session is updating
 its status line; only programs running as your Windows account can hand them to Marquee. Terminal sessions (`claude`)
-run the status line; the Claude desktop app's Code tab doesn't, which is why Marquee also polls `/usage`. Limits are
-lost when `marquee run` restarts, until a `/usage` poll with fresh limits (the first is a few seconds after start) or a
-status-line update. In between they keep their last value (`claude.updated_at` says how old it is), and each window
-goes stale (`—`) when it resets. If `claude` can't be found, isn't logged in or fails, Marquee logs that once and tries
-again after 5 minutes. Which Codex window is primary depends on the plan: `codex.primary.window_min` is 300 for a
-5-hour window and 10080 for a weekly one.
+run the status line; the Claude desktop app's Code tab doesn't, which is why Marquee also polls `/usage`. Between
+updates the limits keep their last value (`claude.updated_at` says how old it is), and each window goes stale (`—`)
+when it resets. If `claude` can't be found, isn't logged in or fails, Marquee logs that once and tries again after 5
+minutes. Which Codex window is primary depends on the plan: `codex.primary.window_min` is 300 for a 5-hour window and
+10080 for a weekly one.
+
+`marquee run` keeps the last limits across restarts in `%LOCALAPPDATA%\Marquee\claude-limits.json`, which holds only
+each window's percentage and reset time and when they were read (no login or account details). It saves them whenever
+they change and when it stops, and loads them at start, so the bars show at once, with `claude.updated_at` still saying
+how old they are. A window that reset while Marquee was stopped stays stale (`—`), and a window without a reset time
+isn't saved. Fresh values from `/usage` or the status line replace the loaded ones as they arrive. A missing or
+unreadable file is skipped with one log line; deleting it is safe.
 
 The session files and Codex logs are undocumented formats that may change. If Marquee can't read them any more, it
 logs a warning and those keys go stale; everything else keeps working.
