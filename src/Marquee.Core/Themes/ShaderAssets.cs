@@ -55,6 +55,7 @@ static class ShaderAssets
 
         using var uniforms = new SKRuntimeEffectUniforms(effect);
         if (!Fits(uniforms, "time", 1)) return "declares 'time' as something other than a float";
+        if (!Fits(uniforms, "day", 1)) return "declares 'day' as something other than a float";
         if (!Fits(uniforms, "resolution", 2)) return "declares 'resolution' as something other than a float2";
 
         foreach (var binding in layer.Uniforms)

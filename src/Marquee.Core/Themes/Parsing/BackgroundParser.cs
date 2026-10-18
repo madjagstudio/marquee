@@ -8,7 +8,7 @@ namespace Marquee.Core.Themes.Parsing;
 static partial class BackgroundParser
 {
     /// Uniforms Marquee sets on every shader; a theme can't bind them.
-    public static readonly IReadOnlyList<string> BuiltInUniforms = ["time", "resolution"];
+    public static readonly IReadOnlyList<string> BuiltInUniforms = ["time", "day", "resolution"];
 
     /// A theme is untrusted: every layer is drawn each frame, and each shader layer is compiled at load and may keep
     /// its own offscreen surface (up to ~3.6 MB), so neither can be stacked without limit.
