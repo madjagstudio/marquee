@@ -127,7 +127,8 @@ that isn't an object), it changes nothing and says why. A project's `.claude/set
 their own `statusLine` take precedence over this one.
 
 Limits arrive only while `marquee run` is going (elevated or not) and a Claude Code session is updating its status
-line; only programs running as your Windows account can hand them to Marquee. They are lost when `marquee run`
+line; only programs running as your Windows account can hand them to Marquee. Terminal sessions (`claude`) run the
+status line; the Claude desktop app's Code tab doesn't, so limits only update while a terminal session is in use. They are lost when `marquee run`
 restarts, until a session updates its status line again. In between they keep their last value (`claude.updated_at`
 says how old it is), and each window goes stale (`—`) when it resets. Which Codex window is primary depends on the
 plan: `codex.primary.window_min` is 300 for a 5-hour window and 10080 for a weekly one.
@@ -174,7 +175,7 @@ off.
 |---|---|---|
 | 8.8" Universal Screen (`1CBE:A088`) | `lianli88_0001_0023` | `portrait` is upright when mounted vertically; brightness works; the image persists after Marquee exits; about 21 ms per frame (~47 fps) including JPEG encoding |
 | 8.8" Universal Screen (`1CBE:A088`) with `marquee run` | `lianli88_0001_0023` | example themes at 30 fps for 12 min (render ~2.5 ms, send ~18 ms); `--fps 60` tops out at ~51 fps; hot reload in ~2 s with the last good layout kept on errors; letterboxing on an orientation mismatch; reconnects after unplugging |
-| 8.8" Universal Screen (`1CBE:A088`) with `example-agents` | `lianli88_0001_0023` | shader theme at 30 fps (render ~16 ms and send ~23 ms, overlapped); `--fps 60` tops out at ~43 fps; Claude Code limits through the status line from both the desktop app and the terminal, with `marquee run` elevated or not; Codex limits and sessions; `marquee push` |
+| 8.8" Universal Screen (`1CBE:A088`) with `example-agents` | `lianli88_0001_0023` | shader theme at 30 fps (render ~16 ms and send ~23 ms, overlapped); `--fps 60` tops out at ~43 fps; Claude Code limits through the status line from terminal sessions (the desktop app's Code tab doesn't run status lines), with `marquee run` elevated or not; Codex limits and sessions; `marquee push` |
 
 ## Credits
 
