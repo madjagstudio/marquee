@@ -38,12 +38,14 @@ public class SampleThemeTests
         {
             ("claude.five_hour.pct", 42), ("claude.five_hour.resets_at", now + 2 * 3600 + 14 * 60),
             ("claude.seven_day.pct", 86), ("claude.seven_day.resets_at", now + 3 * 86400 + 5 * 3600),
+            ("claude.seven_day_model.pct", 64), ("claude.seven_day_model.resets_at", now + 3 * 86400 + 5 * 3600),
             ("claude.context.pct", 31), ("claude.updated_at", now - 180),
             ("claude.sessions.total", 3), ("claude.sessions.busy", 1), ("claude.sessions.idle", 2),
             ("codex.primary.pct", 52), ("codex.primary.window_min", 10080), ("codex.primary.resets_at", now + 4 * 86400 + 3600),
             ("codex.sessions.total", 1), ("codex.sessions.busy", 1), ("codex.sessions.idle", 0),
         })
             store.Set(key, value);
+        store.Set("claude.seven_day_model.name", "Opus");
         store.Set("custom.status", "deploy ok");
         return store;
     }
@@ -109,6 +111,24 @@ public class SampleThemeTests
         using var frame = Frames.Render(theme, store.Snapshot(), TimeSpan.FromSeconds(12));
 
         Snapshots.Match(frame, "example-agents-two-windows");
+    }
+
+    /// A Codex secondary window that is neither 5-hour nor weekly is labeled with its length.
+    [Fact]
+    public void Agents_theme_labels_a_codex_window_by_its_length()
+    {
+        var store = AgentsStore();
+        var now = TestSensors.UnixTime;
+        foreach (var (key, value) in new (string, double)[]
+        {
+            ("codex.primary.pct", 12), ("codex.primary.window_min", 300), ("codex.primary.resets_at", now + 2 * 3600 + 30 * 60),
+            ("codex.secondary.pct", 45), ("codex.secondary.window_min", 1440), ("codex.secondary.resets_at", now + 9 * 3600),
+        })
+            store.Set(key, value);
+        using var theme = Load("example-agents");
+        using var frame = Frames.Render(theme, store.Snapshot(), TimeSpan.FromSeconds(12));
+
+        Snapshots.Match(frame, "example-agents-daily-window");
     }
 
     [Fact]
