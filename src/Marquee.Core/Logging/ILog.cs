@@ -1,6 +1,6 @@
 namespace Marquee.Core.Logging;
 
-/// Where the app reports what it is doing. The CLI writes to the console; rolling file logs arrive with the tray app.
+/// Where the app reports what it is doing: the CLI's console, FileLog's daily files, or both through TeeLog.
 public interface ILog
 {
     void Info(string message);
