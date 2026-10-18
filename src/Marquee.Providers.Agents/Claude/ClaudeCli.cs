@@ -35,7 +35,8 @@ public static class ClaudeCli
     /// command can hold the pipes open long after the command itself is done.
     static readonly TimeSpan DrainTimeout = TimeSpan.FromSeconds(2);
 
-    /// The path of `claude.exe` on this PC, or null. Searched in order: each PATH folder; the native installer's
+    /// The path of `claude.exe` on this PC, or null. Searched in order: each PATH folder (full paths only: a relative one
+    /// would depend on Marquee's current folder); the native installer's
     /// `~\.local\bin`; the desktop app's bundled copy, `%APPDATA%\Claude\claude-code\<version>\<hash>\claude.exe`
     /// (an undocumented layout), taking the newest version whose folder name parses.
     public static string? Find() => Find(Environment.GetEnvironmentVariable, File.Exists, Subfolders);
@@ -49,7 +50,7 @@ public static class ClaudeCli
             foreach (var entry in path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 var folder = entry.Trim('"');
-                if (folder.Length == 0) continue;
+                if (!Path.IsPathFullyQualified(folder)) continue;
                 var candidate = Path.Combine(folder, "claude.exe");
                 if (fileExists(candidate)) return candidate;
             }

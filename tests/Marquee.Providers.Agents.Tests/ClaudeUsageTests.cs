@@ -348,6 +348,22 @@ public class ClaudeUsageTests : IDisposable
     }
 
     [Fact]
+    public void PATH_entries_that_are_not_full_paths_are_skipped()
+    {
+        // A relative entry would be looked up from Marquee's current folder, which anyone may have chosen.
+        var pc = new FakePc();
+        pc.Environment["PATH"] = @"bin;.\tools;\rooted\no-drive;C:relative;""tools2"";C:\Tools";
+        pc.Files.Add(@"bin\claude.exe");
+        pc.Files.Add(@".\tools\claude.exe");
+        pc.Files.Add(@"\rooted\no-drive\claude.exe");
+        pc.Files.Add(@"C:relative\claude.exe");
+        pc.Files.Add(@"tools2\claude.exe");
+        pc.Files.Add(@"C:\Tools\claude.exe");
+
+        Assert.Equal(@"C:\Tools\claude.exe", pc.Find());
+    }
+
+    [Fact]
     public void A_PATH_folder_beats_the_native_installer_and_the_desktop_app()
     {
         var pc = new FakePc();
