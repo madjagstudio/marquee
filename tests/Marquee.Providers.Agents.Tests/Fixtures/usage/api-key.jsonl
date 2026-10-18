@@ -1,0 +1,3 @@
+{"type":"system","subtype":"init","cwd":"C:\Example","session_id":"00000000-0000-0000-0000-000000000000","tools":[],"model":"example-model"}
+{"type":"assistant","message":{"role":"assistant","content":[],"usage_report":{"session":{"total_cost_usd":0,"total_duration_ms":0},"rate_limits":null}},"session_id":"00000000-0000-0000-0000-000000000000"}
+{"type":"result","subtype":"success","is_error":false,"num_turns":0,"result":"Usage limits are available for subscription plans.","total_cost_usd":0,"session_id":"00000000-0000-0000-0000-000000000000"}
