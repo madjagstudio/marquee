@@ -6,9 +6,13 @@ namespace Marquee.Providers.Agents.Claude;
 /// One usage-limit window from the status line: percent used (0–100) and when it resets (Unix seconds), if known.
 public sealed record ClaudeWindow(double UsedPct, double? ResetsAt);
 
-/// What Marquee reads from one status-line update. Windows are null when Claude Code didn't send them: API-key users,
-/// before the session's first response, and after a window resets.
-public sealed record ClaudeStatus(ClaudeWindow? FiveHour, ClaudeWindow? SevenDay, double? ContextPct);
+/// A per-model weekly limit (`weekly_scoped` in `/usage`): the model's name as Claude Code shows it, if it gave one,
+/// percent used (0–100) and when it resets (Unix seconds), if known.
+public sealed record ClaudeModelWindow(string? Model, double UsedPct, double? ResetsAt);
+
+/// What Marquee reads from one status-line update or `/usage` poll. Windows are null when Claude Code didn't send them:
+/// API-key users, before the session's first response, and after a window resets. Only `/usage` has SevenDayModel.
+public sealed record ClaudeStatus(ClaudeWindow? FiveHour, ClaudeWindow? SevenDay, double? ContextPct, ClaudeModelWindow? SevenDayModel = null);
 
 /// Claude Code's documented status-line JSON (https://code.claude.com/docs/en/statusline):
 /// `rate_limits.five_hour` / `seven_day` with `used_percentage` and `resets_at`, and `context_window.used_percentage`.
@@ -56,8 +60,12 @@ public static class ClaudeStatusLine
     internal static void Apply(ClaudeStatus status, SensorStore store, DateTimeOffset now, double updatedAt)
     {
         var nowSeconds = now.ToUnixTimeMilliseconds() / 1000.0;
-        Write(store, "claude.five_hour", status.FiveHour, nowSeconds);
-        Write(store, "claude.seven_day", status.SevenDay, nowSeconds);
+        Write(store, "claude.five_hour", status.FiveHour, nowSeconds, out _);
+        Write(store, "claude.seven_day", status.SevenDay, nowSeconds, out _);
+        if (status.SevenDayModel is { } model
+            && Write(store, "claude.seven_day_model", new ClaudeWindow(model.UsedPct, model.ResetsAt), nowSeconds, out var ttl)
+            && model.Model is { } name)
+            store.Set("claude.seven_day_model.name", name, ttl); // expires with the percentage
         if (status.ContextPct is { } context)
             store.Set("claude.context.pct", context);
         store.Set("claude.updated_at", updatedAt);
@@ -73,18 +81,20 @@ public static class ClaudeStatusLine
         return new ClaudeWindow(used, JsonFields.UnixSeconds(window, "resets_at"));
     }
 
-    static void Write(SensorStore store, string prefix, ClaudeWindow? window, double nowSeconds)
+    /// Whether the window was written; `ttl` is how long its keys last (null: until replaced).
+    static bool Write(SensorStore store, string prefix, ClaudeWindow? window, double nowSeconds, out TimeSpan? ttl)
     {
-        if (window is null) return;
+        ttl = null;
+        if (window is null) return false;
 
-        TimeSpan? ttl = null;
         if (window.ResetsAt is { } resetsAt)
         {
-            if (resetsAt <= nowSeconds) return; // already reset: the percentage is out of date
+            if (resetsAt <= nowSeconds) return false; // already reset: the percentage is out of date
             ttl = TimeSpan.FromSeconds(resetsAt - nowSeconds);
             store.Set($"{prefix}.resets_at", resetsAt, ttl);
         }
 
         store.Set($"{prefix}.pct", window.UsedPct, ttl);
+        return true;
     }
 }
