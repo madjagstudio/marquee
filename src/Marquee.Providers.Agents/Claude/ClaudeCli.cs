@@ -115,12 +115,12 @@ public static class ClaudeCli
             : message);
     }
 
-    /// Starts `exe` with the arguments (no shell) and ChildEnvironment, puts it in ChildProcessJob.Shared so it dies with
-    /// Marquee, closes its stdin, reads stdout (up to MaxOutputBytes) and stderr (thrown away, but read so its pipe can't
-    /// fill), and waits. At the timeout the process tree is killed.
+    /// Starts `exe` with the arguments (no shell) and ChildEnvironment, puts it in a ChildProcessJob of its own so it dies
+    /// with Marquee, closes its stdin, reads stdout (up to MaxOutputBytes) and stderr (thrown away, but read so its pipe
+    /// can't fill), and waits. At the timeout the process tree is killed; closing the job at the end ends anything left.
     internal static ProcessResult RunProcess(string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout)
     {
-        var job = ChildProcessJob.Shared; // first, so a job that can't be made starts nothing
+        using var job = new ChildProcessJob(); // first, so a job that can't be made starts nothing; closed last
         var start = new ProcessStartInfo(exe)
         {
             WorkingDirectory = workingDirectory,

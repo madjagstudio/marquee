@@ -12,7 +12,7 @@ namespace Marquee.Providers.Agents.Claude;
 /// `claude.exe` is found is writable by the user's unelevated programs, so starting it elevated would hand them
 /// administrator rights. The token is the desktop shell's (Explorer's): GetShellWindow, its process, OpenProcessToken,
 /// DuplicateTokenEx, then CreateProcessWithTokenW with the user's own environment block. The child starts suspended, goes
-/// into ChildProcessJob.Shared and only then runs, and its stdin, stdout and stderr are anonymous pipes, read the same
+/// into a ChildProcessJob of its own and only then runs, and its stdin, stdout and stderr are anonymous pipes, read the same
 /// way as ClaudeCli.RunProcess reads them.
 internal static class UnelevatedProcess
 {
@@ -102,6 +102,7 @@ internal static class UnelevatedProcess
 
     static ProcessResult Run(KernelHandle? userToken, string exe, IReadOnlyList<string> arguments, string workingDirectory, TimeSpan timeout)
     {
+        using var job = new ChildProcessJob(); // closed last, after the child is done or killed: it ends anything left
         using var stdin = new AnonymousPipeServerStream(PipeDirection.Out, HandleInheritability.Inheritable);
         using var stdout = new AnonymousPipeServerStream(PipeDirection.In, HandleInheritability.Inheritable);
         using var stderr = new AnonymousPipeServerStream(PipeDirection.In, HandleInheritability.Inheritable);
@@ -128,7 +129,7 @@ internal static class UnelevatedProcess
         {
             try
             {
-                ChildProcessJob.Shared.Assign(process);
+                job.Assign(process);
                 if (ResumeThread(thread) == ResumeThreadFailed) throw Failed("ResumeThread");
             }
             catch (Win32Exception ex)

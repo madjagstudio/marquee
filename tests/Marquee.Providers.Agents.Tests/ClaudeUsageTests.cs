@@ -741,11 +741,12 @@ public class ClaudeUsageTests : IDisposable
         var pidFile = _dir.File("child.pid");
         var script = $"Set-Content -Path '{pidFile}' -Value $PID; Start-Sleep -Seconds 3";
 
+        var inJob = false;
+        ChildProcessJob.Assigned.Value = (job, process) => inJob = job.Contains(process);
         var running = Task.Run(() => ClaudeCli.RunProcess("powershell.exe", PowerShell(script), _dir.Path, TimeSpan.FromSeconds(30)));
 
-        var pid = WaitForPid(pidFile);
-        using (var child = Process.GetProcessById(pid))
-            Assert.True(ChildProcessJob.Shared.Contains(child.SafeHandle), $"process {pid} is not in Marquee's job");
+        WaitForPid(pidFile);
+        Assert.True(inJob, "the child is not in a job of its own");
         Assert.Equal(0, (await running).ExitCode);
     }
 

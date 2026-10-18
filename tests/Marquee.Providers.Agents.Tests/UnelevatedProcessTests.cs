@@ -244,11 +244,12 @@ public class UnelevatedProcessTests(ITestOutputHelper output) : IDisposable
     public async Task It_puts_the_child_in_the_job_that_dies_with_Marquee()
     {
         var pidFile = _dir.File("child.pid");
+        var inJob = false;
+        ChildProcessJob.Assigned.Value = (job, process) => inJob = job.Contains(process);
         var running = Task.Run(() => Run($"Set-Content -Path '{pidFile}' -Value $PID; Start-Sleep -Seconds 3"));
 
-        var pid = ClaudeUsageTests.WaitForPid(pidFile);
-        using (var child = Process.GetProcessById(pid))
-            Assert.True(ChildProcessJob.Shared.Contains(child.SafeHandle), $"process {pid} is not in Marquee's job");
+        ClaudeUsageTests.WaitForPid(pidFile);
+        Assert.True(inJob, "the child is not in a job of its own");
         Assert.Equal(0, (await running).ExitCode);
     }
 
