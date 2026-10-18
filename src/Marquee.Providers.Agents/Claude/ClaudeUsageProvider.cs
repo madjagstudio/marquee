@@ -40,7 +40,11 @@ public sealed class ClaudeUsageProvider : ISensorProvider
         try
         {
             var status = ClaudeUsageReport.Parse(_fetch());
-            ClaudeStatusLine.Apply(status, store, _now());
+            // When Claude Code can't fetch fresh limits, `/usage` still succeeds but lists none (its text shows last-known
+            // bars). Writing nothing, not even claude.updated_at, keeps "updated just now" off a blank reading; earlier
+            // values stay until they expire at their reset.
+            if (status.FiveHour is not null || status.SevenDay is not null)
+                ClaudeStatusLine.Apply(status, store, _now());
             _failure = null;
         }
         catch (Exception ex)

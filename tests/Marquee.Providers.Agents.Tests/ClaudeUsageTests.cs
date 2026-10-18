@@ -36,6 +36,10 @@ public class ClaudeUsageTests : IDisposable
         Assert.Equal(new ClaudeStatus(null, null, null), ClaudeUsageReport.Parse(Usage("api-key.jsonl")));
 
     [Fact]
+    public void A_report_with_null_limits_has_no_windows_and_does_not_throw() =>
+        Assert.Equal(new ClaudeStatus(null, null, null), ClaudeUsageReport.Parse(Usage("no-fresh-limits.jsonl")));
+
+    [Fact]
     public void Not_logged_in_throws_with_the_text_of_the_result()
     {
         var ex = Assert.Throws<FormatException>(() => ClaudeUsageReport.Parse(Usage("not-logged-in.jsonl")));
@@ -185,6 +189,34 @@ public class ClaudeUsageTests : IDisposable
         Assert.Null(Clock.Read(h.Store, "claude.five_hour.pct"));
         Assert.Null(Clock.Read(h.Store, "claude.five_hour.resets_at"));
         Assert.Equal(34.5, Clock.Read(h.Store, "claude.seven_day.pct"));
+    }
+
+    [Fact]
+    public void A_poll_with_no_windows_writes_nothing_not_even_updated_at()
+    {
+        var h = new Harness { Fetch = () => Usage("no-fresh-limits.jsonl") };
+
+        h.Provider.Poll(h.Store);
+
+        Assert.Equal(1, h.Fetches);
+        Assert.Null(Clock.Read(h.Store, "claude.updated_at"));
+        Assert.Empty(h.Store.Snapshot().Keys);
+    }
+
+    [Fact]
+    public void A_poll_with_no_windows_keeps_the_limits_already_in_the_store()
+    {
+        var h = new Harness { Fetch = () => Usage("subscriber.jsonl") };
+        h.Provider.Poll(h.Store);
+
+        h.Now = Clock.T0 + ClaudeUsageProvider.DefaultInterval;
+        h.Fetch = () => Usage("no-fresh-limits.jsonl");
+        h.Provider.Poll(h.Store);
+
+        Assert.Equal(2, h.Fetches);
+        Assert.Equal(12.0, Clock.Read(h.Store, "claude.five_hour.pct"));
+        Assert.Equal(34.5, Clock.Read(h.Store, "claude.seven_day.pct"));
+        Assert.Equal(Clock.T0Unix, Clock.Read(h.Store, "claude.updated_at")); // still the earlier reading's time
     }
 
     [Fact]
