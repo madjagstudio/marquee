@@ -120,7 +120,10 @@ A Claude Code session is busy or idle as its session file says. A Codex session 
 Claude Code's usage limits exist only on claude.ai subscriptions (its docs name Pro and Max; API-key sessions have
 none). Marquee checks them every 5 minutes by running `claude -p /usage` (no model call and no cost). That needs
 Claude Code installed (`claude.exe` on `PATH`, in `~/.local/bin`, or the desktop app's bundled copy) and logged in to a
-subscription, and it works for every Claude Code surface, so limits show up for desktop-app users too. An npm install
+subscription, and it works for every Claude Code surface, so limits show up for desktop-app users too. The limits are
+those of the account the `claude` command line is logged in to (`/status` in a terminal `claude` session shows which).
+The desktop app keeps a login of its own, so if it uses a different account (a Team seat, say, next to a personal
+plan), Marquee shows the command line's account; log the command line in to the same account (`/login`) to match. An npm install
 provides only `claude.cmd`, which Marquee doesn't run; use the native installer or the desktop app. Add
 `--no-claude-usage` to `marquee run` or `marquee sensors` if you don't want Marquee starting `claude`. Marquee never
 starts `claude` elevated (unless Windows' UAC is off, where there is no boundary to protect): when Marquee runs elevated, it starts `claude` with your normal unelevated rights (taken from
