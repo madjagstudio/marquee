@@ -23,7 +23,7 @@ static class PushCommand
         if (!key.StartsWith(CustomValues.Prefix, StringComparison.Ordinal)) key = CustomValues.Prefix + key;
         if (!CustomValues.IsValidKey(key))
         {
-            Console.Error.WriteLine($"'{key}' is not a valid key: use letters, digits, _ and dots after \"custom.\" ({CustomValues.MaxKeyLength} characters at most).");
+            Console.Error.WriteLine(Strings.InvalidCustomKey(key, CustomValues.MaxKeyLength));
             return 1;
         }
 

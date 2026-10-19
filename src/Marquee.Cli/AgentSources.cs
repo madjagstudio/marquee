@@ -11,10 +11,10 @@ static class AgentSources
     public static IReadOnlyList<ISensorProvider> Create(ILog log, bool claudeUsage = true)
     {
         var providers = new List<ISensorProvider>();
-        Add(providers, log, "Claude Code sessions", () => new ClaudeSessionsProvider());
-        if (claudeUsage) Add(providers, log, "Claude Code limits", () => new ClaudeUsageProvider(log));
-        Add(providers, log, "Codex limits", () => new CodexLimitsProvider());
-        Add(providers, log, "Codex sessions", () => new CodexSessionsProvider());
+        Add(providers, log, Strings.ClaudeSessionsSource, () => new ClaudeSessionsProvider());
+        if (claudeUsage) Add(providers, log, Strings.ClaudeLimitsSource, () => new ClaudeUsageProvider(log));
+        Add(providers, log, Strings.CodexLimitsSource, () => new CodexLimitsProvider());
+        Add(providers, log, Strings.CodexSessionsSource, () => new CodexSessionsProvider());
         return providers;
     }
 
@@ -26,7 +26,7 @@ static class AgentSources
         }
         catch (Exception ex)
         {
-            log.Error($"{name} is unavailable: {ex.Message}");
+            log.Error(Strings.SourceUnavailable(name, ex.Message));
         }
     }
 }

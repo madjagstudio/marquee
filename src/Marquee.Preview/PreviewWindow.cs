@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using Marquee.Preview.Resources;
 using SkiaSharp;
 
 namespace Marquee.Preview;
@@ -24,7 +25,7 @@ sealed class PreviewWindow : Form
         BackColor = SystemColors.Control,
         ForeColor = SystemColors.ControlText,
     };
-    readonly ToolStripStatusLabel _status = new("Waiting for the first frame…")
+    readonly ToolStripStatusLabel _status = new(Strings.WaitingForFirstFrame)
     {
         Spring = true,
         TextAlign = ContentAlignment.MiddleLeft,
@@ -34,7 +35,7 @@ sealed class PreviewWindow : Form
     public PreviewWindow(string title, SKSizeI canvas)
     {
         _canvas = canvas;
-        Text = $"Marquee preview: {title}";
+        Text = Strings.WindowTitle(title);
         BackColor = Color.Black;
         KeyPreview = true;
         StartPosition = FormStartPosition.CenterScreen;

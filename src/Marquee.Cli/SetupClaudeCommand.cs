@@ -22,7 +22,7 @@ static class SetupClaudeCommand
         var exe = Environment.ProcessPath;
         if (!undo && (exe is null || !Path.GetFileNameWithoutExtension(exe).Equals("marquee", StringComparison.OrdinalIgnoreCase)))
         {
-            Console.Error.WriteLine($"Run setup-claude from marquee.exe itself (this is {exe ?? "an unknown program"}), so Claude Code gets a command that works on its own.");
+            Console.Error.WriteLine(Strings.RunSetupFromMarquee(exe ?? Strings.UnknownProgram));
             return 1;
         }
 
@@ -36,15 +36,14 @@ static class SetupClaudeCommand
 
             if (dryRun && change.NewSettings is { } text)
             {
-                Console.WriteLine($"Dry run: nothing was written. {AgentPaths.ClaudeSettings} would become:");
+                Console.WriteLine(Strings.DryRunWouldWrite(AgentPaths.ClaudeSettings));
                 Console.WriteLine(text);
             }
 
             // A dry run's message says what the real run would do, in the words the real run uses.
-            Console.WriteLine(dryRun && change.Changed ? $"Without --dry-run: {change.Message}" : change.Message);
+            Console.WriteLine(dryRun && change.Changed ? Strings.WithoutDryRun(change.Message) : change.Message);
             if (change.Changed && !undo && !dryRun)
-                Console.WriteLine("Limits appear once `marquee run` is going and a Claude Code session updates its status line. " +
-                    "A project's .claude/settings.json or managed settings with their own statusLine take precedence over this one.");
+                Console.WriteLine(Strings.LimitsAppearAfterSetup);
             return 0;
         }
         catch (ClaudeSetupException ex)
@@ -54,7 +53,7 @@ static class SetupClaudeCommand
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Console.Error.WriteLine($"Could not update Claude Code's settings: {ex.Message}");
+            Console.Error.WriteLine(Strings.CouldNotUpdateClaudeSettings(ex.Message));
             return 1;
         }
     }

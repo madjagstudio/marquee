@@ -35,7 +35,7 @@ static int ListDevices()
 
     if (supported.Count == 0)
     {
-        Console.WriteLine("No supported screens found.");
+        Console.WriteLine(Strings.NoSupportedScreens);
         return 1;
     }
 
@@ -67,20 +67,21 @@ static int ShowImage(string file, string[] options)
     using var image = SKImage.FromEncodedData(file);
     if (image is null)
     {
-        Console.Error.WriteLine($"Could not read image: {file}");
+        Console.Error.WriteLine(Strings.CouldNotReadImage(file));
         return 1;
     }
 
     var size = orientation.CanvasSize();
     var wrongShape = orientation.IsPortrait() ? image.Width > image.Height : image.Height > image.Width;
     if (wrongShape)
-        Console.Error.WriteLine(
-            $"Warning: image is {image.Width}x{image.Height} but the {(orientation.IsPortrait() ? "portrait" : "landscape")} canvas is {size.Width}x{size.Height}; it will be stretched.");
+        Console.Error.WriteLine(orientation.IsPortrait()
+            ? Strings.ImageStretchedToPortrait(image.Width, image.Height, size.Width, size.Height)
+            : Strings.ImageStretchedToLandscape(image.Width, image.Height, size.Width, size.Height));
 
     IDisplayDevice? device = sink is not null ? new FileSinkDevice(sink, size.Width, size.Height) : Screens.Find(orientation);
     if (device is null)
     {
-        Console.Error.WriteLine("No supported screen found. Run `marquee devices` to check.");
+        Console.Error.WriteLine(Strings.NoScreenFound);
         return 1;
     }
 
@@ -91,10 +92,11 @@ static int ShowImage(string file, string[] options)
         var stopwatch = Stopwatch.StartNew();
         for (var i = 0; i < repeat; i++) device.PushFrame(image);
         stopwatch.Stop();
-        var firmware = device is UniversalScreen88Device screen && screen.FirmwareVersion is { } v ? $" (firmware {v})" : "";
-        Console.WriteLine($"Sent {file} to {device.Info.Name}{firmware}.");
+        Console.WriteLine(device is UniversalScreen88Device { FirmwareVersion: { } firmware }
+            ? Strings.SentImageWithFirmware(file, device.Info.Name, firmware)
+            : Strings.SentImage(file, device.Info.Name));
         if (repeat > 1)
-            Console.WriteLine($"Pushed {repeat} frames, average {stopwatch.Elapsed.TotalMilliseconds / repeat:F1} ms per frame");
+            Console.WriteLine(Strings.PushedFrames(repeat, stopwatch.Elapsed.TotalMilliseconds / repeat));
         return 0;
     }
     catch (DeviceBusyException ex)
@@ -112,16 +114,6 @@ static int ShowImage(string file, string[] options)
 
 static int Usage()
 {
-    Console.Error.WriteLine("""
-        Usage:
-          marquee devices
-          marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
-          marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage]
-          marquee run <theme-folder> [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
-                      [--http-port 1024-65535 | --no-http] [--no-claude-usage]
-          marquee push <key> <value> [--ttl 30s|5m|2h] [--port 1024-65535]
-          marquee setup-claude [--undo] [--dry-run]
-          marquee statusline        (Claude Code runs this; see setup-claude)
-        """);
+    Console.Error.WriteLine(Strings.Usage);
     return 2;
 }

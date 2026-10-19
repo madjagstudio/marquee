@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Drawing.Imaging;
+using Marquee.Preview.Resources;
 using SkiaSharp;
 
 namespace Marquee.Preview;
@@ -17,7 +18,7 @@ public static class FrameBitmap
             {
                 var info = new SKImageInfo(image.Width, image.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
                 if (!image.ReadPixels(info, data.Scan0, data.Stride, 0, 0))
-                    throw new InvalidOperationException("Could not read the frame's pixels.");
+                    throw new InvalidOperationException(Strings.CouldNotReadFramePixels);
             }
             finally
             {

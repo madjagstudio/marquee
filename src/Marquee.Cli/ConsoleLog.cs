@@ -6,8 +6,8 @@ sealed class ConsoleLog : ILog
     readonly object _gate = new();
 
     public void Info(string message) => Write(Console.Out, message);
-    public void Warn(string message) => Write(Console.Error, $"Warning: {message}");
-    public void Error(string message) => Write(Console.Error, $"Error: {message}");
+    public void Warn(string message) => Write(Console.Error, Strings.LogWarning(message));
+    public void Error(string message) => Write(Console.Error, Strings.LogError(message));
 
     void Write(TextWriter writer, string message)
     {

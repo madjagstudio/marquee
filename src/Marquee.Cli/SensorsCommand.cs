@@ -54,7 +54,7 @@ static class SensorsCommand
         }
 
         if (keys.Count == 0)
-            log.Warn("No provider returned any readings.");
+            log.Warn(Strings.NoReadings);
         return keys.Count > 0 ? 0 : 1;
     }
 
@@ -73,7 +73,7 @@ static class SensorsCommand
         }
         catch (Exception ex)
         {
-            log.Error($"{provider.Name} failed: {ex.Message}");
+            log.Error(Strings.SourceFailed(provider.Name, ex.Message));
             return false;
         }
     }

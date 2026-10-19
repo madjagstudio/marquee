@@ -1,4 +1,3 @@
-using System.Globalization;
 using Marquee.Core.Devices;
 using Marquee.Core.Rendering;
 using Marquee.Core.Sensors;
@@ -60,7 +59,7 @@ static class RunCommand
         using var device = sink is not null ? new FileSinkDevice(sink, size.Width, size.Height) : Screens.Find(orientation);
         if (device is null)
         {
-            Console.Error.WriteLine("No supported screen found. Run `marquee devices` to check, or use --sink <folder>.");
+            Console.Error.WriteLine(Strings.NoScreenFoundUseSink);
             return 1;
         }
 
@@ -72,7 +71,7 @@ static class RunCommand
             theme =>
             {
                 foreach (var warning in theme.Warnings) log.Warn(warning);
-                log.Info($"Showing theme '{theme.Name}'.");
+                log.Info(Strings.ShowingTheme(theme.Name));
                 banner = theme.Warnings.Count > 0 ? string.Join(Environment.NewLine, theme.Warnings) : null;
                 previewHost?.ShowError(banner);
                 loop.SetTheme(theme);
@@ -80,7 +79,7 @@ static class RunCommand
             },
             error =>
             {
-                log.Error(showing ? $"{error.Message} (the last good layout stays on screen until the file is fixed)" : error.Message);
+                log.Error(showing ? Strings.LastGoodLayoutStays(error.Message) : error.Message);
                 banner = error.Message;
                 previewHost?.ShowError(banner);
             },
@@ -95,11 +94,11 @@ static class RunCommand
                 loop.Step(TimeSpan.FromSeconds(i / (double)loop.Fps));
             if (loop.FramesPushed < count)
             {
-                log.Error($"only {loop.FramesPushed} of {count} frame(s) reached {device.Info.Name}.");
+                log.Error(Strings.FramesNotDelivered(loop.FramesPushed, count, device.Info.Name));
                 return 1;
             }
 
-            log.Info($"Rendered {count} frame(s) to {device.Info.Name}.");
+            log.Info(Strings.RenderedFrames(count, device.Info.Name));
             return 0;
         }
 
@@ -124,13 +123,12 @@ static class RunCommand
 
         watcher.Start();
         loop.Start();
-        log.Info($"Rendering to {device.Info.Name}. Edit the theme and save to reload; press Ctrl+C to stop.");
+        log.Info(Strings.RenderingTo(device.Info.Name));
 
         for (var seconds = 1; !stop.Wait(StatusEvery); seconds++)
         {
             var stats = loop.Stats;
-            var status = string.Create(CultureInfo.InvariantCulture,
-                $"{stats.Fps:0.0} fps (target {loop.Fps}) · render {stats.RenderMs:0.0} ms · send {stats.PushMs:0.0} ms · {loop.FramesPushed} frames sent");
+            var status = Strings.RenderStatus(stats.Fps, loop.Fps, stats.RenderMs, stats.PushMs, loop.FramesPushed);
             previewHost?.ShowStatus(status);
             if (seconds == 5 || seconds % 60 == 0) log.Info(status);
             claudeLimits.Save(store.Snapshot()); // writes only when the limits changed
