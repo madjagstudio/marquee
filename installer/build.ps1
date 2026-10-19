@@ -102,6 +102,12 @@ foreach ($source in $cli, $tray) {
 }
 Get-ChildItem $staging -Recurse -Filter '*.pdb' | Remove-Item
 
+# The FPS provider looks for PresentMon\PresentMon-<version>-x64.exe beside marquee.exe (PresentMonBundle). Checked
+# here, before the notices check below names it.
+$presentMonExe = Get-ChildItem (Join-Path $staging 'PresentMon') -Filter 'PresentMon-*-x64.exe' -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+if (-not $presentMonExe) { throw 'The staging folder has no PresentMon\PresentMon-<version>-x64.exe.' }
+
 # The examples where ThemeLocator looks for installed ones (a themes folder beside the exe), and the license files.
 $themes = New-Item -ItemType Directory (Join-Path $staging 'themes')
 Get-ChildItem (Join-Path $root 'themes') -Directory -Filter 'example-*' | ForEach-Object { Copy-Item $_.FullName $themes -Recurse }
@@ -155,8 +161,7 @@ if ($unknown.Count -gt 0) {
 # A name counts only whole: SkiaSharp.NativeAssets.Win32 doesn't name SkiaSharp. A sentence's closing period may follow.
 $unnamed = @($shipped.Values | Where-Object { $notices -notmatch ('(?i)(?<![\w.-])' + [regex]::Escape($_.Id) + '(?![\w-]|\.\w)') } |
     ForEach-Object { $_.Id } | Sort-Object -Unique)
-$presentMonExe = (Get-ChildItem (Join-Path $staging 'PresentMon') -Filter 'PresentMon-*-x64.exe' -ErrorAction SilentlyContinue | Select-Object -First 1)
-if ($presentMonExe -and -not $notices.Contains($presentMonExe.Name)) { $unnamed += $presentMonExe.Name }
+if (-not $notices.Contains($presentMonExe.Name)) { $unnamed += $presentMonExe.Name }
 if ($unnamed.Count -gt 0) {
     throw "THIRD-PARTY-NOTICES.md doesn't name $($unnamed -join ', '), which the installer would redistribute. Add each, with its license."
 }
@@ -181,10 +186,6 @@ foreach ($required in 'marquee.exe', 'MarqueeTray.exe', 'LICENSE', 'THIRD-PARTY-
     'licenses\Microsoft.NETCore.App.Runtime.win-x64\THIRD-PARTY-NOTICES.TXT', 'licenses\Inter\OFL.txt',
     'themes\example-landscape\layout.yaml', 'themes\example-portrait\layout.yaml', 'themes\example-agents\layout.yaml') {
     if (-not (Test-Path (Join-Path $staging $required))) { throw "The staging folder has no $required." }
-}
-# The FPS provider looks for PresentMon\PresentMon-<version>-x64.exe beside marquee.exe (PresentMonBundle).
-if (-not (Get-ChildItem (Join-Path $staging 'PresentMon') -Filter 'PresentMon-*-x64.exe' -ErrorAction SilentlyContinue)) {
-    throw 'The staging folder has no PresentMon\PresentMon-<version>-x64.exe.'
 }
 
 # Both exes carry the MSI's version: the update check compares the running tray's own version with a release's, so a
