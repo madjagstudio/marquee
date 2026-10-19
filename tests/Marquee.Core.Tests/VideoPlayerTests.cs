@@ -80,6 +80,20 @@ public class VideoPlayerTests
     }
 
     [Fact]
+    public void A_clip_whose_first_frame_is_not_at_zero_shows_each_frame_for_its_length_across_every_loop()
+    {
+        // Frames at 500, 600 and 700 ms, as in an H.264 stream with B-frames and no edit list, or a clip cut from a
+        // recording. The first frame doesn't wait out the 500 ms, and the last isn't held for them at each loop.
+        using var player = Play(new FakeDecoder(100, Rgb) { FirstMs = 500 });
+
+        for (var frame = 0; frame <= 9; frame++)
+        {
+            AssertShows(player, Ms(frame * 100), Rgb[frame % 3]);
+            AssertShows(player, Ms(frame * 100 + 99), Rgb[frame % 3]);
+        }
+    }
+
+    [Fact]
     public void The_clip_starts_with_the_first_frame_drawn_whatever_the_clock_says()
     {
         // The render loop's clock runs from when the loop started, so a theme loaded later starts at a large time.

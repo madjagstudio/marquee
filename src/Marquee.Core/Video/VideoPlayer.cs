@@ -61,6 +61,7 @@ public sealed class VideoPlayer : IDisposable
     // The decode thread's (and the constructor's, before the thread starts).
     TimeSpan _passStart; // clip time at which the current pass of the loop started
     TimeSpan _passEnd; // clip time at which the current pass ends, as far as decoded
+    TimeSpan _passOrigin; // the decoder's time stamp for the first frame of the current pass
     int _passFrames;
 
     string? _error; // set once by the decode thread; taken once by the render thread
@@ -245,7 +246,11 @@ public sealed class VideoPlayer : IDisposable
 
         var (pixels, start, duration) = decoded.Value;
         if (duration <= TimeSpan.Zero) duration = FallbackDuration;
-        var frameStart = _passStart + start;
+        // Each pass is timed from its own first frame. A clip's first time stamp isn't always zero (H.264 with B-frames
+        // and no edit list, a clip cut from a recording); timed from zero, its first frame would show that much late,
+        // and its last frame would be held that much longer at every loop.
+        if (_passFrames == 0) _passOrigin = start;
+        var frameStart = _passStart + (start - _passOrigin);
         var frameEnd = frameStart + duration;
         if (frameEnd > _passEnd) _passEnd = frameEnd;
         _passFrames++;

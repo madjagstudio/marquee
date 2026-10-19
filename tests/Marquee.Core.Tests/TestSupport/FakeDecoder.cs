@@ -35,6 +35,9 @@ sealed class FakeDecoder : IVideoDecoder
     /// Real time each Next takes, for cost measurements.
     public TimeSpan Delay { get; init; }
 
+    /// The first frame's time stamp; the others follow it `frameMs` apart. Real clips don't always start at zero.
+    public int FirstMs { get; init; }
+
     public int Reads => Volatile.Read(ref _reads);
     public int Rewinds { get; private set; }
     public Thread? ReadBy { get; private set; }
@@ -52,7 +55,7 @@ sealed class FakeDecoder : IVideoDecoder
         if (Delay > TimeSpan.Zero) Thread.Sleep(Delay);
 
         _bitmap.Erase(_colors[_next]);
-        var frame = new DecodedFrame(_pixels, _frameLength * _next, _frameLength);
+        var frame = new DecodedFrame(_pixels, TimeSpan.FromMilliseconds(FirstMs) + _frameLength * _next, _frameLength);
         _next++;
         return frame;
     }
