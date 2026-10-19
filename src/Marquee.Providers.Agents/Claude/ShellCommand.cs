@@ -30,9 +30,9 @@ public sealed record ShellCommand(string FileName, IReadOnlyList<string> Argumen
         var clock = Stopwatch.StartNew();
         using var process = Process.Start(start) ?? throw new InvalidOperationException($"{FileName} did not start");
         var output = new OutputBuffer();
-        var reading = Task.Run(() => output.ReadAll(process.StandardOutput.BaseStream));
+        var reading = PipeWork.Start(() => output.ReadAll(process.StandardOutput.BaseStream));
         // On its own task: a command that never reads its input must not block this one once the pipe buffer fills.
-        _ = Task.Run(() =>
+        _ = PipeWork.Start(() =>
         {
             try
             {

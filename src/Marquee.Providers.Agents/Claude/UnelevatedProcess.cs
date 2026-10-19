@@ -143,8 +143,8 @@ internal static class UnelevatedProcess
 
         stdin.Dispose(); // the child's input ends straight away
         var output = new ClaudeCli.CappedBuffer(ClaudeCli.MaxOutputBytes);
-        var reading = Task.Run(() => output.ReadAll(stdout));
-        var errors = Task.Run(() => new ClaudeCli.CappedBuffer(0).ReadAll(stderr));
+        var reading = PipeWork.Start(() => output.ReadAll(stdout));
+        var errors = PipeWork.Start(() => new ClaudeCli.CappedBuffer(0).ReadAll(stderr));
         try
         {
             var waited = WaitForSingleObject(process, Milliseconds(timeout));
