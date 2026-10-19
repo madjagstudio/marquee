@@ -13,7 +13,9 @@ public class ThemeWatcherTests
 
     const string Broken = "canvas: { orientation: landscape }\nbackground:\n  - fill: \"#00FF00\"\n    blend: sideways\n";
 
-    static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
+    /// Every wait ends as soon as its event arrives; the long limit is for a loaded CI runner, where a file-system event
+    /// and the debounce after it took over 5 s on the first hosted run.
+    static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
     /// Records callbacks from the watcher's thread so tests can wait for them.
     sealed class Events

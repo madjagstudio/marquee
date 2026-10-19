@@ -201,8 +201,13 @@ public class UnelevatedProcessTests(ITestOutputHelper output) : IDisposable
     }
 
     [Fact]
-    public void It_closes_stdin_straight_away() =>
-        Assert.Equal("0", Run("[Console]::In.ReadToEnd().Length").Output.Trim());
+    public void It_closes_stdin_straight_away()
+    {
+        // Errors go to stdout and the exit code is in the message: the one failure on a CI runner printed nothing, which
+        // said neither why nor whether PowerShell had even started.
+        var result = Run("try { [Console]::In.ReadToEnd().Length } catch { \"error: $_\" }");
+        Assert.True(result.Output.Trim() == "0", $"Expected 0; got '{result.Output.Trim()}' with exit code {result.ExitCode}.");
+    }
 
     [Fact]
     public void It_reads_stderr_so_its_pipe_cannot_fill()
