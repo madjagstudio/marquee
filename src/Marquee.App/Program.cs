@@ -38,6 +38,9 @@ static class Program
 
         using var log = new FileLog(paths.Logs);
         log.Info(Strings.TrayStarted(TrayModel.Version));
+        // Made as soon as there is a log to say why it can't be, and kept until the tray exits, so the installer finds it
+        // as long as there is a tray to quit.
+        using var quit = QuitEvent.Create(TrayNames.Quit, log);
         // A menu command that throws on the UI thread is logged and the tray carries on, rather than WinForms showing
         // its exception dialog from an elevated process.
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
@@ -50,7 +53,7 @@ static class Program
         using var updates = TrayUpdates.ForThisApp(http, paths.DataFolder, log);
         using var runtime = new TrayRuntime(paths, log, MachineServices.Instance, TrayNames.Screen);
         using var worker = new EngineWorker();
-        Application.Run(new TrayApp(runtime, paths, new ExplorerShell(), worker, updates, log, instance));
+        Application.Run(new TrayApp(runtime, paths, new ExplorerShell(), worker, updates, log, instance, quit));
         log.Info(Strings.TrayStopped);
         return 0;
     }

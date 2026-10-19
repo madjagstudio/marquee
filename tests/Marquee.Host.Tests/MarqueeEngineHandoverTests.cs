@@ -160,6 +160,29 @@ public sealed class MarqueeEngineHandoverTests : IDisposable
         Assert.Contains(_log.Entries, e => e.StartsWith("warn: Marquee can't take the screen from L-Connect: ", StringComparison.Ordinal));
     }
 
+    /// What the tray's Quit, and so the installer's TrayStopper, waits for: stopping the engine mid-handover stops the
+    /// handover's wait for the screen and starts L-Connect again at once, not when the wait would have run out.
+    [Fact]
+    public void Disposing_the_engine_during_a_handover_starts_L_Connect_again_at_once()
+    {
+        // The screen stays busy after L-Connect's service stops, so the handover waits for it.
+        _services.Device = _ => new RecordingDevice { Busy = () => true };
+        var engine = Engine(HandoverMode.Auto);
+        Assert.True(engine.Start());
+        Assert.Equal(HandoverAction.TakeOver, NextBusy().Action);
+        Assert.True(Wait.Until(() => _services.LConnectServices.Calls.Contains($"wait {Service} Stopped")), "The handover never stopped L-Connect.");
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        engine.Dispose();
+
+        Assert.InRange(clock.Elapsed, TimeSpan.Zero, LConnectHandover.ScreenTimeout / 2);
+        Assert.Equal(
+            [$"stop {Watcher}", $"wait {Watcher} Stopped", $"stop {Service}", $"wait {Service} Stopped", $"start {Service}", $"start {Watcher}"],
+            _services.LConnectServices.Calls);
+        Assert.True(_services.LConnectServices.IsServiceRunning);
+        Assert.Equal(HandoverOutcome.Cancelled, NextFinished().Outcome);
+    }
+
     [Fact]
     public void TakeOverScreen_does_nothing_before_Start_or_while_paused()
     {

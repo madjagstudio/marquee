@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Marquee.Core.Devices;
 
 namespace Marquee.Host;
 
@@ -35,8 +36,14 @@ public sealed record TrayStopResult(int Quit, int Killed);
 /// administrators can do either to an elevated tray.
 public static class TrayStopper
 {
-    /// Quitting stops the engine, which lets go of the screen and the ring in well under a second; this is for a busy PC.
-    public static readonly TimeSpan Grace = TimeSpan.FromSeconds(10);
+    /// How long the trays get to quit. Quitting stops the engine, which lets go of the screen and the ring in well under
+    /// a second, except during an L-Connect handover: the engine then stops the handover's wait for the screen, but the
+    /// handover must still start L-Connect's service and watcher again, and a service can't start while it is still
+    /// stopping. That can take one LConnectHandover.DefaultStopTimeout for the stop it was waiting for, and one more for
+    /// each of the two to finish stopping before it starts. Ending the tray before then would leave L-Connect stopped,
+    /// and with it the fans and RGB, until the next restart. The rest is for a busy PC. A tray that quits ends the wait
+    /// as it exits, so only a tray that hangs keeps the installer waiting this long.
+    public static readonly TimeSpan Grace = 3 * LConnectHandover.DefaultStopTimeout + TimeSpan.FromSeconds(15);
 
     public static TrayStopResult Stop(string trayExePath, ITrayProcesses processes, TimeSpan grace)
     {
@@ -76,6 +83,21 @@ public static class TrayStopper
         finally
         {
             foreach (var tray in trays) tray.Dispose();
+        }
+    }
+
+    /// Sets the quit event named `name` (TrayNames.QuitIn). False when there is none to set (no tray made it, or the
+    /// session is gone) or this process may not set it.
+    public static bool AskToQuit(string name)
+    {
+        try
+        {
+            if (!EventWaitHandle.TryOpenExisting(name, out var quit)) return false;
+            using (quit) return quit.Set();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 

@@ -64,19 +64,7 @@ public sealed class TrayProcesses : ITrayProcesses
     {
         public int ProcessId => processId;
 
-        public bool AskToQuit()
-        {
-            if (userSid is null) return false;
-            try
-            {
-                if (!EventWaitHandle.TryOpenExisting(TrayNames.QuitIn(sessionId, userSid), out var quit)) return false;
-                using (quit) return quit.Set();
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-        }
+        public bool AskToQuit() => userSid is not null && TrayStopper.AskToQuit(TrayNames.QuitIn(sessionId, userSid));
 
         public bool WaitForExit(TimeSpan timeout) =>
             WaitForSingleObject(handle, (uint)timeout.TotalMilliseconds) == WAIT_OBJECT_0;

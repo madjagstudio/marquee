@@ -1,9 +1,12 @@
+using System.Diagnostics;
+using System.Security.AccessControl;
+using Marquee.Core.Devices;
 using Marquee.Host.Tests.TestSupport;
 
 namespace Marquee.Host.Tests;
 
 /// Closing the running trays before the installer replaces or removes their files, through fake processes: no test here
-/// signals, waits for or kills a real process.
+/// signals, waits for or kills a real process, and the quit events set here have names of their own.
 public class TrayStopperTests
 {
     const string Tray = @"C:\Program Files\Marquee\MarqueeTray.exe";
@@ -84,6 +87,42 @@ public class TrayStopperTests
     {
         Assert.StartsWith(@"Local\Marquee-Tray-Quit-S-1-5-", TrayNames.Quit);
         Assert.Equal(@"Session\2\Marquee-Tray-Quit-S-1-5-21-1-2-3-1001", TrayNames.QuitIn(2, "S-1-5-21-1-2-3-1001"));
+    }
+
+    /// A tray taking the screen from L-Connect when it is asked to quit must first start L-Connect's service and watcher
+    /// again, which may wait for each of them to finish stopping, after up to the same wait for the stop it had asked
+    /// for. Ending it before then would leave L-Connect stopped, and the fans and RGB with it.
+    [Fact]
+    public void The_grace_outlasts_a_handover_starting_L_Connect_again()
+    {
+        Assert.True(TrayStopper.Grace > 3 * LConnectHandover.DefaultStopTimeout,
+            $"A {TrayStopper.Grace.TotalSeconds} s grace can end a tray while it starts L-Connect again.");
+    }
+
+    /// The installer runs in session 0 and names a tray's event by the tray's session; from the tray's own session, that
+    /// name and Local\… are the same event.
+    [Fact]
+    public void A_quit_event_is_set_through_its_sessions_name()
+    {
+        var id = $"Marquee-Test-Tray-Quit-{Guid.NewGuid():N}";
+        using var quit = new EventWaitHandle(false, EventResetMode.AutoReset, $@"Local\{id}");
+
+        Assert.True(TrayStopper.AskToQuit($@"Session\{Process.GetCurrentProcess().SessionId}\{id}"));
+        Assert.True(quit.WaitOne(TimeSpan.Zero));
+    }
+
+    [Fact]
+    public void There_is_nothing_to_set_with_no_event_or_one_this_process_may_not_set()
+    {
+        var id = $"Marquee-Test-Tray-Quit-{Guid.NewGuid():N}";
+        Assert.False(TrayStopper.AskToQuit($@"Local\{id}"));
+        Assert.False(TrayStopper.AskToQuit($@"Session\4000000\{id}"));
+
+        var nobody = new EventWaitHandleSecurity();
+        nobody.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        using var refused = EventWaitHandleAcl.Create(false, EventResetMode.AutoReset, $@"Local\{id}", out var created, nobody);
+        Assert.True(created);
+        Assert.False(TrayStopper.AskToQuit($@"Local\{id}"));
     }
 
     [Fact]

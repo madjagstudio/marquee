@@ -32,9 +32,9 @@ sealed class TrayApp : ApplicationContext, ITrayHost
     readonly BalloonClicks _clicks = new();
     PreviewSession? _preview;
 
-    /// Call on the UI thread, before Application.Run.
+    /// Call on the UI thread, before Application.Run. `quit` is null when the tray couldn't make its quit event.
     public TrayApp(TrayRuntime runtime, TrayPaths paths, IShell shell, EngineWorker worker, TrayUpdates updates, ILog log,
-        SingleInstance instance)
+        SingleInstance instance, QuitEvent? quit)
     {
         _runtime = runtime;
         _ui = new WindowsFormsSynchronizationContext();
@@ -76,6 +76,12 @@ sealed class TrayApp : ApplicationContext, ITrayHost
         _tooltip.Tick += (_, _) => _icon.Text = _model.Tooltip;
         _tooltip.Start();
         instance.OnShowRequested(() => _ui.Post(_ => PopMenu(), null));
+        // The installer asks before it replaces or removes the tray's files, and the tray quits as the menu's Quit does,
+        // whatever is open: a posted message runs inside a menu's, a message box's or the preview's message loop too, and
+        // Quit cancels a download. It is also how a tray waiting, paused, for its own update's installer ends: Quit ends
+        // the wait. A request that comes as the tray is exiting anyway (after Quit) quits it again, which changes
+        // nothing; one after the message loop has ended never runs.
+        quit?.OnSet(() => _ui.Post(_ => _ = _model.Quit(), null));
         // At logoff or shutdown Windows ends the process soon after; stopping the engine first lets go of the screen
         // and saves the Claude limits. The runtime is thread-safe, and this is SystemEvents' own thread.
         SystemEvents.SessionEnded += OnSessionEnded;
