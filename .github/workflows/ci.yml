@@ -23,6 +23,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - name: Media Foundation (off by default on Windows Server)
+        # The video tests decode real MP4s. Without Media Foundation they only check the "install the Media Feature
+        # Pack" error, so make its absence fail the run instead of passing quietly.
+        shell: pwsh
+        run: |
+          if ((Get-WindowsFeature Server-Media-Foundation).InstallState -ne 'Installed') { Install-WindowsFeature Server-Media-Foundation }
+          if (-not (Test-Path "$env:WINDIR\System32\mfreadwrite.dll")) { throw 'Media Foundation is missing; the video tests would only check the error path' }
       - run: dotnet test --configuration Release
       - uses: actions/upload-artifact@v4
         if: failure()
