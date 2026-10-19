@@ -78,6 +78,21 @@ public class PresentMonChildTests
         }
     }
 
+    [Fact]
+    public void Dispose_closes_its_ends_of_the_output_and_error_pipes()
+    {
+        // Process.Dispose leaves redirected streams that were read from to their reader, so each restart of PresentMon
+        // would leave two pipe handles for the finalizer.
+        var child = (PresentMonChild)PresentMonChild.Start(Path.Combine(Environment.SystemDirectory, "cmd.exe"),
+            ["/c", "echo Application,ProcessID"]);
+        Assert.Equal("Application,ProcessID", child.Output.ReadLine());
+
+        child.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => child.Output.ReadLine());
+        Assert.Throws<ObjectDisposedException>(() => child.Errors.ReadLine());
+    }
+
     static bool Running(int id)
     {
         try

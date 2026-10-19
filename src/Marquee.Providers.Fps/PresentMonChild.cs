@@ -23,13 +23,16 @@ sealed class PresentMonChild : IPresentMonRun
         _job = job;
         ProcessId = process.Id;
         Output = process.StandardOutput;
-        var errors = process.StandardError; // taken here, so the thread never touches the Process object
-        new Thread(() => ReadErrors(errors)) { IsBackground = true, Name = "Marquee PresentMon stderr" }.Start();
+        Errors = process.StandardError; // taken here, so the thread never touches the Process object
+        new Thread(() => ReadErrors(Errors)) { IsBackground = true, Name = "Marquee PresentMon stderr" }.Start();
     }
 
     public int ProcessId { get; }
 
     public TextReader Output { get; }
+
+    /// Its stderr, which a thread of its own reads.
+    internal StreamReader Errors { get; }
 
     public int? ExitCode
     {
@@ -76,12 +79,20 @@ sealed class PresentMonChild : IPresentMonRun
         }
     }
 
-    /// Kills it, and closing the job ends anything it started.
+    /// Kills it, and closing the job ends anything it started. Then closes this end of its stdout and stderr pipes,
+    /// which Process.Dispose leaves to whoever read from them.
     public void Dispose()
     {
         Kill(_process);
         _process.Dispose();
         _job.Dispose();
+
+        // With the processes gone the pipes are at their end, so a read still under way on the stdout reader's thread
+        // returns rather than holding up the close; PresentMonProcess ignores what that read makes of the close. The
+        // stderr thread catches less, so its reader is closed only once that thread is done (it is at the end of the
+        // pipe too, so this is quick); if it somehow isn't, the reader is left to the finalizer.
+        Output.Dispose();
+        if (_errorsRead.Wait(ErrorDrain)) Errors.Dispose();
     }
 
     void ReadErrors(StreamReader errors)
