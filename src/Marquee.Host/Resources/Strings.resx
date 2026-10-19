@@ -160,7 +160,7 @@
   </data>
   <data name="HandoverRetry" xml:space="preserve">
     <value>Trying again to take the screen from L-Connect's service, as `lconnect.handover: auto` says.</value>
-    <comment>Logged when Marquee tries again by itself, a minute after taking the screen from L-Connect failed. "L-Connect" is a program's name; `lconnect.handover: auto` is a config.yaml setting and stays as it is.</comment>
+    <comment>Logged when Marquee tries again by itself, minutes after taking the screen from L-Connect failed (1, 2, 5, then every 10). "L-Connect" is a program's name; `lconnect.handover: auto` is a config.yaml setting and stays as it is.</comment>
   </data>
   <data name="HandoverScreenOpen" xml:space="preserve">
     <value>Marquee has the screen already, so there's nothing to take from L-Connect.</value>

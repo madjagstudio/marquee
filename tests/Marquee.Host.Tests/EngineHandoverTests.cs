@@ -294,18 +294,101 @@ public sealed class EngineHandoverTests : IDisposable
         Assert.Empty(_timers.Pending);
     }
 
+    /// Each failed try pauses L-Connect's fan and RGB control for up to half a minute, so a cause that lasts (a screen
+    /// slow to come back after sleep, say) is tried less and less often.
     [Fact]
-    public void Auto_keeps_trying_every_60_seconds_while_taking_the_screen_fails()
+    public void Auto_backs_off_to_1_2_5_then_every_10_minutes_while_taking_the_screen_fails()
     {
         LConnect.FailToStop = true;
         Busy(HandoverMode.Auto);
 
+        var delays = new List<TimeSpan>();
+        for (var i = 0; i < 5; i++)
+        {
+            delays.Add(Assert.Single(_timers.Pending).Delay);
+            FireRetry();
+        }
+
+        Assert.Equal([1, 2, 5, 10, 10], delays.Select(delay => delay.TotalMinutes));
+        Assert.Equal(6, _finished.Count);
+        Assert.All(_finished, result => Assert.Equal(HandoverOutcome.Failed, result.Outcome));
+        Assert.Equal(TimeSpan.FromMinutes(10), Assert.Single(_timers.Pending).Delay);
+    }
+
+    [Fact]
+    public void The_back_off_starts_again_at_1_minute_after_a_handover_that_works()
+    {
+        LConnect.FailToStop = true;
+        Busy(HandoverMode.Auto);
         FireRetry();
+        LConnect.FailToStop = false;
+        FireRetry(); // after 2 minutes: taken
+
+        _handover.OnScreenOpenChanged(false); // L-Connect has it again after a wake, say
+        LConnect.FailToStop = true;
+        Busy(HandoverMode.Auto);
+
+        Assert.Equal([HandoverOutcome.Failed, HandoverOutcome.Failed, HandoverOutcome.Taken, HandoverOutcome.Failed], _finished.Select(r => r.Outcome));
+        Assert.Equal(TimeSpan.FromMinutes(1), Assert.Single(_timers.Pending).Delay);
+    }
+
+    [Fact]
+    public void The_back_off_starts_again_at_1_minute_once_the_screen_has_opened()
+    {
+        LConnect.FailToStop = true;
+        Busy(HandoverMode.Auto);
         FireRetry();
+        Assert.Equal(TimeSpan.FromMinutes(2), Assert.Single(_timers.Pending).Delay);
+
+        _handover.OnScreenOpenChanged(true); // L-Connect let go by itself
+        FireRetry(); // nothing to take
+        _handover.OnScreenOpenChanged(false);
+        Busy(HandoverMode.Auto); // a new busy episode, 2 minutes after the last failure
 
         Assert.Equal(3, _finished.Count);
-        Assert.All(_finished, result => Assert.Equal(HandoverOutcome.Failed, result.Outcome));
-        Assert.Equal(TimeSpan.FromSeconds(60), Assert.Single(_timers.Pending).Delay);
+        Assert.Equal(TimeSpan.FromMinutes(1), Assert.Single(_timers.Pending).Delay);
+    }
+
+    [Fact]
+    public void The_back_off_starts_again_at_1_minute_with_a_new_busy_episode()
+    {
+        LConnect.FailToStop = true;
+        Busy(HandoverMode.Auto);
+        FireRetry();
+        FireRetry();
+        Assert.Equal(TimeSpan.FromMinutes(5), Assert.Single(_timers.Pending).Delay);
+
+        // Paused and resumed: the run that starts again reports the busy screen afresh, held back for the rest of the
+        // minute after the last failure.
+        _handover.SetScreenWanted(false);
+        _handover.SetScreenWanted(true);
+        _now += TimeSpan.FromSeconds(10);
+        Busy(HandoverMode.Auto);
+        Assert.Equal(TimeSpan.FromSeconds(50), Assert.Single(_timers.Pending).Delay);
+        Assert.Contains(
+            "info: L-Connect's service has the screen again, but taking it failed less than 60 s ago, so Marquee waits until then to try again.",
+            _log.Entries);
+
+        FireRetry();
+        Assert.Equal(TimeSpan.FromMinutes(1), Assert.Single(_timers.Pending).Delay);
+    }
+
+    [Fact]
+    public void Take_over_from_the_tray_does_not_wait_for_the_back_off()
+    {
+        LConnect.FailToStop = true;
+        Busy(HandoverMode.Auto);
+        FireRetry();
+        FireRetry();
+        var retry = Assert.Single(_timers.Pending);
+        Assert.Equal(TimeSpan.FromMinutes(5), retry.Delay);
+
+        LConnect.FailToStop = false;
+        Assert.True(_handover.TakeOver());
+        _handover.WaitForEnd();
+
+        Assert.Equal(HandoverOutcome.Taken, _finished[^1].Outcome);
+        Assert.True(retry.IsCancelled);
     }
 
     [Fact]

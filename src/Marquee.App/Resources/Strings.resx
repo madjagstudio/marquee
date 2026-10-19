@@ -137,7 +137,7 @@
   </data>
   <data name="HandoverFailedRetrying" xml:space="preserve">
     <value>{0} Marquee will keep trying. See the log for details.</value>
-    <comment>The text of the balloon shown when taking the screen from L-Connect failed and lconnect.handover is auto, so Marquee tries again by itself every minute. {0} is what went wrong, a sentence or two in English.</comment>
+    <comment>The text of the balloon shown when taking the screen from L-Connect failed and lconnect.handover is auto, so Marquee tries again by itself (after 1 minute, then 2, 5, then every 10). {0} is what went wrong, a sentence or two in English.</comment>
   </data>
   <data name="HandoverFailedProblem" xml:space="preserve">
     <value>Couldn't take the screen from L-Connect: {0}</value>

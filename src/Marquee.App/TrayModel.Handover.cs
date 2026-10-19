@@ -11,7 +11,7 @@ namespace Marquee.App;
 /// handover's opt-in (there is no installer page for it). While L-Connect holds the screen and the tray could take it,
 /// the menu offers "Take over" whatever the mode; "Always take over at start" switches config.yaml between `auto` and
 /// `ask`. Both need an elevated tray, so an unelevated one shows neither, and a line saying why instead. Auto's own
-/// tries, holding back after one fails and trying again a minute later, are the engine's.
+/// tries, holding back after one fails and trying again 1, 2, 5, then every 10 minutes later, are the engine's.
 sealed partial class TrayModel
 {
     /// The busy episode the engine last reported, until the screen opens or a handover takes it. Written on engine
@@ -80,8 +80,8 @@ sealed partial class TrayModel
 
     /// On the handover's thread. Success is quiet, since the picture on the screen says it; so is a handover cut short
     /// by Pause or Quit, which didn't fail. A failure is a menu line until Marquee gets the screen, and a balloon, at
-    /// most once a minute (its own minute, so no other error hides it), as Auto tries again every minute. With Auto the
-    /// balloon says so.
+    /// most once a minute (its own minute, so no other error hides it), as Auto tries again (a minute later at the
+    /// soonest). With Auto the balloon says so.
     void OnHandoverFinished(HandoverResult result)
     {
         switch (result.Outcome)

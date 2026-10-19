@@ -15,12 +15,20 @@ namespace Marquee.Host;
 /// a foreground one, so the process can't end between stopping L-Connect and starting it again.
 sealed class EngineHandover : IDisposable
 {
-    /// How long Auto leaves a busy screen alone after a handover failed, before it tries again. A failure means
-    /// L-Connect's service didn't stop or Marquee didn't get the screen while it was stopped; trying again at once would
-    /// most likely fail the same way, and each try stops L-Connect's fan and RGB control for up to half a minute.
-    /// Without the pause, a screen that keeps coming back busy would have Marquee and L-Connect fighting over it in a
-    /// loop. The render loop reports a busy screen only once per episode, so the next try comes from a timer.
-    public static readonly TimeSpan RetryAfterFailure = TimeSpan.FromSeconds(60);
+    /// How long Auto leaves a busy screen alone after a handover failed, before it tries again: 1 minute after the
+    /// episode's first failure, 2 after its second, 5 after its third, then every 10 for as long as the episode lasts. A
+    /// failure means L-Connect's service didn't stop or Marquee didn't get the screen while it was stopped; trying again
+    /// at once would most likely fail the same way, and each try stops L-Connect's fan and RGB control for up to half a
+    /// minute. Without the pause, a screen that keeps coming back busy would have Marquee and L-Connect fighting over it
+    /// in a loop, and a cause that lasts (a screen slow to come back after sleep, a service L-Connect's depends on) is
+    /// tried less and less often. The render loop reports a busy screen only once per episode, so the next try comes
+    /// from a timer. Each episode starts the schedule again; one ends when the screen opens (by a handover or
+    /// otherwise) or when Marquee pauses, and the next busy screen is reported afresh.
+    public static readonly IReadOnlyList<TimeSpan> RetrySchedule =
+        [TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10)];
+
+    /// The first wait of the schedule, which is also how long a new busy episode is held back after a failure.
+    public static TimeSpan RetryAfterFailure => RetrySchedule[0];
 
     readonly ILog _log;
     readonly IEngineServices _services;
@@ -37,13 +45,14 @@ sealed class EngineHandover : IDisposable
     Thread? _thread; // the handover under way, or the last one
     CancellationTokenSource? _cancel; // the wait for the screen of the handover under way
     TimeSpan? _failedAt;
+    int _failures; // the handovers that failed in this busy episode, which set Auto's wait (RetrySchedule)
     IDisposable? _retry; // Auto's next try after a failure, while one is due
     int _retryGeneration; // which retry is due: each one scheduled or cancelled moves it on
     bool _toldUnelevated;
     bool _disposed;
 
     /// `mode` reads `lconnect.handover` as it is at that moment (the engine's settings), since Auto's retry decides
-    /// again a minute after the busy screen was reported. `retryScreen` asks the render loop and the ring to try their
+    /// again minutes after the busy screen was reported. `retryScreen` asks the render loop and the ring to try their
     /// devices at once (EngineRun.RetryScreen). `busy` and `finished` raise the engine's events; they are called on the
     /// render loop's thread and the handover's, and must not block. `elapsed` is a monotonic clock and `schedule` a
     /// one-shot timer (it runs the action once after the delay, unless what it returns is disposed first), for tests.
@@ -88,12 +97,14 @@ sealed class EngineHandover : IDisposable
 
     /// The render loop found the screen busy, once per busy episode. Tells the host what the mode says and whether the
     /// screen could be taken; with Auto, takes it, unless a handover is under way or the last one failed less than
-    /// RetryAfterFailure ago (Auto then tries again once that time is up).
+    /// RetryAfterFailure ago (Auto then tries again once that time is up). A new episode starts Auto's retry schedule
+    /// again.
     public void OnScreenBusy(LConnectState state)
     {
         lock (_gate)
         {
             if (!_wanted) return;
+            _failures = 0;
         }
 
         var elevated = _services.IsElevated;
@@ -159,7 +170,7 @@ sealed class EngineHandover : IDisposable
         _screenOpen.Dispose();
     }
 
-    /// `retry` is Auto's own retry, which comes once RetryAfterFailure is up, so it isn't held back.
+    /// `retry` is Auto's own retry, which comes once its wait (RetryDelay) is up, so it isn't held back.
     bool Start(bool automatic, bool retry = false)
     {
         lock (_gate)
@@ -173,12 +184,12 @@ sealed class EngineHandover : IDisposable
                 return false;
             }
 
-            if (automatic && !retry && _failedAt is { } failedAt && _elapsed() - failedAt is var since && since < RetryAfterFailure)
+            if (automatic && !retry && _failedAt is { } failedAt && _elapsed() - failedAt is var since && since < RetryDelay)
             {
-                _log.Info(Strings.HandoverHeldBack((int)RetryAfterFailure.TotalSeconds));
+                _log.Info(Strings.HandoverHeldBack((int)RetryDelay.TotalSeconds));
                 // The retry after that failure went with a pause, or is still due: either way, this busy screen is
                 // tried again once the time is up.
-                ScheduleRetry(RetryAfterFailure - since);
+                ScheduleRetry(RetryDelay - since);
                 return false;
             }
 
@@ -219,11 +230,13 @@ sealed class EngineHandover : IDisposable
             if (result.Outcome == HandoverOutcome.Failed)
             {
                 _failedAt = _elapsed();
-                if (_wanted && !_disposed) ScheduleRetry(RetryAfterFailure);
+                _failures++;
+                if (_wanted && !_disposed) ScheduleRetry(RetryDelay);
             }
             else if (result.Outcome == HandoverOutcome.Taken)
             {
                 _failedAt = null; // the last one didn't fail, so the next busy screen needn't wait
+                _failures = 0;
             }
 
             _cancel = null;
@@ -234,7 +247,7 @@ sealed class EngineHandover : IDisposable
         _finished(result);
     }
 
-    /// On the timer's thread, RetryAfterFailure after a handover failed (or the rest of it, after a busy screen was
+    /// On the timer's thread, RetryDelay after a handover failed (or the rest of it, after a busy screen was
     /// held back): takes the screen if it is still L-Connect's service's, and `lconnect.handover` still says auto. An
     /// exception would end the process from here. `generation` is the retry's own: disposing a timer doesn't stop a
     /// callback that has already started, so one that waited for the lock while a pause cancelled it (and perhaps a
@@ -259,6 +272,10 @@ sealed class EngineHandover : IDisposable
             _log.Error(Strings.HandoverFailed(ex.Message));
         }
     }
+
+    /// Under _gate. How long Auto waits after the last failure: RetrySchedule's step for the failures in this episode
+    /// (its first, RetryAfterFailure, before the episode has one of its own).
+    TimeSpan RetryDelay => RetrySchedule[Math.Clamp(_failures - 1, 0, RetrySchedule.Count - 1)];
 
     /// Under _gate. Schedules Auto's retry `delay` from now, unless one is due already.
     void ScheduleRetry(TimeSpan delay)

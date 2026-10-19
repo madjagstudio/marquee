@@ -177,8 +177,10 @@ closing the tray included) starts L-Connect again at once, and doesn't count as 
 - `ask`: whenever Marquee finds L-Connect using the screen, the tray shows a balloon: "L-Connect is using the screen.
   Marquee can take it over while L-Connect keeps running your fans and RGB. Click here to take over." Clicking it does.
 - `auto`: at start, and whenever Marquee finds the screen busy again (after you unplug it, say). If a try fails, Marquee
-  tries again every minute for as long as L-Connect's service holds the screen; a minute apart, so Marquee and
-  L-Connect never fight over the screen. This holds for `marquee run` too.
+  tries again for as long as L-Connect's service holds the screen: after 1 minute, then 2, then 5, then every 10
+  minutes, so Marquee and L-Connect never fight over the screen and a problem that lasts pauses L-Connect's fan control
+  less and less often. The waits start again at 1 minute whenever the screen is found busy afresh: after Marquee had it,
+  or after a pause. "Take over the screen from L-Connect" never waits for them. This holds for `marquee run` too.
 
 The tray's "Always take over at start" item writes `lconnect.handover: auto` to `config.yaml` when you check it, and
 `ask` when you uncheck it. It shows only where L-Connect is installed, or while it is checked, so it can be turned off.
