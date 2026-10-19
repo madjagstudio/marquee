@@ -1,9 +1,11 @@
+using Marquee.Core.Video;
 using SkiaSharp;
 
 namespace Marquee.Core.Themes;
 
-/// Images and fonts a theme refers to, loaded once when the theme loads so the render loop never touches the disk.
-/// Anything missing becomes a warning and a fallback (no image; the bundled Inter font), never an error.
+/// Images, fonts, shaders and video players a theme refers to, loaded once when the theme loads so the render loop
+/// never touches the disk (video players read their clips on their own threads). Anything missing becomes a warning
+/// and a fallback (no image or layer; the bundled Inter font), never an error.
 public sealed class ThemeAssets : IDisposable
 {
     /// Widest or tallest image a theme may use. Themes are shared, and a small file can decode to gigabytes of pixels.
@@ -13,11 +15,14 @@ public sealed class ThemeAssets : IDisposable
     readonly Dictionary<string, SKTypeface> _fontFiles = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<(string Family, int Weight), SKTypeface> _families = [];
     readonly Dictionary<ShaderLayer, SKRuntimeEffect> _shaders = new(ReferenceEqualityComparer.Instance);
+    readonly Dictionary<VideoLayer, VideoPlayer> _videos = new(ReferenceEqualityComparer.Instance);
 
     ThemeAssets() { }
 
-    /// `fps` is the rate the theme will run at, which sets the frame budget each shader layer must fit in.
-    internal static ThemeAssets Load(string folder, ThemeSpec spec, List<string> warnings, int fps, ShaderProbe probe)
+    /// `fps` is the rate the theme will run at, which sets the frame budget each shader layer must fit in. Video
+    /// layers start playing here, each on its own thread, until the assets are disposed.
+    internal static ThemeAssets Load(string folder, ThemeSpec spec, List<string> warnings, int fps, ShaderProbe probe,
+        VideoProbe videoProbe)
     {
         var assets = new ThemeAssets();
         try
@@ -34,6 +39,10 @@ public sealed class ThemeAssets : IDisposable
             foreach (var layer in spec.Background.OfType<ShaderLayer>())
                 if (ShaderAssets.Load(folder, layer, warnings, spec.Canvas.Size, fps, probe) is { } effect)
                     assets._shaders[layer] = effect;
+
+            foreach (var layer in spec.Background.OfType<VideoLayer>())
+                if (VideoAssets.Load(folder, layer, warnings, spec.Canvas.Size, videoProbe) is { } player)
+                    assets._videos[layer] = player;
 
             var fonts = widgets.SelectMany(w => w.When.Select(r => r.Style).Prepend(w.Style))
                 .Select(s => s.Font)
@@ -66,6 +75,18 @@ public sealed class ThemeAssets : IDisposable
     /// The compiled shader for a layer, or null if it was skipped (see the theme's warnings).
     public SKRuntimeEffect? Shader(ShaderLayer layer) => _shaders.GetValueOrDefault(layer);
 
+    /// The playing clip for a layer, or null if it was skipped (see the theme's warnings).
+    public VideoPlayer? Video(VideoLayer layer) => _videos.GetValueOrDefault(layer);
+
+    /// Why clips stopped partway since this was last asked, one line per clip, each reported once. The render loop asks
+    /// before each frame it renders, and logs them.
+    internal IEnumerable<string> TakeVideoErrors()
+    {
+        foreach (var (layer, player) in _videos)
+            if (player.TakeError() is { } error)
+                yield return $"Video '{layer.Path}' stopped playing and shows its last frame: {error}";
+    }
+
     /// The typeface for a style's font (a family name, or a .ttf/.otf file in the theme folder) at a weight.
     public SKTypeface Typeface(string? font, int weight)
     {
@@ -93,6 +114,8 @@ public sealed class ThemeAssets : IDisposable
 
     public void Dispose()
     {
+        foreach (var player in _videos.Values) player.Dispose(); // stops their threads
+        _videos.Clear();
         foreach (var image in _images.Values) image.Dispose();
         foreach (var typeface in _fontFiles.Values) typeface.Dispose();
         foreach (var effect in _shaders.Values) effect.Dispose();

@@ -15,9 +15,7 @@ namespace Marquee.Core.Video;
 /// pile up native memory, and could stall the decoder while its output samples are all still held.
 public sealed class MediaFoundationDecoder : IVideoDecoder
 {
-    const int MaxLongSide = 3840;
-    const int MaxShortSide = 2160;
-
+    readonly FileStream _file;
     IMFSourceReader? _reader;
     readonly SKBitmap _bitmap;
     readonly SKPixmap _pixels;
@@ -38,7 +36,9 @@ public sealed class MediaFoundationDecoder : IVideoDecoder
 
         try
         {
-            _reader = Open(Path.GetFullPath(path));
+            path = Path.GetFullPath(path);
+            _file = ClipFile.Open(path);
+            _reader = Open(_file, path);
             (_layout, _frameDuration) = ReadFormat(_reader);
             Size = _layout.Visible.Size;
             // RGB32's fourth byte is padding, not alpha; Copy sets it to 255 so the pixels really are opaque.
@@ -49,6 +49,7 @@ public sealed class MediaFoundationDecoder : IVideoDecoder
         {
             Release(_reader);
             _reader = null;
+            _file?.Dispose();
             throw;
         }
     }
@@ -105,21 +106,28 @@ public sealed class MediaFoundationDecoder : IVideoDecoder
         if (_reader is null) return;
         Release(_reader);
         _reader = null;
+        _file.Dispose(); // after the reader, which reads it until released
         _pixels.Dispose();
         _bitmap.Dispose();
     }
 
-    static IMFSourceReader Open(string path)
+    /// A source reader for the clip in `file`, whose name `path` picks the container parser.
+    static IMFSourceReader Open(FileStream file, string path)
     {
+        IMFByteStream? stream = null;
         IMFAttributes? attributes = null;
         IMFMediaType? rgb = null;
         IMFSourceReader? reader = null;
         try
         {
+            // Media Foundation reads the file Marquee opened, rather than opening it by name, so it stays editable
+            // while it plays (see ClipFile).
+            Check(MFCreateMFByteStreamOnStream(new ReadOnlyComStream(file), out stream));
+            if (stream is IMFAttributes origin) Check(origin.SetString(MF_BYTESTREAM_ORIGIN_NAME, path));
             Check(MFCreateAttributes(out attributes, 1));
             // Lets the source reader convert the decoder's YUV output to RGB32.
             Check(attributes!.SetUINT32(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, 1));
-            Check(MFCreateSourceReaderFromURL(path, attributes, out reader));
+            Check(MFCreateSourceReaderFromByteStream(stream!, attributes, out reader));
             Check(reader!.SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, 0));
             Check(reader.SetStreamSelection(MF_SOURCE_READER_FIRST_VIDEO_STREAM, 1));
 
@@ -138,6 +146,7 @@ public sealed class MediaFoundationDecoder : IVideoDecoder
         {
             Release(rgb);
             Release(attributes);
+            Release(stream); // the reader holds its own reference
         }
     }
 
@@ -147,7 +156,7 @@ public sealed class MediaFoundationDecoder : IVideoDecoder
     /// stored bottom-up.
     readonly record struct Layout(SKSizeI Frame, SKRectI Visible, int Stride);
 
-    /// The output's layout, with its picture refused over 3840×2160 either way round, and the length of one frame.
+    /// The output's layout, with its picture and its frames refused over VideoLimits, and the length of one frame.
     static (Layout Layout, TimeSpan FrameDuration) ReadFormat(IMFSourceReader reader)
     {
         IMFMediaType? type = null;
@@ -156,15 +165,15 @@ public sealed class MediaFoundationDecoder : IVideoDecoder
             Check(reader.GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, out type));
             Check(type!.GetUINT64(MF_MT_FRAME_SIZE, out var packedSize));
             var (width, height) = Unpack(packedSize);
-            if (width > ushort.MaxValue || height > ushort.MaxValue) throw TooLarge(width, height);
+            // The frame is what gets allocated and copied, so it is held to the limit, not only the picture in it.
+            VideoLimits.CheckDecoded(width, height);
             var frame = new SKSizeI((int)width, (int)height);
 
             var visible = Aperture(type, MF_MT_MINIMUM_DISPLAY_APERTURE) ?? Aperture(type, MF_MT_GEOMETRIC_APERTURE)
                 ?? SKRectI.Create(frame);
             if (visible.IsEmpty || !SKRectI.Create(frame).Contains(visible))
                 throw new VideoDecodeException("The clip's video stream describes a picture outside its frames.");
-            var (longSide, shortSide) = (Math.Max(visible.Width, visible.Height), Math.Min(visible.Width, visible.Height));
-            if (longSide > MaxLongSide || shortSide > MaxShortSide) throw TooLarge((uint)visible.Width, (uint)visible.Height);
+            VideoLimits.Check(visible.Width, visible.Height);
 
             // The attribute is a UINT32 holding a signed stride. Without it, RGB rows are top-down and packed.
             var stride = type.GetUINT32(MF_MT_DEFAULT_STRIDE, out var rawStride) >= 0 ? (int)rawStride : frame.Width * 4;
@@ -190,9 +199,6 @@ public sealed class MediaFoundationDecoder : IVideoDecoder
         if (type.GetBlob(key, (IntPtr)(&area), (uint)sizeof(MFVideoArea), IntPtr.Zero) < 0) return null;
         return SKRectI.Create(area.OffsetX, area.OffsetY, area.Width, area.Height);
     }
-
-    static VideoDecodeException TooLarge(uint width, uint height) => new(string.Create(CultureInfo.InvariantCulture,
-        $"The clip's frames are {width}×{height}, over the {MaxLongSide}×{MaxShortSide} limit."));
 
     /// The decoder announces its real output layout with the first frame, and may change it later. The picture's size
     /// can't change, since the bitmap handed out is that size.

@@ -7,10 +7,6 @@ namespace Marquee.Core.Video;
 /// it, to be drawn over what was kept. The file's own loop count is ignored: video layers always loop.
 public sealed class SkiaAnimatedDecoder : IVideoDecoder
 {
-    /// The largest clip decoded, 4K: one frame of it is already about 33 MB of pixels.
-    public const int MaxWidth = 3840;
-    public const int MaxHeight = 2160;
-
     /// Browsers play a delay of 10 ms or less as 100 ms, and GIFs are made to look right in browsers: many say 0 and
     /// rely on it, and played as written they would race through.
     static readonly TimeSpan MaxShortDelay = TimeSpan.FromMilliseconds(10);
@@ -32,8 +28,7 @@ public sealed class SkiaAnimatedDecoder : IVideoDecoder
         try
         {
             var info = _codec.Info;
-            if (info.Width > MaxWidth || info.Height > MaxHeight)
-                throw new VideoDecodeException($"The clip is {info.Width}×{info.Height}; clips can be at most {MaxWidth}×{MaxHeight}.");
+            VideoLimits.Check(info.Width, info.Height);
 
             // Empty for an image that isn't animated, such as a still WebP, which plays as a single frame.
             _frames = _codec.FrameInfo;
@@ -110,7 +105,15 @@ public sealed class SkiaAnimatedDecoder : IVideoDecoder
         if (!File.Exists(path))
             throw new VideoDecodeException("The clip was not found.");
 
-        var codec = SKCodec.Create(path) ?? throw new VideoDecodeException("The clip is not a GIF or WebP image that can be read.");
+        // The codec reads the file as it decodes, through a stream it owns and closes with itself (see ClipFile).
+        var file = ClipFile.Open(path);
+        var codec = SKCodec.Create(file);
+        if (codec is null)
+        {
+            file.Dispose();
+            throw new VideoDecodeException("The clip is not a GIF or WebP image that can be read.");
+        }
+
         if (codec.EncodedFormat is not (SKEncodedImageFormat.Gif or SKEncodedImageFormat.Webp))
         {
             var format = codec.EncodedFormat.ToString().ToUpperInvariant();

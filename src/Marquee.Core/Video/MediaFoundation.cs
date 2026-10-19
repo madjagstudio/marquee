@@ -73,6 +73,9 @@ static class MediaFoundation
     public static readonly Guid MFVideoFormat_RGB32 = new("00000016-0000-0010-8000-00aa00389b71");
     public static readonly Guid MFVideoFormat_H264 = new("34363248-0000-0010-8000-00aa00389b71");
 
+    /// The file name a byte stream came from, whose extension picks the container parser, as it would for a URL.
+    public static readonly Guid MF_BYTESTREAM_ORIGIN_NAME = new("fc358288-3cb6-460c-a424-b6681260375a");
+
     /// Two 32-bit values packed in one UINT64 attribute (frame size, frame rate, aspect ratio): high word first.
     public static ulong Pack(uint high, uint low) => ((ulong)high << 32) | low;
 
@@ -87,8 +90,13 @@ static class MediaFoundation
     [DllImport("mfplat.dll", ExactSpelling = true)]
     public static extern int MFCreateMediaType(out IMFMediaType? mediaType);
 
-    [DllImport("mfreadwrite.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
-    public static extern int MFCreateSourceReaderFromURL(string url, IMFAttributes? attributes, out IMFSourceReader? reader);
+    [DllImport("mfplat.dll", ExactSpelling = true)]
+    public static extern int MFCreateMFByteStreamOnStream(System.Runtime.InteropServices.ComTypes.IStream stream,
+        out IMFByteStream? byteStream);
+
+    [DllImport("mfreadwrite.dll", ExactSpelling = true)]
+    public static extern int MFCreateSourceReaderFromByteStream(IMFByteStream byteStream, IMFAttributes? attributes,
+        out IMFSourceReader? reader);
 
     /// Releases a Media Foundation object now instead of when the garbage collector finds its wrapper. Each object
     /// here is wrapped once and used by one owner, so the final release is the right one.
@@ -241,6 +249,13 @@ interface IMFSample
     [PreserveSig] int GetBufferByIndex(uint index, out IMFMediaBuffer? buffer);
     [PreserveSig] int ConvertToContiguousBuffer(out IMFMediaBuffer? buffer);
     [PreserveSig] int AddBuffer(IMFMediaBuffer buffer);
+}
+
+/// mfobjects.h. Marquee only hands it on, and sets its attributes through IMFAttributes, so none of its own methods
+/// are declared.
+[ComImport, Guid("ad4c1b00-4bf7-422f-9175-756693d9130d"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IMFByteStream
+{
 }
 
 /// mfobjects.h, complete.

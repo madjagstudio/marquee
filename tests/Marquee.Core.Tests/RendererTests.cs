@@ -79,9 +79,9 @@ public class RendererTests
     }
 
     [Fact]
-    public void A_theme_with_a_video_layer_renders_its_other_layers()
+    public void A_theme_with_a_video_layer_that_cannot_play_renders_its_other_layers()
     {
-        // Video playback isn't wired in yet: the layer parses and is skipped, and nothing else is disturbed.
+        // The clip doesn't exist: the layer is skipped with a warning, and nothing else is disturbed.
         using var frame = Render(Landscape + """
             background:
               - fill: "#FF0000"

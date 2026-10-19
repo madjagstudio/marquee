@@ -225,6 +225,7 @@ public sealed class RenderLoop : IDisposable
     {
         TakePendingTheme(time);
         if (_renderer is null) return null;
+        foreach (var error in _theme!.Assets.TakeVideoErrors()) _log.Warn(error); // each once, not every frame
 
         var clock = Stopwatch.StartNew();
         var rendered = _renderer.Render(_sensors.Snapshot(), time);

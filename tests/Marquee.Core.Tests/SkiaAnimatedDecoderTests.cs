@@ -198,23 +198,26 @@ public sealed class SkiaAnimatedDecoderTests : IDisposable
 
     [Theory]
     [InlineData(3841, 1)]
-    [InlineData(1, 2161)]
-    public void Clips_larger_than_4K_are_rejected(int width, int height)
+    [InlineData(1, 3841)]
+    [InlineData(2161, 2161)]
+    public void Clips_larger_than_4K_either_way_round_are_rejected(int width, int height)
     {
         // The header alone says how large every frame is; one tiny frame keeps the file small.
         var path = Save("huge.gif", GifWriter.Write(width, height, Palette, GifFrame.Solid(SKRectI.Create(1, 1), Red, 5)));
 
         var ex = Assert.Throws<VideoDecodeException>(() => new SkiaAnimatedDecoder(path));
 
-        Assert.Equal($"The clip is {width}×{height}; clips can be at most 3840×2160.", ex.Message);
+        Assert.Equal($"The clip's frames are {width}×{height}, over the 3840×2160 limit.", ex.Message);
     }
 
-    [Fact]
-    public void A_4K_clip_is_accepted()
+    [Theory]
+    [InlineData(3840, 2160)]
+    [InlineData(2160, 3840)]
+    public void A_4K_clip_is_accepted_either_way_round(int width, int height)
     {
         using var decoder = new SkiaAnimatedDecoder(
-            Save("4k.gif", GifWriter.Write(3840, 2160, Palette, GifFrame.Solid(SKRectI.Create(1, 1), Red, 5))));
+            Save("4k.gif", GifWriter.Write(width, height, Palette, GifFrame.Solid(SKRectI.Create(1, 1), Red, 5))));
 
-        Assert.Equal(new SKSizeI(3840, 2160), decoder.Size);
+        Assert.Equal(new SKSizeI(width, height), decoder.Size);
     }
 }
