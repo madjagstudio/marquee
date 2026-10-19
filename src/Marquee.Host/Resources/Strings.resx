@@ -130,4 +130,20 @@
     <value>schtasks did not start.</value>
     <comment>"schtasks" is a program's name.</comment>
   </data>
+  <data name="RingUnavailable" xml:space="preserve">
+    <value>The LED ring is unavailable: {0} Retrying every {1} s.</value>
+    <comment>{0} is the reason, a sentence ending in a full stop; {1} is a number of seconds. The LED ring is the ring of lights around the screen.</comment>
+  </data>
+  <data name="RingNotFound" xml:space="preserve">
+    <value>No LED ring was found; Marquee keeps looking for one.</value>
+    <comment>Logged once when no LED ring (the ring of lights around the screen) is plugged in, which is normal for a screen without one.</comment>
+  </data>
+  <data name="RingConnected" xml:space="preserve">
+    <value>Connected to the LED ring.</value>
+    <comment>Follows RingUnavailable or RingNotFound once the ring works.</comment>
+  </data>
+  <data name="RingFrameFailed" xml:space="preserve">
+    <value>Lighting the LED ring failed: {0}</value>
+    <comment>{0} is the reason, an unexpected error while working out the ring's colors.</comment>
+  </data>
 </root>

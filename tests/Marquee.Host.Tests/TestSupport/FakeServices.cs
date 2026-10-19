@@ -6,7 +6,7 @@ using Marquee.Providers.Agents.Claude;
 namespace Marquee.Host.Tests.TestSupport;
 
 /// The engine's machine, faked: a RecordingDevice per start, providers that write nothing, servers that don't listen,
-/// and the Claude limits in a temp file. It records every request so tests can check what the engine asked for.
+/// the Claude limits in a temp file, and a FakeRing when a test asks for one. It records every request so tests can check what the engine asked for.
 sealed class FakeServices(string claudeLimitsPath) : IEngineServices
 {
     /// What CreateDevice returns for each request; null means no screen is plugged in.
@@ -62,6 +62,22 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
         Server(new FakeServer("http", port, maxKeys));
 
     public ClaudeLimitsFile CreateClaudeLimits(ILog log) => new(claudeLimitsPath, log);
+
+    /// The LED ring the engine's ring senders find, or null (the default) for no ring sender at all, as where Marquee
+    /// drives no ring.
+    public FakeRing? Ring { get; set; }
+
+    public List<EngineSettings> RingRequests { get; } = [];
+    public List<RingSender> RingSenders { get; } = [];
+
+    public RingSender? CreateRing(EngineSettings settings, SensorStore store, ILog log)
+    {
+        RingRequests.Add(settings);
+        if (Ring is not { } ring) return null;
+        var sender = new RingSender(() => ring, store, log);
+        RingSenders.Add(sender);
+        return sender;
+    }
 
     FakeProvider Provider(string name)
     {

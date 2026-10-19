@@ -7,7 +7,7 @@ namespace Marquee.Core.Devices.LedRing;
 /// It has no effects of its own: the host streams every frame, and the ring never replies. Like the screen, it is
 /// single-threaded: only the ring's sender touches it. A failed write throws, and the sender reopens the ring.
 /// Protocol facts from sgtaziz/lian-li-linux (MIT, crates/lianli-devices/src/winusb/led.rs); no code was copied.
-public sealed class LedRing88Device(string devicePath, Func<string, IUsbTransport> openTransport) : IDisposable
+public sealed class LedRing88Device(string devicePath, Func<string, IUsbTransport> openTransport) : ILedRing, IDisposable
 {
     public const ushort VendorId = 0x0416, ProductId = 0x8050;
 

@@ -73,7 +73,7 @@ updates: check                # check | off; default check
   tray notification, and `auto` takes it without asking.
 - `updates: check` has the tray look for a newer release once a day; `updates: off` turns that off.
 
-`ring`, `lconnect` and `updates` take effect with the tray and the LED ring, which arrive in milestone 4b.
+`lconnect` and `updates` take effect with the tray, which arrives in milestone 4b.
 
 A command-line flag wins over `config.yaml`, `config.yaml` over the theme, and the theme over the default: `fps` in
 `config.yaml` overrides every theme's `canvas.fps`, and `--fps` overrides both. `--no-http`, `--http-port`,
@@ -230,7 +230,13 @@ ring:
   block leaves out is `static`, white (`#FFFFFF`), speed 1 and brightness 100 instead, so `ring: { color: "#3A7BFF" }`
   shows that blue at full brightness.
 
-`ring: off` or `ring: "#RRGGBB"` in `config.yaml` overrides every theme's ring.
+`ring:` in `config.yaml` overrides every theme's ring: `ring: off` keeps it dark, and `ring: "#3A7BFF"` shows that
+color on every LED, static, at full brightness. An alpha byte dims it: `"#3A7BFF80"` is about half as bright. Saving
+`config.yaml` changes the ring at once, without restarting anything else.
+
+Marquee updates the ring up to 30 times a second on a thread of its own, so the ring never slows the screen. A ring
+that is unplugged or held by another program is tried again every 2 seconds, and a screen without one is fine. The
+ring goes dark when Marquee pauses or quits. `--sink` and `--frames` leave it alone.
 
 ### Checking a theme
 

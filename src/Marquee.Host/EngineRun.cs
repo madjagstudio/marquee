@@ -31,6 +31,12 @@ sealed class EngineRun : IDisposable
     bool _showing; // whether a theme has loaded; theme loads never overlap (one watcher at a time, or Apply under the lock)
     int _stepped;
 
+    // The LED ring: its sender (live runs only), the ring of the theme on screen (null for none), and the lock that
+    // keeps a hot reload's ring and a settings change's from crossing (see ShowRing).
+    volatile RingSender? _ring;
+    volatile RingSpec? _themeRing;
+    readonly object _ringGate = new();
+
     EngineRun(MarqueeEngine engine, EngineSettings settings, bool live, bool paused, ILog log)
     {
         _engine = engine;
@@ -113,6 +119,10 @@ sealed class EngineRun : IDisposable
             StartHttp(next, services);
         }
 
+        // The ring goes with the sink (frames written to files light no real ring); `ring:` changes only its colors.
+        if (next.Sink != old.Sink) ReplaceRing(services);
+        else if (next.Ring != old.Ring || next.RingColor != old.RingColor) ShowRing();
+
         return true;
     }
 
@@ -123,6 +133,7 @@ sealed class EngineRun : IDisposable
         if (Paused) return;
         Paused = true;
         if (Live) _loop!.Stop();
+        _ring?.Pause(); // dark, and let go
     }
 
     /// Starts rendering again; the screen opens with the next frame, with the theme that was showing or has loaded since.
@@ -131,6 +142,7 @@ sealed class EngineRun : IDisposable
         if (!Paused) return;
         Paused = false;
         if (Live) _loop!.Start();
+        _ring?.Start();
     }
 
     /// Stops in the reverse order of TryStart: nothing reloads into a stopping loop, the loop's threads end and close
@@ -138,6 +150,7 @@ sealed class EngineRun : IDisposable
     public void Dispose()
     {
         _watcher?.Dispose();
+        _ring?.Dispose(); // the ring is left dark
         _loop?.Dispose();
         _device?.Dispose();
         _http?.Dispose();
@@ -173,6 +186,7 @@ sealed class EngineRun : IDisposable
 
         if (Live)
         {
+            StartRing(services);
             _watcher.Start();
             if (!Paused) _loop.Start();
         }
@@ -301,6 +315,8 @@ sealed class EngineRun : IDisposable
         var info = new LoadedThemeInfo(theme.Name, theme.Warnings);
         _themeName = theme.Name;
         _showing = true;
+        _themeRing = theme.Spec.Ring;
+        ShowRing();
         _loop!.SetTheme(theme); // the loop owns (and disposes) it from here
         _engine.OnThemeLoaded(info);
     }
@@ -309,5 +325,33 @@ sealed class EngineRun : IDisposable
     {
         _log.Error(_showing ? Strings.LastGoodLayoutStays(error.Message) : error.Message);
         _engine.OnThemeFailed(error.Message);
+    }
+
+    /// Live runs only (`--frames` leaves the ring alone). The ring gets its colors before its thread starts, so it
+    /// never shows anything else first; a paused run makes the sender but starts it only at Resume.
+    void StartRing(IEngineServices services)
+    {
+        _ring = services.CreateRing(Settings, _engine.Sensors, _log);
+        ShowRing();
+        if (!Paused) _ring?.Start();
+    }
+
+    /// The sink changed, and a sink folder gets no ring. The old sender darkens the ring as it goes.
+    void ReplaceRing(IEngineServices services)
+    {
+        if (!Live) return;
+        _ring?.Dispose();
+        StartRing(services);
+    }
+
+    /// Gives the ring what config.yaml's `ring:` and the theme on screen say. A settings change calls this on the
+    /// engine's thread and a hot reload on a theme watcher's; under one lock, each reads the latest settings and theme
+    /// ring, so whichever call comes last leaves the ring right.
+    void ShowRing()
+    {
+        lock (_ringGate)
+        {
+            if (_ring is { } ring) ring.Spec = RingChoice.Resolve(Settings.Ring, Settings.RingColor, _themeRing);
+        }
     }
 }

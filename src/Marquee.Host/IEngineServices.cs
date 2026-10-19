@@ -34,4 +34,8 @@ public interface IEngineServices
 
     /// Where the last Claude Code limits are kept between runs.
     ClaudeLimitsFile CreateClaudeLimits(ILog log);
+
+    /// The LED ring's sender for these settings, not started yet, or null where Marquee drives no ring (a sink folder,
+    /// tests that don't ask for one). The sender finds the ring itself, so a ring that isn't plugged in yet is fine.
+    RingSender? CreateRing(EngineSettings settings, SensorStore store, ILog log);
 }

@@ -70,6 +70,14 @@ internal static class Strings
 
     public static string SchTasksDidNotStart => Get(nameof(SchTasksDidNotStart));
 
+    public static string RingUnavailable(string reason, int seconds) => Format(nameof(RingUnavailable), reason, seconds);
+
+    public static string RingNotFound => Get(nameof(RingNotFound));
+
+    public static string RingConnected => Get(nameof(RingConnected));
+
+    public static string RingFrameFailed(string reason) => Format(nameof(RingFrameFailed), reason);
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages get the platform's line breaks back, like the rest of the log.
     static string Get(string name) =>
