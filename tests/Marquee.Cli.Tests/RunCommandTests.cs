@@ -18,7 +18,7 @@ public class RunCommandTests
     {
         var options = RunCommand.Parse([
             "neon", "--orientation", "portrait-flipped", "--fps", "60", "--sensors", "none", "--sink", "out", "--frames", "3",
-            "--preview", "--http-port", "50000", "--no-claude-usage", "--config", "my.yaml",
+            "--preview", "--http-port", "50000", "--no-claude-usage", "--no-fps", "--config", "my.yaml",
         ]);
 
         Assert.Equal(new RunOptions
@@ -33,6 +33,7 @@ public class RunCommandTests
             HttpEnabled = true,
             HttpPort = 50000,
             ClaudeUsage = false,
+            GameFps = false,
             ConfigFile = "my.yaml",
         }, options);
     }

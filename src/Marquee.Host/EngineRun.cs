@@ -21,6 +21,7 @@ sealed class EngineRun : IDisposable
     ThemeWatcher? _watcher;
     ProviderRunner? _providers;
     ISensorProvider? _hardware;
+    ISensorProvider? _fps;
     IDisposable? _statusLine;
     IDisposable? _http;
     volatile string? _themeName;
@@ -157,6 +158,7 @@ sealed class EngineRun : IDisposable
         var agents = AgentSources.Enabled(Settings.ClaudeSessions, Settings.ClaudeUsage, Settings.Codex);
         foreach (var agent in AgentSources.Create(agents, _log, Remembered(services)))
             _providers.Start(agent);
+        if (Settings.GameFps) StartFps(services);
         _statusLine = services.StartStatusLineServer(store, _log);
         StartHttp(Settings, services);
 
@@ -257,6 +259,20 @@ sealed class EngineRun : IDisposable
             if (_agents.Remove(source, out var provider)) _providers!.Stop(provider);
         foreach (var agent in AgentSources.Create(after.Except(before), _log, Remembered(services)))
             _providers!.Start(agent);
+
+        if (next.GameFps != old.GameFps)
+        {
+            if (_fps is not null) _providers!.Stop(_fps);
+            _fps = null;
+            if (next.GameFps) StartFps(services);
+        }
+    }
+
+    /// PresentMon reads ETW, which takes an elevated Marquee; unelevated, the warning says why FPS is off.
+    void StartFps(IEngineServices services)
+    {
+        if (services.IsElevated) _providers!.Start(_fps = services.CreateFpsProvider(_log));
+        else _log.Warn(Strings.FpsNeedsAdministrator);
     }
 
     /// Makes agent providers through the services and remembers which source each came from, so Apply can stop one.

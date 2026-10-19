@@ -20,6 +20,12 @@ public interface IEngineServices
     /// One agent provider. Throwing is fine: AgentSources logs it and starts the others.
     ISensorProvider CreateAgentProvider(AgentSource source, ILog log);
 
+    /// Whether Marquee runs elevated. The FPS provider needs it: PresentMon reads ETW, which takes administrator rights.
+    bool IsElevated { get; }
+
+    /// The FPS provider. The engine asks for it only when IsElevated.
+    ISensorProvider CreateFpsProvider(ILog log);
+
     /// The status-line pipe server, already started. Disposing it stops it.
     IDisposable StartStatusLineServer(SensorStore store, ILog log);
 

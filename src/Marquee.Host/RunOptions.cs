@@ -23,6 +23,9 @@ public sealed record RunOptions
     /// False for `--no-claude-usage`.
     public bool? ClaudeUsage { get; init; }
 
+    /// False for `--no-fps`.
+    public bool? GameFps { get; init; }
+
     public string? Sink { get; init; }
 
     /// `--config <file>`: read this file instead of %LOCALAPPDATA%\Marquee\config.yaml.

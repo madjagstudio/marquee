@@ -122,6 +122,7 @@ static class RunCommand
                 case "--http-port" when HttpPort.TryParse(value, out var p): options = options with { HttpEnabled = true, HttpPort = p }; i++; break;
                 case "--no-http": options = options with { HttpEnabled = false }; break;
                 case "--no-claude-usage": options = options with { ClaudeUsage = false }; break;
+                case "--no-fps": options = options with { GameFps = false }; break;
                 case "--config" when value is not null: options = options with { ConfigFile = value }; i++; break;
                 default: return null;
             }

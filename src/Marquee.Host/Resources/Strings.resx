@@ -36,6 +36,10 @@
     <value>{0} is unavailable: {1}</value>
     <comment>{0} is a sensor source, {1} the reason.</comment>
   </data>
+  <data name="FpsNeedsAdministrator" xml:space="preserve">
+    <value>FPS is off: PresentMon needs Marquee to run as administrator. Set `providers: { fps: off }` in config.yaml to stop this message.</value>
+    <comment>Logged at start when the FPS provider is on but Marquee isn't elevated. PresentMon is a program's name; `providers: { fps: off }` and config.yaml stay as they are.</comment>
+  </data>
   <data name="NoTheme" xml:space="preserve">
     <value>No theme to show. Pass a theme folder to `marquee run`, or set theme: in config.yaml.</value>
     <comment>Neither the command line nor config.yaml names a theme. "theme:" is the config.yaml key and stays as it is.</comment>

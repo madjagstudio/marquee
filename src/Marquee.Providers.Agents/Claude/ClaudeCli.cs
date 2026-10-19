@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using Marquee.Core.Processes;
 
 namespace Marquee.Providers.Agents.Claude;
 

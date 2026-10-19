@@ -1,12 +1,12 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using static Marquee.Providers.Agents.Claude.NativeMethods;
+using static Marquee.Core.Processes.ProcessNative;
 
-namespace Marquee.Providers.Agents.Claude;
+namespace Marquee.Core.Processes;
 
 /// Whether a token is elevated, from its TokenElevation information. Unlike an Administrators-role check, this is
 /// right for UAC's split tokens: an administrator's unelevated processes are not elevated.
-internal static class ProcessElevation
+public static class ProcessElevation
 {
     static readonly Lazy<bool> Current = new(() =>
     {

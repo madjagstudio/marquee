@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
+using Marquee.Core.Processes;
 using Marquee.Core.Sensors;
 using Marquee.Providers.Agents.Claude;
 using Marquee.Providers.Agents.Tests.TestSupport;

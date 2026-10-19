@@ -1,18 +1,19 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using static Marquee.Providers.Agents.Claude.NativeMethods;
+using static Marquee.Core.Processes.ProcessNative;
 
-namespace Marquee.Providers.Agents.Claude;
+namespace Marquee.Core.Processes;
 
-/// A Win32 job object that kills every process in it when its handle closes. Each `claude` child gets a job of its own,
-/// created just before it starts and closed when its run is over: if Marquee exits or crashes meanwhile, the kernel
-/// closes the handle and the child dies with it, and closing it after a normal run ends anything the child left behind.
+/// A Win32 job object that kills every process in it when its handle closes. Each child Marquee starts (`claude`,
+/// PresentMon) gets a job of its own, created just before it starts and closed when it is done with: if Marquee exits
+/// or crashes meanwhile, the kernel closes the handle and the child dies with it, and closing it after a normal run ends
+/// anything the child left behind.
 ///
 /// A job of its own, not one shared job, because Windows lets a process that is already in a job join another only if
 /// that job is empty or in the same job tree. A child started with the desktop shell's token (UnelevatedProcess) begins
 /// inside the Secondary Logon service's job, and Marquee itself may run inside a job (`dotnet test`, Task Scheduler), so a
 /// shared job that had held earlier children was refused with "Access is denied". A new, empty job is always accepted.
-internal sealed class ChildProcessJob : IDisposable
+public sealed class ChildProcessJob : IDisposable
 {
     readonly KernelHandle _job;
 

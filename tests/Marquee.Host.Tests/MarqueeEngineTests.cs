@@ -97,6 +97,68 @@ public class MarqueeEngineTests : IDisposable
         Assert.Equal(["hwinfo"], _services.HardwareRequests);
     }
 
+    const string FpsNeedsAdministrator =
+        "warn: FPS is off: PresentMon needs Marquee to run as administrator. " +
+        "Set `providers: { fps: off }` in config.yaml to stop this message.";
+
+    [Fact]
+    public void Start_runs_the_fps_provider_when_it_is_on_and_Marquee_is_elevated()
+    {
+        _services.Elevated = true;
+        using var engine = Engine(_settings with { GameFps = true });
+
+        Assert.True(engine.Start());
+
+        Assert.Equal(1, _services.FpsRequests);
+        Assert.Single(_services.Providers, p => p.Name == "FPS");
+        Assert.DoesNotContain(FpsNeedsAdministrator, _log.Entries);
+    }
+
+    [Fact]
+    public void Start_unelevated_leaves_fps_off_and_says_why_once()
+    {
+        _services.Elevated = false;
+        using var engine = Engine(_settings with { GameFps = true });
+
+        Assert.True(engine.Start());
+
+        Assert.Equal(0, _services.FpsRequests);
+        Assert.Single(_log.Entries, e => e == FpsNeedsAdministrator);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Start_with_fps_switched_off_neither_runs_it_nor_mentions_it(bool elevated)
+    {
+        _services.Elevated = elevated;
+        using var engine = Engine(_settings with { GameFps = false });
+
+        Assert.True(engine.Start());
+
+        Assert.Equal(0, _services.FpsRequests);
+        Assert.DoesNotContain(_log.Entries, e => e.Contains("FPS", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Apply_switching_fps_stops_or_starts_only_the_fps_provider()
+    {
+        _services.Elevated = true;
+        using var engine = Engine(_settings with { GameFps = true });
+        engine.Start();
+        var fps = Assert.Single(_services.Providers, p => p.Name == "FPS");
+        var others = _services.Providers.Where(p => p != fps).ToList();
+
+        Assert.True(engine.Apply(_settings with { GameFps = false }));
+        Assert.True(fps.Disposed);
+
+        Assert.True(engine.Apply(_settings with { GameFps = true }));
+        Assert.Equal(2, _services.FpsRequests);
+        Assert.Equal("FPS", _services.Providers[^1].Name);
+        Assert.False(_services.Providers[^1].Disposed);
+        Assert.All(others, p => Assert.False(p.Disposed));
+    }
+
     [Fact]
     public void Start_gives_the_http_server_its_port_and_key_limit()
     {

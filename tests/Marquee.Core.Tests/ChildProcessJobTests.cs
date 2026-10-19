@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using Marquee.Providers.Agents.Claude;
+using Marquee.Core.Processes;
 
-namespace Marquee.Providers.Agents.Tests;
+namespace Marquee.Core.Tests;
 
 public class ChildProcessJobTests
 {

@@ -1,8 +1,10 @@
 using Marquee.Core.Devices;
 using Marquee.Core.Logging;
+using Marquee.Core.Processes;
 using Marquee.Core.Sensors;
 using Marquee.Providers.Agents.Claude;
 using Marquee.Providers.Custom;
+using Marquee.Providers.Fps;
 
 namespace Marquee.Host;
 
@@ -26,6 +28,10 @@ public sealed class MachineServices : IEngineServices
     public ISensorProvider? CreateHardwareProvider(string source, ILog log) => SensorSources.Create(source, log);
 
     public ISensorProvider CreateAgentProvider(AgentSource source, ILog log) => AgentSources.Build(source, log);
+
+    public bool IsElevated => ProcessElevation.IsCurrentProcessElevated();
+
+    public ISensorProvider CreateFpsProvider(ILog log) => new FpsProvider();
 
     /// A pipe that can't be created is logged by the server and leaves Claude Code limits to the other sources.
     public IDisposable StartStatusLineServer(SensorStore store, ILog log)

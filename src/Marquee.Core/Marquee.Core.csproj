@@ -10,5 +10,8 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Marquee.Core.Tests" />
+    <!-- ChildProcessJob.Assigned and Contains, which the tests of the providers that start children use. -->
+    <InternalsVisibleTo Include="Marquee.Providers.Agents.Tests" />
+    <InternalsVisibleTo Include="Marquee.Providers.Fps.Tests" />
   </ItemGroup>
 </Project>

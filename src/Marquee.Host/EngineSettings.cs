@@ -32,7 +32,7 @@ public sealed record EngineSettings
     /// Both Codex providers.
     public bool Codex { get; init; } = true;
 
-    /// The FPS provider. Settled from config.yaml already, though the engine has no FPS provider to start yet.
+    /// The FPS provider (`providers.fps`, `--no-fps`). It runs only when Marquee is elevated as well.
     public bool GameFps { get; init; } = true;
 
     /// How many distinct custom.* keys the HTTP server takes.

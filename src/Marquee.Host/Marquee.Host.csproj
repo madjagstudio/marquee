@@ -13,6 +13,7 @@
     <ProjectReference Include="..\Marquee.Providers.Hardware\Marquee.Providers.Hardware.csproj" />
     <ProjectReference Include="..\Marquee.Providers.Agents\Marquee.Providers.Agents.csproj" />
     <ProjectReference Include="..\Marquee.Providers.Custom\Marquee.Providers.Custom.csproj" />
+    <ProjectReference Include="..\Marquee.Providers.Fps\Marquee.Providers.Fps.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Marquee.Host.Tests" />

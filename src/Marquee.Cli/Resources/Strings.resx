@@ -21,7 +21,7 @@
   marquee show-image &lt;file&gt; [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink &lt;folder&gt;]
   marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage] [--config &lt;file&gt;]
   marquee run [&lt;theme-folder&gt;] [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink &lt;folder&gt;] [--frames N]
-              [--http-port 1024-65535 | --no-http] [--no-claude-usage] [--config &lt;file&gt;]
+              [--http-port 1024-65535 | --no-http] [--no-claude-usage] [--no-fps] [--config &lt;file&gt;]
   marquee push &lt;key&gt; &lt;value&gt; [--ttl 30s|5m|2h] [--port 1024-65535] [--config &lt;file&gt;]
   marquee setup-claude [--undo] [--dry-run]
   marquee statusline        (Claude Code runs this; see setup-claude)

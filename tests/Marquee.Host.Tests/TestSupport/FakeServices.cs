@@ -19,6 +19,11 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
     public List<FakeProvider> Providers { get; } = [];
     public List<FakeServer> Servers { get; } = [];
 
+    /// What IsElevated says: false unless a test says otherwise, like a developer's unelevated terminal.
+    public bool Elevated { get; set; }
+
+    public int FpsRequests { get; private set; }
+
     public RecordingDevice LastDevice => (RecordingDevice)Devices[^1];
 
     public IReadOnlyList<FakeServer> HttpServers => Servers.Where(s => s.Kind == "http").ToList();
@@ -41,6 +46,14 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
     {
         AgentRequests.Add(source);
         return Provider(source.ToString());
+    }
+
+    public bool IsElevated => Elevated;
+
+    public ISensorProvider CreateFpsProvider(ILog log)
+    {
+        FpsRequests++;
+        return Provider("FPS");
     }
 
     public IDisposable StartStatusLineServer(SensorStore store, ILog log) => Server(new FakeServer("status line"));

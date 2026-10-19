@@ -164,6 +164,16 @@ public class SettingsResolverTests : IDisposable
     }
 
     [Fact]
+    public void Fps_flag_beats_config_beats_on()
+    {
+        var off = Config with { GameFps = false };
+
+        Assert.False(Resolve(new RunOptions { GameFps = false }, Config).GameFps);
+        Assert.False(Resolve(new RunOptions(), off).GameFps);
+        Assert.True(Resolve(new RunOptions(), Config).GameFps);
+    }
+
+    [Fact]
     public void Settings_without_a_flag_come_from_config_or_their_default()
     {
         var config = Config with { ClaudeSessions = false, Codex = false, GameFps = false, MaxCustomKeys = 250 };

@@ -38,7 +38,7 @@ public static class SettingsResolver
             ClaudeSessions = config.ClaudeSessions,
             ClaudeUsage = options.ClaudeUsage ?? config.ClaudeUsage,
             Codex = config.Codex,
-            GameFps = config.GameFps,
+            GameFps = options.GameFps ?? config.GameFps,
             MaxCustomKeys = config.MaxCustomKeys,
             Sink = options.Sink,
         });

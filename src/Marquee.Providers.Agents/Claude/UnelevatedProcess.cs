@@ -4,6 +4,7 @@ using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
+using Marquee.Core.Processes;
 using static Marquee.Providers.Agents.Claude.NativeMethods;
 
 namespace Marquee.Providers.Agents.Claude;

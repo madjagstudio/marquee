@@ -22,6 +22,8 @@ internal static class Strings
 
     public static string SourceUnavailable(string source, string reason) => Format(nameof(SourceUnavailable), source, reason);
 
+    public static string FpsNeedsAdministrator => Get(nameof(FpsNeedsAdministrator));
+
     public static string NoTheme => Get(nameof(NoTheme));
 
     public static string ThemeFolderNotFound(string folder) => Format(nameof(ThemeFolderNotFound), folder);

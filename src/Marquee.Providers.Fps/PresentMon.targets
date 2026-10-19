@@ -1,0 +1,61 @@
+<Project>
+  <!-- The PresentMon console exe that Marquee.Providers.Fps runs, bundled next to marquee.exe as
+       PresentMon\PresentMon-<version>-x64.exe. Intel's GameTechDev release, MIT licensed. Its version, file name and
+       SHA-256 are set here and nowhere else: the build checks the file against the hash, and the same values reach the
+       C# side as assembly metadata (PresentMonBundle), which checks the hash again before every start.
+
+       To update: change the version and the hash (GitHub shows each release asset's SHA-256), build, and read the new
+       version's README for changed command-line options and CSV columns. -->
+  <PropertyGroup>
+    <PresentMonVersion>2.6.0</PresentMonVersion>
+    <PresentMonFileName>PresentMon-$(PresentMonVersion)-x64.exe</PresentMonFileName>
+    <PresentMonSha256>b2a706bc6ad475749e3b7e3409263aa1e6906d45bdcf993f6dbc0f660188f1af</PresentMonSha256>
+    <PresentMonUrl>https://github.com/GameTechDev/PresentMon/releases/download/v$(PresentMonVersion)/$(PresentMonFileName)</PresentMonUrl>
+    <!-- Outside bin and obj, so `dotnet clean` keeps it and a build downloads the exe once per clone. Git-ignored. -->
+    <PresentMonCacheDir>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..\..\.cache\presentmon'))</PresentMonCacheDir>
+    <PresentMonCachedExe>$(PresentMonCacheDir)$(PresentMonFileName)</PresentMonCachedExe>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="PresentMonFileName" Value="$(PresentMonFileName)" />
+    <AssemblyMetadata Include="PresentMonSha256" Value="$(PresentMonSha256)" />
+  </ItemGroup>
+
+  <!-- Downloads the exe into the cache if it isn't there yet. It lands under a temporary name and is renamed only once
+       its hash is right, so an interrupted or wrong download never sits in the cache looking like the real one. -->
+  <Target Name="DownloadPresentMon" Condition="!Exists('$(PresentMonCachedExe)')">
+    <PropertyGroup>
+      <_PresentMonDownload>$(PresentMonCachedExe).download</_PresentMonDownload>
+    </PropertyGroup>
+    <Delete Files="$(_PresentMonDownload)" />
+    <DownloadFile SourceUrl="$(PresentMonUrl)" DestinationFolder="$(PresentMonCacheDir)" DestinationFileName="$(PresentMonFileName).download"
+                  Retries="2" ContinueOnError="true" />
+    <!-- Offline with nothing cached is an error, not a warning: a marquee.exe built without PresentMon would ship with
+         FPS silently missing, and CI and release builds must never do that. One online build fills the cache for good. -->
+    <Error Condition="!Exists('$(_PresentMonDownload)')"
+           Text="Could not download PresentMon $(PresentMonVersion) from $(PresentMonUrl). The build bundles it for the FPS provider and needs it once; connect to the internet and build again, or download that file yourself and save it as $(PresentMonCachedExe)." />
+    <GetFileHash Files="$(_PresentMonDownload)" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="_PresentMonDownloadHash" />
+    </GetFileHash>
+    <!-- MSBuild compares strings without regard to case, so the hex digits' case doesn't matter. -->
+    <Delete Condition="'$(_PresentMonDownloadHash)' != '$(PresentMonSha256)'" Files="$(_PresentMonDownload)" />
+    <Error Condition="'$(_PresentMonDownloadHash)' != '$(PresentMonSha256)'"
+           Text="The PresentMon downloaded from $(PresentMonUrl) has SHA-256 $(_PresentMonDownloadHash), not the expected $(PresentMonSha256). It was deleted and will not be bundled." />
+    <Move SourceFiles="$(_PresentMonDownload)" DestinationFiles="$(PresentMonCachedExe)" />
+  </Target>
+
+  <!-- Checks the cached exe on every build, not only after a download, so a cache that was changed by hand never ships,
+       then copies it to the output folder, from where it flows to every project that references this one (marquee.exe's
+       output, the tray's, the installer's). Hashing a 1 MB file costs a few milliseconds. -->
+  <Target Name="BundlePresentMon" BeforeTargets="AssignTargetPaths" DependsOnTargets="DownloadPresentMon">
+    <GetFileHash Files="$(PresentMonCachedExe)" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="_PresentMonCachedHash" />
+    </GetFileHash>
+    <Delete Condition="'$(_PresentMonCachedHash)' != '$(PresentMonSha256)'" Files="$(PresentMonCachedExe)" />
+    <Error Condition="'$(_PresentMonCachedHash)' != '$(PresentMonSha256)'"
+           Text="The cached $(PresentMonCachedExe) has SHA-256 $(_PresentMonCachedHash), not the expected $(PresentMonSha256). It was deleted; build again to download it afresh." />
+    <ItemGroup>
+      <None Include="$(PresentMonCachedExe)" Link="PresentMon\$(PresentMonFileName)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    </ItemGroup>
+  </Target>
+</Project>
