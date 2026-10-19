@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
@@ -14,6 +15,9 @@ public static class LogonTask
 {
     /// In a folder of its own, so Task Scheduler's window shows it apart from Windows' tasks.
     public const string TaskName = @"\Marquee\Marquee";
+
+    /// TaskName's folder, which `marquee task remove` deletes once it is empty: Task Scheduler keeps it otherwise.
+    public const string TaskFolder = @"\Marquee";
 
     /// The tray app, installed next to marquee.exe.
     public const string TrayExeName = "MarqueeTray.exe";
@@ -115,6 +119,28 @@ public static class LogonTask
         if (IsMissing(result, schtasks)) return false;
         Check(result);
         return true;
+    }
+
+    /// Runs the task now in each active session of the user `userSid`, so the tray starts there as it would at their
+    /// logon: elevated where they can be. The installer runs this (as SYSTEM) when it finishes, for the user who ran it.
+    /// Returns those sessions; none means the user isn't signed in (an install by a deployment tool, or CI), and the
+    /// tray starts at their next logon. Throws LogonTaskException with Task Scheduler's reason when it can't run it.
+    public static IReadOnlyList<int> Start(string userSid, IUserSessions sessions, ITaskRunner runner)
+    {
+        var active = sessions.SessionsOf(userSid);
+        foreach (var session in active)
+        {
+            try
+            {
+                runner.RunInSession(TaskName, session);
+            }
+            catch (COMException ex)
+            {
+                throw new LogonTaskException(Strings.TaskSchedulerFailed(ex.Message));
+            }
+        }
+
+        return active;
     }
 
     /// Whether the task exists, and the exe it starts when its XML says.

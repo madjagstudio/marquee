@@ -19,6 +19,15 @@ public static class TrayNames
     /// An event the running tray waits on: setting it opens the tray's menu.
     public static string ShowMenu => $@"Local\Marquee-Tray-Show-{UserSid.Value}";
 
+    /// An event the running tray waits on: setting it makes the tray quit, as its Quit command does. The installer sets
+    /// it (TrayStopper) before it replaces or removes the tray's files. Only SYSTEM and administrators may set it, so an
+    /// unelevated program can't stop an elevated tray.
+    public static string Quit => $@"Local\Marquee-Tray-Quit-{UserSid.Value}";
+
+    /// Quit as another session sees it: the installer runs as SYSTEM in session 0, whose Local\ is session 0's own, and
+    /// reaches a tray's session through Session\<id>\.
+    public static string QuitIn(int sessionId, string userSid) => $@"Session\{sessionId}\Marquee-Tray-Quit-{userSid}";
+
     /// The marker that says the tray is showing the screen (TrayScreen), which `marquee run` checks.
     public static string Screen => $@"Local\Marquee-Screen-{UserSid.Value}";
 }

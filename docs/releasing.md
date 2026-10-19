@@ -71,13 +71,33 @@ On the owner's PC, from the root of the repository:
    no private key file is left in the repository, and `IsPlaceholder` turns false on its own.
 8. Commit `release-key.pub.pem`. From then on every build trusts only the new key.
 
+## Building the installer
+
+From the root of the repository, in Windows PowerShell or PowerShell 7:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File installer\build.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File installer\check-msi.ps1 artifacts\Marquee-0.1.0-x64.msi
+```
+
+`build.ps1` publishes `marquee.exe` and `MarqueeTray.exe` self-contained for x64 (users need no .NET), stages them
+with PresentMon, the example themes, `LICENSE` and `THIRD-PARTY-NOTICES.md` in `artifacts\staging`, checks that
+`marquee.exe` runs from there, and builds `artifacts\Marquee-<version>-x64.msi` with WiX 5.0.2
+(`installer\Marquee.Installer.wixproj`, which is not in `Marquee.sln`). That file name is the one the updater looks for.
+The version is `<Version>` in `Directory.Build.props`, the only place it is set: change it there for a release.
+`check-msi.ps1` reads the built MSI's tables (installing nothing) and checks the version, the files, the PATH entry,
+the shortcut and the custom actions. `artifacts\` is ignored by git.
+
+WiX stays on 5.0.2: v6 adds the Open Source Maintenance Fee. WiX's validation (ICE) runs as part of the build; keep it
+on. `build.ps1 -SkipValidation` exists only for a PC where the Windows Installer service can't run it.
+
 ## Signing a release
 
 1. Get the key file: save the attachment from the password manager to a local folder, or use the USB stick.
 2. Sign the release files:
 
    ```powershell
-   tools\sign-release.ps1 D:\marquee-release-key.pem out\Marquee-0.1.0-x64.msi out\marquee-0.1.0.zip
+   tools\sign-release.ps1 D:\marquee-release-key.pem artifacts\Marquee-0.1.0-x64.msi artifacts\marquee-0.1.0.zip
    ```
 
    It refuses a key file that isn't the key built into Marquee (`release-key.pub.pem`) once it has the password, and
@@ -91,10 +111,10 @@ M4c extends `sign-release.ps1` to check the CI build's hashes and publish the re
 ## Checking a signature
 
 ```powershell
-dotnet run --project tools\Marquee.ReleaseTool -c Release -- verify out\Marquee-0.1.0-x64.msi
+dotnet run --project tools\Marquee.ReleaseTool -c Release -- verify artifacts\Marquee-0.1.0-x64.msi
 ```
 
-It reads `out\Marquee-0.1.0-x64.msi.sig` and says whether it is good under the key built into Marquee
+It reads `artifacts\Marquee-0.1.0-x64.msi.sig` and says whether it is good under the key built into Marquee
 (`release-key.pub.pem`, which the tool is built with too). It needs no password. To check against another public key,
 give its PEM file first: `verify <pub.pem> <file>`.
 

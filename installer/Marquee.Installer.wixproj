@@ -1,0 +1,34 @@
+<!-- Marquee's MSI, built by installer/build.ps1 from the self-contained publish it stages first. Deliberately not in
+     Marquee.sln: the root `dotnet build` and `dotnet test` would then need that publish (and WiX) for every build.
+
+     WiX is pinned to 5.0.2 on purpose: its license is MS-RL. WiX v6 adds the Open Source Maintenance Fee
+     to its license, so never move to v6 or a floating version. -->
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <!-- WiX's SDK doesn't import Directory.Build.props (it isn't a .NET project), so the version is read from it here:
+         it is set there and nowhere else. -->
+    <Version>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\Directory.Build.props')), '&lt;Version&gt;([^&lt;]+)&lt;/Version&gt;').Groups[1].Value)</Version>
+    <Platform>x64</Platform>
+    <!-- The name the update check looks for (ReleaseFeed.InstallerName), from the one version in Directory.Build.props. -->
+    <OutputName>Marquee-$(Version)-x64</OutputName>
+    <OutputPath>$(MSBuildThisFileDirectory)..\artifacts\</OutputPath>
+    <!-- What build.ps1 publishes and copies: both apps, PresentMon, the example themes and the license files. -->
+    <StagingDir Condition="'$(StagingDir)' == ''">$(MSBuildThisFileDirectory)..\artifacts\staging\</StagingDir>
+    <StagingDir>$([MSBuild]::EnsureTrailingSlash('$(StagingDir)'))</StagingDir>
+    <!-- Validation (ICE) stays on, here and on CI, except for these. ICE43 and ICE57 flag a non-advertised Start menu
+         shortcut in a component whose key path is a file: they assume the Start menu could be the user's own, and in
+         this per-machine package it is the all-users one (Files.wxs). ICE61 flags an upgrade that also replaces its own
+         version, which Package.wxs asks for (AllowSameVersionUpgrades) so a second build of one version replaces the
+         first rather than installing beside it. -->
+    <SuppressIces>ICE43;ICE57;ICE61</SuppressIces>
+    <DefineConstants>ProductVersion=$(Version);RepoRoot=$(MSBuildThisFileDirectory)..\</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+    <!-- !(bindpath.Staging) in Files.wxs. -->
+    <BindPath Include="$(StagingDir)" BindName="Staging" />
+  </ItemGroup>
+  <Target Name="CheckVersion" BeforeTargets="Build">
+    <Error Condition="'$(Version)' == ''" Text="Found no &lt;Version&gt; in Directory.Build.props." />
+  </Target>
+</Project>

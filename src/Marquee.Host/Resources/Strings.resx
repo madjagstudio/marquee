@@ -130,6 +130,14 @@
     <value>schtasks did not start.</value>
     <comment>"schtasks" is a program's name.</comment>
   </data>
+  <data name="TaskSchedulerFailed" xml:space="preserve">
+    <value>Task Scheduler could not start the task: {0}</value>
+    <comment>{0} is Task Scheduler's reason (Windows' own text, already in the user's language).</comment>
+  </data>
+  <data name="UpdatesFolderIsLink" xml:space="preserve">
+    <value>{0} or the folder above it is a junction or symbolic link, so the downloaded updates in it were not deleted.</value>
+    <comment>{0} is the folder of downloaded updates, %ProgramData%\Marquee\updates.</comment>
+  </data>
   <data name="RingUnavailable" xml:space="preserve">
     <value>The LED ring is unavailable: {0} Retrying every {1} s.</value>
     <comment>{0} is the reason, a sentence ending in a full stop; {1} is a number of seconds. The LED ring is the ring of lights around the screen.</comment>

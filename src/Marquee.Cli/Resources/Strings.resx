@@ -25,7 +25,7 @@
   marquee validate &lt;theme-folder|zip&gt; [--fps 1-60]
   marquee push &lt;key&gt; &lt;value&gt; [--ttl 30s|5m|2h] [--port 1024-65535] [--config &lt;file&gt;]
   marquee setup-claude [--undo] [--dry-run]
-  marquee task install [--tray &lt;file&gt;] | remove | status
+  marquee task install [--tray &lt;file&gt;] | remove [--updates] | status | start [--user &lt;SID&gt;] | stop
   marquee claim-screen      (in an administrator terminal: stops L-Connect until a running Marquee has the screen)
   marquee statusline        (Claude Code runs this; see setup-claude)
 Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.yaml, or the file --config names.</value>
@@ -245,6 +245,46 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
   <data name="TaskStatusFailed" xml:space="preserve">
     <value>Could not read the logon task: {0}</value>
     <comment>{0} is the reason, usually schtasks's exit code and what it printed.</comment>
+  </data>
+  <data name="TaskStarted" xml:space="preserve">
+    <value>Started the logon task {0}: the tray is starting.</value>
+    <comment>{0} is the task's name in Task Scheduler.</comment>
+  </data>
+  <data name="TaskStartNoSession" xml:space="preserve">
+    <value>{0} is not signed in, so the tray was not started now. It starts at their next logon.</value>
+    <comment>{0} is the user's security identifier (SID), such as S-1-5-21-…; it stays as it is.</comment>
+  </data>
+  <data name="TaskStartFailed" xml:space="preserve">
+    <value>Could not start the logon task: {0}</value>
+    <comment>{0} is the reason, usually Task Scheduler's own text.</comment>
+  </data>
+  <data name="TraysStopped" xml:space="preserve">
+    <value>Closed the trays running from {0}: {1} quit when asked, {2} had to be ended.</value>
+    <comment>{0} is the path of MarqueeTray.exe; {1} and {2} are numbers of running copies of it.</comment>
+  </data>
+  <data name="NoTrayRunning" xml:space="preserve">
+    <value>No tray was running from {0}.</value>
+    <comment>{0} is the path of MarqueeTray.exe.</comment>
+  </data>
+  <data name="TrayStopFailed" xml:space="preserve">
+    <value>Could not close the tray: {0}</value>
+    <comment>{0} is the reason (Windows' own text, already in the user's language).</comment>
+  </data>
+  <data name="UpdatesRemoved" xml:space="preserve">
+    <value>Deleted {0} downloaded update files and the folder {1}.</value>
+    <comment>{0} is a number of files, {1} the folder they were in (%ProgramData%\Marquee\updates). Printed when Marquee is uninstalled.</comment>
+  </data>
+  <data name="UpdatesNotRemoved" xml:space="preserve">
+    <value>Warning: {0}</value>
+    <comment>{0} is the reason the downloaded updates were not deleted, a sentence.</comment>
+  </data>
+  <data name="TaskFolderNotRemoved" xml:space="preserve">
+    <value>Warning: could not delete the task folder {0}: {1}</value>
+    <comment>{0} is the logon task's folder in Task Scheduler (\Marquee), {1} Task Scheduler's reason (Windows' own text, already in the user's language).</comment>
+  </data>
+  <data name="DataFolderNotSecured" xml:space="preserve">
+    <value>Warning: {0} Marquee is installed, but until then its tray won't start with administrator rights.</value>
+    <comment>{0} is why Marquee's folder in %ProgramData% isn't safe to use, sentences that end by saying how to fix it. Printed into the installer's log.</comment>
   </data>
   <data name="ClaimScreenNeedsAdministrator" xml:space="preserve">
     <value>`{0}` needs an administrator terminal, because stopping L-Connect's service takes administrator rights. Open Terminal or PowerShell with "Run as administrator" and run it again.</value>

@@ -1,0 +1,43 @@
+<!-- Marquee's per-machine MSI: what it is, how it upgrades, and how it shows in Settings > Apps. What it installs is in
+     Files.wxs, and what it runs in CustomActions.wxs; %ProgramData%\Marquee is made by one of those, marquee task
+     install, not by Windows Installer. -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <!-- The UpgradeCode is what makes every later Marquee MSI an upgrade of this one. It must never change: a new one would
+       install side by side with the old Marquee instead of replacing it. -->
+  <Package Name="Marquee" Manufacturer="MadJag Studios" Version="$(var.ProductVersion)"
+           UpgradeCode="FB7DB083-7009-4492-83BE-2D7F39B7745D" Scope="perMachine" Language="1033">
+    <SummaryInformation Description="Marquee: themes, sensors and game FPS on the Lian Li Universal Screen" />
+
+    <!-- An upgrade removes the old version, then installs the new one in its place. afterInstallInitialize removes it
+         inside the new install's transaction, so if the new install fails (a full disk, a file held open, the task not
+         installing) Windows Installer rolls back to the old version, with its task and its tray (CustomActions.wxs
+         lists what runs when): a failed update never leaves nothing installed. The old version's own uninstall closes
+         its trays before its files go, and keeps the logon task, which the new version then replaces.
+
+         AllowSameVersionUpgrades: every build has a new product code, so without it a second build of one version
+         (a CI artifact and the release, or a release candidate and the release, which share a version) would install
+         beside the first, as a second entry in Settings > Apps sharing its files, and uninstalling either would delete
+         the logon task from under the other. With it, the later one replaces the earlier. WiX's validation warns about
+         this (ICE61: an upgrade that also matches its own version), which the .wixproj suppresses for that reason. -->
+    <MajorUpgrade Schedule="afterInstallInitialize" AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of Marquee is already installed. To go back to this version, uninstall Marquee first." />
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="Marquee.ico" SourceFile="$(var.RepoRoot)src\Marquee.App\marquee.ico" />
+    <Property Id="ARPPRODUCTICON" Value="Marquee.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/madjagstudios/marquee" />
+    <!-- There is nothing to choose, so Settings offers no Modify. -->
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <!-- The installer closes the trays itself (marquee task stop), from the old version's uninstall during an upgrade.
+         Restart Manager would only look first, before that, and couldn't close an elevated tray for an unelevated
+         msiexec anyway; without it, Windows Installer neither prompts about the tray nor tries to close it. -->
+    <Property Id="MSIRESTARTMANAGERCONTROL" Value="Disable" />
+
+    <Feature Id="Marquee" Title="Marquee">
+      <ComponentGroupRef Id="Program" />
+    </Feature>
+    <!-- Pulls in CustomActions.wxs, which nothing else refers to. -->
+    <CustomActionRef Id="InstallTask" />
+  </Package>
+</Wix>

@@ -70,6 +70,10 @@ internal static class Strings
 
     public static string SchTasksDidNotStart => Get(nameof(SchTasksDidNotStart));
 
+    public static string TaskSchedulerFailed(string reason) => Format(nameof(TaskSchedulerFailed), reason);
+
+    public static string UpdatesFolderIsLink(string folder) => Format(nameof(UpdatesFolderIsLink), folder);
+
     public static string RingUnavailable(string reason, int seconds) => Format(nameof(RingUnavailable), reason, seconds);
 
     public static string RingNotFound => Get(nameof(RingNotFound));

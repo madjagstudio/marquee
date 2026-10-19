@@ -59,7 +59,9 @@ public sealed class UpdateInstaller(HttpClient http, string runningVersion, ECDs
         var signaturePath = Path.Combine(folder, ReleaseFeed.SignatureName(offer.Version));
         try
         {
-            CleanUp(folder);
+            // What earlier downloads left there; a file that can't be deleted (an installer an earlier VerifiedUpdate
+            // still holds) stays until next time.
+            UpdateDownloads.DeleteFiles(folder);
             // The signature first: it is small, and without it there is no point fetching the installer.
             var signature = await DownloadSignature(offer.Signature, signaturePath, cancellationToken);
             await DownloadInstaller(offer.Installer, installerPath, progress, cancellationToken);
@@ -164,18 +166,6 @@ public sealed class UpdateInstaller(HttpClient http, string runningVersion, ECDs
         {
             DeleteQuietly(temporary);
             throw;
-        }
-    }
-
-    /// Deletes what earlier downloads left in the folder: files whose names start with "Marquee-" (installers, their
-    /// signatures, partial downloads), and nothing else. A file that can't be deleted (an installer an earlier
-    /// VerifiedUpdate still holds) stays until next time.
-    static void CleanUp(string folder)
-    {
-        foreach (var file in Directory.EnumerateFiles(folder, "Marquee-*"))
-        {
-            // The pattern also matches short (8.3) names; the long name decides.
-            if (Path.GetFileName(file).StartsWith("Marquee-", StringComparison.OrdinalIgnoreCase)) DeleteQuietly(file);
         }
     }
 

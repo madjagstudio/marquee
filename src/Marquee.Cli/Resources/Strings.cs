@@ -129,6 +129,26 @@ internal static class Strings
 
     public static string TaskStatusFailed(string reason) => Format(nameof(TaskStatusFailed), reason);
 
+    public static string TaskStarted(string task) => Format(nameof(TaskStarted), task);
+
+    public static string TaskStartNoSession(string user) => Format(nameof(TaskStartNoSession), user);
+
+    public static string TaskStartFailed(string reason) => Format(nameof(TaskStartFailed), reason);
+
+    public static string TraysStopped(string path, int quit, int killed) => Format(nameof(TraysStopped), path, quit, killed);
+
+    public static string NoTrayRunning(string path) => Format(nameof(NoTrayRunning), path);
+
+    public static string TrayStopFailed(string reason) => Format(nameof(TrayStopFailed), reason);
+
+    public static string UpdatesRemoved(int count, string folder) => Format(nameof(UpdatesRemoved), count, folder);
+
+    public static string UpdatesNotRemoved(string reason) => Format(nameof(UpdatesNotRemoved), reason);
+
+    public static string TaskFolderNotRemoved(string folder, string reason) => Format(nameof(TaskFolderNotRemoved), folder, reason);
+
+    public static string DataFolderNotSecured(string reason) => Format(nameof(DataFolderNotSecured), reason);
+
     public static string ClaimScreenNeedsAdministrator(string command) => Format(nameof(ClaimScreenNeedsAdministrator), command);
 
     public static string ClaimScreenNoMarquee => Get(nameof(ClaimScreenNoMarquee));

@@ -2,7 +2,7 @@
 # public half. It asks for the key's password, and refuses a key that isn't the one built into Marquee
 # (src/Marquee.Host/Updates/release-key.pub.pem, which the tool is built with). See docs/releasing.md.
 #
-#   tools\sign-release.ps1 D:\marquee-release-key.pem out\Marquee-0.1.0.msi out\marquee-0.1.0.zip
+#   tools\sign-release.ps1 D:\marquee-release-key.pem artifacts\Marquee-0.1.0-x64.msi artifacts\marquee-0.1.0.zip
 param(
     [Parameter(Mandatory)] [string] $Key,
     [Parameter(Mandatory, ValueFromRemainingArguments)] [string[]] $Files

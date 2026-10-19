@@ -1,0 +1,44 @@
+<!-- What goes into Program Files\Marquee: everything build.ps1 staged. Only administrators can change that folder, which
+     the logon task needs (it starts MarqueeTray.exe elevated) and PresentMon too (Windows loads its tdh.dll from its own
+     folder first). -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    <!-- InstallDir has lowercase letters, which makes it a private property: msiexec ignores it on the command line, so
+         no one installing can move Marquee out of Program Files (an all-caps id such as INSTALLFOLDER would let them).
+         Anywhere else, the folder could be one every user can change, such as a new folder in C:\, and the logon task
+         would run what they put there elevated at every logon, with the folder on the system PATH as well. -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="InstallDir" Name="Marquee" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <ComponentGroup Id="Program" Directory="InstallDir">
+      <!-- The two exes by name, because the PATH entry, the shortcut and the custom actions refer to them. -->
+      <Component Id="MarqueeCli">
+        <File Id="MarqueeExe" Name="marquee.exe" Source="!(bindpath.Staging)marquee.exe" KeyPath="yes" />
+        <!-- marquee.exe's folder at the end of the system PATH, so `marquee` works in any new terminal. Windows Installer
+             removes just this entry on uninstall. -->
+        <Environment Id="Path" Name="PATH" Value="[InstallDir]" Part="last" System="yes" Action="set" Permanent="no" />
+      </Component>
+      <Component Id="MarqueeTray">
+        <File Id="MarqueeTrayExe" Name="MarqueeTray.exe" Source="!(bindpath.Staging)MarqueeTray.exe" KeyPath="yes">
+          <!-- "Marquee" in the Start menu: starts the tray, or opens the running one's menu. The icon is the exe's own.
+               Not advertised, so opening it never triggers a Windows Installer repair. In this per-machine package
+               ProgramMenuFolder is the all-users Start menu, so the shortcut is per-machine like its exe; ICE43 and
+               ICE57, which assume it could be a user's own Start menu, are suppressed in the .wixproj for that. -->
+          <Shortcut Id="StartMenu" Directory="ProgramMenuFolder" Name="Marquee" WorkingDirectory="InstallDir"
+                    Description="Marquee: themes, sensors and game FPS on the Lian Li Universal Screen" />
+        </File>
+      </Component>
+
+      <!-- Everything else as it is laid out in the staging folder, one component per file, with GUIDs WiX derives from
+           the paths: the .NET runtime and Marquee's DLLs beside the exes, PresentMon\PresentMon-<version>-x64.exe where
+           the FPS provider looks for it, themes\example-* where ThemeLocator looks for installed examples, LICENSE and
+           THIRD-PARTY-NOTICES.md. A file added to the build is picked up with no change here. -->
+      <Files Include="!(bindpath.Staging)**">
+        <Exclude Files="!(bindpath.Staging)marquee.exe" />
+        <Exclude Files="!(bindpath.Staging)MarqueeTray.exe" />
+      </Files>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
