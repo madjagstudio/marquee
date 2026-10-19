@@ -1,6 +1,7 @@
 using System.Globalization;
 using Marquee.App.Resources;
 using Marquee.App.Tests.TestSupport;
+using Marquee.Core.Devices;
 using Marquee.Core.Logging;
 using Marquee.Host;
 
@@ -91,12 +92,35 @@ public class StringsTests
         var engine = new FakeTrayEngine();
         engine.Showing(dir.Folder("example-landscape"));
         var paths = new TrayPaths(dir.File("config.yaml"), new ThemeLocator([dir.File("user")], dir.Path), dir.File("logs"), dir.File("data"));
-        var model = new TrayModel(engine, paths, new FakeShell(), new FakeHost(), worker, NullLog.Instance);
+        using var updates = new UpdateRig(dir);
+        var model = new TrayModel(engine, paths, new FakeShell(), new FakeHost(), worker, updates.Updates, NullLog.Instance);
 
         var menu = model.BuildMenu();
 
         Assert.Equal("[!example-landscape · 30 fps · Universal Screen 8.8!]", menu[0].Text);
         Assert.Equal("[!Quit!]", menu[^1].Text);
         Assert.All(menu.Where(item => !item.IsSeparator), item => Assert.StartsWith("[!", item.Text));
+    }
+
+    [Fact]
+    public async Task A_translation_reaches_the_handover_and_update_items_and_balloons()
+    {
+        using var resources = SwappedResources.Pseudo();
+        using var rig = new TrayRig();
+        rig.Engine.RaiseScreenBusy(new ScreenBusyInfo(LConnectState.Service, HandoverAction.Prompt, CanTakeOver: true));
+        await rig.Model.CheckForUpdates().WaitAsync(Wait.Timeout);
+
+        var menu = rig.Model.BuildMenu();
+
+        Assert.Equal("[!L-Connect is using the screen!]", menu[0].Text);
+        Assert.Equal("[!Take over the screen from L-Connect!]", Assert.Single(menu, item => item.Key == MenuKeys.TakeOver).Text);
+        Assert.Equal("[!Always take over at start!]", Assert.Single(menu, item => item.Key == MenuKeys.AlwaysTakeOver).Text);
+        Assert.Equal("[!Install Marquee 0.2.0…!]", Assert.Single(menu, item => item.Key == MenuKeys.InstallUpdate).Text);
+        Assert.All(rig.Host.Balloons, balloon =>
+        {
+            Assert.StartsWith("[!", balloon.Title);
+            Assert.StartsWith("[!", balloon.Text);
+        });
+        Assert.Equal(2, rig.Host.Balloons.Count);
     }
 }

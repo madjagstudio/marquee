@@ -39,6 +39,9 @@ sealed class TrayRuntime : ITrayEngine
     volatile string? _configError; // config.yaml's own error, until it reads cleanly
     volatile string? _settingsError; // the theme config.yaml names can't be found, until one can
     volatile string? _themeError; // the last theme error, until a theme loads
+    volatile bool _checkForUpdates = true; // config.yaml's `updates:`, as last read cleanly
+    volatile bool _handoverChosen; // config.yaml sets `lconnect.handover`, as last read
+    volatile bool _lconnectInstalled = true; // L-Connect's service is installed, or the tray couldn't tell
     ConfigWatcher? _watcher;
     volatile Timer? _retry; // RetrySoon reads it from the UI thread
     IDisposable? _marker;
@@ -64,6 +67,14 @@ sealed class TrayRuntime : ITrayEngine
 
     public event Action<SKImage>? FrameRendered;
 
+    public event Action? ConfigApplied;
+
+    public event Action<ScreenBusyInfo>? ScreenBusy;
+
+    public event Action<HandoverResult>? HandoverFinished;
+
+    public event Action? ScreenOpened;
+
     public EngineSettings? Settings => _engine?.Settings;
 
     public EngineStatus Status => _engine?.Status ?? EngineStatus.Stopped;
@@ -81,6 +92,14 @@ sealed class TrayRuntime : ITrayEngine
     }
 
     public string? ThemeError => _themeError;
+
+    public bool IsElevated => _services.IsElevated;
+
+    public bool CheckForUpdates => _checkForUpdates;
+
+    public bool HandoverChosen => _handoverChosen;
+
+    public bool LConnectInstalled => _lconnectInstalled;
 
     public IReadOnlyList<string> Problems
     {
@@ -107,6 +126,7 @@ sealed class TrayRuntime : ITrayEngine
 
             var config = ReadConfig();
             UsesDefaultTheme = config.Theme is null;
+            _checkForUpdates = config.CheckForUpdates;
             Follow(config);
 
             // %LOCALAPPDATA%\Marquee may not exist yet on a fresh install; the watcher needs the folder to see a
@@ -125,6 +145,7 @@ sealed class TrayRuntime : ITrayEngine
             _watcher = new ConfigWatcher(_paths.ConfigFile, OnConfigChanged, OnConfigFailed);
             _watcher.Start();
             _retry = new Timer(_ => Retry(), null, _retryEvery, _retryEvery);
+            _lconnectInstalled = IsLConnectInstalled();
         }
     }
 
@@ -176,6 +197,12 @@ sealed class TrayRuntime : ITrayEngine
         }
     }
 
+    /// MarqueeEngine.TakeOverScreen, which takes no engine lock and returns at once.
+    public bool TakeOverScreen()
+    {
+        lock (_gate) return !_disposed && _engine is { } engine && engine.TakeOverScreen();
+    }
+
     /// Stops the watcher and the timer first, outside the lock (each waits for a callback in progress, which takes the
     /// lock), then the engine, which lets go of the screen and saves the Claude limits, then the marker.
     public void Dispose()
@@ -208,6 +235,7 @@ sealed class TrayRuntime : ITrayEngine
     /// first time they resolve, or applies them to it.
     void Follow(MarqueeConfig config)
     {
+        _handoverChosen = config.HandoverSet;
         var resolved = SettingsResolver.Resolve(new RunOptions(), FirstRun.WithDefaultTheme(config), _paths.Locator, _paths.ConfigFile);
         if (!resolved.Succeeded)
         {
@@ -243,6 +271,13 @@ sealed class TrayRuntime : ITrayEngine
             ThemeFailed?.Invoke(error);
         };
         engine.FrameRendered += frame => FrameRendered?.Invoke(frame);
+        engine.ScreenBusy += info =>
+        {
+            if (info.LConnect == LConnectState.Service) _lconnectInstalled = true;
+            ScreenBusy?.Invoke(info);
+        };
+        engine.HandoverFinished += result => HandoverFinished?.Invoke(result);
+        engine.ScreenOpened += () => ScreenOpened?.Invoke();
         return engine;
     }
 
@@ -270,14 +305,18 @@ sealed class TrayRuntime : ITrayEngine
         return MarqueeConfig.Default;
     }
 
+    /// Raises ConfigApplied after letting go of the lock, so a handler may call back in.
     void OnConfigChanged(MarqueeConfig config)
     {
         lock (_gate)
         {
             if (_disposed) return;
             _configError = null;
+            _checkForUpdates = config.CheckForUpdates;
             Follow(config);
         }
+
+        ConfigApplied?.Invoke();
     }
 
     /// A broken edit keeps the settings that are running, as `marquee run` does.
@@ -292,6 +331,20 @@ sealed class TrayRuntime : ITrayEngine
 
         _log.Error(problem);
         ConfigFailed?.Invoke(problem);
+    }
+
+    /// Under _gate, once at Start. Reading a service's state needs no administrator rights. A Service Control Manager
+    /// that can't be asked counts as installed, so the menu still offers what might work.
+    bool IsLConnectInstalled()
+    {
+        try
+        {
+            return _services.CreateServiceControl().Status(LConnectHandover.ServiceName) is not null;
+        }
+        catch (InvalidOperationException)
+        {
+            return true;
+        }
     }
 
     /// On the timer's thread, where an exception would end the process.

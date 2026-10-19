@@ -43,6 +43,18 @@
     <value>Not showing anything</value>
     <comment>The menu's first line when config.yaml names a theme that can't be found; the reason is on the next line.</comment>
   </data>
+  <data name="StatusLConnectBusy" xml:space="preserve">
+    <value>L-Connect is using the screen</value>
+    <comment>The menu's first line while L-Connect 3's background service holds the screen. "L-Connect" stays as it is.</comment>
+  </data>
+  <data name="StatusDownloading" xml:space="preserve">
+    <value>Downloading Marquee {0}… {1}%</value>
+    <comment>The menu's first line while an update downloads. {0} is the new version, {1} how much of it has arrived, as a whole percentage.</comment>
+  </data>
+  <data name="StatusInstalling" xml:space="preserve">
+    <value>Installing Marquee {0}…</value>
+    <comment>The menu's first line while the installer of an update runs; the screen is paused meanwhile. {0} is the new version.</comment>
+  </data>
   <data name="MenuThemes" xml:space="preserve">
     <value>Themes</value>
     <comment>The submenu listing the themes to pick from: the user's own, then the installed examples.</comment>
@@ -94,6 +106,106 @@
   <data name="MenuResume" xml:space="preserve">
     <value>Resume</value>
     <comment>Shows the theme again after Pause.</comment>
+  </data>
+  <data name="MenuTakeOver" xml:space="preserve">
+    <value>Take over the screen from L-Connect</value>
+    <comment>A menu item while L-Connect 3's background service holds the screen: Marquee stops the service, opens the screen and starts the service again. "L-Connect" stays as it is.</comment>
+  </data>
+  <data name="MenuAlwaysTakeOver" xml:space="preserve">
+    <value>Always take over at start</value>
+    <comment>A checkable menu item: checked, Marquee takes the screen from L-Connect by itself (lconnect.handover: auto in config.yaml); unchecked, it asks first (ask).</comment>
+  </data>
+  <data name="TakeOverNeedsAdministrator" xml:space="preserve">
+    <value>Marquee can take the screen from L-Connect only when it runs as administrator, as its logon task starts it.</value>
+    <comment>A line in the menu while L-Connect holds the screen and the tray isn't elevated (started by hand, or by a user who isn't an administrator).</comment>
+  </data>
+  <data name="TakeOverTitle" xml:space="preserve">
+    <value>L-Connect is using the screen</value>
+    <comment>The title of the balloon that offers to take the screen from L-Connect (lconnect.handover: ask).</comment>
+  </data>
+  <data name="TakeOverPrompt" xml:space="preserve">
+    <value>Marquee can take it over while L-Connect keeps running your fans and RGB. Click here to take over.</value>
+    <comment>The text of the balloon that offers to take the screen from L-Connect; clicking the balloon does it. "RGB" means the PC's colored lights.</comment>
+  </data>
+  <data name="HandoverFailedTitle" xml:space="preserve">
+    <value>Couldn't take the screen from L-Connect</value>
+    <comment>The title of the balloon shown when taking the screen from L-Connect failed; the text says why.</comment>
+  </data>
+  <data name="HandoverFailed" xml:space="preserve">
+    <value>{0} See the log for details.</value>
+    <comment>The text of the balloon shown when taking the screen from L-Connect failed. {0} is what went wrong, a sentence or two in English.</comment>
+  </data>
+  <data name="HandoverFailedRetrying" xml:space="preserve">
+    <value>{0} Marquee will keep trying. See the log for details.</value>
+    <comment>The text of the balloon shown when taking the screen from L-Connect failed and lconnect.handover is auto, so Marquee tries again by itself every minute. {0} is what went wrong, a sentence or two in English.</comment>
+  </data>
+  <data name="HandoverFailedProblem" xml:space="preserve">
+    <value>Couldn't take the screen from L-Connect: {0}</value>
+    <comment>A line in the menu after taking the screen from L-Connect failed, until Marquee gets the screen. {0} is what went wrong, a sentence or two in English. "L-Connect" stays as it is.</comment>
+  </data>
+  <data name="MenuCheckForUpdates" xml:space="preserve">
+    <value>Check for updates</value>
+    <comment>A menu item that looks for a newer Marquee on GitHub now.</comment>
+  </data>
+  <data name="MenuInstallUpdate" xml:space="preserve">
+    <value>Install Marquee {0}…</value>
+    <comment>A menu item once a newer Marquee is found: downloads it, checks its signature and installs it. {0} is its version.</comment>
+  </data>
+  <data name="MenuDownloadUpdate" xml:space="preserve">
+    <value>Download Marquee {0}…</value>
+    <comment>The same item when Marquee isn't running as administrator and can't install: it opens the new version's page in the browser. {0} is its version.</comment>
+  </data>
+  <data name="UpdateAvailableTitle" xml:space="preserve">
+    <value>Update available</value>
+    <comment>The title of the balloon that says a newer Marquee is out.</comment>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Marquee {0} is available. Click to install.</value>
+    <comment>The text of that balloon; clicking it downloads and installs the update. {0} is the new version.</comment>
+  </data>
+  <data name="UpdateAvailableDownload" xml:space="preserve">
+    <value>Marquee {0} is available. Click to open its download page.</value>
+    <comment>The text of that balloon when Marquee isn't running as administrator: clicking it opens the new version's page in the browser. {0} is the new version.</comment>
+  </data>
+  <data name="UpToDateTitle" xml:space="preserve">
+    <value>Marquee is up to date</value>
+    <comment>The title of the balloon after "Check for updates" found nothing newer.</comment>
+  </data>
+  <data name="UpToDate" xml:space="preserve">
+    <value>You have the latest version ({0}).</value>
+    <comment>The text of that balloon. {0} is the running version.</comment>
+  </data>
+  <data name="UpdateCheckFailedTitle" xml:space="preserve">
+    <value>Marquee couldn't check for updates</value>
+    <comment>The title of the balloon when "Check for updates" got no answer it could use; the text says why, in English.</comment>
+  </data>
+  <data name="UpdateFailedTitle" xml:space="preserve">
+    <value>Marquee couldn't install the update</value>
+    <comment>The title of the balloon when an update couldn't be downloaded, verified or started; the text says why, in English. Marquee keeps running.</comment>
+  </data>
+  <data name="UpdateFailed" xml:space="preserve">
+    <value>Updating Marquee failed: {0}</value>
+    <comment>Logged when the folder updates are downloaded into can't be used. {0} is the reason.</comment>
+  </data>
+  <data name="UpdateDidNotInstall" xml:space="preserve">
+    <value>The update didn't install (code {0}). See {1}.</value>
+    <comment>The balloon's text, and the log line, when the installer of an update ended without installing it (the user cancelled it, another installation was under way, it failed); Marquee carries on as before. {0} is the installer's exit code, {1} the full path of its log file.</comment>
+  </data>
+  <data name="InstallerFinishedWithoutQuit" xml:space="preserve">
+    <value>The installer finished (code {0}) without closing Marquee, so there was nothing to update; Marquee carries on.</value>
+    <comment>Logged when the installer of an update ended successfully but never asked the tray to quit. {0} is its exit code.</comment>
+  </data>
+  <data name="UpdateTimerFailed" xml:space="preserve">
+    <value>The daily update check failed unexpectedly: {0}</value>
+    <comment>Logged when the timer for the daily update check hits an error it didn't expect; it carries on. {0} is the reason.</comment>
+  </data>
+  <data name="NoReleaseKeyTitle" xml:space="preserve">
+    <value>This build can't install updates</value>
+    <comment>The title of the balloon after "Check for updates" in a build that has no release key to check updates with (a development build).</comment>
+  </data>
+  <data name="NoReleaseKey" xml:space="preserve">
+    <value>Download new versions from {0}. Click here to open it.</value>
+    <comment>The text of that balloon; clicking it opens the page. {0} is the address of Marquee's releases on GitHub.</comment>
   </data>
   <data name="MenuAbout" xml:space="preserve">
     <value>About Marquee</value>

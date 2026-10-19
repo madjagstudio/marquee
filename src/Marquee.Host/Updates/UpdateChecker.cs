@@ -27,42 +27,41 @@ public sealed class UpdateChecker(HttpClient http, string runningVersion, ECDsa 
     public static UpdateChecker ForThisApp(HttpClient http, ILog log) =>
         new(http, ReleaseVersion.EntryAssembly ?? "", ReleaseKey.Public, log, DefaultTimeout);
 
+    /// Whether updates are signed with a real key: false while the placeholder is built in (ReleaseKey.IsPlaceholder),
+    /// when the checker doesn't ask GitHub and nothing could be installed.
+    public bool HasReleaseKey => !ReleaseKey.IsPlaceholderKey(releaseKey);
+
     /// The latest release when it is newer than this Marquee, or null; either way logged, once. Throws
     /// OperationCanceledException only when `cancellationToken` is cancelled.
-    public async Task<UpdateOffer?> CheckAsync(CancellationToken cancellationToken)
+    public async Task<UpdateOffer?> CheckAsync(CancellationToken cancellationToken) => (await FindAsync(cancellationToken)).Offer;
+
+    /// CheckAsync, saying why there is no offer: this Marquee is the latest, or the check didn't get an answer it could
+    /// use, with the reason it logged. The tray's "Check for updates" tells the user which.
+    public async Task<UpdateCheckResult> FindAsync(CancellationToken cancellationToken)
     {
-        if (ReleaseKey.IsPlaceholderKey(releaseKey))
-        {
-            log.Info(Strings.UpdateCheckSkippedDevelopmentKey);
-            return null;
-        }
+        if (!HasReleaseKey) return new UpdateCheckResult(null, Info(Strings.UpdateCheckSkippedDevelopmentKey), runningVersion);
 
         if (!ReleaseVersion.TryParseRunning(runningVersion, out var running))
-        {
-            log.Warn(Strings.UpdateCheckSkippedNoVersion(runningVersion));
-            return null;
-        }
+            return new UpdateCheckResult(null, Warn(Strings.UpdateCheckSkippedNoVersion(runningVersion)), runningVersion);
 
-        if (await FetchAsync(cancellationToken) is not { } json) return null;
+        var (json, problem) = await FetchAsync(cancellationToken);
+        if (json is null) return new UpdateCheckResult(null, problem, running.ToString());
 
-        if (!ReleaseFeed.TryRead(json, out var release, out var problem))
-        {
-            log.Warn(Strings.UpdateCheckUnusableRelease(problem));
-            return null;
-        }
+        if (!ReleaseFeed.TryRead(json, out var release, out var unusable))
+            return new UpdateCheckResult(null, Warn(Strings.UpdateCheckUnusableRelease(unusable)), running.ToString());
 
         if (!running.IsOlderThan(release.Version))
         {
             log.Info(Strings.UpToDate(running.ToString()));
-            return null;
+            return new UpdateCheckResult(null, null, running.ToString());
         }
 
         log.Info(Strings.UpdateAvailable(release.Version.ToString(3), running.ToString()));
-        return release;
+        return new UpdateCheckResult(release, null, running.ToString());
     }
 
-    /// The answer's text, or null with the reason logged.
-    async Task<string?> FetchAsync(CancellationToken cancellationToken)
+    /// The answer's text, or null and the reason, logged.
+    async Task<(string? Json, string? Problem)> FetchAsync(CancellationToken cancellationToken)
     {
         using var timer = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timer.CancelAfter(timeout);
@@ -70,45 +69,46 @@ public sealed class UpdateChecker(HttpClient http, string runningVersion, ECDsa 
         {
             using var request = UpdateHttp.Get(new Uri(ReleaseFeed.LatestReleaseUrl), runningVersion, "application/vnd.github+json");
             using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timer.Token);
-            if (!response.IsSuccessStatusCode)
-            {
-                LogRefusal(response);
-                return null;
-            }
+            if (!response.IsSuccessStatusCode) return (null, LogRefusal(response));
 
             if (await UpdateHttp.ReadAtMost(response.Content, MaxAnswerBytes, timer.Token) is not { } bytes)
-            {
-                log.Warn(Strings.UpdateCheckAnswerTooLarge(MaxAnswerBytes));
-                return null;
-            }
+                return (null, Warn(Strings.UpdateCheckAnswerTooLarge(MaxAnswerBytes)));
 
             // GitHub's API always answers in UTF-8.
-            return Encoding.UTF8.GetString(bytes);
+            return (Encoding.UTF8.GetString(bytes), null);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            log.Warn(Strings.UpdateCheckTimedOut(timeout.TotalSeconds));
-            return null;
+            return (null, Warn(Strings.UpdateCheckTimedOut(timeout.TotalSeconds)));
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException)
         {
-            log.Warn(Strings.UpdateCheckFailed(ex.Message));
-            return null;
+            return (null, Warn(Strings.UpdateCheckFailed(ex.Message)));
         }
     }
 
-    void LogRefusal(HttpResponseMessage response)
+    string LogRefusal(HttpResponseMessage response)
     {
         // GitHub answers 404 for a repository with no published release, and 403 or 429 when the address has no requests
         // left in the hour's allowance (X-RateLimit-Remaining: 0) or is asked to slow down (Retry-After). Neither is a
         // fault, so neither is a warning.
-        if (response.StatusCode == HttpStatusCode.NotFound)
-            log.Info(Strings.NoReleaseYet);
-        else if (response.StatusCode == HttpStatusCode.TooManyRequests
+        if (response.StatusCode == HttpStatusCode.NotFound) return Info(Strings.NoReleaseYet);
+        if (response.StatusCode == HttpStatusCode.TooManyRequests
             || (response.StatusCode == HttpStatusCode.Forbidden && IsRateLimited(response)))
-            log.Info(Strings.UpdateCheckRateLimited);
-        else
-            log.Warn(Strings.UpdateCheckHttpError((int)response.StatusCode, response.ReasonPhrase ?? ""));
+            return Info(Strings.UpdateCheckRateLimited);
+        return Warn(Strings.UpdateCheckHttpError((int)response.StatusCode, response.ReasonPhrase ?? ""));
+    }
+
+    string Info(string message)
+    {
+        log.Info(message);
+        return message;
+    }
+
+    string Warn(string message)
+    {
+        log.Warn(message);
+        return message;
     }
 
     static bool IsRateLimited(HttpResponseMessage response) =>

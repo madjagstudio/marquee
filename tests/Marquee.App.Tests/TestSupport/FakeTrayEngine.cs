@@ -6,6 +6,7 @@ using SkiaSharp;
 namespace Marquee.App.Tests.TestSupport;
 
 /// The engine as the menu sees it, with every property settable and every call recorded with the thread it came on.
+/// Elevated, as the logon task starts the tray, unless a test says otherwise.
 sealed class FakeTrayEngine : ITrayEngine
 {
     readonly object _gate = new();
@@ -24,6 +25,15 @@ sealed class FakeTrayEngine : ITrayEngine
     public string? ThemeError { get; set; }
 
     public IReadOnlyList<string> Problems { get; set; } = [];
+
+    public bool IsElevated { get; set; } = true;
+
+    public bool CheckForUpdates { get; set; } = true;
+
+    /// True unless a test says otherwise, so only the tests of the one-time offer to take over see it.
+    public bool HandoverChosen { get; set; } = true;
+
+    public bool LConnectInstalled { get; set; } = true;
 
     /// Every call, as "SwitchTheme C:\...", "Pause" and so on, with the managed thread it ran on.
     public IReadOnlyList<(string Call, int Thread)> Calls
@@ -62,11 +72,32 @@ sealed class FakeTrayEngine : ITrayEngine
 
     public void Resume() => Record("Resume");
 
+    public bool TakeOverScreen()
+    {
+        Record("TakeOverScreen");
+        return true;
+    }
+
     public void Dispose() => Record("Dispose");
+
+    /// Puts something that isn't an engine call into Calls, so a test can check what came between them.
+    public void Note(string what) => Record(what);
 
     public void RaiseThemeFailed(string error) => ThemeFailed?.Invoke(error);
 
     public void RaiseConfigFailed(string error) => ConfigFailed?.Invoke(error);
+
+    public void RaiseScreenBusy(ScreenBusyInfo info) => ScreenBusy?.Invoke(info);
+
+    public void RaiseHandoverFinished(HandoverResult result) => HandoverFinished?.Invoke(result);
+
+    public void RaiseScreenOpened() => ScreenOpened?.Invoke();
+
+    public void RaiseConfigApplied() => ConfigApplied?.Invoke();
+
+    public void RaiseThemeLoaded(LoadedThemeInfo theme) => ThemeLoaded?.Invoke(theme);
+
+    public void RaiseFrameRendered(SKImage frame) => FrameRendered?.Invoke(frame);
 
     public event Action<LoadedThemeInfo>? ThemeLoaded;
 
@@ -74,15 +105,18 @@ sealed class FakeTrayEngine : ITrayEngine
 
     public event Action<string>? ConfigFailed;
 
+    public event Action? ConfigApplied;
+
     public event Action<SKImage>? FrameRendered;
+
+    public event Action<ScreenBusyInfo>? ScreenBusy;
+
+    public event Action<HandoverResult>? HandoverFinished;
+
+    public event Action? ScreenOpened;
 
     void Record(string call)
     {
         lock (_gate) _calls.Add((call, Environment.CurrentManagedThreadId));
     }
-
-    // No test raises these two yet; without a use, the compiler warns that the events are never raised.
-    public void RaiseThemeLoaded(LoadedThemeInfo theme) => ThemeLoaded?.Invoke(theme);
-
-    public void RaiseFrameRendered(SKImage frame) => FrameRendered?.Invoke(frame);
 }

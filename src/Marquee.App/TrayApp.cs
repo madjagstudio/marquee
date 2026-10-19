@@ -29,14 +29,16 @@ sealed class TrayApp : ApplicationContext, ITrayHost
     readonly NotifyIcon _icon;
     readonly DeviceChangeWindow _devices;
     readonly System.Windows.Forms.Timer _tooltip = new() { Interval = 2000 };
+    readonly BalloonClicks _clicks = new();
     PreviewSession? _preview;
 
     /// Call on the UI thread, before Application.Run.
-    public TrayApp(TrayRuntime runtime, TrayPaths paths, IShell shell, EngineWorker worker, ILog log, SingleInstance instance)
+    public TrayApp(TrayRuntime runtime, TrayPaths paths, IShell shell, EngineWorker worker, TrayUpdates updates, ILog log,
+        SingleInstance instance)
     {
         _runtime = runtime;
         _ui = new WindowsFormsSynchronizationContext();
-        _model = new TrayModel(runtime, paths, shell, this, worker, log);
+        _model = new TrayModel(runtime, paths, shell, this, worker, updates, log);
 
         // Explorer broadcasts TaskbarCreated when it starts again (after a crash, or a restart from Task Manager), and
         // NotifyIcon adds its icon again when it hears it. But Windows keeps messages from a lower integrity level away
@@ -59,7 +61,15 @@ sealed class TrayApp : ApplicationContext, ITrayHost
         {
             if (e.Button == MouseButtons.Left) PopMenu();
         };
-        _icon.BalloonTipClicked += (_, _) => PopMenu();
+        // A click on a balloon does what that balloon offers (take over the screen, install an update), or opens the
+        // menu. Windows may report the end of a balloon that another replaced after the new one shows, which clears the
+        // new one's action too; its click then opens the menu, which has the same item.
+        _icon.BalloonTipClicked += (_, _) =>
+        {
+            if (_clicks.Clicked() is { } onClick) onClick();
+            else PopMenu();
+        };
+        _icon.BalloonTipClosed += (_, _) => _clicks.Closed();
         _icon.Visible = true;
 
         _devices = new DeviceChangeWindow(runtime.RetrySoon);
@@ -73,8 +83,11 @@ sealed class TrayApp : ApplicationContext, ITrayHost
         _ = _model.Start();
     }
 
-    public void ShowBalloon(string title, string text, bool isError) =>
-        _ui.Post(_ => _icon.ShowBalloonTip((int)BalloonTimeout.TotalMilliseconds, title, text, isError ? ToolTipIcon.Error : ToolTipIcon.Info), null);
+    public void ShowBalloon(string title, string text, bool isError, Action? onClick = null) => _ui.Post(_ =>
+    {
+        _clicks.Showing(onClick);
+        _icon.ShowBalloonTip((int)BalloonTimeout.TotalMilliseconds, title, text, isError ? ToolTipIcon.Error : ToolTipIcon.Info);
+    }, null);
 
     public void ShowMessage(string title, string text) =>
         _ui.Post(_ => MessageBox.Show(text, title, MessageBoxButtons.OK, MessageBoxIcon.Information), null);

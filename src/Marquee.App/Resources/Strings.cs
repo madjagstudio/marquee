@@ -25,6 +25,12 @@ internal static class Strings
 
     public static string StatusNoTheme => Get(nameof(StatusNoTheme));
 
+    public static string StatusLConnectBusy => Get(nameof(StatusLConnectBusy));
+
+    public static string StatusDownloading(string version, int percent) => Format(nameof(StatusDownloading), version, percent);
+
+    public static string StatusInstalling(string version) => Format(nameof(StatusInstalling), version);
+
     public static string MenuThemes => Get(nameof(MenuThemes));
 
     public static string MenuNoThemes => Get(nameof(MenuNoThemes));
@@ -50,6 +56,56 @@ internal static class Strings
     public static string MenuPause => Get(nameof(MenuPause));
 
     public static string MenuResume => Get(nameof(MenuResume));
+
+    public static string MenuTakeOver => Get(nameof(MenuTakeOver));
+
+    public static string MenuAlwaysTakeOver => Get(nameof(MenuAlwaysTakeOver));
+
+    public static string TakeOverNeedsAdministrator => Get(nameof(TakeOverNeedsAdministrator));
+
+    public static string TakeOverTitle => Get(nameof(TakeOverTitle));
+
+    public static string TakeOverPrompt => Get(nameof(TakeOverPrompt));
+
+    public static string HandoverFailedTitle => Get(nameof(HandoverFailedTitle));
+
+    public static string HandoverFailed(string message) => Format(nameof(HandoverFailed), message);
+
+    public static string HandoverFailedRetrying(string message) => Format(nameof(HandoverFailedRetrying), message);
+
+    public static string HandoverFailedProblem(string message) => Format(nameof(HandoverFailedProblem), message);
+
+    public static string MenuCheckForUpdates => Get(nameof(MenuCheckForUpdates));
+
+    public static string MenuInstallUpdate(string version) => Format(nameof(MenuInstallUpdate), version);
+
+    public static string MenuDownloadUpdate(string version) => Format(nameof(MenuDownloadUpdate), version);
+
+    public static string UpdateAvailableTitle => Get(nameof(UpdateAvailableTitle));
+
+    public static string UpdateAvailable(string version) => Format(nameof(UpdateAvailable), version);
+
+    public static string UpdateAvailableDownload(string version) => Format(nameof(UpdateAvailableDownload), version);
+
+    public static string UpToDateTitle => Get(nameof(UpToDateTitle));
+
+    public static string UpToDate(string version) => Format(nameof(UpToDate), version);
+
+    public static string UpdateCheckFailedTitle => Get(nameof(UpdateCheckFailedTitle));
+
+    public static string UpdateFailedTitle => Get(nameof(UpdateFailedTitle));
+
+    public static string UpdateFailed(string reason) => Format(nameof(UpdateFailed), reason);
+
+    public static string UpdateDidNotInstall(int exitCode, string log) => Format(nameof(UpdateDidNotInstall), exitCode, log);
+
+    public static string InstallerFinishedWithoutQuit(int exitCode) => Format(nameof(InstallerFinishedWithoutQuit), exitCode);
+
+    public static string UpdateTimerFailed(string reason) => Format(nameof(UpdateTimerFailed), reason);
+
+    public static string NoReleaseKeyTitle => Get(nameof(NoReleaseKeyTitle));
+
+    public static string NoReleaseKey(string releasesPage) => Format(nameof(NoReleaseKey), releasesPage);
 
     public static string MenuAbout => Get(nameof(MenuAbout));
 

@@ -2,6 +2,7 @@ using System.Windows.Forms;
 using Marquee.App.Resources;
 using Marquee.Core.Logging;
 using Marquee.Host;
+using Marquee.Host.Updates;
 
 namespace Marquee.App;
 
@@ -43,10 +44,13 @@ static class Program
         Application.ThreadException += (_, e) => log.Error(Strings.CommandFailed(e.Exception.Message));
 
         // Disposed in the reverse order: the worker finishes what was queued, then the engine stops (Quit has stopped
-        // it already; this covers the tray ending any other way), then the log closes.
+        // it already; this covers the tray ending any other way), then the updates let go of an installer they held
+        // for msiexec, then the update client and the log close. One HttpClient serves every check and download.
+        using var http = UpdateHttp.CreateClient();
+        using var updates = TrayUpdates.ForThisApp(http, paths.DataFolder, log);
         using var runtime = new TrayRuntime(paths, log, MachineServices.Instance, TrayNames.Screen);
         using var worker = new EngineWorker();
-        Application.Run(new TrayApp(runtime, paths, new ExplorerShell(), worker, log, instance));
+        Application.Run(new TrayApp(runtime, paths, new ExplorerShell(), worker, updates, log, instance));
         log.Info(Strings.TrayStopped);
         return 0;
     }

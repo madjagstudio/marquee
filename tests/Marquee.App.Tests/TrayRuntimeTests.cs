@@ -17,6 +17,9 @@ public sealed class TrayRuntimeTests : IDisposable
     readonly TrayPaths _paths;
     readonly string _marker = $@"Local\Marquee-Test-Screen-{Guid.NewGuid():N}";
     readonly ConcurrentQueue<string> _configErrors = new();
+    readonly ConcurrentQueue<ScreenBusyInfo> _busy = new();
+    readonly ConcurrentQueue<HandoverResult> _handovers = new();
+    int _configsApplied;
     TrayRuntime? _runtime;
 
     public TrayRuntimeTests()
@@ -40,6 +43,9 @@ public sealed class TrayRuntimeTests : IDisposable
     {
         _runtime = new TrayRuntime(_paths, NullLog.Instance, _services, _marker, retryEvery);
         _runtime.ConfigFailed += _configErrors.Enqueue;
+        _runtime.ConfigApplied += () => Interlocked.Increment(ref _configsApplied);
+        _runtime.ScreenBusy += _busy.Enqueue;
+        _runtime.HandoverFinished += _handovers.Enqueue;
         _runtime.Start();
         return _runtime;
     }
@@ -257,5 +263,100 @@ public sealed class TrayRuntimeTests : IDisposable
         Assert.True(runtime.SetOrientation(Orientation.Portrait));
         Assert.Equal(Orientation.Portrait, runtime.Settings!.Orientation);
         Assert.Equal(480, _services.LastScreen.Info.Width); // a portrait screen
+    }
+
+    [Fact]
+    public void Updates_follow_config_yaml_and_each_edit_that_applies_is_announced()
+    {
+        WriteConfig("updates: off\n");
+        var runtime = Start();
+        Assert.False(runtime.CheckForUpdates);
+
+        WriteConfig("updates: check\n");
+
+        Assert.True(Wait.Until(() => runtime.CheckForUpdates && Volatile.Read(ref _configsApplied) > 0));
+    }
+
+    [Fact]
+    public void A_broken_edit_keeps_the_update_setting()
+    {
+        WriteConfig("updates: off\n");
+        var runtime = Start();
+
+        WriteConfig("updates: sometimes\n");
+
+        Assert.True(Wait.Until(() => !_configErrors.IsEmpty));
+        Assert.False(runtime.CheckForUpdates);
+        Assert.Equal(0, Volatile.Read(ref _configsApplied));
+    }
+
+    [Fact]
+    public void A_busy_screen_is_passed_on_to_the_tray()
+    {
+        _services.ScreenInUse = true;
+
+        Start();
+
+        Assert.True(Wait.Until(() => !_busy.IsEmpty));
+        // The fake PC has no L-Connect, so there is nothing to take the screen from.
+        Assert.Equal(new ScreenBusyInfo(LConnectState.NotRunning, HandoverAction.None, CanTakeOver: false), _busy.Single());
+    }
+
+    [Fact]
+    public void Unelevated_the_tray_cant_take_the_screen_over()
+    {
+        var runtime = Start();
+
+        Assert.False(runtime.IsElevated);
+        Assert.False(runtime.TakeOverScreen());
+        Assert.Empty(_handovers);
+    }
+
+    [Fact]
+    public void The_screen_opening_is_passed_on_to_the_tray()
+    {
+        var opened = 0;
+        _runtime = new TrayRuntime(_paths, NullLog.Instance, _services, _marker);
+        _runtime.ScreenOpened += () => Interlocked.Increment(ref opened);
+
+        _runtime.Start();
+
+        Assert.True(Wait.Until(() => Volatile.Read(ref opened) > 0), "ScreenOpened never came.");
+    }
+
+    [Fact]
+    public void HandoverChosen_says_whether_config_yaml_sets_lconnect_handover()
+    {
+        var runtime = Start();
+        Assert.False(runtime.HandoverChosen);
+
+        WriteConfig("lconnect: { handover: off }\n");
+
+        Assert.True(Wait.Until(() => runtime.HandoverChosen), "The edit never reached HandoverChosen.");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void LConnectInstalled_comes_from_L_Connect_s_service(bool installed)
+    {
+        _services.LConnectInstalled = installed;
+
+        Assert.Equal(installed, Start().LConnectInstalled);
+    }
+
+    [Fact]
+    public void Elevated_a_take_over_runs_and_its_end_is_passed_on_to_the_tray()
+    {
+        _services.IsElevated = true;
+        _services.ScreenInUse = true; // Marquee having the screen would leave nothing to take
+        var runtime = Start();
+
+        Assert.True(runtime.IsElevated);
+        Assert.True(runtime.TakeOverScreen());
+
+        Assert.True(Wait.Until(() => !_handovers.IsEmpty));
+        // The fake services refuse to touch L-Connect's, which a handover reports as failed.
+        Assert.Equal(HandoverOutcome.Failed, _handovers.Single().Outcome);
     }
 }

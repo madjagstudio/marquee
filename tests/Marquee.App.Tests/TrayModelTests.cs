@@ -13,6 +13,7 @@ public sealed class TrayModelTests : IDisposable
     readonly FakeShell _shell = new();
     readonly FakeHost _host = new();
     readonly EngineWorker _worker = new();
+    readonly UpdateRig _updates;
     readonly TrayPaths _paths;
     DateTime _now = new(2026, 10, 19, 12, 0, 0, DateTimeKind.Utc);
 
@@ -20,7 +21,8 @@ public sealed class TrayModelTests : IDisposable
     {
         _paths = new TrayPaths(_dir.File("config.yaml"), new ThemeLocator([_dir.File("user"), _dir.File("installed")], _dir.Path),
             _dir.File("logs"), _dir.File("data"));
-        Model = new TrayModel(_engine, _paths, _shell, _host, _worker, NullLog.Instance, () => _now);
+        _updates = new UpdateRig(_dir);
+        Model = new TrayModel(_engine, _paths, _shell, _host, _worker, _updates.Updates, NullLog.Instance, () => _now);
     }
 
     TrayModel Model { get; }
@@ -28,6 +30,7 @@ public sealed class TrayModelTests : IDisposable
     public void Dispose()
     {
         _worker.Dispose();
+        _updates.Dispose();
         _dir.Dispose();
     }
 
@@ -64,8 +67,34 @@ public sealed class TrayModelTests : IDisposable
         Assert.Equal([
             MenuKeys.Status, MenuKeys.Separator, MenuKeys.Themes, MenuKeys.Orientation, MenuKeys.Separator,
             MenuKeys.Preview, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
-            MenuKeys.Pause, MenuKeys.Separator, MenuKeys.About, MenuKeys.Quit,
+            MenuKeys.AlwaysTakeOver, MenuKeys.Pause, MenuKeys.Separator, MenuKeys.CheckForUpdates, MenuKeys.About, MenuKeys.Quit,
         ], keys);
+    }
+
+    [Fact]
+    public async Task With_the_screen_to_take_over_and_an_update_the_menu_has_those_in_their_places()
+    {
+        _engine.Showing(Theme("installed", "example-landscape"));
+        _engine.RaiseScreenBusy(new ScreenBusyInfo(LConnectState.Service, HandoverAction.None, CanTakeOver: true));
+        await Model.CheckForUpdates().WaitAsync(Wait.Timeout);
+
+        var keys = Model.BuildMenu().Select(item => item.Key);
+
+        Assert.Equal([
+            MenuKeys.Status, MenuKeys.Separator, MenuKeys.Themes, MenuKeys.Orientation, MenuKeys.Separator,
+            MenuKeys.Preview, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
+            MenuKeys.TakeOver, MenuKeys.AlwaysTakeOver, MenuKeys.Pause, MenuKeys.Separator, MenuKeys.InstallUpdate, MenuKeys.About,
+            MenuKeys.Quit,
+        ], keys);
+    }
+
+    [Fact]
+    public void Unelevated_the_menu_has_no_handover_items()
+    {
+        _engine.Showing(Theme("installed", "example-landscape"));
+        _engine.IsElevated = false;
+
+        Assert.DoesNotContain(Model.BuildMenu(), item => item.Key is MenuKeys.TakeOver or MenuKeys.AlwaysTakeOver);
     }
 
     [Fact]
@@ -274,7 +303,7 @@ public sealed class TrayModelTests : IDisposable
         try
         {
             var paths = _paths with { Locator = new ThemeLocator([Path.Combine(link, "themes")], _dir.Path) };
-            var model = new TrayModel(_engine, paths, _shell, _host, _worker, NullLog.Instance, () => _now);
+            var model = new TrayModel(_engine, paths, _shell, _host, _worker, _updates.Updates, NullLog.Instance, () => _now);
 
             await model.OpenThemesFolder().WaitAsync(Wait.Timeout);
 
@@ -345,6 +374,15 @@ public sealed class TrayModelTests : IDisposable
     }
 
     [Fact]
+    public async Task Start_starts_the_daily_update_check_after_the_engine()
+    {
+        await Model.Start().WaitAsync(Wait.Timeout);
+
+        Assert.True(_updates.Delay.WaitForRequests(1));
+        Assert.Equal(["Start"], _engine.CallNames);
+    }
+
+    [Fact]
     public async Task Quit_stops_the_engine_on_the_worker_then_exits()
     {
         await Model.Quit().WaitAsync(Wait.Timeout);
@@ -372,7 +410,7 @@ public sealed class TrayModelTests : IDisposable
         _engine.UsesDefaultTheme = true;
 
         await Model.Start().WaitAsync(Wait.Timeout);
-        var again = new TrayModel(_engine, _paths, _shell, _host, _worker, NullLog.Instance, () => _now);
+        var again = new TrayModel(_engine, _paths, _shell, _host, _worker, _updates.Updates, NullLog.Instance, () => _now);
         await again.Start().WaitAsync(Wait.Timeout);
 
         var hint = Assert.Single(_host.Balloons);

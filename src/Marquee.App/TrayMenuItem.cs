@@ -35,8 +35,12 @@ static class MenuKeys
     public const string ThemesFolder = "themes-folder";
     public const string Logs = "logs";
     public const string Settings = "settings";
+    public const string TakeOver = "take-over";
+    public const string AlwaysTakeOver = "always-take-over";
     public const string Pause = "pause";
     public const string Resume = "resume";
+    public const string CheckForUpdates = "check-for-updates";
+    public const string InstallUpdate = "install-update";
     public const string About = "about";
     public const string Quit = "quit";
 }

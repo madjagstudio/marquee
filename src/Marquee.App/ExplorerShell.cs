@@ -4,9 +4,9 @@ using Marquee.App.Resources;
 
 namespace Marquee.App;
 
-/// Opens folders and files through Explorer, so they open as the user and not elevated: the tray runs elevated, and
-/// Process.Start(file) with UseShellExecute would start the user's editor elevated too, with every file it saves or
-/// plug-in it loads running as administrator.
+/// Opens folders, files and web pages through Explorer, so they open as the user and not elevated: the tray runs
+/// elevated, and Process.Start(file) with UseShellExecute would start the user's editor (or browser) elevated too, with
+/// every file it saves or plug-in it loads running as administrator.
 ///
 /// explorer.exe started by an elevated process doesn't stay elevated: when the desktop's Explorer is already running
 /// (it always is while a user is signed in), the new explorer.exe hands the path to it and exits, and the desktop's

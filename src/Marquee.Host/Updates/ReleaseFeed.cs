@@ -20,6 +20,9 @@ public static class ReleaseFeed
     /// The one address the update check asks.
     public const string LatestReleaseUrl = "https://api.github.com/repos/madjagstudios/marquee/releases/latest";
 
+    /// Marquee's releases on GitHub, for a person to download from in a browser.
+    public const string ReleasesPage = "https://github.com/madjagstudios/marquee/releases";
+
     /// The largest installer the updater downloads, far more than Marquee needs, so a release that says more is a
     /// mistake or worse.
     public const long MaxInstallerBytes = 300L * 1024 * 1024;

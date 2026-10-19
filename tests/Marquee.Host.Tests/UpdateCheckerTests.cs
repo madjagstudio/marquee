@@ -232,4 +232,52 @@ public sealed class UpdateCheckerTests : IDisposable
 
         Assert.Equal("Marquee 0.2.0 — Größer", offer?.Title);
     }
+
+    [Fact]
+    public async Task Find_says_when_this_marquee_is_the_latest()
+    {
+        var result = await Checker(Serving("v0.1.0")).FindAsync(CancellationToken.None);
+
+        Assert.Null(result.Offer);
+        Assert.Null(result.Problem);
+        Assert.True(result.IsUpToDate);
+        Assert.Equal("0.1.0", result.Running);
+    }
+
+    [Fact]
+    public async Task Find_returns_the_offer_of_a_newer_release()
+    {
+        var result = await Checker(Serving("v0.2.0")).FindAsync(CancellationToken.None);
+
+        Assert.Equal(new Version(0, 2, 0), result.Offer?.Version);
+        Assert.Null(result.Problem);
+        Assert.False(result.IsUpToDate);
+    }
+
+    [Fact]
+    public async Task Find_says_why_a_check_failed_in_the_words_it_logged()
+    {
+        var handler = new FakeHttpHandler((_, _) => throw new HttpRequestException("No such host is known."));
+
+        var result = await Checker(handler).FindAsync(CancellationToken.None);
+
+        Assert.Null(result.Offer);
+        Assert.False(result.IsUpToDate);
+        Assert.Contains("No such host is known.", result.Problem);
+        Assert.Equal($"warn: {result.Problem}", Assert.Single(log.Entries));
+    }
+
+    [Fact]
+    public async Task Find_says_why_with_the_placeholder_key_and_HasReleaseKey_is_false()
+    {
+        using var placeholder = PlaceholderKey.Open();
+        var checker = Checker(Serving("v0.2.0"), releaseKey: placeholder);
+
+        var result = await checker.FindAsync(CancellationToken.None);
+
+        Assert.False(checker.HasReleaseKey);
+        Assert.True(Checker(Serving("v0.2.0")).HasReleaseKey);
+        Assert.False(result.IsUpToDate);
+        Assert.Equal($"info: {result.Problem}", Assert.Single(log.Entries));
+    }
 }

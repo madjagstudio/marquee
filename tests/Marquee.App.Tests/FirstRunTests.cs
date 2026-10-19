@@ -31,4 +31,16 @@ public class FirstRunTests
 
         Assert.False(FirstRun.ClaimHint(file));
     }
+
+    [Fact]
+    public void The_handover_offer_is_claimed_once_apart_from_the_hint()
+    {
+        using var dir = new TempDir();
+        var data = dir.File("data");
+
+        Assert.True(FirstRun.ClaimHint(data));
+        Assert.True(FirstRun.ClaimHandoverOffer(data));
+        Assert.False(FirstRun.ClaimHandoverOffer(data));
+        Assert.True(File.Exists(Path.Combine(data, FirstRun.HandoverOfferMarker)));
+    }
 }

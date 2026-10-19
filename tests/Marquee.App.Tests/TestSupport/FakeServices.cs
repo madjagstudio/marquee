@@ -1,3 +1,4 @@
+using System.ServiceProcess;
 using Marquee.Core.Devices;
 using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
@@ -14,6 +15,9 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
     /// Whether a screen is plugged in; CreateDevice makes a new FakeScreen each time while it is.
     public volatile bool ScreenPluggedIn = true;
 
+    /// Whether another program has the screen: opening it fails as busy until this is false.
+    public volatile bool ScreenInUse;
+
     public List<FakeScreen> Screens { get; } = [];
 
     public bool IsElevated { get; set; }
@@ -22,7 +26,7 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
     {
         if (!ScreenPluggedIn) return null;
         var size = settings.Orientation.CanvasSize();
-        var screen = new FakeScreen(size.Width, size.Height);
+        var screen = new FakeScreen(size.Width, size.Height, () => ScreenInUse);
         lock (Screens) Screens.Add(screen);
         return screen;
     }
@@ -55,11 +59,29 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
 
     public LConnectDetector LConnect { get; } = new(new NoLConnect());
 
-    public IServiceControl CreateServiceControl() =>
-        throw new InvalidOperationException("The tray's tests never take the screen from L-Connect.");
+    /// Whether L-Connect's service is installed, as the tray asks the services once at start.
+    public volatile bool LConnectInstalled = true;
+
+    /// Reads L-Connect's service as running while LConnectInstalled says it is installed, but refuses to stop or start
+    /// it: the tray's tests never take the screen from L-Connect, and a handover reports that as failed.
+    public IServiceControl CreateServiceControl() => new NoServiceControl(this);
 
     /// A name of this instance's own, so a Marquee running on the same PC never sees the test's signal.
     public string ScreenSignalName { get; } = $@"Local\Marquee.Tests.ScreenOpen.{Guid.NewGuid():N}";
+
+    sealed class NoServiceControl(FakeServices services) : IServiceControl
+    {
+        const string Refused = "The tray's tests never take the screen from L-Connect.";
+
+        public ServiceControllerStatus? Status(string name) =>
+            name == LConnectHandover.ServiceName && services.LConnectInstalled ? ServiceControllerStatus.Running : null;
+
+        public void Stop(string name) => throw new InvalidOperationException(Refused);
+
+        public void Start(string name) => throw new InvalidOperationException(Refused);
+
+        public bool WaitFor(string name, ServiceControllerStatus status, TimeSpan timeout) => throw new InvalidOperationException(Refused);
+    }
 
     sealed class NoLConnect : ILConnectStatusSource
     {
@@ -88,8 +110,9 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
     }
 }
 
-/// A screen that counts the frames it gets and whether it is open.
-sealed class FakeScreen(int width, int height) : IDisplayDevice
+/// A screen that counts the frames it gets and whether it is open. While `inUse` says so, opening it fails as a
+/// screen L-Connect holds does.
+sealed class FakeScreen(int width, int height, Func<bool>? inUse = null) : IDisplayDevice
 {
     int _frames;
     int _open;
@@ -100,7 +123,11 @@ sealed class FakeScreen(int width, int height) : IDisplayDevice
 
     public bool IsOpen => Volatile.Read(ref _open) == 1;
 
-    public void Open() => Volatile.Write(ref _open, 1);
+    public void Open()
+    {
+        if (inUse?.Invoke() == true) throw new DeviceBusyException("Another program is using the screen.");
+        Volatile.Write(ref _open, 1);
+    }
 
     public void PushFrame(SKImage frame) => Interlocked.Increment(ref _frames);
 

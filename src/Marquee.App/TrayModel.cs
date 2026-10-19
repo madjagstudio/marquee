@@ -14,7 +14,9 @@ namespace Marquee.App;
 /// Commands are called on the UI thread. Anything that touches the engine or the disk runs on `worker`, never on the UI
 /// thread, and reports a failure as a balloon and a log line rather than throwing. Engine events arrive on engine
 /// threads; their balloons go through `host`, which moves them to the UI thread.
-sealed class TrayModel
+///
+/// The L-Connect handover's prompt and items are in TrayModel.Handover.cs, the update offer's in TrayModel.Updates.cs.
+sealed partial class TrayModel
 {
     /// Menu lines are cut to this many characters (the first line only), so a long error doesn't make the menu as
     /// wide as the screen. The log has it in full.
@@ -43,21 +45,28 @@ sealed class TrayModel
     readonly IShell _shell;
     readonly ITrayHost _host;
     readonly EngineWorker _worker;
+    readonly TrayUpdates _updates;
     readonly ILog _log;
     readonly BalloonLimiter _balloons;
 
-    public TrayModel(ITrayEngine engine, TrayPaths paths, IShell shell, ITrayHost host, EngineWorker worker, ILog log,
-        Func<DateTime>? utcNow = null)
+    public TrayModel(ITrayEngine engine, TrayPaths paths, IShell shell, ITrayHost host, EngineWorker worker, TrayUpdates updates,
+        ILog log, Func<DateTime>? utcNow = null)
     {
         _engine = engine;
         _paths = paths;
         _shell = shell;
         _host = host;
         _worker = worker;
+        _updates = updates;
         _log = log;
         _balloons = new BalloonLimiter(BalloonEvery, utcNow ?? (() => DateTime.UtcNow));
         engine.ThemeFailed += error => Warn(Strings.ThemeFailedTitle, error);
         engine.ConfigFailed += error => Warn(Strings.ConfigFailedTitle, error);
+        engine.ConfigApplied += () => updates.SetEnabled(engine.CheckForUpdates);
+        engine.ScreenBusy += OnScreenBusy;
+        engine.HandoverFinished += OnHandoverFinished;
+        engine.ScreenOpened += OnScreenOpened;
+        updates.Offered += ShowOffer;
     }
 
     /// The version About shows: the assembly's informational version without the commit hash the SDK appends.
@@ -68,30 +77,39 @@ sealed class TrayModel
     /// The icon's tooltip: Marquee and the status line.
     public string Tooltip => Cut(Strings.Tooltip(StatusLine), TooltipLimit);
 
-    /// What the engine is doing, in a line.
+    /// What the engine is doing, in a line; while an update downloads, how far it has got, and while it installs, that.
     public string StatusLine
     {
         get
         {
+            if (_updates.Downloading is { } download) return Strings.StatusDownloading(VersionOf(download.Offer), download.Percent);
+            if (Installing is { } installing) return Strings.StatusInstalling(VersionOf(installing));
             if (_engine.Settings is not { } settings) return Strings.StatusNoTheme;
             if (_engine.IsPaused) return Strings.StatusPaused;
+            if (LConnectHasScreen) return Strings.StatusLConnectBusy;
             if (!_engine.IsRunning) return _engine.ThemeError is null ? Strings.StatusWaitingForScreen : Strings.StatusThemeFailed;
             var status = _engine.Status;
             return Strings.StatusShowing(status.Theme ?? Path.GetFileName(settings.ThemeFolder), status.Stats.Fps, status.Device ?? "");
         }
     }
 
-    /// Starts the engine on the worker. On the first run (config.yaml names no theme, and the hint hasn't been shown)
-    /// a balloon says where to pick a theme and the orientation.
-    public Task Start() => Run(() =>
+    /// Starts the engine on the worker, then the daily update check, which runs even when the engine didn't start (it
+    /// may be the fix). On the first run (config.yaml names no theme, and the hint hasn't been shown) a balloon says
+    /// where to pick a theme and the orientation; not while L-Connect has the screen, though, where the handover's
+    /// offer matters more and a later balloon would hide it: the hint then waits for a later start.
+    public async Task Start()
     {
-        _engine.Start();
-        if (_engine.UsesDefaultTheme && FirstRun.ClaimHint(_paths.DataFolder))
-            _host.ShowBalloon(Strings.FirstRunHintTitle, Strings.FirstRunHint, isError: false);
-    });
+        await Run(() =>
+        {
+            _engine.Start();
+            if (_engine.UsesDefaultTheme && !LConnectHasScreen && FirstRun.ClaimHint(_paths.DataFolder))
+                _host.ShowBalloon(Strings.FirstRunHintTitle, Strings.FirstRunHint, isError: false);
+        }).ConfigureAwait(false);
+        _updates.SetEnabled(_engine.CheckForUpdates);
+    }
 
     /// The menu, top to bottom: the status and any problems, the theme and orientation pickers, the windows and folders,
-    /// pause, then About and Quit.
+    /// the handover's items and pause, then the update's item, About and Quit.
     public IReadOnlyList<TrayMenuItem> BuildMenu()
     {
         var settings = _engine.Settings;
@@ -100,6 +118,7 @@ sealed class TrayModel
         [
             new(MenuKeys.Status, StatusLine) { Enabled = false },
             .. _engine.Problems.Select(problem => new TrayMenuItem(MenuKeys.Problem, MenuText(problem)) { Enabled = false }),
+            .. HandoverProblems(),
             TrayMenuItem.Separator,
             new(MenuKeys.Themes, Strings.MenuThemes) { Children = ThemeItems(settings?.ThemeFolder) },
             new(MenuKeys.Orientation, Strings.MenuOrientation) { Enabled = hasEngine, Children = OrientationItems(settings?.Orientation) },
@@ -109,10 +128,12 @@ sealed class TrayModel
             new(MenuKeys.Logs, Strings.MenuOpenLogs) { Command = () => _ = OpenLogs() },
             new(MenuKeys.Settings, Strings.MenuEditSettings) { Command = () => _ = EditSettings() },
             TrayMenuItem.Separator,
+            .. HandoverItems(settings),
             _engine.IsPaused
                 ? new(MenuKeys.Resume, Strings.MenuResume) { Enabled = hasEngine, Command = () => _ = Run(_engine.Resume) }
                 : new(MenuKeys.Pause, Strings.MenuPause) { Enabled = hasEngine, Command = () => _ = Run(_engine.Pause) },
             TrayMenuItem.Separator,
+            UpdateItem(),
             new(MenuKeys.About, Strings.MenuAbout) { Command = () => _host.ShowMessage(Strings.MenuAbout, Strings.About(Version)) },
             new(MenuKeys.Quit, Strings.MenuQuit) { Command = () => _ = Quit() },
         ];
@@ -160,9 +181,11 @@ sealed class TrayModel
         _shell.Open(_paths.ConfigFile);
     });
 
-    /// Stops the engine (which lets go of the screen and saves the Claude limits), then ends the tray.
+    /// Cancels an update download, stops the engine (which lets go of the screen and saves the Claude limits), then
+    /// ends the tray.
     public async Task Quit()
     {
+        _updates.Dispose();
         await Run(_engine.Dispose).ConfigureAwait(false);
         _host.Exit();
     }
