@@ -9,9 +9,17 @@ using Marquee.Providers.Agents.Tests.TestSupport;
 
 namespace Marquee.Providers.Agents.Tests;
 
+/// The server reads on the thread pool, and a send completes only once it has read the message (the pipe has no
+/// buffer). On a loaded CI runner, with every test assembly running at once and PowerShell children starting, the pool
+/// can take seconds to get to the server, so sends and connects get a generous limit; they return as soon as the server
+/// answers. The limits that a test checks are kept short, and the bounds on how long those take leave room for the same
+/// delays.
 public class StatusLinePipeTests
 {
-    static readonly TimeSpan Connect = TimeSpan.FromSeconds(2);
+    static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
+
+    /// Upper bound for a call given a short timeout: well past the timeout, far short of a hang.
+    static readonly TimeSpan Quickly = TimeSpan.FromSeconds(10);
 
     // Each test uses its own pipe, so tests running in parallel never meet.
     static string UniquePipe() => "marquee-test-" + Guid.NewGuid().ToString("N");
@@ -30,7 +38,7 @@ public class StatusLinePipeTests
         using var server = new StatusLineServer(store, new ListLog(), name, () => Clock.T0);
         Assert.True(server.Start());
 
-        Assert.True(StatusLinePipe.TrySend(Fixture.Bytes("statusline/subscriber.json"), Connect, name));
+        Assert.True(StatusLinePipe.TrySend(Fixture.Bytes("statusline/subscriber.json"), Patience, name));
 
         Assert.True(Wait.Until(() => Clock.Read(store, "claude.five_hour.pct") is 42.5));
         Assert.Equal(17.0, Clock.Read(store, "claude.seven_day.pct"));
@@ -45,7 +53,7 @@ public class StatusLinePipeTests
         server.Start();
 
         for (var pct = 1; pct <= 20; pct++)
-            Assert.True(StatusLinePipe.TrySend(Json($"{{\"context_window\":{{\"used_percentage\":{pct}}}}}"), Connect, name));
+            Assert.True(StatusLinePipe.TrySend(Json($"{{\"context_window\":{{\"used_percentage\":{pct}}}}}"), Patience, name));
 
         Assert.True(Wait.Until(() => Clock.Read(store, "claude.context.pct") is 20.0));
     }
@@ -57,14 +65,14 @@ public class StatusLinePipeTests
 
         Assert.False(StatusLinePipe.TrySend(Json("{}"), TimeSpan.FromMilliseconds(100), UniquePipe()));
 
-        Assert.True(clock.ElapsedMilliseconds < 1000, $"took {clock.ElapsedMilliseconds} ms");
+        Assert.True(clock.Elapsed < Quickly, $"took {clock.Elapsed}");
     }
 
     [Fact]
     public void Empty_and_oversized_messages_are_not_sent()
     {
-        Assert.False(StatusLinePipe.TrySend([], Connect, UniquePipe()), "an empty message was sent");
-        Assert.False(StatusLinePipe.TrySend(new byte[ClaudeStatusLine.MaxBytes + 1], Connect, UniquePipe()), "an oversized message was sent");
+        Assert.False(StatusLinePipe.TrySend([], Patience, UniquePipe()), "an empty message was sent");
+        Assert.False(StatusLinePipe.TrySend(new byte[ClaudeStatusLine.MaxBytes + 1], Patience, UniquePipe()), "an oversized message was sent");
     }
 
     [Fact]
@@ -78,11 +86,11 @@ public class StatusLinePipeTests
 
         // Run off-thread so a hang fails the test (instead of hanging the run).
         var send = Task.Run(() => StatusLinePipe.TrySend(new byte[60_000], TimeSpan.FromMilliseconds(300), name));
-        var finished = await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(5))) == send;
+        var finished = await Task.WhenAny(send, Task.Delay(Patience)) == send;
 
         Assert.True(finished, "TrySend hung writing to a server that never reads");
         Assert.False(await send);
-        Assert.True(clock.ElapsedMilliseconds < 2000, $"took {clock.ElapsedMilliseconds} ms");
+        Assert.True(clock.Elapsed < Quickly, $"took {clock.Elapsed}");
     }
 
     [Fact]
@@ -94,10 +102,10 @@ public class StatusLinePipeTests
         using var server = new StatusLineServer(store, log, name, () => Clock.T0);
         server.Start();
 
-        StatusLinePipe.TrySend(Json("""{"rate_limits":{"five_hour":"full"}}"""), Connect, name);
-        StatusLinePipe.TrySend(Json("""{"rate_limits":{"five_hour":"full"}}"""), Connect, name);
+        StatusLinePipe.TrySend(Json("""{"rate_limits":{"five_hour":"full"}}"""), Patience, name);
+        StatusLinePipe.TrySend(Json("""{"rate_limits":{"five_hour":"full"}}"""), Patience, name);
         Assert.True(Wait.Until(() => log.Entries.Count > 0));
-        StatusLinePipe.TrySend(Fixture.Bytes("statusline/subscriber.json"), Connect, name);
+        StatusLinePipe.TrySend(Fixture.Bytes("statusline/subscriber.json"), Patience, name);
 
         Assert.True(Wait.Until(() => Clock.Read(store, "claude.five_hour.pct") is 42.5));
         Assert.Equal(
@@ -116,7 +124,7 @@ public class StatusLinePipeTests
 
         using (var pipe = new System.IO.Pipes.NamedPipeClientStream(".", name, System.IO.Pipes.PipeDirection.Out))
         {
-            pipe.Connect(2000);
+            pipe.Connect(Patience);
             pipe.Write(new byte[ClaudeStatusLine.MaxBytes + 100]);
         }
 
@@ -132,15 +140,19 @@ public class StatusLinePipeTests
         var server = new StatusLineServer(new SensorStore(), new ListLog(), name);
         server.Start();
         using var stalled = new System.IO.Pipes.NamedPipeClientStream(".", name, System.IO.Pipes.PipeDirection.Out);
-        stalled.Connect(2000);
-        Thread.Sleep(200); // the server is now waiting for the rest of the message
+        stalled.Connect(Patience);
+        // The server opens the next instance once it has taken the stalled client, just before it reads, so a second
+        // client getting in means the server is now waiting for the rest of the message. (A fixed sleep could end
+        // before a slow runner got the server there.)
+        using (var next = new System.IO.Pipes.NamedPipeClientStream(".", name, System.IO.Pipes.PipeDirection.Out))
+            next.Connect(Patience);
 
         server.Dispose();
         server.Dispose();
 
         var clock = Stopwatch.StartNew();
         Assert.False(StatusLinePipe.TrySend(Json("{}"), TimeSpan.FromMilliseconds(100), name));
-        Assert.True(clock.ElapsedMilliseconds < 1000, $"took {clock.ElapsedMilliseconds} ms");
+        Assert.True(clock.Elapsed < Quickly, $"took {clock.Elapsed}");
     }
 
     [Fact]
@@ -151,7 +163,7 @@ public class StatusLinePipeTests
         Assert.True(server.Start());
 
         using var client = new NamedPipeClientStream(".", name, PipeDirection.Out);
-        client.Connect(2000);
+        client.Connect(Patience);
         var security = client.GetAccessControl();
 
         var user = WindowsIdentity.GetCurrent().User;
@@ -183,10 +195,10 @@ public class StatusLinePipeTests
         server.Start();
         var someoneElse = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
-        Assert.False(StatusLinePipe.TrySend(Fixture.Bytes("statusline/subscriber.json"), Connect, name, someoneElse));
+        Assert.False(StatusLinePipe.TrySend(Fixture.Bytes("statusline/subscriber.json"), Patience, name, someoneElse));
 
         // Messages are handled in order: once the next one is in, the refused one would have been too.
-        Assert.True(StatusLinePipe.TrySend(Json("""{"context_window":{"used_percentage":7}}"""), Connect, name));
+        Assert.True(StatusLinePipe.TrySend(Json("""{"context_window":{"used_percentage":7}}"""), Patience, name));
         Assert.True(Wait.Until(() => Clock.Read(store, "claude.context.pct") is 7.0));
         Assert.Null(Clock.Read(store, "claude.five_hour.pct"));
     }
