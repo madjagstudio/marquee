@@ -16,6 +16,11 @@
     <ProjectReference Include="..\Marquee.Providers.Fps\Marquee.Providers.Fps.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The public key updates must be signed with (ReleaseKey). A fixed resource name, so moving the file doesn't
+         change the lookup. -->
+    <EmbeddedResource Include="Updates\release-key.pub.pem" LogicalName="release-key.pub.pem" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Marquee.Host.Tests" />
   </ItemGroup>
 </Project>
