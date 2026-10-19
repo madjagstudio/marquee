@@ -1,32 +1,18 @@
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using Marquee.Host.Tests.TestSupport;
 using Marquee.Host.Updates;
 
 namespace Marquee.Host.Tests;
 
 public class ReleaseKeyTests
 {
-    /// The placeholder public key, as release-key.pub.pem holds it until the owner's key ceremony. It is copied here so
-    /// that these tests still know the placeholder after the ceremony replaces that file. Its private half was never
-    /// kept, so nothing anyone has can sign for it.
-    const string PlaceholderPem = """
-        -----BEGIN PUBLIC KEY-----
-        MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1n7ApjJ4ivIMf/aSV0AcvX6Spyak
-        QBUuCDS5/tacJiIMu243kyZt8QNvksvOIr066rwhVCTV2lto47b8jdsXPQ==
-        -----END PUBLIC KEY-----
-        """;
-
     /// A whole PEM private key block of any kind (PKCS#8, encrypted PKCS#8, SEC1 "EC", RSA): the header, a Base64 body
     /// and the matching footer. A header alone, as in a test that checks what the release tool writes, isn't a key.
     static readonly Regex PrivateKeyPem = new(@"-----BEGIN ([A-Z ]*)PRIVATE KEY-----[A-Za-z0-9+/=\s]{40,}-----END \1PRIVATE KEY-----",
         RegexOptions.CultureInvariant);
 
-    static ECDsa Placeholder()
-    {
-        var key = ECDsa.Create();
-        key.ImportFromPem(PlaceholderPem);
-        return key;
-    }
+    static ECDsa Placeholder() => PlaceholderKey.Open();
 
     [Fact]
     public void The_built_in_key_is_a_P256_public_key_with_no_private_half()

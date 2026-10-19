@@ -174,4 +174,132 @@
     <value>Couldn't take the screen from L-Connect: {0}</value>
     <comment>{0} is the reason, an unexpected error. "L-Connect" is a program's name.</comment>
   </data>
+  <data name="ReleaseNotJson" xml:space="preserve">
+    <value>GitHub's answer isn't JSON Marquee can read: {0}</value>
+    <comment>{0} is the JSON reader's own description of the problem. "GitHub" is a name.</comment>
+  </data>
+  <data name="ReleaseUnreadable" xml:space="preserve">
+    <value>GitHub's answer doesn't describe a release: it should have a tag, say whether it is a draft or a prerelease, and list its files.</value>
+    <comment>"GitHub" is a name. A release's tag is its version, such as v1.2.3.</comment>
+  </data>
+  <data name="ReleaseIsDraft" xml:space="preserve">
+    <value>Release {0} is a draft.</value>
+    <comment>{0} is the release's tag, such as v1.2.3.</comment>
+  </data>
+  <data name="ReleaseIsPrerelease" xml:space="preserve">
+    <value>Release {0} is a prerelease.</value>
+    <comment>{0} is the release's tag, such as v1.2.3.</comment>
+  </data>
+  <data name="ReleaseTagNotAVersion" xml:space="preserve">
+    <value>Release tag '{0}' isn't a version Marquee installs, which is v and three numbers, such as v1.2.3.</value>
+    <comment>{0} is the release's tag as GitHub gave it.</comment>
+  </data>
+  <data name="ReleaseFileMissing" xml:space="preserve">
+    <value>Release {0} has no file named {1}.</value>
+    <comment>{0} is the release's tag, such as v1.2.3; {1} a file name, such as Marquee-1.2.3-x64.msi.</comment>
+  </data>
+  <data name="ReleaseFileUnreadable" xml:space="preserve">
+    <value>The release doesn't say how big {0} is.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.</comment>
+  </data>
+  <data name="ReleaseFileSize" xml:space="preserve">
+    <value>The release says {0} is {1} bytes, and Marquee only downloads it at 1 to {2} bytes.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi; {1} and {2} are numbers of bytes.</comment>
+  </data>
+  <data name="ReleaseFileNotOnGitHub" xml:space="preserve">
+    <value>The release doesn't serve {0} from github.com over https, so Marquee won't download it.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi. "github.com" and "https" stay as they are.</comment>
+  </data>
+  <data name="UpdateCheckSkippedDevelopmentKey" xml:space="preserve">
+    <value>This build of Marquee carries the placeholder release key, which no release is signed with, so it doesn't look for updates.</value>
+    <comment>The signing key is what proves an update comes from Marquee's author; a development build has a placeholder whose private half was never kept.</comment>
+  </data>
+  <data name="UpdateCheckSkippedNoVersion" xml:space="preserve">
+    <value>Marquee doesn't look for updates: its own version, '{0}', isn't one it can compare.</value>
+    <comment>{0} is the version Marquee was built with, as text.</comment>
+  </data>
+  <data name="UpdateCheckTimedOut" xml:space="preserve">
+    <value>GitHub didn't answer the update check within {0} seconds. Marquee looks again tomorrow.</value>
+    <comment>{0} is a number of seconds. "GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateCheckFailed" xml:space="preserve">
+    <value>The update check failed ({0}). Marquee looks again tomorrow.</value>
+    <comment>{0} is the reason, such as Windows' own text for a network error.</comment>
+  </data>
+  <data name="UpdateCheckHttpError" xml:space="preserve">
+    <value>GitHub answered the update check with HTTP {0} {1}. Marquee looks again tomorrow.</value>
+    <comment>{0} is an HTTP status code, {1} its English name from the server. "GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateCheckRateLimited" xml:space="preserve">
+    <value>GitHub turned the update check away: requests from this network without a GitHub account have reached their hourly limit. Marquee looks again tomorrow.</value>
+    <comment>"GitHub" is a name. Marquee makes one request a day; the limit counts every program on the network.</comment>
+  </data>
+  <data name="NoReleaseYet" xml:space="preserve">
+    <value>No Marquee release has been published on GitHub yet.</value>
+    <comment>"GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateCheckAnswerTooLarge" xml:space="preserve">
+    <value>GitHub's answer to the update check was over {0} bytes, so Marquee didn't read it. It looks again tomorrow.</value>
+    <comment>{0} is a number of bytes. "GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateCheckUnusableRelease" xml:space="preserve">
+    <value>The latest release on GitHub isn't one Marquee can install: {0} Marquee looks again tomorrow.</value>
+    <comment>{0} is the reason, one of the Release messages above, ending with a full stop.</comment>
+  </data>
+  <data name="UpToDate" xml:space="preserve">
+    <value>Marquee {0} is up to date.</value>
+    <comment>{0} is the running version, such as 1.2.3.</comment>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Marquee {0} is available (this is {1}).</value>
+    <comment>{0} is the new version, {1} the running one, such as 1.2.3.</comment>
+  </data>
+  <data name="UpdateCheckTimeNotSaved" xml:space="preserve">
+    <value>Couldn't save the time of the update check in {0} ({1}). Until Marquee restarts it still checks once a day.</value>
+    <comment>{0} is a file's path, {1} the reason.</comment>
+  </data>
+  <data name="UpdateRefusedDevelopmentKey" xml:space="preserve">
+    <value>Marquee won't install updates: this build carries the placeholder release key, which no release is signed with.</value>
+    <comment>The signing key is what proves an update comes from Marquee's author; a development build has a placeholder whose private half was never kept.</comment>
+  </data>
+  <data name="UpdateSignatureMissing" xml:space="preserve">
+    <value>The update's signature, {0}, isn't there, so Marquee won't install the update.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.sig.</comment>
+  </data>
+  <data name="UpdateSignatureTooLarge" xml:space="preserve">
+    <value>{0} is over {1} bytes, which no signature is, so Marquee won't install the update.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.sig; {1} a number of bytes.</comment>
+  </data>
+  <data name="UpdateSignatureInvalid" xml:space="preserve">
+    <value>{0} couldn't be verified: its signature doesn't match the key built into Marquee, so it may have been changed. Marquee won't install it.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.</comment>
+  </data>
+  <data name="UpdateWrongSize" xml:space="preserve">
+    <value>{0} isn't the {1} bytes the release says it is, so Marquee won't install it.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi; {1} a number of bytes.</comment>
+  </data>
+  <data name="UpdateDownloadHttpError" xml:space="preserve">
+    <value>Downloading {0} failed: GitHub answered HTTP {1}.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi; {1} an HTTP status code. "GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateDownloadFailed" xml:space="preserve">
+    <value>Downloading the update failed: {0}</value>
+    <comment>{0} is the reason, such as Windows' own text for a network or disk error.</comment>
+  </data>
+  <data name="UpdateDownloadStalled" xml:space="preserve">
+    <value>Downloading the update stopped: nothing arrived for {0} seconds.</value>
+    <comment>{0} is a number of seconds.</comment>
+  </data>
+  <data name="UpdateVerified" xml:space="preserve">
+    <value>Downloaded {0} and verified its signature.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.</comment>
+  </data>
+  <data name="InstallerStarting" xml:space="preserve">
+    <value>Starting the installer for Marquee {0}.</value>
+    <comment>{0} is the new version, such as 1.2.3.</comment>
+  </data>
+  <data name="InstallerDidNotStart" xml:space="preserve">
+    <value>The installer could not be started: {0}</value>
+    <comment>{0} is the reason, Windows' own text.</comment>
+  </data>
 </root>

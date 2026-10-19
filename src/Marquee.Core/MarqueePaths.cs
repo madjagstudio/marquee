@@ -30,6 +30,9 @@ public static class MarqueePaths
     /// %ProgramData%\Marquee\users\<the current user's SID>.
     public static string ElevatedDataRoot => Current.ElevatedDataRoot;
 
+    /// %ProgramData%\Marquee\updates, which the tray makes admin-only (SecureFolder.Ensure) before downloading into it.
+    public static string Updates => Current.Updates;
+
     /// The unelevated log folder, %LOCALAPPDATA%\Marquee\logs. A process logs to ProcessLogs, which is this one only
     /// when it isn't elevated.
     public static string Logs => Current.LogsFolder(elevated: false);

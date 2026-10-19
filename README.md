@@ -99,7 +99,8 @@ updates: check                # check | off; default check
 - `lconnect.handover` is whether Marquee takes the screen from L-Connect: `off` leaves it alone, `ask` offers to in a
   tray notification, and `auto` takes it without asking (see
   [Sharing the screen with L-Connect](#sharing-the-screen-with-l-connect)).
-- `updates: check` has the tray look for a newer release once a day; `updates: off` turns that off.
+- `updates: check` has the tray look for a newer release once a day; `updates: off` turns that off. See
+  [Updates](#updates).
 
 `updates` takes effect with the tray, which arrives in milestone 4b.
 
@@ -433,6 +434,22 @@ PresentMon reads Windows' event tracing, which needs administrator rights, so FP
 administrator. A logon task that starts Marquee elevated comes with the tray app; until then, start `marquee run` from
 an elevated terminal. Unelevated, FPS is off with a warning saying why. `providers: { fps: off }` in `config.yaml` or
 `--no-fps` turns FPS off, and the warning with it.
+
+## Updates
+
+The tray looks for a newer Marquee once a day, the first time a few minutes after it starts, and remembers when it last
+looked, so restarting the PC doesn't make it look again. That check is the only request Marquee makes on its own: one
+`GET https://api.github.com/repos/madjagstudios/marquee/releases/latest`, with no account and no cookies. All it sends
+about you is what any request does (your IP address) and a `User-Agent` header saying `Marquee/<version>`, which GitHub
+requires. If the check fails, nothing else is affected, and it tries again the next day.
+
+A newer version shows in the tray. Nothing is downloaded until you click to install it: then the tray downloads the
+installer and its signature from the GitHub release into `%ProgramData%\Marquee\updates`, a folder only administrators
+can change, checks the signature against the public key built into Marquee, and only then runs the installer. A missing
+or wrong signature means nothing is installed, and the log says why. How releases are signed is in
+[docs/releasing.md](docs/releasing.md).
+
+`updates: off` in `config.yaml` turns the daily check off.
 
 ## Logs
 

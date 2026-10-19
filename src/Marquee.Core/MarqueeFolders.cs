@@ -12,6 +12,10 @@ public sealed record MarqueeFolders(string LocalAppData, string ProgramData, str
     /// link that redirects an elevated write.
     public string ElevatedDataRoot => Path.Combine(ProgramData, "Marquee", "users", UserSid);
 
+    /// %ProgramData%\Marquee\updates: where the tray downloads an update, for the machine, not per user. Only
+    /// administrators can write there (SecureFolder), so nothing can swap the installer between the check and msiexec.
+    public string Updates => Path.Combine(ProgramData, "Marquee", "updates");
+
     /// The user's own themes, looked up by name before the installed examples.
     public string Themes => Path.Combine(DataRoot, "themes");
 

@@ -1,8 +1,13 @@
 # Releasing
 
-Every release file (the MSI, and the CLI zip) is published with a signature beside it: `Marquee-0.1.0.msi` and
-`Marquee-0.1.0.msi.sig`. Marquee's updater downloads both, checks the signature against the public key built into
+Every release file (the MSI, and the CLI zip) is published with a signature beside it: `Marquee-0.1.0-x64.msi` and
+`Marquee-0.1.0-x64.msi.sig`. Marquee's updater downloads both, checks the signature against the public key built into
 Marquee, and only then runs the installer. A missing or wrong signature means nothing runs.
+
+The updater finds the two files by name, so the names are fixed: the installer is `Marquee-<version>-x64.msi`, where
+`<version>` is the release's tag without its `v` (the tag `v0.1.0` has `Marquee-0.1.0-x64.msi`), and its signature is
+that name plus `.sig`. The tag is always `v` and three numbers, with no `-rc.1` or other suffix. A release that is a
+draft or a prerelease, or lacks either file under those names, is never offered (`ReleaseFeed`).
 
 The signature is ECDSA P-256 over the file's SHA-256, made with one private key that only the owner holds. There is no
 Authenticode: a first install shows Windows SmartScreen's "unknown publisher" prompt, and updates are protected by this
@@ -72,7 +77,7 @@ On the owner's PC, from the root of the repository:
 2. Sign the release files:
 
    ```powershell
-   tools\sign-release.ps1 D:\marquee-release-key.pem out\Marquee-0.1.0.msi out\marquee-0.1.0.zip
+   tools\sign-release.ps1 D:\marquee-release-key.pem out\Marquee-0.1.0-x64.msi out\marquee-0.1.0.zip
    ```
 
    It refuses a key file that isn't the key built into Marquee (`release-key.pub.pem`) once it has the password, and
@@ -86,10 +91,12 @@ M4c extends `sign-release.ps1` to check the CI build's hashes and publish the re
 ## Checking a signature
 
 ```powershell
-dotnet run --project tools\Marquee.ReleaseTool -c Release -- verify src\Marquee.Host\Updates\release-key.pub.pem out\Marquee-0.1.0.msi
+dotnet run --project tools\Marquee.ReleaseTool -c Release -- verify out\Marquee-0.1.0-x64.msi
 ```
 
-It reads `out\Marquee-0.1.0.msi.sig` and says whether it is good. It needs no password.
+It reads `out\Marquee-0.1.0-x64.msi.sig` and says whether it is good under the key built into Marquee
+(`release-key.pub.pem`, which the tool is built with too). It needs no password. To check against another public key,
+give its PEM file first: `verify <pub.pem> <file>`.
 
 ## If the key is lost or leaks
 

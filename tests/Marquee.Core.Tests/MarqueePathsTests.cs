@@ -51,6 +51,15 @@ public class MarqueePathsTests
     }
 
     [Fact]
+    public void Downloaded_updates_go_to_one_folder_for_the_machine_under_ProgramData()
+    {
+        var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+        Assert.Equal(@"C:\ProgramData\Marquee\updates", Folders.Updates);
+        Assert.Equal(Path.Combine(programData, "Marquee", "updates"), MarqueePaths.Updates);
+    }
+
+    [Fact]
     public void An_unelevated_process_keeps_its_data_in_LocalAppData_and_secures_nothing()
     {
         var secured = new List<string>();
