@@ -27,6 +27,7 @@ return args switch
     ["statusline"] => StatusLineCommand.Run(),
     ["setup-claude", .. var options] => SetupClaudeCommand.Run(options) ?? Usage(),
     ["task", .. var options] => TaskCommand.Run(options) ?? Usage(),
+    ["claim-screen", .. var options] => ClaimScreenCommand.Run(options) ?? Usage(),
     _ => Usage(),
 };
 

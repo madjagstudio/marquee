@@ -146,4 +146,32 @@
     <value>Lighting the LED ring failed: {0}</value>
     <comment>{0} is the reason, an unexpected error while working out the ring's colors.</comment>
   </data>
+  <data name="HandoverAuto" xml:space="preserve">
+    <value>L-Connect's service has the screen; taking it over, as `lconnect.handover: auto` says.</value>
+    <comment>Logged when Marquee starts taking the screen from L-Connect by itself. "L-Connect" is a program's name; `lconnect.handover: auto` is a config.yaml setting and stays as it is.</comment>
+  </data>
+  <data name="HandoverRetry" xml:space="preserve">
+    <value>Trying again to take the screen from L-Connect's service, as `lconnect.handover: auto` says.</value>
+    <comment>Logged when Marquee tries again by itself, a minute after taking the screen from L-Connect failed. "L-Connect" is a program's name; `lconnect.handover: auto` is a config.yaml setting and stays as it is.</comment>
+  </data>
+  <data name="HandoverScreenOpen" xml:space="preserve">
+    <value>Marquee has the screen already, so there's nothing to take from L-Connect.</value>
+    <comment>Logged when a "Take over" (from the tray menu or a notification clicked late) comes after Marquee already got the screen, so nothing is done. "L-Connect" is a program's name.</comment>
+  </data>
+  <data name="HandoverHeldBack" xml:space="preserve">
+    <value>L-Connect's service has the screen again, but taking it failed less than {0} s ago, so Marquee waits until then to try again.</value>
+    <comment>{0} is a number of seconds. Logged instead of taking the screen from L-Connect again straight after a failed try; Marquee tries again once the seconds are up. "L-Connect" is a program's name.</comment>
+  </data>
+  <data name="HandoverNeedsAdministrator" xml:space="preserve">
+    <value>Marquee can't take the screen from L-Connect: stopping L-Connect's service needs Marquee to run as administrator. Set `lconnect: { handover: off }` in config.yaml to stop this message.</value>
+    <comment>Logged once when L-Connect holds the screen and `lconnect.handover` is ask or auto, but Marquee isn't elevated. "L-Connect" is a program's name; `lconnect: { handover: off }` and config.yaml stay as they are.</comment>
+  </data>
+  <data name="TakeOverNeedsAdministrator" xml:space="preserve">
+    <value>Marquee can't take the screen from L-Connect: stopping L-Connect's service needs Marquee to run as administrator, as its logon task starts it.</value>
+    <comment>Logged when someone asks Marquee to take the screen (the tray's "Take over") but Marquee isn't elevated. "L-Connect" is a program's name.</comment>
+  </data>
+  <data name="HandoverFailed" xml:space="preserve">
+    <value>Couldn't take the screen from L-Connect: {0}</value>
+    <comment>{0} is the reason, an unexpected error. "L-Connect" is a program's name.</comment>
+  </data>
 </root>

@@ -67,6 +67,9 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
     /// drives no ring.
     public FakeRing? Ring { get; set; }
 
+    /// Whether the senders find Ring when they look, asked at each look; null means always.
+    public Func<bool>? RingPresent { get; set; }
+
     public List<EngineSettings> RingRequests { get; } = [];
     public List<RingSender> RingSenders { get; } = [];
 
@@ -74,10 +77,20 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
     {
         RingRequests.Add(settings);
         if (Ring is not { } ring) return null;
-        var sender = new RingSender(() => ring, store, log);
+        var sender = new RingSender(() => RingPresent?.Invoke() == false ? null : ring, store, log);
         RingSenders.Add(sender);
         return sender;
     }
+
+    /// L-Connect's services for the handover. LConnect reads them too, so a test's busy screen can follow them.
+    public FakeServiceControl LConnectServices { get; } = new();
+
+    public LConnectDetector LConnect => LConnectServices.Detector;
+
+    public IServiceControl CreateServiceControl() => LConnectServices;
+
+    /// A name of this instance's own, so a Marquee running on the same PC never sees the test's signal.
+    public string ScreenSignalName { get; } = $@"Local\Marquee.Tests.ScreenOpen.{Guid.NewGuid():N}";
 
     FakeProvider Provider(string name)
     {

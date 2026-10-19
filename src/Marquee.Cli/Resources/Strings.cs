@@ -127,6 +127,12 @@ internal static class Strings
 
     public static string TaskStatusFailed(string reason) => Format(nameof(TaskStatusFailed), reason);
 
+    public static string ClaimScreenNeedsAdministrator(string command) => Format(nameof(ClaimScreenNeedsAdministrator), command);
+
+    public static string ClaimScreenNoMarquee => Get(nameof(ClaimScreenNoMarquee));
+
+    public static string ClaimScreenAlreadyHeld => Get(nameof(ClaimScreenAlreadyHeld));
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages such as the usage get the platform's line breaks back, like the rest of the console output.
     static string Get(string name) =>

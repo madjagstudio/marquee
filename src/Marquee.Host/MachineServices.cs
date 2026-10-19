@@ -56,4 +56,10 @@ public sealed class MachineServices : IEngineServices
     /// A sink folder gets none: a run that writes its frames to files must not light a real ring.
     public RingSender? CreateRing(EngineSettings settings, SensorStore store, ILog log) =>
         settings.Sink is null ? new RingSender(LedRings.Find, store, log) : null;
+
+    public LConnectDetector LConnect => LConnectDetector.Default;
+
+    public IServiceControl CreateServiceControl() => new WindowsServiceControl();
+
+    public string ScreenSignalName => ScreenSignal.DefaultName;
 }

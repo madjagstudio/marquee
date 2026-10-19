@@ -78,6 +78,20 @@ internal static class Strings
 
     public static string RingFrameFailed(string reason) => Format(nameof(RingFrameFailed), reason);
 
+    public static string HandoverAuto => Get(nameof(HandoverAuto));
+
+    public static string HandoverRetry => Get(nameof(HandoverRetry));
+
+    public static string HandoverScreenOpen => Get(nameof(HandoverScreenOpen));
+
+    public static string HandoverHeldBack(int seconds) => Format(nameof(HandoverHeldBack), seconds);
+
+    public static string HandoverNeedsAdministrator => Get(nameof(HandoverNeedsAdministrator));
+
+    public static string TakeOverNeedsAdministrator => Get(nameof(TakeOverNeedsAdministrator));
+
+    public static string HandoverFailed(string reason) => Format(nameof(HandoverFailed), reason);
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages get the platform's line breaks back, like the rest of the log.
     static string Get(string name) =>

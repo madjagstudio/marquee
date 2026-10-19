@@ -23,7 +23,14 @@ sealed class RecordingDevice(int width = 1920, int height = 480) : IDisplayDevic
     /// The pixel at (10, 10) of the last frame pushed.
     public SKColor LastPixel => (SKColor)Volatile.Read(ref _lastPixel);
 
-    public void Open() => Interlocked.Increment(ref _opens);
+    /// Open throws DeviceBusyException while this says so, as the real screen does while L-Connect holds it.
+    public Func<bool> Busy { get; set; } = () => false;
+
+    public void Open()
+    {
+        Interlocked.Increment(ref _opens);
+        if (Busy()) throw new DeviceBusyException("The screen is in use by another program.");
+    }
 
     public void PushFrame(SKImage frame)
     {

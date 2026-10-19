@@ -1,3 +1,4 @@
+using Marquee.Core.Devices;
 using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
@@ -31,6 +32,7 @@ public sealed class MarqueeEngine : IDisposable
     readonly IEngineServices _services;
     readonly ClaudeLimitsFile _claudeLimits;
     readonly EngineEvents _events;
+    readonly EngineHandover _handover;
     readonly object _gate = new();
     readonly object _saveGate = new();
     volatile EngineRun? _run;
@@ -50,6 +52,9 @@ public sealed class MarqueeEngine : IDisposable
         _services = services;
         _events = new EngineEvents(log);
         _claudeLimits = services.CreateClaudeLimits(log);
+        _handover = new EngineHandover(log, services, mode: () => _settings.Handover, retryScreen: () => _run?.RetryScreen(),
+            busy: info => Post(() => ScreenBusy?.Invoke(info)),
+            finished: result => Post(() => HandoverFinished?.Invoke(result)));
     }
 
     /// The settings the engine runs with, or will run with at the next Start.
@@ -93,6 +98,26 @@ public sealed class MarqueeEngine : IDisposable
     /// must return promptly: never wait for a thread that may be in an engine call (on a UI thread use BeginInvoke, not
     /// Invoke), and never call the engine itself.
     public event Action<SKImage>? FrameRendered;
+
+    /// The screen came up busy: who holds it and what `lconnect.handover` says (see ScreenBusyInfo). Raised once per
+    /// busy episode, which ends when Marquee gets the screen or pauses, so Ask's tray balloon shows once, not at every
+    /// retry. With Off it changes nothing, but the tray can still offer "Take over" while CanTakeOver is true. Raised
+    /// like ThemeLoaded, with no lock held.
+    public event Action<ScreenBusyInfo>? ScreenBusy;
+
+    /// A handover (Auto's, or TakeOverScreen's) ended, with how. Raised like ThemeLoaded, with no lock held.
+    public event Action<HandoverResult>? HandoverFinished;
+
+    /// The engine opened the screen (the first frame after opening it got through), which ends a busy episode however
+    /// it ended. Raised like ThemeLoaded, through the same queue as ScreenBusy, so it always comes after the ScreenBusy
+    /// of the episode it ends: a tray that clears its busy state here never has a late ScreenBusy set it again.
+    public event Action? ScreenOpened;
+
+    /// The tray's "Take over" (or a click on Ask's balloon): takes the screen from L-Connect on a thread of its own,
+    /// whatever `lconnect.handover` says, and returns at once; HandoverFinished says how it went. False when it doesn't
+    /// start: a handover is under way already, the engine isn't running live or is paused, Marquee has the screen
+    /// already, or Marquee isn't elevated (those two are logged). Any thread; takes no engine lock.
+    public bool TakeOverScreen() => _handover.TakeOver();
 
     /// Restores the saved Claude Code limits (the first time only, before any provider, so live readings win), then
     /// starts everything for Settings. False, with the reason logged, when there is no screen or the theme doesn't
@@ -178,6 +203,7 @@ public sealed class MarqueeEngine : IDisposable
         {
             if (_disposed) return;
             _paused = true;
+            _handover.SetScreenWanted(false);
             _run?.Pause();
         }
     }
@@ -189,6 +215,7 @@ public sealed class MarqueeEngine : IDisposable
         {
             if (_disposed) return;
             _paused = false;
+            _handover.SetScreenWanted(_run is { Live: true });
             _run?.Resume();
         }
     }
@@ -200,11 +227,14 @@ public sealed class MarqueeEngine : IDisposable
         lock (_gate)
         {
             _wanted = false;
+            _handover.SetScreenWanted(false);
             StopWaiting();
             StopSaving();
             var run = _run;
             _run = null;
             run?.Dispose();
+            // A handover under way has stopped waiting for the screen; it ends once L-Connect is running again.
+            _handover.WaitForEnd();
             // After the providers have stopped, so the file gets their last word.
             if (_restored) SaveLimits();
         }
@@ -217,6 +247,7 @@ public sealed class MarqueeEngine : IDisposable
             if (_disposed) return;
             Stop();
             _disposed = true;
+            _handover.Dispose();
         }
     }
 
@@ -225,6 +256,20 @@ public sealed class MarqueeEngine : IDisposable
     internal void OnThemeFailed(string error) => Post(() => ThemeFailed?.Invoke(error));
 
     internal void OnFrameRendered(SKImage frame) => FrameRendered?.Invoke(frame);
+
+    /// Who holds a busy screen, for the render loops.
+    internal LConnectDetector LConnect => _services.LConnect;
+
+    /// A live render loop's sending thread found the screen busy; takes no engine lock (Stop waits for that thread).
+    internal void OnScreenBusy(LConnectState state) => _handover.OnScreenBusy(state);
+
+    /// A render loop opened or closed the screen; takes no engine lock. The render loop reports a busy screen on the
+    /// same thread before it opens it, so ScreenOpened is queued after that ScreenBusy.
+    internal void OnScreenOpenChanged(bool open)
+    {
+        _handover.OnScreenOpenChanged(open);
+        if (open) Post(() => ScreenOpened?.Invoke());
+    }
 
     /// Under _gate.
     bool ApplyLocked(EngineSettings settings)
@@ -257,6 +302,7 @@ public sealed class MarqueeEngine : IDisposable
             _log.Error(Strings.SettingsChangeFailed(ex.Message));
             _settings = settings;
             _run = null;
+            _handover.SetScreenWanted(false);
             DisposeRun(run);
             return false;
         }
@@ -333,6 +379,9 @@ public sealed class MarqueeEngine : IDisposable
     /// rather than thrown at a config watcher's thread.
     bool StartRun(EngineSettings settings)
     {
+        // Before the run starts: its render loop may find the screen busy before EngineRun.Start returns, and Auto must
+        // take it then.
+        _handover.SetScreenWanted(_live && !_paused);
         try
         {
             _run = EngineRun.Start(this, settings, _live, _paused, _log, _services);
@@ -340,10 +389,16 @@ public sealed class MarqueeEngine : IDisposable
         catch (Exception ex)
         {
             _log.Error(Strings.StartFailed(ex.Message));
+            _handover.SetScreenWanted(false);
             return false;
         }
 
-        if (_run is null) return false;
+        if (_run is null)
+        {
+            _handover.SetScreenWanted(false);
+            return false;
+        }
+
         _saveTimer ??= new Timer(_ => SaveLimits(), null, SaveLimitsEvery, SaveLimitsEvery);
         return true;
     }

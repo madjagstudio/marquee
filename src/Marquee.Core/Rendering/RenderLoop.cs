@@ -62,6 +62,11 @@ public sealed class RenderLoop : IDisposable
     Thread? _thread;
     CancellationTokenSource? _stop;
 
+    // For the L-Connect handover.
+    int _retryNow; // 1 when RetryNow asked for the next attempt to open the screen to come at once
+    bool _screenAnnounced; // the sending side: ScreenOpenChanged(true) went out, and the screen hasn't closed since
+    bool _busyReported; // the sending side: this busy episode has been reported, and the screen hasn't opened since
+
     public RenderLoop(IDisplayDevice device, SensorStore sensors, ILog log, int? fpsOverride = null, LConnectDetector? lconnect = null)
     {
         _device = device;
@@ -74,6 +79,22 @@ public sealed class RenderLoop : IDisposable
     /// Raised on the sending thread after each frame is pushed (or skipped while the screen is away). The image is
     /// disposed when handlers return, so copy it.
     public event Action<SKImage>? FrameRendered;
+
+    /// The screen came up busy (a DeviceBusyException), with who holds it. Raised on the sending thread once per busy
+    /// episode, not at every retry: an episode ends when a frame gets through, or when the loop stops, so a resumed
+    /// loop that finds the screen still busy reports it again. Handlers must return promptly: the retries wait for them.
+    public event Action<LConnectState>? ScreenBusy;
+
+    /// The screen opened (true, once the first frame after opening it got through, as the "Connected" log line says) or
+    /// closed (false, just before it is let go of). Raised by the thread that opens and closes it: the sending thread,
+    /// or the caller of Step or Dispose. The L-Connect handover waits for the true; handlers must return promptly.
+    public event Action<bool>? ScreenOpenChanged;
+
+    /// Makes the next attempt to open the screen come with the next frame instead of after the rest of ReconnectDelay.
+    /// Thread-safe. The sending thread wakes for every frame anyway, but while the screen is away it only tries to open
+    /// it every ReconnectDelay; the handover calls this once L-Connect's service has stopped, because every second until
+    /// Marquee has the screen is a second longer that L-Connect isn't running the fans and RGB.
+    public void RetryNow() => Volatile.Write(ref _retryNow, 1);
 
     /// `--fps` (or config.yaml's fps): the rate for every theme, or null for each theme's canvas.fps. Thread-safe; it
     /// takes effect from the next frame, so a host switching theme and rate together sets it as it hands over the theme.
@@ -128,6 +149,7 @@ public sealed class RenderLoop : IDisposable
         _thread?.Join();
         _thread = null;
         _clock.Stop();
+        _busyReported = false; // the sending thread closed the screen as it ended
 
         // A frame the sender never took must not go to the screen as the first frame of a restart.
         Interlocked.Exchange(ref _handoff, null)?.Image.Dispose();
@@ -305,7 +327,8 @@ public sealed class RenderLoop : IDisposable
     {
         if (!_deviceOpen)
         {
-            if (time < _nextOpenAttempt) return;
+            var retryNow = Interlocked.Exchange(ref _retryNow, 0) == 1;
+            if (time < _nextOpenAttempt && !retryNow) return;
             try
             {
                 _device.Open();
@@ -335,17 +358,39 @@ public sealed class RenderLoop : IDisposable
             CloseDevice();
             _nextOpenAttempt = time + ReconnectDelay;
             ReportDevice(ex);
+            return;
         }
+
+        // Outside the try, so a handler that throws is never taken for the screen failing.
+        if (!_screenAnnounced) ScreenOpened();
     }
 
     void ReportDevice(Exception ex)
     {
-        var hint = ex is DeviceBusyException ? LConnectDetector.LogHint(_lconnect.Detect()) : "";
+        var busy = ex is DeviceBusyException;
+        var state = busy ? _lconnect.Detect() : LConnectState.NotRunning;
+        var hint = busy ? LConnectDetector.LogHint(state) : "";
         if (hint.Length > 0) hint = " " + hint;
         var message = $"The screen is unavailable: {ex.Message}{hint} Retrying every {ReconnectDelay.TotalSeconds:0} s.";
-        if (message == _lastDeviceError) return;
-        _lastDeviceError = message;
-        _log.Error(message);
+        if (message != _lastDeviceError)
+        {
+            _lastDeviceError = message;
+            _log.Error(message);
+        }
+
+        if (busy && !_busyReported)
+        {
+            _busyReported = true;
+            ScreenBusy?.Invoke(state);
+        }
+    }
+
+    /// The first frame since the screen opened got through.
+    void ScreenOpened()
+    {
+        _busyReported = false;
+        _screenAnnounced = true;
+        ScreenOpenChanged?.Invoke(true);
     }
 
     /// Logs each distinct render error once, not once per frame. Kept apart from device errors so a failing frame is
@@ -361,7 +406,19 @@ public sealed class RenderLoop : IDisposable
     {
         if (!_deviceOpen) return;
         _deviceOpen = false;
-        _device.Close();
+        // Announced before it is let go of, so nothing waiting for the screen takes a closing one for an open one.
+        try
+        {
+            if (_screenAnnounced)
+            {
+                _screenAnnounced = false;
+                ScreenOpenChanged?.Invoke(false);
+            }
+        }
+        finally
+        {
+            _device.Close();
+        }
     }
 
     void Record(TimeSpan time, Frame frame, double pushMs)

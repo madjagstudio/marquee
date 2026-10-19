@@ -196,9 +196,20 @@ sealed class EngineRun : IDisposable
 
     RenderLoop NewLoop(IDisplayDevice device, EngineSettings settings)
     {
-        var loop = new RenderLoop(device, _engine.Sensors, _log, settings.FpsOverride);
+        var loop = new RenderLoop(device, _engine.Sensors, _log, settings.FpsOverride, _engine.LConnect);
         loop.FrameRendered += _engine.OnFrameRendered;
+        // The L-Connect handover. Only a live run hands over: `--frames` renders its frames and exits.
+        loop.ScreenOpenChanged += _engine.OnScreenOpenChanged;
+        if (Live) loop.ScreenBusy += _engine.OnScreenBusy;
         return loop;
+    }
+
+    /// Has the render loop try to open the screen with its next frame (RenderLoop.RetryNow), and the ring sender the
+    /// ring with its next tick, for the L-Connect handover: L-Connect's service has just let go of both. Any thread.
+    public void RetryScreen()
+    {
+        _loop?.RetryNow();
+        _ring?.RetryNow();
     }
 
     ThemeWatcher NewWatcher(EngineSettings settings) =>

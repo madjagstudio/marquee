@@ -17,21 +17,12 @@ First supported device: the 8.8" Universal Screen (USB `1CBE:A088`).
     marquee validate <theme-folder|zip> [--fps 1-60]
     marquee push <key> <value> [--ttl 30s|5m|2h] [--port 1024-65535] [--config <file>]
     marquee setup-claude [--undo] [--dry-run]
+    marquee claim-screen      (in an administrator terminal; see Sharing the screen with L-Connect)
     marquee statusline        (Claude Code runs this; see setup-claude)
 
 Settings not given on the command line come from `%LOCALAPPDATA%\Marquee\config.yaml`, or the file `--config` names
 (see [Settings](#settings)).
 
-Only one program can drive the screen at a time. L-Connect 3's background service holds it, and closing the
-L-Connect 3 window doesn't free it. Ending the service in Task Manager doesn't stick either: a watcher service starts
-it again. To hand the screen to Marquee:
-
-1. Right-click L-Connect's tray icon and choose its stop-service option. Fans keep their last settings meanwhile.
-2. Start Marquee (`marquee run …`) and wait for the picture.
-3. Start the service again from the same tray menu. L-Connect skips the screen and goes on running your fans and RGB.
-
-While Marquee has the screen, L-Connect doesn't control it or its LED ring, and neither shows up in the L-Connect app.
-To give the screen back, quit Marquee, then stop and start the service from the tray again.
 
 `marquee run themes/example-landscape --preview` shows a theme on the screen and in a preview window (press `1` for 1:1).
 Edit `layout.yaml` and save: the screen updates within a second. If the file has a mistake, the last good layout stays
@@ -41,6 +32,42 @@ frames instead of using the screen, and keeps writing them until stopped (Ctrl+C
 
 The command line's and the preview's messages are in resource files that can be translated;
 [docs/localization.md](docs/localization.md) says how to add a language.
+
+### Sharing the screen with L-Connect
+
+Only one program can drive the screen at a time. L-Connect 3's background service holds it, and closing the
+L-Connect 3 window doesn't free it. Marquee can take the screen over while L-Connect keeps running your fans and RGB:
+it stops L-Connect's service watcher and service, opens the screen, and starts them again straight away. L-Connect then
+skips the screen and goes on running everything else. The cost is a pause of a few seconds while the service is
+stopped, in which your fans keep their last speed and L-Connect doesn't adjust them or the RGB.
+
+`lconnect.handover` in [`config.yaml`](#settings) says when Marquee does this:
+
+- `off` (the default): never. The screen stays L-Connect's, and the log says how to hand it over by hand (below).
+- `ask`: when Marquee finds L-Connect using the screen, the tray says so: "L-Connect is using the screen. Marquee can
+  take it over while L-Connect keeps running your fans and RGB." Click the notification to take over. The tray's
+  "Always take over at start" item switches to `auto`.
+- `auto`: at start, and whenever Marquee finds the screen busy again (after you unplug it, say). It tries once each
+  time, and not again within a minute of a try that failed, so Marquee and L-Connect never fight over the screen.
+
+Stopping L-Connect's service takes administrator rights. The tray has them when it starts from its logon task; a
+Marquee without them says once in its log that it can't take the screen over. `marquee claim-screen`, run in an
+administrator terminal, takes the screen once for a `marquee run` in another window: it stops L-Connect, waits until
+that Marquee has the screen (15 seconds at most), and starts L-Connect again. It does nothing when no Marquee is
+running.
+
+To turn the handover off, set `lconnect: { handover: off }`. It changes nothing in L-Connect itself: once Marquee
+quits, stopping and starting the service from L-Connect's tray icon gives the screen back to L-Connect.
+
+By hand, with the handover off:
+
+1. Right-click L-Connect's tray icon and choose its stop-service option. Ending the service in Task Manager doesn't
+   stick: a watcher service starts it again. Fans keep their last settings meanwhile.
+2. Start Marquee (`marquee run …`) and wait for the picture.
+3. Start the service again from the same tray menu. L-Connect skips the screen and goes on running your fans and RGB.
+
+While Marquee has the screen, L-Connect doesn't control it or its LED ring, and neither shows up in the L-Connect app.
+To give the screen back, quit Marquee, then stop and start the service from the tray again.
 
 ## Settings
 
@@ -70,10 +97,11 @@ updates: check                # check | off; default check
 - `ring` is the screen's LED ring: `theme` lets each theme set it, `off` keeps it dark, and a color shows that color
   for every theme. Quote the color: an unquoted `#` starts a comment.
 - `lconnect.handover` is whether Marquee takes the screen from L-Connect: `off` leaves it alone, `ask` offers to in a
-  tray notification, and `auto` takes it without asking.
+  tray notification, and `auto` takes it without asking (see
+  [Sharing the screen with L-Connect](#sharing-the-screen-with-l-connect)).
 - `updates: check` has the tray look for a newer release once a day; `updates: off` turns that off.
 
-`lconnect` and `updates` take effect with the tray, which arrives in milestone 4b.
+`updates` takes effect with the tray, which arrives in milestone 4b.
 
 A command-line flag wins over `config.yaml`, `config.yaml` over the theme, and the theme over the default: `fps` in
 `config.yaml` overrides every theme's `canvas.fps`, and `--fps` overrides both. `--no-http`, `--http-port`,
