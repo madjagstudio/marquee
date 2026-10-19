@@ -27,7 +27,8 @@ static partial class BackgroundParser
     /// A float4x4 has 16 components, the most any SkSL uniform type has.
     const int MaxComponents = 16;
 
-    public static IReadOnlyList<BackgroundLayer> Parse(YamlNode node)
+    /// A bad layer is reported and left out, and the next one is still checked.
+    public static IReadOnlyList<BackgroundLayer> Parse(YamlNode node, ParseErrors errors)
     {
         var nodes = Yaml.List(node, "background");
         if (nodes.Count > MaxLayers)
@@ -38,11 +39,21 @@ static partial class BackgroundParser
         var videos = 0;
         foreach (var layerNode in nodes)
         {
-            var layer = Layer(layerNode);
-            if (layer is ShaderLayer && ++shaders > MaxShaderLayers)
-                throw Yaml.Error(layerNode, $"a background can have at most {MaxShaderLayers} shader layers");
-            if (layer is VideoLayer && ++videos > MaxVideoLayers)
-                throw Yaml.Error(layerNode, $"a background can have at most {MaxVideoLayers} video layers");
+            if (errors.Recover(() => Layer(layerNode)) is not { } layer) continue;
+            var (count, max, kind) = layer switch
+            {
+                ShaderLayer => (++shaders, MaxShaderLayers, "shader"),
+                VideoLayer => (++videos, MaxVideoLayers, "video"),
+                _ => (0, int.MaxValue, ""),
+            };
+            if (count > max)
+            {
+                // Only the first layer over a limit is reported: the ones after it are over for the same reason.
+                if (count == max + 1)
+                    errors.Report(Yaml.Error(layerNode, $"a background can have at most {max} {kind} layers"));
+                continue;
+            }
+
             layers.Add(layer);
         }
 

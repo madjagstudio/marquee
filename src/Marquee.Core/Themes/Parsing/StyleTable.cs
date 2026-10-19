@@ -15,43 +15,60 @@ sealed class StyleTable
     readonly Dictionary<string, Raw> _raw;
     readonly Dictionary<string, StyleSpec> _resolved = new(StringComparer.Ordinal);
 
-    StyleTable(Dictionary<string, Raw> raw) => _raw = raw;
+    /// Only filled when errors are collected: the styles already reported as broken, and whether the whole section
+    /// was. A reference to a broken style, or to any style when the section was, resolves to no style instead of
+    /// reporting that mistake a second time as an unknown style.
+    readonly HashSet<string> _broken = new(StringComparer.Ordinal);
+    readonly bool _sectionBroken;
 
-    public static StyleTable Parse(YamlNode? node)
+    StyleTable(Dictionary<string, Raw> raw, bool sectionBroken = false)
+    {
+        _raw = raw;
+        _sectionBroken = sectionBroken;
+    }
+
+    public static StyleTable Parse(YamlNode? node) => Parse(node, ParseErrors.Throwing);
+
+    /// A bad style is reported and the next one is still read.
+    public static StyleTable Parse(YamlNode? node, ParseErrors errors)
     {
         var raw = new Dictionary<string, Raw>(StringComparer.Ordinal);
+        var table = new StyleTable(raw);
         if (node is not null)
         {
             if (node is not YamlMappingNode map)
-                throw Yaml.Error(node, "styles must be a mapping of style names to styles");
+            {
+                errors.Report(Yaml.Error(node, "styles must be a mapping of style names to styles"));
+                return new StyleTable(raw, sectionBroken: true);
+            }
+
             foreach (var (keyNode, value) in map.Children)
             {
-                var name = Yaml.Text(keyNode, "style name");
-                var (own, extends) = ParseStyle(value, $"style '{name}'");
-                raw[name] = new Raw(own, extends, keyNode);
+                if (errors.Recover(() => Yaml.Text(keyNode, "style name")) is not { } name) continue;
+                if (errors.Recover(() => ParseStyle(value, $"style '{name}'", keyNode)) is { } style)
+                    raw[name] = style;
+                else
+                    table._broken.Add(name);
             }
         }
 
-        var table = new StyleTable(raw);
+        // A style whose extends chain fails is broken too. The error is the same for every style along the chain, so
+        // it is collected once.
         foreach (var name in raw.Keys)
-            table.Named(name, raw[name].Definition, []);
+            if (errors.Recover(() => table.Named(name, raw[name].Definition, [])) is null)
+                table._broken.Add(name);
         return table;
     }
 
-    public StyleSpec Reference(YamlNode node, string what)
-    {
-        if (node is YamlScalarNode)
-            return Named(Yaml.Text(node, what), node, []);
-
-        var (own, extends) = ParseStyle(node, what);
-        return Resolve(new Raw(own, extends, node), []);
-    }
+    public StyleSpec Reference(YamlNode node, string what) =>
+        node is YamlScalarNode ? Named(Yaml.Text(node, what), node, []) : Resolve(ParseStyle(node, what, node), []);
 
     StyleSpec Named(string name, YamlNode usedAt, IReadOnlyList<string> chain)
     {
         if (_resolved.TryGetValue(name, out var resolved)) return resolved;
+        if (_broken.Contains(name)) return StyleSpec.Empty;
         if (!_raw.TryGetValue(name, out var raw))
-            throw Yaml.Error(usedAt, _raw.Count == 0
+            return _sectionBroken ? StyleSpec.Empty : throw Yaml.Error(usedAt, _raw.Count == 0
                 ? $"Unknown style '{name}': no styles are defined"
                 : $"Unknown style '{name}'. Defined styles: {string.Join(", ", _raw.Keys)}");
         if (chain.Contains(name))
@@ -67,7 +84,8 @@ sealed class StyleTable
             ? raw.Own
             : StyleSpec.Merge(Named(Yaml.Text(raw.Extends, "extends"), raw.Extends, chain), raw.Own);
 
-    static (StyleSpec Own, YamlNode? Extends) ParseStyle(YamlNode node, string what)
+    /// `definition` is where an error about the whole style points: its name in `styles:`, or the inline style itself.
+    static Raw ParseStyle(YamlNode node, string what, YamlNode definition)
     {
         var f = Yaml.Map(node, what, Keys);
         var style = new StyleSpec
@@ -89,7 +107,7 @@ sealed class StyleTable
                 ? Yaml.Choice(align, "align", ("left", TextAlign.Left), ("center", TextAlign.Center), ("right", TextAlign.Right))
                 : null,
         };
-        return (style, f.Optional("extends"));
+        return new Raw(style, f.Optional("extends"), definition);
     }
 
     static int Weight(YamlNode node) => Yaml.Text(node, "weight") switch

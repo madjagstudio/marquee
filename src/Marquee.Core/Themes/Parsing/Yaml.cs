@@ -36,7 +36,10 @@ static class Yaml
 
     public static ThemeException Error(YamlNode node, string reason) => new(reason, Line(node));
 
-    public static Fields Map(YamlNode node, string what, params string[] allowed)
+    public static Fields Map(YamlNode node, string what, params string[] allowed) => Map(node, what, ParseErrors.Throwing, allowed);
+
+    /// When `errors` collects, a bad key is reported and skipped, and the other keys are still read.
+    public static Fields Map(YamlNode node, string what, ParseErrors errors, params string[] allowed)
     {
         if (node is not YamlMappingNode map)
             throw Error(node, $"{what} must be a mapping of keys to values");
@@ -44,10 +47,12 @@ static class Yaml
         var values = new Dictionary<string, YamlNode>(StringComparer.Ordinal);
         foreach (var (keyNode, value) in map.Children)
         {
-            var key = keyNode is YamlScalarNode { Value: { } k } ? k : throw Error(keyNode, $"Keys in {what} must be plain names");
-            if (!allowed.Contains(key))
-                throw Error(keyNode, $"Unknown key '{key}' in {what}. Expected one of: {string.Join(", ", allowed)}");
-            values[key] = value;
+            if (keyNode is not YamlScalarNode { Value: { } key })
+                errors.Report(Error(keyNode, $"Keys in {what} must be plain names"));
+            else if (!allowed.Contains(key))
+                errors.Report(Error(keyNode, $"Unknown key '{key}' in {what}. Expected one of: {string.Join(", ", allowed)}"));
+            else
+                values[key] = value;
         }
 
         return new Fields(map, what, values);
