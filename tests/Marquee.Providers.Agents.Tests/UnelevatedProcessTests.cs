@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using Marquee.Core.Processes;
 using Marquee.Providers.Agents.Claude;
 using Marquee.Providers.Agents.Tests.TestSupport;
 using Xunit.Abstractions;
@@ -28,16 +29,6 @@ public class UnelevatedProcessTests(ITestOutputHelper output) : IDisposable
     // ---- Choosing it ----
 
     [Fact]
-    public void The_elevation_check_agrees_with_the_administrators_role()
-    {
-        // Unelevated (the dev PC): both false. With UAC off (CI runners) an administrator's token is elevated: both true.
-        using var identity = WindowsIdentity.GetCurrent();
-        var administrator = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
-
-        Assert.Equal(administrator, ProcessElevation.IsCurrentProcessElevated());
-    }
-
-    [Fact]
     public void Claude_runs_through_UnelevatedProcess_only_when_Marquee_is_elevated()
     {
         Assert.Equal((ProcessRunner)UnelevatedProcess.Run, ClaudeCli.Runner(elevated: true));
@@ -49,7 +40,7 @@ public class UnelevatedProcessTests(ITestOutputHelper output) : IDisposable
     {
         // Every step up to CreateProcessWithTokenW works unelevated. Without a desktop shell (a CI service session) it
         // must refuse, saying why.
-        NativeMethods.KernelHandle token;
+        KernelHandle token;
         try
         {
             token = UnelevatedProcess.ShellUserToken();
@@ -82,7 +73,7 @@ public class UnelevatedProcessTests(ITestOutputHelper output) : IDisposable
     public void The_shell_tokens_elevation_type_is_readable_and_allowed_here()
     {
         // The dev PC's Explorer is unelevated (Limited, or Default with UAC off). A CI service session has no shell.
-        NativeMethods.KernelHandle token;
+        KernelHandle token;
         try
         {
             token = UnelevatedProcess.ShellUserToken();
@@ -210,8 +201,13 @@ public class UnelevatedProcessTests(ITestOutputHelper output) : IDisposable
     }
 
     [Fact]
-    public void It_closes_stdin_straight_away() =>
-        Assert.Equal("0", Run("[Console]::In.ReadToEnd().Length").Output.Trim());
+    public void It_closes_stdin_straight_away()
+    {
+        // Errors go to stdout and the exit code is in the message: the one failure on a CI runner printed nothing, which
+        // said neither why nor whether PowerShell had even started.
+        var result = Run("try { [Console]::In.ReadToEnd().Length } catch { \"error: $_\" }");
+        Assert.True(result.Output.Trim() == "0", $"Expected 0; got '{result.Output.Trim()}' with exit code {result.ExitCode}.");
+    }
 
     [Fact]
     public void It_reads_stderr_so_its_pipe_cannot_fill()

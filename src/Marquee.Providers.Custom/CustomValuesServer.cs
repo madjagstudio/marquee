@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Net;
 using System.Text;
+using Marquee.Core.Config;
 using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
 
@@ -13,14 +15,19 @@ namespace Marquee.Providers.Custom;
 ///   but 127.0.0.1 or localhost.
 /// - A request with an Origin header (sent by browsers) is refused, and JSON content is required, which a page can't
 ///   send cross-site without a preflight this server never approves.
-public sealed class CustomValuesServer(SensorStore store, ILog log, int port = CustomValuesServer.DefaultPort, int maxKeys = 1000) : IDisposable
+public sealed class CustomValuesServer(SensorStore store, ILog log, int port = CustomValuesServer.DefaultPort, int maxKeys = MarqueeConfig.DefaultMaxCustomKeys) : IDisposable
 {
     public const int DefaultPort = 47913;
     public const int MaxBodyBytes = 64 * 1024;
     internal static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(5);
 
+    /// How long a custom key stays after its ttl runs out before it is removed and stops counting against maxKeys.
+    /// Long enough that a script pushing on a schedule which runs a little late keeps its key, short enough that keys
+    /// made per build or per run don't fill the budget for good. Keys pushed without a ttl count until restart.
+    public static readonly TimeSpan StaleGrace = TimeSpan.FromMinutes(10);
+
     readonly HttpListener _listener = new();
-    readonly HashSet<string> _keys = new(StringComparer.Ordinal);
+    readonly object _gate = new(); // one push at a time between counting the keys and writing them
     volatile bool _stopping;
     Task? _loop;
 
@@ -140,15 +147,20 @@ public sealed class CustomValuesServer(SensorStore store, ILog log, int port = C
             return (400, ex.Message);
         }
 
-        lock (_keys)
+        // The limit counts the store's own custom keys rather than a list of this server's: the store outlives a server
+        // that a settings change restarts, and keeps every key pushed to the one before. A key already held can always
+        // be set, even when a lowered limit leaves more keys held than it allows.
+        lock (_gate)
         {
-            var added = update.Values.Select(v => v.Key).Where(k => !_keys.Contains(k)).Distinct().Count();
-            if (_keys.Count + added > maxKeys)
-                return (400, $"Marquee holds at most {maxKeys} different custom keys; restart it to clear them.");
-            foreach (var (key, _) in update.Values) _keys.Add(key);
+            store.RemoveStale(CustomValues.Prefix, StaleGrace);
+            var held = store.Keys(CustomValues.Prefix);
+            var added = update.Values.Select(v => v.Key).Where(k => !held.Contains(k)).Distinct().Count();
+            if (added > 0 && held.Count + added > maxKeys)
+                return (400, string.Create(CultureInfo.InvariantCulture, $"Marquee holds at most {maxKeys} different custom keys. " +
+                    $"A key frees its place once it has been stale for {StaleGrace.TotalMinutes} minutes; restarting Marquee clears them all."));
+            update.Apply(store);
         }
 
-        update.Apply(store);
         return (204, null);
     }
 

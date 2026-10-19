@@ -53,6 +53,49 @@ public class BackgroundParsingTests
     }
 
     [Fact]
+    public void Video_layer_defaults_match_images()
+    {
+        var layer = Layers("  - video: clips/rain.mp4\n")[0];
+
+        Assert.Equal(new VideoLayer("clips/rain.mp4", ImageFit.Cover, 1f, SKBlendMode.SrcOver), layer);
+    }
+
+    [Fact]
+    public void Video_layer_options()
+    {
+        var layer = Layers("""
+              - video: clips/rain.mp4
+                fit: stretch
+                opacity: 0.8
+                blend: screen
+            """)[0];
+
+        Assert.Equal(new VideoLayer("clips/rain.mp4", ImageFit.Stretch, 0.8f, SKBlendMode.Screen), layer);
+    }
+
+    [Theory]
+    [InlineData("a.mp4")]
+    [InlineData("a.M4V")]
+    [InlineData("a.mov")]
+    [InlineData("a.WMV")]
+    [InlineData("loops/a.gif")]
+    [InlineData("a.Webp")]
+    public void Video_extensions_are_case_insensitive(string path) =>
+        Assert.Equal(path, Assert.IsType<VideoLayer>(Layers($"  - video: {path}\n")[0]).Path);
+
+    [Fact]
+    public void At_most_2_video_layers()
+    {
+        // Each video layer decodes on its own thread and holds frames in memory; other layers don't count.
+        Assert.Equal(2, Layers("  - video: a.mp4\n  - fill: \"#000\"\n  - video: b.gif\n").Count(l => l is VideoLayer));
+
+        var ex = LayerError("  - video: a.mp4\n  - fill: \"#000\"\n  - video: b.gif\n  - video: c.webp\n");
+
+        Assert.Equal("a background can have at most 2 video layers", ex.Reason);
+        Assert.Equal(6, ex.Line); // the third video layer
+    }
+
+    [Fact]
     public void Linear_gradient_with_angle()
     {
         var fill = (FillLayer)Layers("""
@@ -75,14 +118,19 @@ public class BackgroundParsingTests
     }
 
     [Theory]
-    [InlineData("  - video: loop.mp4", 3, "video background layers arrive in a later version of Marquee; use fill, image or shader")]
     [InlineData("  - opacity: 1", 3, "background layer needs one of: fill, image, shader, video")]
     [InlineData("  - fill: \"#000\"\n    image: a.png", 3, "background layer can only have one of: fill, image")]
     [InlineData("  - fill: #000000", 3, "fill is empty. Quote colors, e.g. \"#FF0000\": an unquoted # starts a YAML comment")]
     [InlineData("  - fill: red", 3, "fill: 'red' is not a color. Use \"#RRGGBB\", \"#RRGGBBAA\" or \"transparent\"")]
     [InlineData("  - fill: \"#000\"\n    opacity: 2", 4, "background layer opacity must be between 0 and 1")]
     [InlineData("  - fill: \"#000\"\n    blend: burn", 4, "blend must be one of: normal, multiply, screen, overlay, darken, lighten, add; not 'burn'")]
-    [InlineData("  - fill: \"#000\"\n    fit: cover", 4, "fit only applies to image layers")]
+    [InlineData("  - fill: \"#000\"\n    fit: cover", 4, "fit only applies to image and video layers")]
+    [InlineData("  - video: a.mp4\n    uniforms: { a: 1 }", 4, "uniforms only applies to shader layers")]
+    [InlineData("  - video: a.mp4\n    scale: 0.5", 4, "scale only applies to shader layers")]
+    [InlineData("  - video: a.mp4\n    fit: tile", 4, "fit must be one of: cover, contain, stretch, none; not 'tile'")]
+    [InlineData("  - video: clips/rain.avi", 3, "video must be a .mp4, .m4v, .mov, .wmv, .gif or .webp file, not 'clips/rain.avi'")]
+    [InlineData("  - video: clips/rain", 3, "video must be a .mp4, .m4v, .mov, .wmv, .gif or .webp file, not 'clips/rain'")]
+    [InlineData("  - video: [a.mp4]", 3, "video must be a single value, not a list or mapping")]
     [InlineData("  - image: a.png\n    fit: tile", 4, "fit must be one of: cover, contain, stretch, none; not 'tile'")]
     [InlineData("  - fill: { linear: [\"#000\"] }", 3, "fill.linear needs at least two colors")]
     [InlineData("  - fill: { radial: [\"#000\", \"#fff\"], angle: 45 }", 3, "fill: angle only applies to linear gradients")]

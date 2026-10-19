@@ -13,7 +13,7 @@ public class SampleThemeTests
 
     /// Without the shader cost check: whether a shader fits the frame budget depends on the machine (a slower PC skips
     /// the aurora by design), and ShaderCostTests covers the check itself.
-    static LoadedTheme Load(string name) => ThemeLoader.Load(ThemeFolder(name), null, TestProbes.Free);
+    static LoadedTheme Load(string name) => ThemeLoader.Load(ThemeFolder(name), null, TestProbes.Free, TestProbes.Free);
 
     static SensorSnapshot Typical() => TypicalStore().Snapshot();
 

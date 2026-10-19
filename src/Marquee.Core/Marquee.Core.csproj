@@ -1,4 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- The video decoder copies each frame straight from Media Foundation's buffer into its bitmap. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SkiaSharp" Version="3.116.1" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
@@ -10,5 +14,10 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Marquee.Core.Tests" />
+    <!-- ChildProcessJob.Assigned and Contains, which the tests of the providers that start children use. -->
+    <InternalsVisibleTo Include="Marquee.Providers.Agents.Tests" />
+    <InternalsVisibleTo Include="Marquee.Providers.Fps.Tests" />
+    <!-- marquee validate's tests swap the machine-dependent shader and video cost probes for fixed ones. -->
+    <InternalsVisibleTo Include="Marquee.Cli.Tests" />
   </ItemGroup>
 </Project>

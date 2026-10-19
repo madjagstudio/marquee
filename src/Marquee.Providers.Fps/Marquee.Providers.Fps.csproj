@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Downloads, checks and bundles PresentMon: see the file. -->
+  <Import Project="PresentMon.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\Marquee.Core\Marquee.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marquee.Providers.Fps.Tests" />
+  </ItemGroup>
+</Project>

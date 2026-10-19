@@ -46,7 +46,7 @@ public class ShaderCostTests
     {
         using var folder = Theme("  - fill: \"#203040\"\n  - shader: shaders/slow.sksl", 30, ("shaders/slow.sksl", Cheap));
         var probe = new FakeProbe(1250);
-        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure);
+        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure, TestProbes.Free);
         using var frame = Frames.Render(theme, TestSensors.Of());
 
         Assert.Equal(["Shader 'shaders/slow.sksl' would take about 1,250 ms to render a frame, over the 33 ms budget at 30 fps " +
@@ -60,7 +60,7 @@ public class ShaderCostTests
     {
         using var folder = Theme("  - shader: s.sksl", 30, ("s.sksl", Cheap));
         var probe = new FakeProbe(30);
-        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure);
+        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure, TestProbes.Free);
 
         Assert.Empty(theme.Warnings);
         Assert.NotNull(theme.Assets.Shader((ShaderLayer)theme.Spec.Background[0]));
@@ -71,9 +71,9 @@ public class ShaderCostTests
     {
         using var folder = Theme("  - shader: s.sksl", 30, ("s.sksl", Cheap));
 
-        using (var at60 = ThemeLoader.Load(folder.Folder, 60, new FakeProbe(20).Measure))
+        using (var at60 = ThemeLoader.Load(folder.Folder, 60, new FakeProbe(20).Measure, TestProbes.Free))
             Assert.Contains("over the 17 ms budget at 60 fps", Assert.Single(at60.Warnings));
-        using (var at10 = ThemeLoader.Load(folder.Folder, 10, new FakeProbe(90).Measure))
+        using (var at10 = ThemeLoader.Load(folder.Folder, 10, new FakeProbe(90).Measure, TestProbes.Free))
             Assert.Empty(at10.Warnings);
     }
 
@@ -83,7 +83,7 @@ public class ShaderCostTests
         // One test frame can be slow for reasons that have nothing to do with the shader (another process, a GC).
         using var folder = Theme("  - shader: s.sksl", 30, ("s.sksl", Cheap));
         var probe = new FakeProbe(500, 5);
-        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure);
+        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure, TestProbes.Free);
 
         Assert.Empty(theme.Warnings);
         Assert.Equal(2, probe.Calls.Count);
@@ -94,7 +94,7 @@ public class ShaderCostTests
     {
         using var folder = Theme("  - shader: a.sksl\n    scale: 0.5\n  - shader: b.sksl", 30, ("a.sksl", Cheap), ("b.sksl", Cheap));
         var probe = new FakeProbe(1);
-        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure);
+        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure, TestProbes.Free);
 
         Assert.Equal(["a.sksl", "b.sksl"], probe.Calls.Select(c => c.Layer.Path));
         Assert.All(probe.Calls, c => Assert.Equal(new SKSizeI(1920, 480), c.Canvas));
@@ -105,7 +105,7 @@ public class ShaderCostTests
     {
         using var folder = Theme("  - shader: broken.sksl", 30, ("broken.sksl", "half4 main(float2 p) { return glow; }"));
         var probe = new FakeProbe(1);
-        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure);
+        using var theme = ThemeLoader.Load(folder.Folder, null, probe.Measure, TestProbes.Free);
 
         Assert.Empty(probe.Calls);
     }

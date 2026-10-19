@@ -5,3 +5,4 @@ obj/
 out/
 .superpowers/
 *.received.png
+.cache/

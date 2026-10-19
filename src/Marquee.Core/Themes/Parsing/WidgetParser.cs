@@ -20,32 +20,54 @@ static class WidgetParser
     /// Deepest nesting of groups.
     public const int MaxGroupDepth = 16;
 
-    /// How many widgets the layout has so far, across all levels.
-    sealed class Counter
+    /// What every widget in one layout shares, including how many widgets it has so far, across all levels.
+    sealed class Context(StyleTable styles, ParseErrors errors)
     {
+        public StyleTable Styles { get; } = styles;
+        public ParseErrors Errors { get; } = errors;
         public int Widgets;
+
+        /// Past MaxWidgets the rest of the layout isn't checked, so an aliased one can't report millions of problems.
+        public bool OverLimit => Widgets > MaxWidgets;
     }
 
-    public static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what) =>
-        ParseList(node, styles, what, new Counter(), groupDepth: 0);
+    public static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what, ParseErrors errors) =>
+        ParseList(node, what, new Context(styles, errors), groupDepth: 0);
 
-    static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what, Counter counter, int groupDepth) =>
-        Yaml.List(node, what).Select(w => Parse(w, styles, counter, groupDepth)).ToList();
+    /// A bad widget is reported and left out, and its siblings are still checked.
+    static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, string what, Context context, int groupDepth)
+    {
+        var widgets = new List<WidgetSpec>();
+        foreach (var widgetNode in Yaml.List(node, what))
+        {
+            if (context.OverLimit) break;
+            if (context.Errors.Recover(() => Parse(widgetNode, context, groupDepth)) is { } widget)
+                widgets.Add(widget);
+        }
+
+        return widgets;
+    }
 
     /// `groupDepth` is how many groups this widget is inside.
-    static WidgetSpec Parse(YamlNode node, StyleTable styles, Counter counter, int groupDepth)
+    static WidgetSpec Parse(YamlNode node, Context context, int groupDepth)
     {
-        if (++counter.Widgets > MaxWidgets)
+        if (++context.Widgets > MaxWidgets)
             throw Yaml.Error(node, $"The layout has more than {MaxWidgets} widgets");
 
         if (node is not YamlMappingNode map)
             throw Yaml.Error(node, "Each widget must be a mapping with a type, e.g. - type: value");
 
-        var typeNode = map.Children.FirstOrDefault(kv => kv.Key is YamlScalarNode { Value: "type" }).Value
-            ?? throw Yaml.Error(node, "widget is missing 'type'");
+        var typeNode = Find(map, "type") ?? throw Yaml.Error(node, "widget is missing 'type'");
         var type = Yaml.Choice(typeNode, "widget type", Types);
         if (type == "group" && groupDepth + 1 > MaxGroupDepth)
             throw Yaml.Error(node, $"Groups are nested more than {MaxGroupDepth} levels deep");
+
+        // When collecting, a group's children are checked before its own keys, so a mistake in the group doesn't hide
+        // theirs. Throwing keeps the original order, which decides the error `marquee run` reports.
+        var children = type == "group" && context.Errors.Collects && Find(map, "children") is { } c
+            ? ParseList(c, "children", context, groupDepth + 1)
+            : null;
+
         string[] extra = type switch
         {
             "text" => ["text"],
@@ -75,18 +97,21 @@ static class WidgetParser
             "graph" => Graph(f, f.Required("source")),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
-            _ => new GroupWidget(ParseList(f.Required("children"), styles, "children", counter, groupDepth + 1)),
+            _ => new GroupWidget(children ?? ParseList(f.Required("children"), "children", context, groupDepth + 1)),
         };
 
         return widget with
         {
             Bounds = SKRect.Create(at.X, at.Y, size.X, size.Y),
             Source = source,
-            Style = f.Optional("style") is { } style ? styles.Reference(style, "style") : StyleSpec.Empty,
-            When = f.Optional("when") is { } when ? Rules(when, styles, source is not null) : [],
+            Style = f.Optional("style") is { } style ? context.Styles.Reference(style, "style") : StyleSpec.Empty,
+            When = f.Optional("when") is { } when ? Rules(when, context.Styles, source is not null) : [],
             SmoothMs = f.Optional("smooth") is { } smooth ? Yaml.Float(smooth, "smooth", 0, 10_000) : 0,
         };
     }
+
+    static YamlNode? Find(YamlMappingNode map, string key) =>
+        map.Children.FirstOrDefault(kv => kv.Key is YamlScalarNode { Value: { } k } && k == key).Value;
 
     static Expression Source(YamlNode node)
     {

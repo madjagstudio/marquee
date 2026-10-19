@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using Marquee.Core.Processes;
 
 namespace Marquee.Providers.Agents.Claude;
 
@@ -153,15 +154,11 @@ public static class ClaudeCli
             var stdout = process.StandardOutput.BaseStream;
             var stderr = process.StandardError.BaseStream;
             var output = new CappedBuffer(MaxOutputBytes);
-            var reading = Task.Run(() => output.ReadAll(stdout));
-            var errors = Task.Run(() => new CappedBuffer(0).ReadAll(stderr));
+            var reading = PipeWork.Start(() => output.ReadAll(stdout));
+            var errors = PipeWork.Start(() => new CappedBuffer(0).ReadAll(stderr));
 
-            using var limit = new CancellationTokenSource(timeout);
-            try
-            {
-                process.WaitForExitAsync(limit.Token).GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
+            // A blocking wait: WaitForExitAsync completes on the thread pool, so on a busy PC it could miss the exit.
+            if (!process.WaitForExit(timeout))
             {
                 Kill(process);
                 Task.WaitAll([reading, errors], DrainTimeout);

@@ -15,12 +15,20 @@ static partial class BackgroundParser
     public const int MaxLayers = 16;
     public const int MaxShaderLayers = 4;
 
+    /// Each video layer decodes on its own background thread and holds several decoded frames in memory, so two clips
+    /// are the most a theme may play at once.
+    public const int MaxVideoLayers = 2;
+
+    /// Media Foundation decodes the first four; Skia decodes animated GIF and WebP.
+    public static readonly IReadOnlyList<string> VideoExtensions = [".mp4", ".m4v", ".mov", ".wmv", ".gif", ".webp"];
+
     const int MaxUniforms = 32;
 
     /// A float4x4 has 16 components, the most any SkSL uniform type has.
     const int MaxComponents = 16;
 
-    public static IReadOnlyList<BackgroundLayer> Parse(YamlNode node)
+    /// A bad layer is reported and left out, and the next one is still checked.
+    public static IReadOnlyList<BackgroundLayer> Parse(YamlNode node, ParseErrors errors)
     {
         var nodes = Yaml.List(node, "background");
         if (nodes.Count > MaxLayers)
@@ -28,11 +36,24 @@ static partial class BackgroundParser
 
         var layers = new List<BackgroundLayer>();
         var shaders = 0;
+        var videos = 0;
         foreach (var layerNode in nodes)
         {
-            var layer = Layer(layerNode);
-            if (layer is ShaderLayer && ++shaders > MaxShaderLayers)
-                throw Yaml.Error(layerNode, $"a background can have at most {MaxShaderLayers} shader layers");
+            if (errors.Recover(() => Layer(layerNode)) is not { } layer) continue;
+            var (count, max, kind) = layer switch
+            {
+                ShaderLayer => (++shaders, MaxShaderLayers, "shader"),
+                VideoLayer => (++videos, MaxVideoLayers, "video"),
+                _ => (0, int.MaxValue, ""),
+            };
+            if (count > max)
+            {
+                // Only the first layer over a limit is reported: the ones after it are over for the same reason.
+                if (count == max + 1)
+                    errors.Report(Yaml.Error(layerNode, $"a background can have at most {max} {kind} layers"));
+                continue;
+            }
+
             layers.Add(layer);
         }
 
@@ -47,28 +68,37 @@ static partial class BackgroundParser
         const string what = "background layer";
         var fields = Yaml.Map(node, what, "fill", "image", "shader", "video", "fit", "uniforms", "scale", "opacity", "blend");
         var kind = fields.OneOf("fill", "image", "shader", "video");
-        if (kind is "video")
-            throw Yaml.Error(fields.Required(kind), "video background layers arrive in a later version of Marquee; use fill, image or shader");
 
-        foreach (var (key, only) in new[] { ("fit", "image"), ("uniforms", "shader"), ("scale", "shader") })
-            if (kind != only && fields.Optional(key) is { } misplaced)
-                throw Yaml.Error(misplaced, $"{key} only applies to {only} layers");
+        foreach (var (key, kinds) in new[] { ("fit", new[] { "image", "video" }), ("uniforms", ["shader"]), ("scale", ["shader"]) })
+            if (!kinds.Contains(kind) && fields.Optional(key) is { } misplaced)
+                throw Yaml.Error(misplaced, $"{key} only applies to {string.Join(" and ", kinds)} layers");
 
         var opacity = fields.Optional("opacity") is { } o ? Yaml.Float(o, $"{what} opacity", 0, 1) : 1f;
         var blend = fields.Optional("blend") is { } b ? Blend(b) : SKBlendMode.SrcOver;
+        var fit = fields.Optional("fit") is { } f ? Fit(f, "fit") : ImageFit.Cover;
 
         switch (kind)
         {
             case "fill":
                 return new FillLayer(PaintParser.Paint(fields.Required("fill"), "fill"), opacity, blend);
             case "image":
-                var fit = fields.Optional("fit") is { } f ? Fit(f, "fit") : ImageFit.Cover;
                 return new ImageLayer(Yaml.Text(fields.Required("image"), "image"), fit, opacity, blend);
+            case "video":
+                return new VideoLayer(VideoPath(fields.Required("video")), fit, opacity, blend);
             default:
                 var uniforms = fields.Optional("uniforms") is { } u ? Uniforms(u) : [];
                 var scale = fields.Optional("scale") is { } s ? Yaml.Float(s, "scale", 0.1, 1) : 1f;
                 return new ShaderLayer(Yaml.Text(fields.Required("shader"), "shader"), uniforms, scale, opacity, blend);
         }
+    }
+
+    /// The extension picks the decoder, so a clip no decoder reads is caught here, with its line, rather than at load.
+    static string VideoPath(YamlNode node)
+    {
+        var path = Yaml.Text(node, "video");
+        if (!VideoExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
+            throw Yaml.Error(node, $"video must be a {string.Join(", ", VideoExtensions.SkipLast(1))} or {VideoExtensions[^1]} file, not '{path}'");
+        return path;
     }
 
     static IReadOnlyList<ShaderUniform> Uniforms(YamlNode node)

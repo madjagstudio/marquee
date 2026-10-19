@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Resources are named from the root namespace and their folder: Resources\Strings.resx becomes
+         Marquee.Host.Resources.Strings, the name Strings.cs looks up, and Strings.de.resx its German satellite, the same
+         way the CLI names its own. -->
+    <RootNamespace>Marquee.Host</RootNamespace>
+    <EmbeddedResourceUseDependentUponConvention>false</EmbeddedResourceUseDependentUponConvention>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+  <!-- The engine has no UI: no preview and no WinForms here, so the windowless tray app can host it as it is. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Marquee.Core\Marquee.Core.csproj" />
+    <ProjectReference Include="..\Marquee.Providers.Hardware\Marquee.Providers.Hardware.csproj" />
+    <ProjectReference Include="..\Marquee.Providers.Agents\Marquee.Providers.Agents.csproj" />
+    <ProjectReference Include="..\Marquee.Providers.Custom\Marquee.Providers.Custom.csproj" />
+    <ProjectReference Include="..\Marquee.Providers.Fps\Marquee.Providers.Fps.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marquee.Host.Tests" />
+  </ItemGroup>
+</Project>

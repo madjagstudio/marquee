@@ -6,10 +6,12 @@ using YamlDotNet.RepresentationModel;
 namespace Marquee.Core.Themes.Parsing;
 
 /// Reading helpers over YamlDotNet's node model. Every failure is a ThemeException carrying the line of the node at fault.
-/// `what` names the thing being read in messages, e.g. "canvas.fps".
+/// `what` names the thing being read in messages, e.g. "canvas.fps". config.yaml reuses them and turns the
+/// ThemeException's reason and line into its own exception.
 static class Yaml
 {
-    public static YamlNode? Load(string text)
+    /// `fileName` is only for the one syntax error YamlDotNet reports without a line, which has no "file line N:" prefix.
+    public static YamlNode? Load(string text, string fileName = ThemeLoader.LayoutFileName)
     {
         var stream = new YamlStream();
         try
@@ -22,8 +24,9 @@ static class Yaml
         }
         catch (InvalidOperationException ex)
         {
-            // YamlDotNet throws this, without a position, for some malformed flow collections such as an unclosed [.
-            throw new ThemeException($"YAML syntax error in layout.yaml: {ex.Message} Check for an unclosed [ or {{.");
+            // YamlDotNet throws this, without a position, for some malformed flow collections, such as an unclosed [
+            // followed by another line.
+            throw new ThemeException($"YAML syntax error in {fileName}: {ex.Message} Check for an unclosed [ or {{.");
         }
 
         return stream.Documents.Count == 0 ? null : stream.Documents[0].RootNode;
@@ -33,7 +36,10 @@ static class Yaml
 
     public static ThemeException Error(YamlNode node, string reason) => new(reason, Line(node));
 
-    public static Fields Map(YamlNode node, string what, params string[] allowed)
+    public static Fields Map(YamlNode node, string what, params string[] allowed) => Map(node, what, ParseErrors.Throwing, allowed);
+
+    /// When `errors` collects, a bad key is reported and skipped, and the other keys are still read.
+    public static Fields Map(YamlNode node, string what, ParseErrors errors, params string[] allowed)
     {
         if (node is not YamlMappingNode map)
             throw Error(node, $"{what} must be a mapping of keys to values");
@@ -41,10 +47,12 @@ static class Yaml
         var values = new Dictionary<string, YamlNode>(StringComparer.Ordinal);
         foreach (var (keyNode, value) in map.Children)
         {
-            var key = keyNode is YamlScalarNode { Value: { } k } ? k : throw Error(keyNode, $"Keys in {what} must be plain names");
-            if (!allowed.Contains(key))
-                throw Error(keyNode, $"Unknown key '{key}' in {what}. Expected one of: {string.Join(", ", allowed)}");
-            values[key] = value;
+            if (keyNode is not YamlScalarNode { Value: { } key })
+                errors.Report(Error(keyNode, $"Keys in {what} must be plain names"));
+            else if (!allowed.Contains(key))
+                errors.Report(Error(keyNode, $"Unknown key '{key}' in {what}. Expected one of: {string.Join(", ", allowed)}"));
+            else
+                values[key] = value;
         }
 
         return new Fields(map, what, values);

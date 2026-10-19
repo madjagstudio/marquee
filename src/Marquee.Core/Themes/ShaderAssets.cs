@@ -11,15 +11,15 @@ static class ShaderAssets
 
     /// The compiled shader, or null when the layer is skipped: it can't be read or compiled, Marquee can't feed it, or
     /// `probe` says a frame of it would take longer than a frame at `fps` allows on `canvas`.
-    public static SKRuntimeEffect? Load(string folder, ShaderLayer layer, List<string> warnings, SKSizeI canvas, int fps, ShaderProbe probe)
+    public static SKRuntimeEffect? Load(string folder, ShaderLayer layer, List<ThemeWarning> warnings, SKSizeI canvas, int fps, ShaderProbe probe)
     {
         var path = layer.Path;
         if (!ThemeAssets.TryInsideFolder(folder, path, out var full))
-            return Skip(warnings, $"Shader '{path}' is not a valid path");
+            return Skip(warnings, path, $"Shader '{path}' is not a valid path");
         if (full is null)
-            return Skip(warnings, $"Shader '{path}' is outside the theme folder");
+            return Skip(warnings, path, $"Shader '{path}' is outside the theme folder");
         if (!File.Exists(full))
-            return Skip(warnings, $"Shader '{path}' was not found");
+            return Skip(warnings, path, $"Shader '{path}' was not found");
 
         // One open, so a file replaced after the Exists check can't throw out of the load.
         string source;
@@ -27,29 +27,29 @@ static class ShaderAssets
         {
             using var stream = File.OpenRead(full);
             if (stream.Length > MaxShaderBytes)
-                return Skip(warnings, $"Shader '{path}' is larger than {MaxShaderBytes / 1024} KB");
+                return Skip(warnings, path, $"Shader '{path}' is larger than {MaxShaderBytes / 1024} KB");
             using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
             source = reader.ReadToEnd();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return Skip(warnings, $"Shader '{path}' could not be read");
+            return Skip(warnings, path, $"Shader '{path}' could not be read");
         }
 
         var effect = SKRuntimeEffect.CreateShader(source, out var errors);
         if (effect is null)
-            return Skip(warnings, $"Shader '{path}' doesn't compile: {CompileErrors(errors)}");
+            return Skip(warnings, path, $"Shader '{path}' doesn't compile: {CompileErrors(errors)}");
 
         if (Problem(effect, layer, warnings) is { } problem)
         {
             effect.Dispose();
-            return Skip(warnings, $"Shader '{path}' {problem}");
+            return Skip(warnings, path, $"Shader '{path}' {problem}");
         }
 
         if (TooSlow(effect, layer, canvas, fps, probe) is { } slow)
         {
             effect.Dispose();
-            return Skip(warnings, $"Shader '{path}' {slow}");
+            return Skip(warnings, path, $"Shader '{path}' {slow}");
         }
 
         return effect;
@@ -72,7 +72,7 @@ static class ShaderAssets
     static TimeSpan Min(TimeSpan a, TimeSpan b) => a < b ? a : b;
 
     /// Why the layer can't run, or null. Bindings the shader doesn't use, and uniforms nothing binds, are warnings only.
-    static string? Problem(SKRuntimeEffect effect, ShaderLayer layer, List<string> warnings)
+    static string? Problem(SKRuntimeEffect effect, ShaderLayer layer, List<ThemeWarning> warnings)
     {
         if (effect.Children.Count > 0)
             return $"declares child shaders ({string.Join(", ", effect.Children)}), which Marquee doesn't provide";
@@ -86,7 +86,7 @@ static class ShaderAssets
         {
             if (!uniforms.Contains(binding.Name))
             {
-                warnings.Add($"Shader '{layer.Path}' has no uniform '{binding.Name}'; that binding is ignored.");
+                warnings.Add(new($"Shader '{layer.Path}' has no uniform '{binding.Name}'; that binding is ignored.", layer.Path, Skipped: false));
                 continue;
             }
 
@@ -100,7 +100,7 @@ static class ShaderAssets
         }
 
         foreach (var name in effect.Uniforms.Except(Parsing.BackgroundParser.BuiltInUniforms).Except(layer.Uniforms.Select(u => u.Name)))
-            warnings.Add($"Shader '{layer.Path}' uniform '{name}' isn't bound in layout.yaml, so it stays 0.");
+            warnings.Add(new($"Shader '{layer.Path}' uniform '{name}' isn't bound in layout.yaml, so it stays 0.", layer.Path, Skipped: false));
 
         return null;
     }
@@ -146,9 +146,9 @@ static class ShaderAssets
         return text.Length > MaxErrorChars ? text[..MaxErrorChars] + "…" : text;
     }
 
-    static SKRuntimeEffect? Skip(List<string> warnings, string problem)
+    static SKRuntimeEffect? Skip(List<ThemeWarning> warnings, string path, string problem)
     {
-        warnings.Add($"{problem}; the layer is skipped.");
+        warnings.Add(new($"{problem}; the layer is skipped.", path, Skipped: true));
         return null;
     }
 }

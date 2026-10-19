@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The engine's messages in English: what `marquee run` and the tray log while they run. To translate, copy this file
+     to Strings.<culture>.resx (Strings.de.resx, say) and translate the values: see docs/localization.md. Keep every
+     {0}-style placeholder; the comments say what each holds. Command names, option names, config.yaml keys and file
+     names stay as they are. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ClaudeSessionsSource" xml:space="preserve">
+    <value>Claude Code sessions</value>
+    <comment>A sensor source, as in "Claude Code sessions is unavailable: …".</comment>
+  </data>
+  <data name="ClaudeLimitsSource" xml:space="preserve">
+    <value>Claude Code limits</value>
+    <comment>A sensor source.</comment>
+  </data>
+  <data name="CodexLimitsSource" xml:space="preserve">
+    <value>Codex limits</value>
+    <comment>A sensor source.</comment>
+  </data>
+  <data name="CodexSessionsSource" xml:space="preserve">
+    <value>Codex sessions</value>
+    <comment>A sensor source.</comment>
+  </data>
+  <data name="SourceUnavailable" xml:space="preserve">
+    <value>{0} is unavailable: {1}</value>
+    <comment>{0} is a sensor source, {1} the reason.</comment>
+  </data>
+  <data name="FpsNeedsAdministrator" xml:space="preserve">
+    <value>FPS is off: PresentMon needs Marquee to run as administrator. Set `providers: { fps: off }` in config.yaml to stop this message.</value>
+    <comment>Logged at start when the FPS provider is on but Marquee isn't elevated. PresentMon is a program's name; `providers: { fps: off }` and config.yaml stay as they are.</comment>
+  </data>
+  <data name="NoTheme" xml:space="preserve">
+    <value>No theme to show. Pass a theme folder to `marquee run`, or set theme: in config.yaml.</value>
+    <comment>Neither the command line nor config.yaml names a theme. "theme:" is the config.yaml key and stays as it is.</comment>
+  </data>
+  <data name="ThemeFolderNotFound" xml:space="preserve">
+    <value>There is no theme folder at {0}.</value>
+    <comment>{0} is the full path that was given.</comment>
+  </data>
+  <data name="ThemeNotFound" xml:space="preserve">
+    <value>Theme '{0}' was not found. Marquee looked for a folder of that name in: {1}</value>
+    <comment>{0} is the theme's name as given, {1} the folders searched, separated by semicolons.</comment>
+  </data>
+  <data name="ConfigUnreadable" xml:space="preserve">
+    <value>Could not read {0} ({1}); using the default settings.</value>
+    <comment>{0} is the path of config.yaml, {1} the reason.</comment>
+  </data>
+  <data name="ConfigInvalidUsingDefaults" xml:space="preserve">
+    <value>{0} (Marquee uses the default settings until the file is fixed)</value>
+    <comment>{0} is the error in config.yaml, starting with its line number.</comment>
+  </data>
+  <data name="CouldNotReadConfig" xml:space="preserve">
+    <value>Could not read config.yaml: {0}</value>
+    <comment>{0} is the reason.</comment>
+  </data>
+  <data name="CouldNotApplyConfig" xml:space="preserve">
+    <value>Could not apply config.yaml: {0}</value>
+    <comment>{0} is the reason.</comment>
+  </data>
+  <data name="NoScreenFound" xml:space="preserve">
+    <value>No supported screen found. Run `marquee devices` to check.</value>
+  </data>
+  <data name="ShowingTheme" xml:space="preserve">
+    <value>Showing theme '{0}'.</value>
+    <comment>{0} is the theme's name.</comment>
+  </data>
+  <data name="LastGoodLayoutStays" xml:space="preserve">
+    <value>{0} (the last good layout stays on screen until the file is fixed)</value>
+    <comment>{0} is the error in the theme's layout.</comment>
+  </data>
+  <data name="SettingsChanged" xml:space="preserve">
+    <value>The settings changed; applying the new ones.</value>
+  </data>
+  <data name="PreviousSettingsKept" xml:space="preserve">
+    <value>The new settings could not be applied, so Marquee kept the previous ones.</value>
+    <comment>Follows the reason the new settings failed, such as a theme error or no screen.</comment>
+  </data>
+  <data name="WaitingForTheme" xml:space="preserve">
+    <value>Once theme '{0}' is fixed and saved, Marquee switches to it with the new settings.</value>
+    <comment>Follows PreviousSettingsKept when the new settings name a theme that didn't load. {0} is the theme's name.</comment>
+  </data>
+  <data name="ThemeStillFails" xml:space="preserve">
+    <value>{0} (Marquee switches to this theme once it loads)</value>
+    <comment>{0} is the error in a theme that new settings are waiting for (see WaitingForTheme), after it was saved again.</comment>
+  </data>
+  <data name="SavingLimitsFailed" xml:space="preserve">
+    <value>Saving the Claude Code limits failed: {0}</value>
+    <comment>{0} is the reason.</comment>
+  </data>
+  <data name="StartFailed" xml:space="preserve">
+    <value>Marquee could not start: {0}</value>
+    <comment>{0} is the reason, an unexpected error.</comment>
+  </data>
+  <data name="SettingsChangeFailed" xml:space="preserve">
+    <value>Applying the new settings failed ({0}), so Marquee stopped. It starts again at the next settings change.</value>
+    <comment>{0} is the reason, an unexpected error part-way through a config.yaml change.</comment>
+  </data>
+  <data name="HandlerFailed" xml:space="preserve">
+    <value>A handler of the engine's events failed: {0}</value>
+    <comment>{0} is the reason. A handler is code in the tray or `marquee run` that reacts to a theme loading or failing.</comment>
+  </data>
+</root>

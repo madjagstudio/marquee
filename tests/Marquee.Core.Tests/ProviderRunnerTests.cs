@@ -97,6 +97,27 @@ public class ProviderRunnerTests
     }
 
     [Fact]
+    public void Stop_ends_and_disposes_one_provider_and_leaves_the_others_running()
+    {
+        var stopped = new FakeProvider("stopped", (_, _) => { });
+        var kept = new FakeProvider("kept", (_, _) => { });
+        using var runner = new ProviderRunner(new SensorStore(), new ListLog());
+        runner.Start(stopped);
+        runner.Start(kept);
+        Assert.True(Wait.Until(() => stopped.Polls >= 1 && kept.Polls >= 1));
+
+        runner.Stop(stopped);
+        var polls = stopped.Polls;
+        var keptPolls = kept.Polls;
+
+        Assert.True(stopped.Disposed);
+        Assert.True(Wait.Until(() => kept.Polls > keptPolls + 2), "The other provider stopped too.");
+        Assert.Equal(polls, stopped.Polls);
+        Assert.False(kept.Disposed);
+        runner.Stop(stopped); // a provider it no longer runs: nothing happens
+    }
+
+    [Fact]
     public void Dispose_twice_is_safe()
     {
         var provider = new FakeProvider("fake", (_, _) => { });
@@ -141,7 +162,7 @@ public class ProviderRunnerTests
     }
 
     [Fact]
-    public async Task Dispose_leaves_a_provider_that_will_not_stop_running_and_says_so()
+    public async Task Dispose_does_not_wait_for_a_provider_that_will_not_stop_says_so_and_disposes_it_when_its_poll_returns()
     {
         var release = new ManualResetEventSlim(); // not disposed: the provider thread may still be waking from it
         var log = new ListLog();
@@ -160,12 +181,42 @@ public class ProviderRunnerTests
             Assert.True(returned, "Dispose did not return");
             Assert.InRange(timer.Elapsed, TimeSpan.FromSeconds(2.5), TimeSpan.FromSeconds(5));
             Assert.False(stuck.Disposed);
-            Assert.Equal(["warn: stuck did not stop within 3 s; leaving it to exit with the process."], log.Entries);
+            Assert.Equal(["warn: stuck did not stop within 3 s; it will be shut down when its current poll returns."], log.Entries);
         }
         finally
         {
             release.Set();
         }
+
+        Assert.True(Wait.Until(() => stuck.Disposed), "The provider was never disposed once its poll returned");
+    }
+
+    [Fact]
+    public void Stop_disposes_a_provider_stuck_in_a_poll_once_the_poll_returns()
+    {
+        // A settings change can stop one provider in a process that runs for days, so a stuck one can't just be left
+        // for the process exit: its driver handle or child process would stay open until then.
+        var release = new ManualResetEventSlim(); // not disposed: the provider thread may still be waking from it
+        var log = new ListLog();
+        var stuck = new FakeProvider("stuck", (_, _) => release.Wait());
+        using var runner = new ProviderRunner(new SensorStore(), log) { StopTimeout = TimeSpan.FromMilliseconds(100) };
+        runner.Start(stuck);
+        Assert.True(Wait.Until(() => stuck.Polls >= 1));
+
+        try
+        {
+            runner.Stop(stuck);
+
+            Assert.False(stuck.Disposed); // never under a running poll
+            Assert.Contains("stuck did not stop", Assert.Single(log.Entries));
+        }
+        finally
+        {
+            release.Set();
+        }
+
+        Assert.True(Wait.Until(() => stuck.Disposed), "The provider was never disposed once its poll returned");
+        Assert.Equal(1, stuck.Polls);
     }
 
     [Theory]

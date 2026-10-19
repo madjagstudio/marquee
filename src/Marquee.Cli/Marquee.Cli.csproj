@@ -2,12 +2,21 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AssemblyName>marquee</AssemblyName>
+    <!-- Resources are named from the root namespace and their folder: Resources\Strings.resx becomes
+         Marquee.Cli.Resources.Strings, the name Strings.cs looks up, and Strings.de.resx its German satellite. The SDK
+         would otherwise name a .resx after the class in the .cs file beside it, and Strings is in the global namespace. -->
+    <RootNamespace>Marquee.Cli</RootNamespace>
+    <EmbeddedResourceUseDependentUponConvention>false</EmbeddedResourceUseDependentUponConvention>
+    <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Marquee.Core\Marquee.Core.csproj" />
-    <ProjectReference Include="..\Marquee.Providers.Hardware\Marquee.Providers.Hardware.csproj" />
+    <ProjectReference Include="..\Marquee.Host\Marquee.Host.csproj" />
     <ProjectReference Include="..\Marquee.Preview\Marquee.Preview.csproj" />
     <ProjectReference Include="..\Marquee.Providers.Agents\Marquee.Providers.Agents.csproj" />
     <ProjectReference Include="..\Marquee.Providers.Custom\Marquee.Providers.Custom.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marquee.Cli.Tests" />
   </ItemGroup>
 </Project>

@@ -1,107 +1,64 @@
 using System.Globalization;
+using Marquee.Core;
 using Marquee.Core.Devices;
-using Marquee.Core.Rendering;
+using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
+using Marquee.Host;
 using Marquee.Preview;
-using Marquee.Providers.Agents.Claude;
-using Marquee.Providers.Custom;
 
-/// `marquee run <theme-folder>`: live sensors → theme → screen (or --sink), with hot reload and an optional preview.
+/// `marquee run [<theme-folder>]`: live sensors → theme → screen (or --sink), with hot reload and an optional preview.
+/// MarqueeEngine does the work; this is its console host. Settings come from the flags, then config.yaml, then the
+/// defaults, and an edit to config.yaml while running is applied at once (the flags still win).
 static class RunCommand
 {
     static readonly TimeSpan StatusEvery = TimeSpan.FromSeconds(1);
 
     /// Null means the options were wrong and the caller should print usage.
-    public static int? Run(string folder, string[] options)
+    public static int? Run(string[] args)
     {
-        var orientation = Orientation.Landscape;
-        int? fps = null;
-        var sensors = SensorSources.Default;
-        string? sink = null;
-        var preview = false;
-        int? frames = null;
-        int? httpPort = CustomValuesServer.DefaultPort;
-        var claudeUsage = true;
+        if (Parse(args) is not { } options) return null;
 
-        for (var i = 0; i < options.Length; i++)
+        using var fileLog = new FileLog(MarqueePaths.Logs);
+        var log = new TeeLog(new ConsoleLog(), fileLog);
+        var configPath = ConfigOption.Path(options.ConfigFile);
+        var locator = ThemeLocator.Default;
+        var resolved = SettingsResolver.Resolve(options, ConfigOption.Load(options.ConfigFile, log), locator, configPath);
+        if (!resolved.Succeeded)
         {
-            var value = i + 1 < options.Length ? options[i + 1] : null;
-            switch (options[i])
-            {
-                case "--orientation" when Screens.ParseOrientation(value) is { } o: orientation = o; i++; break;
-                case "--fps" when int.TryParse(value, out var f) && f is >= 1 and <= CanvasSpec.MaxFps: fps = f; i++; break;
-                case "--sensors" when SensorSources.IsValid(value): sensors = value!; i++; break;
-                case "--sink" when value is not null: sink = value; i++; break;
-                case "--frames" when int.TryParse(value, out var n) && n > 0: frames = n; i++; break;
-                case "--preview": preview = true; break;
-                case "--http-port" when HttpPort.TryParse(value, out var p): httpPort = p; i++; break;
-                case "--no-http": httpPort = null; break;
-                case "--no-claude-usage": claudeUsage = false; break;
-                default: return null;
-            }
-        }
-
-        var log = new ConsoleLog();
-        var store = new SensorStore();
-        var claudeLimits = new ClaudeLimitsFile(log);
-        claudeLimits.Restore(store, DateTimeOffset.UtcNow); // before any source starts, so live readings win
-        using var providers = new ProviderRunner(store, log);
-        if (SensorSources.Create(sensors, log) is { } provider)
-            providers.Start(provider);
-        foreach (var agent in AgentSources.Create(log, claudeUsage))
-            providers.Start(agent);
-        using var statusLine = new StatusLineServer(store, log);
-        statusLine.Start();
-        using var custom = httpPort is { } port ? new CustomValuesServer(store, log, port) : null;
-        custom?.Start();
-
-        var size = orientation.CanvasSize();
-        using var device = sink is not null ? new FileSinkDevice(sink, size.Width, size.Height) : Screens.Find(orientation);
-        if (device is null)
-        {
-            Console.Error.WriteLine("No supported screen found. Run `marquee devices` to check, or use --sink <folder>.");
+            log.Error(resolved.Error);
             return 1;
         }
 
-        using var loop = new RenderLoop(device, store, log, fps);
+        using var engine = new MarqueeEngine(resolved.Settings, log, MachineServices.Instance);
         PreviewHost? previewHost = null;
         string? banner = null; // what the preview's banner shows: the theme's warnings (a shader error, say), or a layout error
-        var showing = false;
-        using var watcher = new ThemeWatcher(folder,
-            theme =>
-            {
-                foreach (var warning in theme.Warnings) log.Warn(warning);
-                log.Info($"Showing theme '{theme.Name}'.");
-                banner = theme.Warnings.Count > 0 ? string.Join(Environment.NewLine, theme.Warnings) : null;
-                previewHost?.ShowError(banner);
-                loop.SetTheme(theme);
-                showing = true;
-            },
-            error =>
-            {
-                log.Error(showing ? $"{error.Message} (the last good layout stays on screen until the file is fixed)" : error.Message);
-                banner = error.Message;
-                previewHost?.ShowError(banner);
-            },
-            fpsOverride: fps);
-
-        // With no last good layout yet, a broken theme at startup has nothing to fall back to.
-        if (!watcher.Reload(retryIfLocked: false)) return 1;
-
-        if (frames is { } count)
+        engine.ThemeLoaded += theme =>
         {
-            for (var i = 0; i < count; i++)
-                loop.Step(TimeSpan.FromSeconds(i / (double)loop.Fps));
-            if (loop.FramesPushed < count)
-            {
-                log.Error($"only {loop.FramesPushed} of {count} frame(s) reached {device.Info.Name}.");
-                return 1;
-            }
+            banner = theme.Warnings.Count > 0 ? string.Join(Environment.NewLine, theme.Warnings) : null;
+            previewHost?.ShowError(banner);
+        };
+        engine.ThemeFailed += error =>
+        {
+            banner = error;
+            previewHost?.ShowError(banner);
+        };
 
-            log.Info($"Rendered {count} frame(s) to {device.Info.Name}.");
-            return 0;
-        }
+        if (options.Frames is { } count) return RenderFrames(engine, count, log);
+        if (!engine.Start()) return 1;
+
+        // The default folder is %LOCALAPPDATA%\Marquee, which the log has made by now anyway. Making sure of it here
+        // means a config.yaml written there later, while this runs, is seen. A --config file's folder is left alone.
+        if (options.ConfigFile is null) Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+        using var configWatcher = new ConfigWatcher(configPath,
+            config =>
+            {
+                var changed = SettingsResolver.Resolve(options, config, locator, configPath);
+                if (changed.Succeeded) engine.Apply(changed.Settings);
+                else log.Error(Strings.SettingsUnchanged(changed.Error));
+            },
+            error => log.Error(Strings.SettingsUnchanged(error.Message)));
+        configWatcher.Start();
 
         using var stop = new ManualResetEventSlim();
         var stopping = 0;
@@ -114,32 +71,82 @@ static class RunCommand
             if (first) stop.Set();
         };
 
-        if (preview)
+        if (options.Preview)
         {
-            previewHost = PreviewHost.Open(Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder))), size);
+            var settings = engine.Settings;
+            previewHost = PreviewHost.Open(Path.GetFileName(settings.ThemeFolder), settings.Orientation.CanvasSize());
             previewHost.Closed += stop.Set;
-            loop.FrameRendered += previewHost.ShowFrame;
+            engine.FrameRendered += previewHost.ShowFrame;
             previewHost.ShowError(banner); // the startup load happened before the window opened
         }
 
-        watcher.Start();
-        loop.Start();
-        log.Info($"Rendering to {device.Info.Name}. Edit the theme and save to reload; press Ctrl+C to stop.");
+        log.Info(Strings.RenderingTo(engine.Status.Device ?? ""));
 
         for (var seconds = 1; !stop.Wait(StatusEvery); seconds++)
         {
-            var stats = loop.Stats;
-            var status = string.Create(CultureInfo.InvariantCulture,
-                $"{stats.Fps:0.0} fps (target {loop.Fps}) · render {stats.RenderMs:0.0} ms · send {stats.PushMs:0.0} ms · {loop.FramesPushed} frames sent");
-            previewHost?.ShowStatus(status);
-            if (seconds == 5 || seconds % 60 == 0) log.Info(status);
-            claudeLimits.Save(store.Snapshot()); // writes only when the limits changed
+            var status = engine.Status;
+            var line = Strings.RenderStatus(status.Stats.Fps, status.TargetFps, status.Stats.RenderMs, status.Stats.PushMs, status.FramesSent);
+            previewHost?.ShowStatus(line);
+            if (seconds == 5 || seconds % 60 == 0) log.Info(line);
         }
 
         Interlocked.Exchange(ref stopping, 1); // stopping now (the preview may have closed), so Ctrl+C won't touch `stop`
-        loop.Stop();
-        claudeLimits.Save(store.Snapshot());
+        configWatcher.Dispose(); // no settings change may start the engine again while it stops
+        engine.Stop();
         previewHost?.Dispose();
+        return 0;
+    }
+
+    /// The command line after `run`: an optional theme folder, then flags. Null if a flag or its value is wrong.
+    internal static RunOptions? Parse(string[] args)
+    {
+        var options = new RunOptions();
+        var first = 0;
+        if (args is [var theme, ..] && !theme.StartsWith("--", StringComparison.Ordinal))
+        {
+            options = options with { Theme = theme };
+            first = 1;
+        }
+
+        for (var i = first; i < args.Length; i++)
+        {
+            var value = i + 1 < args.Length ? args[i + 1] : null;
+            switch (args[i])
+            {
+                case "--orientation" when Screens.ParseOrientation(value) is { } o: options = options with { Orientation = o }; i++; break;
+                case "--fps" when Integer(value) is { } f && f is >= 1 and <= CanvasSpec.MaxFps: options = options with { Fps = f }; i++; break;
+                case "--sensors" when SensorSourceNames.IsValid(value): options = options with { Sensors = value }; i++; break;
+                case "--sink" when value is not null: options = options with { Sink = value }; i++; break;
+                case "--frames" when Integer(value) is { } n && n > 0: options = options with { Frames = n }; i++; break;
+                case "--preview": options = options with { Preview = true }; break;
+                case "--http-port" when HttpPort.TryParse(value, out var p): options = options with { HttpEnabled = true, HttpPort = p }; i++; break;
+                case "--no-http": options = options with { HttpEnabled = false }; break;
+                case "--no-claude-usage": options = options with { ClaudeUsage = false }; break;
+                case "--no-fps": options = options with { GameFps = false }; break;
+                case "--config" when value is not null: options = options with { ConfigFile = value }; i++; break;
+                default: return null;
+            }
+        }
+
+        return options;
+    }
+
+    static int? Integer(string? text) =>
+        int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;
+
+    /// `--frames N`: N frames at fixed times, then exit; 1 if any didn't reach the screen.
+    static int RenderFrames(MarqueeEngine engine, int count, ILog log)
+    {
+        if (!engine.Start(liveRendering: false)) return 1;
+        var screen = engine.Status.Device ?? "";
+        var sent = engine.RenderFrames(count);
+        if (sent < count)
+        {
+            log.Error(Strings.FramesNotDelivered(sent, count, screen));
+            return 1;
+        }
+
+        log.Info(Strings.RenderedFrames(count, screen));
         return 0;
     }
 }

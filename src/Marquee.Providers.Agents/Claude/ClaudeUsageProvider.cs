@@ -1,5 +1,6 @@
 using System.Runtime.ExceptionServices;
 using Marquee.Core.Logging;
+using Marquee.Core.Processes;
 using Marquee.Core.Sensors;
 
 namespace Marquee.Providers.Agents.Claude;

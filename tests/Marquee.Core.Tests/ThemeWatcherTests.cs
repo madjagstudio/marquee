@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Marquee.Core.Rendering;
 using Marquee.Core.Themes;
 using Marquee.Core.Tests.TestSupport;
+using Marquee.Core.Video;
 using SkiaSharp;
 
 namespace Marquee.Core.Tests;
@@ -12,7 +13,9 @@ public class ThemeWatcherTests
 
     const string Broken = "canvas: { orientation: landscape }\nbackground:\n  - fill: \"#00FF00\"\n    blend: sideways\n";
 
-    static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
+    /// Every wait ends as soon as its event arrives; the long limit is for a loaded CI runner, where a file-system event
+    /// and the debounce after it took over 5 s on the first hosted run.
+    static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
     /// Records callbacks from the watcher's thread so tests can wait for them.
     sealed class Events
@@ -34,6 +37,18 @@ public class ThemeWatcherTests
 
         using var theme = Assert.Single(events.Loaded);
         Assert.Empty(events.Failed);
+    }
+
+    [Fact]
+    public void Load_loads_once_and_turns_every_failure_into_a_ThemeException()
+    {
+        using var good = new TempTheme(Fill("#FF0000"));
+        using var broken = new TempTheme(Broken);
+
+        using (var theme = ThemeWatcher.Load(good.Folder, fpsOverride: 12)) Assert.Equal(good.Folder, theme.Folder);
+        Assert.Equal(4, Assert.Throws<ThemeException>(() => ThemeWatcher.Load(broken.Folder)).Line);
+        using (File.Open(good.LayoutPath, FileMode.Open, FileAccess.Read, FileShare.None))
+            Assert.StartsWith("Could not read the theme: ", Assert.Throws<ThemeException>(() => ThemeWatcher.Load(good.Folder)).Message);
     }
 
     [Fact]
@@ -140,6 +155,60 @@ public class ThemeWatcherTests
         Assert.True(events.Loaded.TryTake(out var theme, Timeout), "No reload after adding an image");
         using (theme)
             Assert.NotNull(theme!.Assets.Image("sky.png"));
+    }
+
+    /// Writes a two-frame clip of one color: a GIF, or an H.264 MP4.
+    static void WriteClip(string path, SKColor color)
+    {
+        if (Path.GetExtension(path) == ".gif")
+            File.WriteAllBytes(path, GifWriter.Write(16, 4, [color], GifFrame.Solid(SKRectI.Create(16, 4), 0, 10),
+                GifFrame.Solid(SKRectI.Create(16, 4), 0, 10)));
+        else
+            ClipWriter.Write(path, 128, 72, color, color);
+    }
+
+    /// A playing clip is open in its decoder, and must still take a save: written over in place, or replaced by a new
+    /// file the way many editors save (ReplaceFile). A rename onto it (MoveFileEx) is the one save Windows refuses
+    /// while any program has the file open.
+    [Theory]
+    [InlineData("clip.gif", false)]
+    [InlineData("clip.gif", true)]
+    [InlineData("clip.mp4", false)]
+    [InlineData("clip.mp4", true)]
+    public void Saving_over_a_playing_clip_reloads_the_theme(string clip, bool byReplacing)
+    {
+        using var folder = new TempTheme(Fill("#FF0000") + $"  - video: {clip}\n");
+        var path = Path.Combine(folder.Folder, clip);
+        if (Path.GetExtension(clip) == ".mp4" && !MediaFoundation.IsAvailable)
+        {
+            // Nothing can write or play an MP4 here; check the one thing that can be: the layer says why it's skipped.
+            File.WriteAllBytes(path, [0]);
+            using var unavailable = folder.Load();
+            Assert.Contains("Media Feature Pack", Assert.Single(unavailable.Warnings));
+            return;
+        }
+
+        WriteClip(path, new SKColor(200, 40, 40));
+        var events = new Events();
+        using var watcher = events.Watch(folder.Folder);
+        Assert.True(watcher.Reload());
+        using var playing = events.Loaded.Take();
+        Assert.Empty(playing.Warnings);
+        watcher.Start();
+
+        using var edits = new TempFolder();
+        var edited = edits.File(clip);
+        WriteClip(edited, new SKColor(50, 70, 200));
+        if (byReplacing) File.Replace(edited, path, null);
+        else File.WriteAllBytes(path, File.ReadAllBytes(edited));
+
+        Assert.True(events.Loaded.TryTake(out var theme, Timeout), "No reload after saving the clip");
+        using (theme)
+        using (var frame = Frames.Render(theme!, TestSensors.Of()))
+        {
+            Assert.Empty(theme!.Warnings);
+            Pixels.AssertNear(new SKColor(50, 70, 200), Images.PixelAt(frame, 960, 240), 24); // H.264 is lossy
+        }
     }
 
     [Fact]

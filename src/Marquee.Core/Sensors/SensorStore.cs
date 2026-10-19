@@ -27,6 +27,31 @@ public sealed class SensorStore(Func<DateTimeOffset>? now = null, int historyLen
             return new SensorSnapshot(_now(), new Dictionary<string, SensorEntry>(_entries, StringComparer.Ordinal));
     }
 
+    /// Removes the keys starting with prefix whose ttl ran out at least staleFor ago, and returns them. Entries are
+    /// otherwise kept forever, which is fine for a provider's fixed set of keys but not for keys that scripts make up:
+    /// this lets the custom-values server forget the ones nobody updates any more. Keys without a ttl are never removed.
+    public IReadOnlyList<string> RemoveStale(string prefix, TimeSpan staleFor)
+    {
+        // Expired at or before this; subtracting from now can't overflow the way adding to a far-off expiry could.
+        var cutoff = _now() - staleFor;
+        lock (_gate)
+        {
+            var stale = _entries
+                .Where(e => e.Key.StartsWith(prefix, StringComparison.Ordinal) && e.Value.ExpiresAt <= cutoff)
+                .Select(e => e.Key)
+                .ToList();
+            foreach (var key in stale) _entries.Remove(key);
+            return stale;
+        }
+    }
+
+    /// The keys starting with prefix, stale or not, as a set of their own.
+    public IReadOnlySet<string> Keys(string prefix)
+    {
+        lock (_gate)
+            return _entries.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal)).ToHashSet(StringComparer.Ordinal);
+    }
+
     void Write(string key, SensorValue value, TimeSpan? ttl)
     {
         var at = _now();

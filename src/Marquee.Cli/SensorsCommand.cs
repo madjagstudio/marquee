@@ -1,30 +1,38 @@
 using Marquee.Core.Expressions;
 using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
+using Marquee.Host;
 
 /// `marquee sensors`: reads the hardware source twice (load percentages need two samples) and the agent providers
 /// once, and prints every key, so theme authors can see what's available and the providers can be checked on a real PC.
-/// Claude Code's limits are read by running `claude -p /usage` (skipped with --no-claude-usage). The context
+/// Claude Code's limits are read by running `claude -p /usage` (skipped with --no-claude-usage, or with
+/// `providers: { claude_usage: off }` in config.yaml). The hardware source is --sensors, else config.yaml's. The context
 /// percentage, which only the status line carries, and custom values come from other programs while `marquee run` is
-/// going, so they aren't listed.
+/// going, so they aren't listed. Nor is FPS: it needs a game in front, presenting frames for a while, and an elevated
+/// Marquee, which a one-off listing typed into a terminal doesn't have.
 static class SensorsCommand
 {
     /// Null means the options were wrong and the caller should print usage.
     public static int? Run(string[] options)
     {
-        var source = SensorSources.Default;
-        var claudeUsage = true;
+        string? source = null;
+        bool? claudeUsage = null;
+        string? configFile = null;
         for (var i = 0; i < options.Length; i++)
         {
             var value = i + 1 < options.Length ? options[i + 1] : null;
             switch (options[i])
             {
-                case "--sensors" when SensorSources.IsValid(value):
+                case "--sensors" when SensorSourceNames.IsValid(value):
                     source = value!;
                     i++;
                     break;
                 case "--no-claude-usage":
                     claudeUsage = false;
+                    break;
+                case "--config" when value is not null:
+                    configFile = value;
+                    i++;
                     break;
                 default:
                     return null;
@@ -32,6 +40,8 @@ static class SensorsCommand
         }
 
         var log = new ConsoleLog();
+        var config = ConfigOption.Load(configFile, log);
+        source ??= config.Sensors ?? SensorSourceNames.Default;
         var store = new SensorStore();
         using (var hardware = SensorSources.Create(source, log))
         {
@@ -39,7 +49,7 @@ static class SensorsCommand
                 return 1;
         }
 
-        foreach (var agent in AgentSources.Create(log, claudeUsage))
+        foreach (var agent in AgentSources.Create(AgentSources.Enabled(claudeUsage: claudeUsage ?? config.ClaudeUsage), log))
         {
             using (agent)
                 TryPoll(agent, store, log, twice: false);
@@ -54,7 +64,7 @@ static class SensorsCommand
         }
 
         if (keys.Count == 0)
-            log.Warn("No provider returned any readings.");
+            log.Warn(Strings.NoReadings);
         return keys.Count > 0 ? 0 : 1;
     }
 
@@ -73,7 +83,7 @@ static class SensorsCommand
         }
         catch (Exception ex)
         {
-            log.Error($"{provider.Name} failed: {ex.Message}");
+            log.Error(Strings.SourceFailed(provider.Name, ex.Message));
             return false;
         }
     }
