@@ -38,6 +38,7 @@ sealed class EngineHandover : IDisposable
     CancellationTokenSource? _cancel; // the wait for the screen of the handover under way
     TimeSpan? _failedAt;
     IDisposable? _retry; // Auto's next try after a failure, while one is due
+    int _retryGeneration; // which retry is due: each one scheduled or cancelled moves it on
     bool _toldUnelevated;
     bool _disposed;
 
@@ -177,7 +178,7 @@ sealed class EngineHandover : IDisposable
                 _log.Info(Strings.HandoverHeldBack((int)RetryAfterFailure.TotalSeconds));
                 // The retry after that failure went with a pause, or is still due: either way, this busy screen is
                 // tried again once the time is up.
-                _retry ??= _schedule(RetryAfterFailure - since, Retry);
+                ScheduleRetry(RetryAfterFailure - since);
                 return false;
             }
 
@@ -218,7 +219,7 @@ sealed class EngineHandover : IDisposable
             if (result.Outcome == HandoverOutcome.Failed)
             {
                 _failedAt = _elapsed();
-                if (_wanted && !_disposed) _retry ??= _schedule(RetryAfterFailure, Retry);
+                if (_wanted && !_disposed) ScheduleRetry(RetryAfterFailure);
             }
             else if (result.Outcome == HandoverOutcome.Taken)
             {
@@ -235,15 +236,17 @@ sealed class EngineHandover : IDisposable
 
     /// On the timer's thread, RetryAfterFailure after a handover failed (or the rest of it, after a busy screen was
     /// held back): takes the screen if it is still L-Connect's service's, and `lconnect.handover` still says auto. An
-    /// exception would end the process from here.
-    void Retry()
+    /// exception would end the process from here. `generation` is the retry's own: disposing a timer doesn't stop a
+    /// callback that has already started, so one that waited for the lock while a pause cancelled it (and perhaps a
+    /// held-back busy screen scheduled the next) finds it is no longer the retry due, and leaves that one alone.
+    void Retry(int generation)
     {
         try
         {
             lock (_gate)
             {
-                _retry?.Dispose();
-                _retry = null;
+                if (generation != _retryGeneration) return;
+                CancelRetry();
                 if (_disposed || !_wanted || _cancel is not null || _screenOpen.IsSet) return;
             }
 
@@ -257,9 +260,18 @@ sealed class EngineHandover : IDisposable
         }
     }
 
+    /// Under _gate. Schedules Auto's retry `delay` from now, unless one is due already.
+    void ScheduleRetry(TimeSpan delay)
+    {
+        if (_retry is not null) return;
+        var generation = ++_retryGeneration;
+        _retry = _schedule(delay, () => Retry(generation));
+    }
+
     /// Under _gate.
     void CancelRetry()
     {
+        _retryGeneration++;
         _retry?.Dispose();
         _retry = null;
     }

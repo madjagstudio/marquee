@@ -391,6 +391,50 @@ public sealed class EngineHandoverTests : IDisposable
     }
 
     [Fact]
+    public void A_retry_already_running_when_it_was_cancelled_leaves_the_retry_that_replaced_it_alone()
+    {
+        // The first retry's callback has started and waits for the lock while a pause cancels it, and a resume with the
+        // screen still busy is held back and schedules a retry of its own for the rest of the 60 seconds.
+        LConnect.FailToStop = true;
+        Busy(HandoverMode.Auto);
+        var first = Assert.Single(_timers.Pending);
+        _handover.SetScreenWanted(false);
+        _handover.SetScreenWanted(true);
+        _now += TimeSpan.FromSeconds(20);
+        Busy(HandoverMode.Auto);
+        var second = Assert.Single(_timers.Pending);
+        var tried = LConnect.Calls.Count;
+
+        first.FireAfterCancel();
+        _handover.WaitForEnd();
+
+        Assert.Equal(tried, LConnect.Calls.Count);
+        Assert.Single(_finished);
+        Assert.True(second.IsPending);
+
+        LConnect.FailToStop = false;
+        FireRetry();
+        Assert.Equal(HandoverOutcome.Taken, _finished[^1].Outcome);
+    }
+
+    [Fact]
+    public void A_retry_already_running_when_a_pause_cancelled_it_does_nothing_after_the_resume()
+    {
+        LConnect.FailToStop = true;
+        Busy(HandoverMode.Auto);
+        var first = Assert.Single(_timers.Pending);
+        _handover.SetScreenWanted(false);
+        _handover.SetScreenWanted(true); // resumed; the screen hasn't been reported busy again yet
+        var tried = LConnect.Calls.Count;
+
+        first.FireAfterCancel();
+        _handover.WaitForEnd();
+
+        Assert.Equal(tried, LConnect.Calls.Count);
+        Assert.DoesNotContain(Retrying, _log.Entries);
+    }
+
+    [Fact]
     public void A_take_over_from_the_tray_that_fails_with_the_mode_at_Ask_is_not_retried()
     {
         LConnect.FailToStop = true;

@@ -43,6 +43,10 @@ sealed class FakeTimers
             if (Interlocked.CompareExchange(ref _state, 1, 0) == 0) callback();
         }
 
+        /// Runs the callback even though the timer was cancelled: a real timer's callback that had already started when
+        /// it was disposed, and got as far as the code under test only afterwards.
+        public void FireAfterCancel() => callback();
+
         public void Dispose() => Interlocked.CompareExchange(ref _state, 2, 0);
     }
 }
