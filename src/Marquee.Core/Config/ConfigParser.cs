@@ -1,4 +1,5 @@
 using Marquee.Core.Devices;
+using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Parsing;
 using YamlDotNet.RepresentationModel;
@@ -16,7 +17,7 @@ public static class ConfigParser
     static readonly (string Name, bool Value)[] SwitchWords =
         [("on", true), ("off", false), ("true", true), ("false", false)];
 
-    static readonly (string Name, string Value)[] SensorSources = [("lhm", "lhm"), ("hwinfo", "hwinfo"), ("none", "none")];
+    static readonly (string Name, string Value)[] SensorSources = SensorSourceNames.All.Select(name => (name, name)).ToArray();
 
     /// An empty file, or one with only comments, gives MarqueeConfig.Default.
     public static MarqueeConfig Parse(string yaml)

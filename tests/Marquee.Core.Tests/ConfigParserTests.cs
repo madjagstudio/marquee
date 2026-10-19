@@ -1,5 +1,6 @@
 using Marquee.Core.Config;
 using Marquee.Core.Devices;
+using Marquee.Core.Sensors;
 
 namespace Marquee.Core.Tests;
 
@@ -188,6 +189,16 @@ public class ConfigParserTests
         Assert.StartsWith("YAML syntax error in config.yaml:", ex.Reason);
         Assert.Equal(0, ex.Line);
         Assert.DoesNotContain("layout.yaml", ex.Message);
+    }
+
+    [Fact]
+    public void Sensors_accepts_exactly_the_sensor_source_names()
+    {
+        foreach (var name in SensorSourceNames.All)
+            Assert.Equal(name, ConfigParser.Parse($"sensors: {name}").Sensors);
+
+        Assert.Equal($"sensors must be one of: {string.Join(", ", SensorSourceNames.All)}; not 'aida64'",
+            Error("sensors: aida64").Reason);
     }
 
     [Fact]

@@ -97,6 +97,27 @@ public class ProviderRunnerTests
     }
 
     [Fact]
+    public void Stop_ends_and_disposes_one_provider_and_leaves_the_others_running()
+    {
+        var stopped = new FakeProvider("stopped", (_, _) => { });
+        var kept = new FakeProvider("kept", (_, _) => { });
+        using var runner = new ProviderRunner(new SensorStore(), new ListLog());
+        runner.Start(stopped);
+        runner.Start(kept);
+        Assert.True(Wait.Until(() => stopped.Polls >= 1 && kept.Polls >= 1));
+
+        runner.Stop(stopped);
+        var polls = stopped.Polls;
+        var keptPolls = kept.Polls;
+
+        Assert.True(stopped.Disposed);
+        Assert.True(Wait.Until(() => kept.Polls > keptPolls + 2), "The other provider stopped too.");
+        Assert.Equal(polls, stopped.Polls);
+        Assert.False(kept.Disposed);
+        runner.Stop(stopped); // a provider it no longer runs: nothing happens
+    }
+
+    [Fact]
     public void Dispose_twice_is_safe()
     {
         var provider = new FakeProvider("fake", (_, _) => { });

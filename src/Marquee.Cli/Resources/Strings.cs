@@ -3,7 +3,8 @@ using System.Resources;
 
 /// The CLI's own messages, from Strings.resx in English and from Strings.<culture>.resx where a translation exists.
 /// Each property (plain text) or method (text with placeholders) reads the resource of the same name; the tests check
-/// that the two lists match. Messages from the libraries (Marquee.Core, the providers) are still English-only.
+/// that the two lists match. The engine's messages (Marquee.Host) are in its own Strings.resx; those from Marquee.Core
+/// and the providers are still English-only.
 internal static class Strings
 {
     /// Settable so tests can put a pseudo-translation in front of the real resources.
@@ -18,8 +19,6 @@ internal static class Strings
     public static string NoSupportedScreens => Get(nameof(NoSupportedScreens));
 
     public static string NoScreenFound => Get(nameof(NoScreenFound));
-
-    public static string NoScreenFoundUseSink => Get(nameof(NoScreenFoundUseSink));
 
     public static string CouldNotReadImage(string file) => Format(nameof(CouldNotReadImage), file);
 
@@ -36,23 +35,13 @@ internal static class Strings
 
     public static string PushedFrames(int frames, double averageMs) => Format(nameof(PushedFrames), frames, averageMs);
 
-    public static string ClaudeSessionsSource => Get(nameof(ClaudeSessionsSource));
-
-    public static string ClaudeLimitsSource => Get(nameof(ClaudeLimitsSource));
-
-    public static string CodexLimitsSource => Get(nameof(CodexLimitsSource));
-
-    public static string CodexSessionsSource => Get(nameof(CodexSessionsSource));
-
-    public static string SourceUnavailable(string source, string reason) => Format(nameof(SourceUnavailable), source, reason);
-
     public static string SourceFailed(string source, string reason) => Format(nameof(SourceFailed), source, reason);
 
     public static string NoReadings => Get(nameof(NoReadings));
 
-    public static string ShowingTheme(string theme) => Format(nameof(ShowingTheme), theme);
+    public static string ConfigFileMissing(string path) => Format(nameof(ConfigFileMissing), path);
 
-    public static string LastGoodLayoutStays(string error) => Format(nameof(LastGoodLayoutStays), error);
+    public static string SettingsUnchanged(string error) => Format(nameof(SettingsUnchanged), error);
 
     public static string FramesNotDelivered(long delivered, int requested, string screen) =>
         Format(nameof(FramesNotDelivered), delivered, requested, screen);
@@ -65,6 +54,8 @@ internal static class Strings
         Format(nameof(RenderStatus), fps, targetFps, renderMs, sendMs, framesSent);
 
     public static string InvalidCustomKey(string key, int maxLength) => Format(nameof(InvalidCustomKey), key, maxLength);
+
+    public static string HttpOffInConfig(string configPath) => Format(nameof(HttpOffInConfig), configPath);
 
     public static string UnknownProgram => Get(nameof(UnknownProgram));
 

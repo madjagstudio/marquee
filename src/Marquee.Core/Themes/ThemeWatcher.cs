@@ -59,14 +59,14 @@ public sealed class ThemeWatcher : IDisposable
                 }
 
                 _lockedRetries = 0;
-                _failed(new ThemeException($"Could not read the theme: {ex.Message}"));
+                _failed(Unreadable(ex));
                 return false;
             }
             catch (Exception ex)
             {
                 // Anything else (a path the OS rejects, a codec bug) is still just a broken theme, not a crash.
                 _lockedRetries = 0;
-                _failed(new ThemeException($"Could not load the theme: {ex.Message}"));
+                _failed(Unloadable(ex));
                 return false;
             }
 
@@ -75,6 +75,33 @@ public sealed class ThemeWatcher : IDisposable
             return true;
         }
     }
+
+    /// Loads a theme once, outside any watcher, the way Reload's startup load does: every failure, a locked file
+    /// included, is a ThemeException with a message for the user. For a host that must know a new theme loads before it
+    /// lets go of the one on screen.
+    public static LoadedTheme Load(string folder, int? fpsOverride = null)
+    {
+        try
+        {
+            return ThemeLoader.Load(folder, fpsOverride);
+        }
+        catch (ThemeException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw Unreadable(ex);
+        }
+        catch (Exception ex)
+        {
+            throw Unloadable(ex);
+        }
+    }
+
+    static ThemeException Unreadable(Exception ex) => new($"Could not read the theme: {ex.Message}");
+
+    static ThemeException Unloadable(Exception ex) => new($"Could not load the theme: {ex.Message}");
 
     public void Start()
     {

@@ -3,8 +3,9 @@ using Marquee.Cli.Tests.TestSupport;
 
 namespace Marquee.Cli.Tests;
 
-/// These tests swap Strings.ResourceManager, the culture and the console, so they share one class: xUnit runs a
-/// class's tests one at a time.
+/// These tests swap Strings.ResourceManager, the culture and the console, so they run in the console collection (see
+/// ConsoleCollection): one at a time, after the tests that run in parallel.
+[Collection(nameof(ConsoleCapture))]
 public class StringsTests
 {
     [Fact]

@@ -1,8 +1,10 @@
 using Marquee.Core.Devices;
 using Marquee.Core.Usb;
 
-/// Command-line helpers shared by show-image and run.
-static class Screens
+namespace Marquee.Host;
+
+/// Finding the screen, for show-image, run and the tray.
+public static class Screens
 {
     public static Orientation? ParseOrientation(string? value) =>
         OrientationNames.TryParse(value, out var orientation) ? orientation : null;

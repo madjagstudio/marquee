@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Marquee.Core.Devices;
 using Marquee.Core.Devices.UniversalScreen88;
 using Marquee.Core.Usb;
+using Marquee.Host;
 using SkiaSharp;
 
 // Messages use characters such as "—", "·" and "×"; the default console code page would mangle them. Setting it
@@ -20,7 +21,7 @@ return args switch
     ["devices"] => ListDevices(),
     ["show-image", var file, .. var options] => ShowImage(file, options),
     ["sensors", .. var options] => SensorsCommand.Run(options) ?? Usage(),
-    ["run", var folder, .. var options] => RunCommand.Run(folder, options) ?? Usage(),
+    ["run", .. var options] => RunCommand.Run(options) ?? Usage(),
     ["push", var key, var value, .. var options] => PushCommand.Run(key, value, options) ?? Usage(),
     ["statusline"] => StatusLineCommand.Run(),
     ["setup-claude", .. var options] => SetupClaudeCommand.Run(options) ?? Usage(),

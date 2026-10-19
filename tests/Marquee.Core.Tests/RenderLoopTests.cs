@@ -332,6 +332,46 @@ public class RenderLoopTests
     }
 
     [Fact]
+    public void Stop_closes_the_screen_and_Start_opens_it_again_with_the_same_theme()
+    {
+        using var folder = new TempTheme(Fill("#FF0000", fps: 30));
+        using var device = new RecordingDevice();
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog());
+        loop.SetTheme(folder.Load());
+        loop.Start();
+        Assert.True(Wait.Until(() => device.FramesPushed >= 2));
+
+        loop.Stop();
+        Assert.Equal((1, 1), (device.Opens, device.Closes));
+        var pushed = device.FramesPushed;
+        loop.Start();
+
+        Assert.True(Wait.Until(() => device.FramesPushed >= pushed + 3), "No frames after the restart.");
+        // The restart carries on the same clock, so the last second's frames still measure the rate correctly.
+        Assert.InRange(loop.Stats.Fps, 1, 45);
+        loop.Stop();
+        Assert.Equal((2, 2), (device.Opens, device.Closes));
+        Pixels.AssertNear(SKColors.Red, device.LastFrame!.GetPixel(10, 10), 0);
+    }
+
+    [Fact]
+    public void FpsOverride_can_be_changed_and_cleared_at_any_time()
+    {
+        using var folder = new TempTheme(Fill("#FF0000", fps: 15));
+        using var device = new RecordingDevice();
+        using var loop = new RenderLoop(device, TestSensors.Store(), new ListLog(), fpsOverride: 20);
+        loop.SetTheme(folder.Load());
+        loop.Step(TimeSpan.Zero);
+        Assert.Equal((20, 20), (loop.FpsOverride, loop.Fps));
+
+        loop.FpsOverride = 45;
+        Assert.Equal(45, loop.Fps);
+
+        loop.FpsOverride = null;
+        Assert.Equal(15, loop.Fps);
+    }
+
+    [Fact]
     public void Step_cannot_be_used_while_the_loop_is_running()
     {
         using var device = new RecordingDevice();

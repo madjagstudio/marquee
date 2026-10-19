@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
+using Marquee.Core.Config;
 using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
 
@@ -14,7 +15,7 @@ namespace Marquee.Providers.Custom;
 ///   but 127.0.0.1 or localhost.
 /// - A request with an Origin header (sent by browsers) is refused, and JSON content is required, which a page can't
 ///   send cross-site without a preflight this server never approves.
-public sealed class CustomValuesServer(SensorStore store, ILog log, int port = CustomValuesServer.DefaultPort, int maxKeys = 1000) : IDisposable
+public sealed class CustomValuesServer(SensorStore store, ILog log, int port = CustomValuesServer.DefaultPort, int maxKeys = MarqueeConfig.DefaultMaxCustomKeys) : IDisposable
 {
     public const int DefaultPort = 47913;
     public const int MaxBodyBytes = 64 * 1024;

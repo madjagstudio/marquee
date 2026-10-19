@@ -30,10 +30,14 @@ public sealed class RenderLoop : IDisposable
     readonly IDisplayDevice _device;
     readonly SensorStore _sensors;
     readonly ILog _log;
-    readonly int? _fpsOverride;
     readonly LConnectDetector _lconnect;
     readonly Queue<TimeSpan> _frameTimes = new();
     readonly AutoResetEvent _frameReady = new(false);
+
+    // Runs only while the loop does, so a Start after Stop (a host resuming after a pause) carries on where it left off,
+    // and every time measured on it (the stats window, the reconnect delay, the theme's start) still makes sense.
+    readonly Stopwatch _clock = new();
+    volatile object? _fpsOverride; // a boxed int, or null: set from any thread, read by the render thread
 
     // Rendering side (the render thread, or the Step caller).
     LoadedTheme? _pending;
@@ -63,7 +67,7 @@ public sealed class RenderLoop : IDisposable
         _device = device;
         _sensors = sensors;
         _log = log;
-        _fpsOverride = fpsOverride;
+        FpsOverride = fpsOverride;
         _lconnect = lconnect ?? LConnectDetector.Default;
     }
 
@@ -71,8 +75,16 @@ public sealed class RenderLoop : IDisposable
     /// disposed when handlers return, so copy it.
     public event Action<SKImage>? FrameRendered;
 
-    /// The target rate: --fps if given, else the theme's canvas.fps, clamped to 1–60.
-    public int Fps => Math.Clamp(_fpsOverride ?? _theme?.Spec.Canvas.Fps ?? CanvasSpec.DefaultFps, 1, CanvasSpec.MaxFps);
+    /// `--fps` (or config.yaml's fps): the rate for every theme, or null for each theme's canvas.fps. Thread-safe; it
+    /// takes effect from the next frame, so a host switching theme and rate together sets it as it hands over the theme.
+    public int? FpsOverride
+    {
+        get => (int?)_fpsOverride;
+        set => _fpsOverride = value;
+    }
+
+    /// The target rate: FpsOverride if set, else the theme's canvas.fps, clamped to 1–60.
+    public int Fps => Math.Clamp(FpsOverride ?? _theme?.Spec.Canvas.Fps ?? CanvasSpec.DefaultFps, 1, CanvasSpec.MaxFps);
 
     public RenderStats Stats { get; private set; } = new(0, 0, 0);
 
@@ -101,16 +113,21 @@ public sealed class RenderLoop : IDisposable
     public void Start()
     {
         if (_thread is not null) throw new InvalidOperationException("The render loop is already running.");
+        _stop?.Dispose(); // the last run's, cancelled by Stop
         _stop = new CancellationTokenSource();
+        _clock.Start();
         _thread = new Thread(Run) { IsBackground = true, Name = "Marquee render loop" };
         _thread.Start();
     }
 
+    /// Ends the render and sending threads; the sending thread closes the screen as it ends. Start may follow, and
+    /// opens it again with the same theme.
     public void Stop()
     {
         _stop?.Cancel();
         _thread?.Join();
         _thread = null;
+        _clock.Stop();
 
         // A frame the sender never took must not go to the screen as the first frame of a restart.
         Interlocked.Exchange(ref _handoff, null)?.Image.Dispose();
@@ -135,10 +152,10 @@ public sealed class RenderLoop : IDisposable
     {
         using var resolution = TimerResolution.Begin();
         var token = _stop!.Token;
-        var clock = Stopwatch.StartNew();
+        var clock = _clock;
         var sender = new Thread(() => SendLoop(clock, token)) { IsBackground = true, Name = "Marquee screen sender" };
         sender.Start();
-        var next = TimeSpan.Zero;
+        var next = clock.Elapsed;
 
         while (!token.IsCancellationRequested)
         {

@@ -37,6 +37,18 @@ public class ThemeWatcherTests
     }
 
     [Fact]
+    public void Load_loads_once_and_turns_every_failure_into_a_ThemeException()
+    {
+        using var good = new TempTheme(Fill("#FF0000"));
+        using var broken = new TempTheme(Broken);
+
+        using (var theme = ThemeWatcher.Load(good.Folder, fpsOverride: 12)) Assert.Equal(good.Folder, theme.Folder);
+        Assert.Equal(4, Assert.Throws<ThemeException>(() => ThemeWatcher.Load(broken.Folder)).Line);
+        using (File.Open(good.LayoutPath, FileMode.Open, FileAccess.Read, FileShare.None))
+            Assert.StartsWith("Could not read the theme: ", Assert.Throws<ThemeException>(() => ThemeWatcher.Load(good.Folder)).Message);
+    }
+
+    [Fact]
     public void Reload_reports_a_bad_theme_with_its_line_and_loads_nothing()
     {
         using var folder = new TempTheme(Broken);
