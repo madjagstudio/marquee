@@ -86,6 +86,14 @@
     <value>The new settings could not be applied, so Marquee kept the previous ones.</value>
     <comment>Follows the reason the new settings failed, such as a theme error or no screen.</comment>
   </data>
+  <data name="WaitingForTheme" xml:space="preserve">
+    <value>Once theme '{0}' is fixed and saved, Marquee switches to it with the new settings.</value>
+    <comment>Follows PreviousSettingsKept when the new settings name a theme that didn't load. {0} is the theme's name.</comment>
+  </data>
+  <data name="ThemeStillFails" xml:space="preserve">
+    <value>{0} (Marquee switches to this theme once it loads)</value>
+    <comment>{0} is the error in a theme that new settings are waiting for (see WaitingForTheme), after it was saved again.</comment>
+  </data>
   <data name="SavingLimitsFailed" xml:space="preserve">
     <value>Saving the Claude Code limits failed: {0}</value>
     <comment>{0} is the reason.</comment>

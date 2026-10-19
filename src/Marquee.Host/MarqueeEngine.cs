@@ -1,5 +1,6 @@
 using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
+using Marquee.Core.Themes;
 using Marquee.Host.Resources;
 using Marquee.Providers.Agents.Claude;
 using SkiaSharp;
@@ -19,6 +20,13 @@ public sealed class MarqueeEngine : IDisposable
     /// How often the Claude Code limits are saved while running, if they changed, as `marquee run` always has.
     public static readonly TimeSpan SaveLimitsEvery = TimeSpan.FromSeconds(1);
 
+    /// Settings that couldn't be applied because their theme didn't load, and the watch on that theme's folder.
+    sealed class Waiting(EngineSettings settings)
+    {
+        public EngineSettings Settings { get; } = settings;
+        public ThemeWatcher? Watcher { get; set; }
+    }
+
     readonly ILog _log;
     readonly IEngineServices _services;
     readonly ClaudeLimitsFile _claudeLimits;
@@ -29,6 +37,7 @@ public sealed class MarqueeEngine : IDisposable
     volatile EngineSettings _settings;
     volatile bool _paused;
     Timer? _saveTimer;
+    Waiting? _waiting; // settings that couldn't be applied because their theme didn't load, and the watch on that theme
     bool _wanted; // Start was called and Stop wasn't, so a missing run (a start or a change that failed) starts again
     bool _live = true;
     bool _restored;
@@ -56,6 +65,15 @@ public sealed class MarqueeEngine : IDisposable
 
     public EngineStatus Status => _run?.Status ?? EngineStatus.Stopped;
 
+    /// The theme folder that settings Apply couldn't apply are waiting for (see Apply), for tests.
+    internal string? WaitingForTheme
+    {
+        get
+        {
+            lock (_gate) return _waiting?.Settings.ThemeFolder;
+        }
+    }
+
     /// A theme loaded: at start, after its files changed, or for Apply and SwitchTheme. The theme events are raised
     /// with no engine or watcher lock held, one at a time and in order: for a load that Start, Apply or SwitchTheme did,
     /// on the calling thread just before the call returns; for a hot reload, on a thread-pool thread. So a handler may
@@ -63,8 +81,8 @@ public sealed class MarqueeEngine : IDisposable
     public event Action<LoadedThemeInfo>? ThemeLoaded;
 
     /// A theme failed to load: the error, with its file and line. At start this means Start returns false; for Apply,
-    /// that the previous theme stays; for a hot reload, that the last good layout stays on screen. Raised like
-    /// ThemeLoaded.
+    /// that the previous theme stays; for a hot reload, that the last good layout stays on screen; for a theme that
+    /// settings are waiting for (see Apply), that it still doesn't load. Raised like ThemeLoaded.
     public event Action<string>? ThemeFailed;
 
     /// Each frame after it went to the screen, raised on the render loop's screen-sending thread. The image is disposed
@@ -116,9 +134,11 @@ public sealed class MarqueeEngine : IDisposable
     /// Switches to new settings (a config.yaml edit), changing only what differs (see EngineRun.Apply): a new theme or
     /// frame rate keeps the screen open, and the sensor store and the Claude limits always carry on. Settings equal to
     /// the current ones change nothing. If the new settings can't be applied (a broken theme, no screen for a new
-    /// orientation), nothing changes and this returns false. Before Start or after Stop, it only replaces the settings
-    /// Start will use. If the engine should be running but isn't, because a start or an earlier change failed, it
-    /// starts with the new settings.
+    /// orientation), nothing changes and this returns false; when it was another theme that didn't load, the engine
+    /// watches that theme's folder and applies the settings once a save makes it load, unless other settings are
+    /// applied or the engine stops first. Before Start or after Stop, it only replaces the settings Start will use. If
+    /// the engine should be running but isn't, because a start or an earlier change failed, it starts with the new
+    /// settings.
     public bool Apply(EngineSettings settings)
     {
         bool applied;
@@ -177,6 +197,7 @@ public sealed class MarqueeEngine : IDisposable
         lock (_gate)
         {
             _wanted = false;
+            StopWaiting();
             StopSaving();
             var run = _run;
             _run = null;
@@ -205,6 +226,7 @@ public sealed class MarqueeEngine : IDisposable
     /// Under _gate.
     bool ApplyLocked(EngineSettings settings)
     {
+        StopWaiting(); // these settings replace any that were waiting for their theme
         if (_run is not { } run)
         {
             _settings = settings;
@@ -222,6 +244,7 @@ public sealed class MarqueeEngine : IDisposable
             }
 
             _log.Error(Strings.PreviousSettingsKept);
+            WaitForTheme(settings, run.Settings);
             return false;
         }
         catch (Exception ex)
@@ -234,6 +257,73 @@ public sealed class MarqueeEngine : IDisposable
             DisposeRun(run);
             return false;
         }
+    }
+
+    /// Under _gate, after Apply kept the running settings. A change to a theme that doesn't load yet (picked while it
+    /// is still being written, say) is applied once it does: the theme's folder is watched as the one on screen is, a
+    /// save that loads applies the settings again, and a save that still doesn't load is reported as a hot reload is.
+    /// Only while rendering live, and only for a theme other than the one on screen, which its own watcher reloads.
+    /// A failure that isn't the theme's (no screen for a new orientation) is tried again at the theme's next save too.
+    void WaitForTheme(EngineSettings wanted, EngineSettings running)
+    {
+        if (!_live || wanted.ThemeFolder == running.ThemeFolder || !Directory.Exists(wanted.ThemeFolder)) return;
+
+        var waiting = new Waiting(wanted);
+        // The callbacks run under the watcher's lock, which disposing it (under _gate) waits for, so they never take
+        // _gate: the change itself is applied from the thread pool.
+        var watcher = new ThemeWatcher(wanted.ThemeFolder,
+            loaded: theme =>
+            {
+                theme.Dispose(); // Apply loads it again, before it lets go of the theme on screen
+                ThreadPool.QueueUserWorkItem(_ => ApplyWaiting(waiting));
+            },
+            failed: error =>
+            {
+                _log.Error(Strings.ThemeStillFails(error.Message));
+                OnThemeFailed(error.Message);
+            },
+            fpsOverride: wanted.FpsOverride);
+        try
+        {
+            watcher.Start();
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException)
+        {
+            // The folder went away just now; there is nothing to wait for.
+            watcher.Dispose();
+            return;
+        }
+
+        waiting.Watcher = watcher;
+        _waiting = waiting;
+        _log.Info(Strings.WaitingForTheme(Path.GetFileName(wanted.ThemeFolder)));
+    }
+
+    /// The theme a change was waiting for loaded: applies the change, unless another change, Stop or Dispose came first.
+    void ApplyWaiting(Waiting waiting)
+    {
+        try
+        {
+            lock (_gate)
+            {
+                if (_disposed || _waiting != waiting) return;
+                ApplyLocked(waiting.Settings);
+            }
+
+            _events.Raise();
+        }
+        catch (Exception ex)
+        {
+            // This runs on a thread-pool thread, where an unhandled exception ends the process.
+            _log.Error(Strings.CouldNotApplyConfig(ex.Message));
+        }
+    }
+
+    /// Under _gate.
+    void StopWaiting()
+    {
+        _waiting?.Watcher?.Dispose();
+        _waiting = null;
     }
 
     /// Under _gate. False, with the reason logged, when the run doesn't start; an unexpected error is logged too,

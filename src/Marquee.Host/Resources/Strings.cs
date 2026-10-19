@@ -48,6 +48,10 @@ internal static class Strings
 
     public static string PreviousSettingsKept => Get(nameof(PreviousSettingsKept));
 
+    public static string WaitingForTheme(string theme) => Format(nameof(WaitingForTheme), theme);
+
+    public static string ThemeStillFails(string error) => Format(nameof(ThemeStillFails), error);
+
     public static string SavingLimitsFailed(string reason) => Format(nameof(SavingLimitsFailed), reason);
 
     public static string StartFailed(string reason) => Format(nameof(StartFailed), reason);

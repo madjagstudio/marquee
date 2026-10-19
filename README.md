@@ -80,7 +80,8 @@ means the default settings, with the error in the console and the log. `marquee 
 changes only what the edit touches, keeping the values read so far: a new theme or `fps` is loaded first and then
 swapped in while the screen stays on, a new `orientation` reopens the screen, and a provider or `http` change restarts
 only that provider or the server. If the new settings can't be applied (the new theme doesn't load, say), it keeps
-the previous ones. An edit that breaks the file, or names a theme that can't be found, is logged with the reason (and
+the previous ones; a new theme that doesn't load is watched, and the new settings apply as soon as it is fixed and
+saved, with no need to save `config.yaml` again. An edit that breaks the file, or names a theme that can't be found, is logged with the reason (and
 the line) and changes nothing until the file is fixed; flags on the command line still win over whatever the file
 says.
 

@@ -315,6 +315,51 @@ public class MarqueeEngineTests : IDisposable
     }
 
     [Fact]
+    public void A_change_to_a_broken_theme_applies_once_the_theme_is_fixed()
+    {
+        using var broken = new TempTheme(TempTheme.Broken);
+        using var engine = Engine();
+        engine.Start();
+        var screen = _services.LastDevice;
+        var wanted = _settings with { ThemeFolder = broken.Folder };
+
+        Assert.False(engine.Apply(wanted));
+        Assert.Contains($"info: Once theme '{broken.Name}' is fixed and saved, Marquee switches to it with the new settings.", _log.Entries);
+
+        // Saving it still broken says why, as a hot reload would; saving it fixed applies the change.
+        broken.Write(TempTheme.Broken.Replace("sideways", "upwards"));
+        Assert.True(Wait.Until(() => _log.Entries.Any(e => e.Contains("upwards") && e.EndsWith("(Marquee switches to this theme once it loads)"))),
+            "Saving the theme still broken logged nothing.");
+        broken.Write(TempTheme.Fill("#0000FF"));
+
+        Assert.True(Wait.Until(() => engine.Settings == wanted), "The change was never applied.");
+        Assert.True(Wait.Until(() => screen.LastPixel == SKColors.Blue), "The fixed theme never reached the screen.");
+        Assert.Same(screen, Assert.Single(_services.Devices));
+        Assert.Null(engine.WaitingForTheme);
+    }
+
+    [Fact]
+    public void Another_change_or_stop_ends_the_wait_for_a_broken_theme()
+    {
+        using var broken = new TempTheme(TempTheme.Broken);
+        using var engine = Engine();
+        engine.Start();
+
+        Assert.False(engine.Apply(_settings with { ThemeFolder = broken.Folder }));
+        Assert.Equal(broken.Folder, engine.WaitingForTheme);
+        Assert.True(engine.Apply(_settings with { FpsOverride = 12 }));
+        Assert.Null(engine.WaitingForTheme);
+
+        Assert.False(engine.Apply(_settings with { ThemeFolder = broken.Folder }));
+        Assert.True(engine.Apply(_settings with { FpsOverride = 12 })); // back to the running settings: nothing to wait for
+        Assert.Null(engine.WaitingForTheme);
+
+        Assert.False(engine.Apply(_settings with { ThemeFolder = broken.Folder }));
+        engine.Stop();
+        Assert.Null(engine.WaitingForTheme);
+    }
+
+    [Fact]
     public void Apply_before_start_only_changes_the_settings()
     {
         using var engine = Engine();
