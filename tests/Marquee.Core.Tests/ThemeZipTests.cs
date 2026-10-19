@@ -156,9 +156,51 @@ public class ThemeZipTests : IDisposable
     }
 
     [Fact]
+    public void A_zip_whose_directory_holds_more_entries_than_it_declares_is_refused_at_the_limit()
+    {
+        var path = Zip(("layout.yaml", Layout), ("a.txt", "a"), ("b.txt", "b"), ("c.txt", "c"));
+        Zips.UnderstateCount(path, 2);
+
+        Assert.Equal([":0: error: The zip's directory lists more than 3 entries, though the zip says it has 2; a theme may have at most 3 files."],
+            Lines(Validate(path, ThemeLimits.Default with { MaxFiles = 3 })));
+    }
+
+    [Fact]
+    public void A_zip_listing_many_entries_is_refused_without_reading_them_all()
+    {
+        // A zip of about 100 MB can list over a million entries. Reading them all, an object each, before counting them
+        // would cost hundreds of megabytes; here, 20,000 entries would cost several.
+        var path = _folder.File("theme.zip");
+        using (var archive = ZipFile.Open(path, ZipArchiveMode.Create))
+            for (var i = 0; i < 20_000; i++) archive.CreateEntry($"f{i}.txt");
+        Zips.UnderstateCount(path, 2); // and past a check of the count the zip declares
+        var issues = new List<ThemeIssue>();
+
+        var allocated = GC.GetAllocatedBytesForCurrentThread();
+        using (ThemeZip.Extract(path, ThemeLimits.Default with { MaxFiles = 10 }, issues)) { }
+        allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
+
+        Assert.StartsWith("The zip's directory lists more than 10 entries", Assert.Single(issues).Message);
+        Assert.True(allocated < 1024 * 1024, $"allocated {allocated:N0} bytes");
+    }
+
+    [Fact]
+    public void A_zip_file_larger_than_a_theme_may_be_is_refused_before_it_is_opened()
+    {
+        // Not even a zip: the size alone refuses it, before anything reads its directory.
+        var path = _folder.File("theme.zip");
+        File.WriteAllBytes(path, Zips.Noise(1100 * 1024));
+
+        Assert.Equal([":0: error: The zip file is 2 MB, over the 1 MB limit for a theme."],
+            Lines(Validate(path, ThemeLimits.Default with { MaxTotalBytes = 1024 * 1024 })));
+    }
+
+    [Fact]
     public void A_zip_over_the_total_size_limit_is_refused_before_extracting()
     {
-        var path = Zip(("layout.yaml", Layout), ("a.bin", Zips.Noise(600 * 1024)), ("b.bin", Zips.Noise(600 * 1024)));
+        // The zip is under the limit; what it would expand to isn't.
+        var path = Zip(("layout.yaml", Layout), ("a.bin", Zips.HalfNoise(600 * 1024)), ("b.bin", Zips.HalfNoise(600 * 1024)));
+        Assert.True(new FileInfo(path).Length < 1024 * 1024);
 
         Assert.Equal([":0: error: The zip's files add up to 2 MB uncompressed, over the 1 MB limit for a theme."],
             Lines(Validate(path, ThemeLimits.Default with { MaxTotalBytes = 1024 * 1024 })));

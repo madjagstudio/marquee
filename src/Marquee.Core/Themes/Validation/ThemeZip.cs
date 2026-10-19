@@ -44,7 +44,10 @@ sealed class ThemeZip : IDisposable
         var zip = new ThemeZip();
         try
         {
-            using var archive = ZipFile.OpenRead(zipPath);
+            using var file = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (RefusedUpFront(file, limits, issues)) return zip;
+            file.Position = 0;
+            using var archive = new ZipArchive(file, ZipArchiveMode.Read);
             zip.ExtractFrom(archive, limits, issues);
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -68,13 +71,49 @@ sealed class ThemeZip : IDisposable
         }
     }
 
+    /// Checks what can be checked before ZipArchive reads the zip's directory: the zip's own size, held to the theme's
+    /// total size limit (but for its headers, a zip is no larger than the files it holds), and how many entries it
+    /// lists, counted without reading them in (see ZipDirectory). True, with an issue, when the zip is refused.
+    static bool RefusedUpFront(FileStream file, ThemeLimits limits, List<ThemeIssue> issues)
+    {
+        if (file.Length > limits.MaxTotalBytes)
+        {
+            issues.Add(ThemeIssue.Error("", $"The zip file is {ThemeFiles.Megabytes(file.Length)} MB, " +
+                $"over the {ThemeFiles.Megabytes(limits.MaxTotalBytes)} MB limit for a theme."));
+            return true;
+        }
+
+        if (ZipDirectory.Count(file, limits.MaxFiles) is not { } count) return false;
+        var (declared, found) = count;
+        if (declared > limits.MaxFiles)
+        {
+            TooMany(declared, limits, issues);
+            return true;
+        }
+
+        // A zip that lists more than it declares is damaged or made to get past the check above.
+        if (found > limits.MaxFiles)
+        {
+            issues.Add(ThemeIssue.Error("", string.Create(CultureInfo.InvariantCulture,
+                $"The zip's directory lists more than {limits.MaxFiles:N0} entries, though the zip says it has {declared:N0}; " +
+                $"a theme may have at most {limits.MaxFiles:N0} files.")));
+            return true;
+        }
+
+        return false;
+    }
+
+    static void TooMany(long entries, ThemeLimits limits, List<ThemeIssue> issues) =>
+        issues.Add(ThemeIssue.Error("", string.Create(CultureInfo.InvariantCulture,
+            $"The zip has {entries:N0} entries, more than the {limits.MaxFiles:N0} files a theme may have.")));
+
     void ExtractFrom(ZipArchive archive, ThemeLimits limits, List<ThemeIssue> issues)
     {
+        // Checked before opening too; this holds whatever ZipArchive makes of a zip that ZipDirectory couldn't read.
         var all = archive.Entries;
         if (all.Count > limits.MaxFiles)
         {
-            issues.Add(ThemeIssue.Error("", string.Create(CultureInfo.InvariantCulture,
-                $"The zip has {all.Count:N0} entries, more than the {limits.MaxFiles:N0} files a theme may have.")));
+            TooMany(all.Count, limits, issues);
             return;
         }
 

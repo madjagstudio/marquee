@@ -38,6 +38,21 @@ static class Zips
         File.WriteAllBytes(path, bytes);
     }
 
+    /// Rewrites the zip's end-of-directory record to say it has `count` entries, whatever its directory holds, as a zip
+    /// made to get past an entry-count check would. A zip without a comment ends with that 22-byte record.
+    public static void UnderstateCount(string path, ushort count)
+    {
+        var bytes = File.ReadAllBytes(path);
+        var end = bytes.Length - 22;
+        if (BitConverter.ToUInt32(bytes, end) != 0x06054b50) throw new InvalidOperationException("The zip has a comment.");
+        BitConverter.TryWriteBytes(bytes.AsSpan(end + 8), count); // entries on this disk
+        BitConverter.TryWriteBytes(bytes.AsSpan(end + 10), count); // entries in all
+        File.WriteAllBytes(path, bytes);
+    }
+
+    /// Bytes from only 16 values: they deflate to about half, far from a zip bomb's ratio.
+    public static byte[] HalfNoise(int length) => [.. Noise(length).Select(b => (byte)(b & 0x0F))];
+
     static int Find(byte[] bytes, uint signature)
     {
         for (var i = 0; i + 4 <= bytes.Length; i++)

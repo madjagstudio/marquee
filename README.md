@@ -218,8 +218,9 @@ is designed for, and the counts:
 It exits 0 when there are no errors (warnings alone are fine) and 1 when there are any.
 
 A theme, in a folder or a zip, can have at most 1,000 files, each up to 200 MB and 512 MB in all. A zip holds the theme
-at its top level (`layout.yaml` next to everything else) or in its one top-level folder. Before anything is extracted,
-Marquee checks every entry: its name must stay inside the theme, it must not be a link, and it must not expand more
+at its top level (`layout.yaml` next to everything else) or in its one top-level folder. A zip file over 512 MB, or one
+listing more than 1,000 entries, is refused before its entries are read. Before anything is extracted, Marquee checks
+every entry: its name must stay inside the theme, it must not be a link, and it must not expand more
 than 100 times its compressed size (the mark of a zip bomb). The zip is extracted into a temporary folder, which is
 deleted afterwards. `marquee validate` never changes the theme or the zip.
 
