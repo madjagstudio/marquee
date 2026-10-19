@@ -410,13 +410,30 @@ public sealed class TrayModelTests : IDisposable
         _engine.UsesDefaultTheme = true;
 
         await Model.Start().WaitAsync(Wait.Timeout);
+        Assert.Empty(_host.Balloons); // not before the theme is on the screen
+        _engine.RaiseScreenOpened();
+        _engine.RaiseScreenOpened(); // after a pause, say
         var again = new TrayModel(_engine, _paths, _shell, _host, _worker, _updates.Updates, NullLog.Instance, () => _now);
         await again.Start().WaitAsync(Wait.Timeout);
+        _engine.RaiseScreenOpened();
 
         var hint = Assert.Single(_host.Balloons);
         Assert.Equal("Marquee is showing an example theme", hint.Title);
         Assert.Contains("theme and the screen's orientation", hint.Text);
         Assert.False(hint.IsError);
+    }
+
+    [Fact]
+    public void The_first_run_hint_isnt_shown_over_a_config_yaml_error_or_while_paused()
+    {
+        _engine.UsesDefaultTheme = false; // what a config.yaml that doesn't read gives
+        _engine.RaiseScreenOpened();
+        _engine.UsesDefaultTheme = true;
+        _engine.IsPaused = true; // paused before the opening's report came through
+        _engine.RaiseScreenOpened();
+
+        Assert.Empty(_host.Balloons);
+        Assert.False(File.Exists(Path.Combine(_paths.DataFolder, FirstRun.HintMarker)));
     }
 
     [Fact]

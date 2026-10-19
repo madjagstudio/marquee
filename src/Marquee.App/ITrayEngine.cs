@@ -22,7 +22,7 @@ interface ITrayEngine : IDisposable
 
     bool IsPaused { get; }
 
-    /// config.yaml named no theme at start, so FirstRun.DefaultTheme is showing.
+    /// config.yaml as last read names no theme (and has no error), so FirstRun.DefaultTheme is showing.
     bool UsesDefaultTheme { get; }
 
     /// The last theme error, until a theme loads.

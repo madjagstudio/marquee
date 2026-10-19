@@ -47,7 +47,7 @@ sealed class TrayRuntime : ITrayEngine
     IDisposable? _marker;
     bool _started;
     bool _disposed;
-    bool _namesNoTheme; // config.yaml named no theme at start
+    volatile bool _namesNoTheme; // config.yaml as last read names no theme; the tray reads it on an engine thread
 
     /// `screenMarker` is TrayNames.Screen, or a test's own name.
     public TrayRuntime(TrayPaths paths, ILog log, IEngineServices services, string screenMarker, TimeSpan? retryEvery = null)
@@ -83,13 +83,10 @@ sealed class TrayRuntime : ITrayEngine
 
     public bool IsPaused => _engine?.IsPaused ?? false;
 
-    /// config.yaml named no theme when Start read it, and has no error. One that doesn't read shows the example theme
-    /// too, but that isn't a first run: the first-run hint would cover its error's balloon and use up the one-time hint.
-    public bool UsesDefaultTheme
-    {
-        get => _namesNoTheme && _configError is null;
-        private set => _namesNoTheme = value;
-    }
+    /// config.yaml as last read names no theme, and has no error. One that doesn't read shows the example theme too, but
+    /// that isn't a first run: the first-run hint would cover its error's balloon and use up the one-time hint. The tray
+    /// asks when the screen opens, which can be long after Start, so this follows each edit.
+    public bool UsesDefaultTheme => _namesNoTheme && _configError is null;
 
     public string? ThemeError => _themeError;
 
@@ -125,7 +122,6 @@ sealed class TrayRuntime : ITrayEngine
             _started = true;
 
             var config = ReadConfig();
-            UsesDefaultTheme = config.Theme is null;
             _checkForUpdates = config.CheckForUpdates;
             Follow(config);
 
@@ -236,6 +232,7 @@ sealed class TrayRuntime : ITrayEngine
     void Follow(MarqueeConfig config)
     {
         _handoverChosen = config.HandoverSet;
+        _namesNoTheme = config.Theme is null;
         var resolved = SettingsResolver.Resolve(new RunOptions(), FirstRun.WithDefaultTheme(config), _paths.Locator, _paths.ConfigFile);
         if (!resolved.Succeeded)
         {

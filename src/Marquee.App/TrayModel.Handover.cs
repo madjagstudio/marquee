@@ -21,6 +21,9 @@ sealed partial class TrayModel
     /// Why the last handover failed, for a menu line, until Marquee gets the screen.
     volatile string? _handoverFailure;
 
+    /// The first-run hint's marker was tried in this run, so later openings (after each pause, say) don't touch the disk.
+    volatile bool _hintTried;
+
     /// L-Connect's service holds the screen, and the tray is trying to show something on it.
     bool LConnectHasScreen => !_engine.IsPaused && _busy is { LConnect: LConnectState.Service };
 
@@ -98,9 +101,18 @@ sealed partial class TrayModel
 
     /// On an engine thread, after the ScreenBusy of the episode it ends, however it ended (a handover, or L-Connect
     /// stopped by hand), so a late ScreenBusy can't bring back a stale "Take over".
+    ///
+    /// On the first run (config.yaml as last read names no theme and has no error, and the hint hasn't been shown) a
+    /// balloon then says where to pick a theme and the orientation. Not at Start: the engine reports a busy screen only
+    /// after its first frame, so at Start nothing yet says whether L-Connect has the screen, and the hint would race the
+    /// handover's offer and use itself up unseen. Here Marquee's picture is on the screen, the offer (if any) came first,
+    /// and the hint, which does nothing when clicked, replaces it as the balloon showing, so its click can't take over.
     void OnScreenOpened()
     {
         _busy = null;
         _handoverFailure = null;
+        if (_hintTried || _engine.IsPaused || !_engine.UsesDefaultTheme) return;
+        _hintTried = true;
+        if (FirstRun.ClaimHint(_paths.DataFolder)) _host.ShowBalloon(Strings.FirstRunHintTitle, Strings.FirstRunHint, isError: false);
     }
 }

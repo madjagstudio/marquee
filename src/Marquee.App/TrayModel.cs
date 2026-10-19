@@ -94,17 +94,10 @@ sealed partial class TrayModel
     }
 
     /// Starts the engine on the worker, then the daily update check, which runs even when the engine didn't start (it
-    /// may be the fix). On the first run (config.yaml names no theme, and the hint hasn't been shown) a balloon says
-    /// where to pick a theme and the orientation; not while L-Connect has the screen, though, where the handover's
-    /// offer matters more and a later balloon would hide it: the hint then waits for a later start.
+    /// may be the fix). The first-run hint waits for the screen to open (OnScreenOpened).
     public async Task Start()
     {
-        await Run(() =>
-        {
-            _engine.Start();
-            if (_engine.UsesDefaultTheme && !LConnectHasScreen && FirstRun.ClaimHint(_paths.DataFolder))
-                _host.ShowBalloon(Strings.FirstRunHintTitle, Strings.FirstRunHint, isError: false);
-        }).ConfigureAwait(false);
+        await Run(_engine.Start).ConfigureAwait(false);
         _updates.SetEnabled(_engine.CheckForUpdates);
     }
 

@@ -294,17 +294,29 @@ public sealed class TrayHandoverTests : IDisposable
     }
 
     [Fact]
-    public async Task The_first_run_theme_hint_waits_for_a_start_where_L_Connect_doesnt_have_the_screen()
+    public async Task The_first_run_theme_hint_waits_until_Marquee_has_the_screen()
     {
-        // The handover offer (or the screen showing L-Connect's picture) matters more than which theme is on it, and a
-        // later balloon would hide the offer.
+        // In the engine's order: Start returns before the first frame finds the screen busy, and ScreenOpened comes only
+        // once Marquee's picture is on it. The handover's offer matters more than which theme is shown, and the hint
+        // makes sense only once the theme is on the screen.
         Engine.UsesDefaultTheme = true;
-        Engine.RaiseScreenBusy(Busy(HandoverAction.None));
+        Engine.HandoverChosen = false;
 
         await _rig.Model.Start().WaitAsync(Wait.Timeout);
+        Engine.RaiseScreenBusy(Busy(HandoverAction.None));
 
-        Assert.Empty(Host.Balloons);
+        Assert.Equal([("L-Connect is using the screen", PromptText, false)], Host.Balloons);
         Assert.False(File.Exists(Path.Combine(_rig.Paths.DataFolder, FirstRun.HintMarker)));
+
+        Engine.RaiseScreenOpened();
+
+        Assert.Equal(["L-Connect is using the screen", "Marquee is showing an example theme"], Host.Balloons.Select(b => b.Title));
+        Assert.True(File.Exists(Path.Combine(_rig.Paths.DataFolder, FirstRun.HintMarker)));
+
+        // The hint's click does nothing; the offer's went with its balloon.
+        Host.ClickBalloon();
+        await _rig.Flush();
+        Assert.Equal(0, TakeOvers);
     }
 
     [Fact]

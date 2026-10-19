@@ -168,6 +168,26 @@ public sealed class TrayRuntimeTests : IDisposable
         Assert.Equal(_dir.File(Path.Combine("installed", "example-landscape")), runtime.Settings!.ThemeFolder);
     }
 
+    /// The tray decides the first-run hint when the screen opens, which can be long after Start (while L-Connect held
+    /// the screen, say), so UsesDefaultTheme follows config.yaml as last read, not as it was at Start.
+    [Fact]
+    public void UsesDefaultTheme_follows_the_config_yaml_last_read()
+    {
+        var neon = Theme("user", "neon");
+        var landscape = _dir.File(Path.Combine("installed", "example-landscape"));
+        WriteConfig("fsp: 20\n");
+        var runtime = Start();
+        Assert.False(runtime.UsesDefaultTheme);
+
+        WriteConfig("theme: neon\n");
+        Assert.True(Wait.Until(() => runtime.Settings?.ThemeFolder == neon));
+        Assert.False(runtime.UsesDefaultTheme);
+
+        WriteConfig("orientation: portrait\n");
+        Assert.True(Wait.Until(() => runtime.Settings?.ThemeFolder == landscape));
+        Assert.True(runtime.UsesDefaultTheme);
+    }
+
     [Fact]
     public void A_theme_that_cant_be_found_waits_for_a_config_yaml_that_names_one_that_can()
     {
