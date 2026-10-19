@@ -1,6 +1,7 @@
 using Marquee.Core.Config;
 using Marquee.Core.Devices;
 using Marquee.Host.Tests.TestSupport;
+using SkiaSharp;
 
 namespace Marquee.Host.Tests;
 
@@ -183,6 +184,18 @@ public class SettingsResolverTests : IDisposable
 
         Assert.Equal((false, false, false, 250), (set.ClaudeSessions, set.Codex, set.GameFps, set.MaxCustomKeys));
         Assert.Equal((true, true, true, 1000), (unset.ClaudeSessions, unset.Codex, unset.GameFps, unset.MaxCustomKeys));
+    }
+
+    [Fact]
+    public void Ring_and_handover_come_from_config_or_their_default()
+    {
+        var config = Config with { Ring = RingMode.Color, RingColor = new SKColor(0x3A, 0x7B, 0xFF), Handover = HandoverMode.Auto };
+
+        var set = Resolve(new RunOptions(), config);
+        var unset = Resolve(new RunOptions(), Config);
+
+        Assert.Equal((RingMode.Color, new SKColor(0x3A, 0x7B, 0xFF), HandoverMode.Auto), (set.Ring, set.RingColor, set.Handover));
+        Assert.Equal((RingMode.Theme, (SKColor?)null, HandoverMode.Off), (unset.Ring, unset.RingColor, unset.Handover));
     }
 
     [Fact]

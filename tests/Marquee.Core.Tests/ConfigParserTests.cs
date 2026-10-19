@@ -1,6 +1,7 @@
 using Marquee.Core.Config;
 using Marquee.Core.Devices;
 using Marquee.Core.Sensors;
+using SkiaSharp;
 
 namespace Marquee.Core.Tests;
 
@@ -19,6 +20,9 @@ public class ConfigParserTests
             http: { port: 50000 }
             providers: { claude: on, claude_usage: off, codex: false, fps: true }
             custom: { max_keys: 250 }
+            ring: "#3A7BFF"
+            lconnect: { handover: ask }
+            updates: off
             """);
 
         Assert.Equal(new MarqueeConfig
@@ -34,6 +38,11 @@ public class ConfigParserTests
             Codex = false,
             GameFps = true,
             MaxCustomKeys = 250,
+            Ring = RingMode.Color,
+            RingColor = new SKColor(0x3A, 0x7B, 0xFF),
+            Handover = HandoverMode.Ask,
+            HandoverSet = true,
+            CheckForUpdates = false,
         }, config);
     }
 
@@ -60,12 +69,17 @@ public class ConfigParserTests
         Assert.True(config.Codex);
         Assert.True(config.GameFps);
         Assert.Equal(1000, config.MaxCustomKeys);
+        Assert.Equal(RingMode.Theme, config.Ring);
+        Assert.Null(config.RingColor);
+        Assert.Equal(HandoverMode.Off, config.Handover);
+        Assert.False(config.HandoverSet);
+        Assert.True(config.CheckForUpdates);
     }
 
     [Fact]
     public void Keys_left_out_of_a_section_keep_their_defaults()
     {
-        var config = ConfigParser.Parse("providers: { codex: off }\nhttp: {}\ncustom: {}");
+        var config = ConfigParser.Parse("providers: { codex: off }\nhttp: {}\ncustom: {}\nlconnect: {}");
 
         Assert.Equal(MarqueeConfig.Default with { Codex = false }, config);
     }
@@ -121,6 +135,58 @@ public class ConfigParserTests
         Assert.Equal(fps, ConfigParser.Parse($"fps: {fps}").Fps);
 
     [Theory]
+    [InlineData("theme", RingMode.Theme)]
+    [InlineData("off", RingMode.Off)]
+    public void Ring_takes_theme_or_off_with_no_color(string word, RingMode expected)
+    {
+        var config = ConfigParser.Parse($"ring: {word}");
+
+        Assert.Equal(expected, config.Ring);
+        Assert.Null(config.RingColor);
+    }
+
+    [Theory]
+    [InlineData("\"#3A7BFF\"", 0xFF3A7BFFu)]
+    [InlineData("'#3a7bff'", 0xFF3A7BFFu)]
+    [InlineData("\"#FFF\"", 0xFFFFFFFFu)]
+    [InlineData("\"#3A7BFF80\"", 0x803A7BFFu)]
+    public void Ring_takes_a_quoted_color_in_the_forms_themes_take(string yaml, uint argb)
+    {
+        var config = ConfigParser.Parse($"ring: {yaml}");
+
+        Assert.Equal(RingMode.Color, config.Ring);
+        Assert.Equal(new SKColor(argb), config.RingColor);
+    }
+
+    [Theory]
+    [InlineData("off", HandoverMode.Off)]
+    [InlineData("ask", HandoverMode.Ask)]
+    [InlineData("auto", HandoverMode.Auto)]
+    public void Lconnect_handover_takes_off_ask_and_auto(string word, HandoverMode expected)
+    {
+        var config = ConfigParser.Parse($"lconnect: {{ handover: {word} }}");
+
+        Assert.Equal((expected, true), (config.Handover, config.HandoverSet));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("lconnect: {}")]
+    [InlineData("theme: neon")]
+    public void Without_lconnect_handover_the_handover_is_off_by_default_not_by_choice(string yaml)
+    {
+        var config = ConfigParser.Parse(yaml);
+
+        Assert.Equal((HandoverMode.Off, false), (config.Handover, config.HandoverSet));
+    }
+
+    [Theory]
+    [InlineData("check", true)]
+    [InlineData("off", false)]
+    public void Updates_takes_check_and_off(string word, bool expected) =>
+        Assert.Equal(expected, ConfigParser.Parse($"updates: {word}").CheckForUpdates);
+
+    [Theory]
     [InlineData("theme: \"\"", 1, "theme is empty")]
     [InlineData("theme: [a, b]", 1, "theme must be a single value, not a list or mapping")]
     [InlineData("fps: 30\norientation: sideways", 2,
@@ -140,6 +206,17 @@ public class ConfigParserTests
     [InlineData("custom:\n  max_keys: 0", 2, "custom.max_keys must be between 1 and 10000")]
     [InlineData("custom:\n  max_keys: 10001", 2, "custom.max_keys must be between 1 and 10000")]
     [InlineData("custom: { max_keys: lots }", 1, "custom.max_keys must be a number, not 'lots'")]
+    [InlineData("theme: a\nring: blue", 2, "ring must be theme, off or a quoted color like \"#3A7BFF\"; not 'blue'")]
+    [InlineData("ring: \"transparent\"", 1, "ring must be theme, off or a quoted color like \"#3A7BFF\"; not 'transparent'")]
+    [InlineData("ring: \"#12345\"", 1, "ring must be theme, off or a quoted color like \"#3A7BFF\"; not '#12345'")]
+    [InlineData("ring: \"#GGGGGG\"", 1, "ring must be theme, off or a quoted color like \"#3A7BFF\"; not '#GGGGGG'")]
+    [InlineData("ring: #3A7BFF", 1, "ring is empty. Quote colors, e.g. \"#3A7BFF\": an unquoted # starts a YAML comment")]
+    [InlineData("ring: { color: \"#3A7BFF\" }", 1, "ring must be a single value, not a list or mapping")]
+    [InlineData("lconnect: auto", 1, "lconnect must be a mapping of keys to values")]
+    [InlineData("lconnect:\n  handover: on", 2, "lconnect.handover must be one of: off, ask, auto; not 'on'")]
+    [InlineData("lconnect: { handover: [ask] }", 1, "lconnect.handover must be a single value, not a list or mapping")]
+    [InlineData("theme: a\nupdates: on", 2, "updates must be one of: check, off; not 'on'")]
+    [InlineData("updates: daily", 1, "updates must be one of: check, off; not 'daily'")]
     [InlineData("landscape", 1, "config.yaml must be a mapping of keys to values")]
     [InlineData("fps: 30\nfps: 60", 2, "YAML syntax error: Duplicate key fps")]
     public void Bad_values_name_the_line_and_the_problem(string yaml, int line, string reason)
@@ -151,11 +228,12 @@ public class ConfigParserTests
     }
 
     [Theory]
-    [InlineData("theme: a\nthemes: b", 2, "Unknown key 'themes' in config.yaml. Expected one of: theme, orientation, fps, sensors, http, providers, custom")]
-    [InlineData("ring: off", 1, "Unknown key 'ring' in config.yaml. Expected one of: theme, orientation, fps, sensors, http, providers, custom")]
+    [InlineData("theme: a\nthemes: b", 2, "Unknown key 'themes' in config.yaml. Expected one of: theme, orientation, fps, sensors, http, providers, custom, ring, lconnect, updates")]
+    [InlineData("rings: off", 1, "Unknown key 'rings' in config.yaml. Expected one of: theme, orientation, fps, sensors, http, providers, custom, ring, lconnect, updates")]
     [InlineData("providers:\n  claude: on\n  gpu: on", 3, "Unknown key 'gpu' in providers. Expected one of: claude, claude_usage, codex, fps")]
     [InlineData("custom:\n  max: 5", 2, "Unknown key 'max' in custom. Expected one of: max_keys")]
     [InlineData("http: { port: 47913, host: 0.0.0.0 }", 1, "Unknown key 'host' in http. Expected one of: port")]
+    [InlineData("lconnect:\n  handover: ask\n  takeover: auto", 3, "Unknown key 'takeover' in lconnect. Expected one of: handover")]
     public void Unknown_keys_are_errors_with_their_line(string yaml, int line, string reason)
     {
         var ex = Error(yaml);

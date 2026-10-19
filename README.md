@@ -55,6 +55,9 @@ sensors: lhm                  # lhm | hwinfo | none; default lhm
 http: { port: 47913 }         # port 1024-65535, or http: off; default on, port 47913
 providers: { claude: on, claude_usage: on, codex: on, fps: on }   # each on or off; default on
 custom: { max_keys: 1000 }    # 1-10000; default 1000
+ring: theme                   # theme | off | a quoted color like "#3A7BFF"; default theme
+lconnect: { handover: off }   # off | ask | auto; default off
+updates: check                # check | off; default check
 ```
 
 - `theme` is the theme `marquee run` shows when no folder is given on its command line. Without either, it says so
@@ -64,6 +67,13 @@ custom: { max_keys: 1000 }    # 1-10000; default 1000
   `claude_usage` the `/usage` poll for Claude Code's limits, `codex` the Codex limits and sessions, and `fps` the
   [game FPS](#game-fps).
 - `custom.max_keys` is how many different `custom.*` keys a running Marquee holds.
+- `ring` is the screen's LED ring: `theme` lets each theme set it, `off` keeps it dark, and a color shows that color
+  for every theme. Quote the color: an unquoted `#` starts a comment.
+- `lconnect.handover` is whether Marquee takes the screen from L-Connect: `off` leaves it alone, `ask` offers to in a
+  tray notification, and `auto` takes it without asking.
+- `updates: check` has the tray look for a newer release once a day; `updates: off` turns that off.
+
+`ring`, `lconnect` and `updates` take effect with the tray and the LED ring, which arrive in milestone 4b.
 
 A command-line flag wins over `config.yaml`, `config.yaml` over the theme, and the theme over the default: `fps` in
 `config.yaml` overrides every theme's `canvas.fps`, and `--fps` overrides both. `--no-http`, `--http-port`,

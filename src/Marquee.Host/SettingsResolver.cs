@@ -40,6 +40,9 @@ public static class SettingsResolver
             Codex = config.Codex,
             GameFps = options.GameFps ?? config.GameFps,
             MaxCustomKeys = config.MaxCustomKeys,
+            Ring = config.Ring,
+            RingColor = config.RingColor,
+            Handover = config.Handover,
             Sink = options.Sink,
         });
     }
