@@ -292,7 +292,8 @@ when it resets. If `claude` can't be found, isn't logged in or fails, Marquee lo
 minutes. Which Codex window is primary depends on the plan: `codex.primary.window_min` is 300 for a 5-hour window and
 10080 for a weekly one.
 
-`marquee run` keeps the last limits across restarts in `%LOCALAPPDATA%\Marquee\claude-limits.json`, which holds only
+`marquee run` keeps the last limits across restarts in `%LOCALAPPDATA%\Marquee\claude-limits.json`, or, running as
+administrator, in `%ProgramData%\Marquee\users\<your SID>\claude-limits.json` (see [Logs](#logs) for why). The file holds only
 each window's percentage and reset time and when they were read (no login or account details). It saves them whenever
 they change and when it stops, and loads them at start, so the bars show at once, with `claude.updated_at` still saying
 how old they are. A window that reset while Marquee was stopped stays stale (`—`), and a window without a reset time
@@ -379,6 +380,14 @@ an elevated terminal. Unelevated, FPS is off with a warning saying why. `provide
 so a problem can still be read after the console is closed. The files of the last 7 days, today's included, are kept;
 older ones are deleted. A day's file stops at 10 MB, with a last line saying so, and logging carries on in the next
 day's file. The file can be opened while Marquee runs.
+
+Running as administrator (from an elevated terminal, say), Marquee keeps its log and the Claude Code limits in
+`%ProgramData%\Marquee\users\<your SID>\` instead (`logs\marquee-YYYYMMDD.log` and `claude-limits.json`), a folder
+only administrators can change and you can read. `%LOCALAPPDATA%` belongs to your unelevated programs, and one of them
+could put a link there that sends an elevated write anywhere on the PC. If `%ProgramData%\Marquee` or a folder in it
+already exists and someone other than administrators can change it, Marquee says so and stops: delete that folder (as
+an administrator) and Marquee makes it again. `config.yaml` and your themes stay in `%LOCALAPPDATA%\Marquee`, where
+you edit them.
 
 ## Verified hardware
 

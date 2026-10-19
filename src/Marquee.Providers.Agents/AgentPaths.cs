@@ -21,9 +21,12 @@ public static class AgentPaths
     /// %LOCALAPPDATA%\Marquee: Marquee's own state (MarqueePaths.DataRoot).
     public static string MarqueeData => MarqueePaths.DataRoot;
 
-    /// The status line Claude Code ran before `marquee setup-claude`, which `marquee statusline` runs in turn.
+    /// The status line Claude Code ran before `marquee setup-claude`, which `marquee statusline` runs in turn. Both run
+    /// unelevated, so it stays in %LOCALAPPDATA%\Marquee.
     public static string SavedStatusLine => Path.Combine(MarqueeData, "claude-statusline.json");
 
-    /// The last Claude Code limits `marquee run` saw, which it shows again at its next start (ClaudeLimitsFile).
-    public static string ClaudeLimits => Path.Combine(MarqueeData, "claude-limits.json");
+    /// The last Claude Code limits Marquee saw, which it shows again at its next start (ClaudeLimitsFile). Written by
+    /// `marquee run` and the tray, so it is in MarqueePaths.ProcessDataFolder: %LOCALAPPDATA%\Marquee unelevated, the
+    /// admin-only %ProgramData%\Marquee\users\<SID> elevated (and throws there if that folder can't be made safe).
+    public static string ClaudeLimits => Path.Combine(MarqueePaths.ProcessDataFolder, "claude-limits.json");
 }

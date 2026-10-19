@@ -41,6 +41,8 @@ internal static class Strings
 
     public static string ConfigFileMissing(string path) => Format(nameof(ConfigFileMissing), path);
 
+    public static string DataFolderUnusable(string reason) => Format(nameof(DataFolderUnusable), reason);
+
     public static string SettingsUnchanged(string error) => Format(nameof(SettingsUnchanged), error);
 
     public static string FramesNotDelivered(long delivered, int requested, string screen) =>
@@ -82,6 +84,8 @@ internal static class Strings
         Format(nameof(ValidateSummary), theme, orientation, width, height, counts);
 
     public static string ValidateSummaryNoCanvas(string theme, string counts) => Format(nameof(ValidateSummaryNoCanvas), theme, counts);
+
+    public static string ValidateZipElevated => Get(nameof(ValidateZipElevated));
 
     public static string NoProblemsFound => Get(nameof(NoProblemsFound));
 

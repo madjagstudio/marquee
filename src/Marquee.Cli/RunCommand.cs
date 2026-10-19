@@ -19,7 +19,20 @@ static class RunCommand
     {
         if (Parse(args) is not { } options) return null;
 
-        using var fileLog = new FileLog(MarqueePaths.Logs);
+        // Elevated, the log and the Claude limits go in an admin-only folder under %ProgramData%; one that can't be made
+        // safe stops Marquee here, with the reason, before anything writes there.
+        string logs;
+        try
+        {
+            logs = MarqueePaths.ProcessLogs;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            new ConsoleLog().Error(Strings.DataFolderUnusable(ex.Message));
+            return 1;
+        }
+
+        using var fileLog = new FileLog(logs);
         var log = new TeeLog(new ConsoleLog(), fileLog);
         var configPath = ConfigOption.Path(options.ConfigFile);
         var locator = ThemeLocator.Default;
@@ -47,8 +60,8 @@ static class RunCommand
         if (options.Frames is { } count) return RenderFrames(engine, count, log);
         if (!engine.Start()) return 1;
 
-        // The default folder is %LOCALAPPDATA%\Marquee, which the log has made by now anyway. Making sure of it here
-        // means a config.yaml written there later, while this runs, is seen. A --config file's folder is left alone.
+        // The default folder is %LOCALAPPDATA%\Marquee, which an unelevated log has made by now anyway. Making sure of it
+        // here means a config.yaml written there later, while this runs, is seen. A --config file's folder is left alone.
         if (options.ConfigFile is null) Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
         using var configWatcher = new ConfigWatcher(configPath,
             config =>

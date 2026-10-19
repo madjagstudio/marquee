@@ -2,10 +2,13 @@ namespace Marquee.Core.Tests.TestSupport;
 
 static class Wait
 {
-    /// Polls until the condition holds or five seconds pass. For tests of background threads.
+    /// Long enough for a loaded CI runner to deliver a file-system event and start a render thread, as in Host's tests.
+    public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
+
+    /// Polls until the condition holds or Timeout passes. For tests of background threads.
     public static bool Until(Func<bool> condition)
     {
-        var deadline = DateTime.UtcNow.AddSeconds(5);
+        var deadline = DateTime.UtcNow + Timeout;
         while (DateTime.UtcNow < deadline)
         {
             if (condition()) return true;

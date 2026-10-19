@@ -255,4 +255,35 @@ public class ValidateCommandTests
         Assert.Equal(1, exit);
         Assert.Contains("marquee-no-themes-here", console.Out);
     }
+
+    /// Elevated, extracting a zip into %TEMP%, a folder the user's unelevated programs control, would let a junction
+    /// placed there mid-extraction send an administrator's writes anywhere. So a zip is refused, with what to do instead.
+    [Fact]
+    public void An_elevated_validate_refuses_a_zip_and_unpacks_nothing()
+    {
+        using var folder = new TempTheme("canvas: { orientation: landscape }\n");
+        var zip = Path.Combine(folder.Folder, "neon.ZIP");
+        using (var archive = ZipFile.Open(zip, ZipArchiveMode.Create))
+        using (var layout = new StreamWriter(archive.CreateEntry("neon/layout.yaml").Open()))
+            layout.Write("canvas: { orientation: portrait }\n");
+
+        using var console = new ConsoleCapture();
+        var exit = ValidateCommand.Run([zip], Free, new ThemeLocator([], Environment.CurrentDirectory), isElevated: () => true);
+
+        Assert.Equal(1, exit);
+        Assert.Equal("", console.Out);
+        Assert.Contains("normal terminal", console.Error);
+    }
+
+    [Fact]
+    public void An_elevated_validate_still_checks_a_folder()
+    {
+        using var theme = new TempTheme("canvas: { orientation: portrait }\n");
+
+        using var console = new ConsoleCapture();
+        var exit = ValidateCommand.Run([theme.Folder], Free, new ThemeLocator([], Environment.CurrentDirectory), isElevated: () => true);
+
+        Assert.Equal(0, exit);
+        Assert.Equal($"{theme.Name} (portrait, 480×1920): no problems found.", console.Out.Trim());
+    }
 }

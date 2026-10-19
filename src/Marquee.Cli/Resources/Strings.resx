@@ -79,6 +79,10 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
     <value>There is no {0}; using the default settings.</value>
     <comment>{0} is the config file --config names, as a full path.</comment>
   </data>
+  <data name="DataFolderUnusable" xml:space="preserve">
+    <value>Marquee is running as administrator, so it keeps its log and the Claude Code limits in a folder only administrators can change, and that folder can't be used. {0}</value>
+    <comment>Printed when marquee run, elevated, can't use its folder under %ProgramData%\Marquee, and stops. {0} says which folder and why, and what to do, in English.</comment>
+  </data>
   <data name="SettingsUnchanged" xml:space="preserve">
     <value>{0} (the current settings stay until the file is fixed)</value>
     <comment>Logged when config.yaml changes while marquee run is going but can't be used. {0} is the error, starting with its line number where there is one.</comment>
@@ -153,6 +157,10 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
   <data name="ValidateSummaryNoCanvas" xml:space="preserve">
     <value>{0}: {1}.</value>
     <comment>As ValidateSummary, for a theme whose layout.yaml declares no valid canvas.</comment>
+  </data>
+  <data name="ValidateZipElevated" xml:space="preserve">
+    <value>Marquee is running as administrator, so it won't check a .zip: it would unpack it into your temp folder, which your other programs can change. Run marquee validate on the .zip from a normal terminal, or unzip it and validate the folder.</value>
+    <comment>marquee validate, run as administrator on a .zip, checked nothing. The command name stays as it is.</comment>
   </data>
   <data name="NoProblemsFound" xml:space="preserve">
     <value>no problems found</value>
