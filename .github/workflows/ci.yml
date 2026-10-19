@@ -30,10 +30,65 @@ jobs:
         run: |
           if ((Get-WindowsFeature Server-Media-Foundation).InstallState -ne 'Installed') { Install-WindowsFeature Server-Media-Foundation }
           if (-not (Test-Path "$env:WINDIR\System32\mfreadwrite.dll")) { throw 'Media Foundation is missing; the video tests would only check the error path' }
-      - run: dotnet test --configuration Release
+      # A test that hangs for 10 minutes is stopped with a minidump, and the log names it, instead of the job running
+      # into GitHub's 6-hour limit with nothing to show.
+      - run: dotnet test --configuration Release --blame-hang-timeout 10m --blame-hang-dump-type mini
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: received-snapshots
           path: tests/**/Snapshots/*.received.png
           if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: hang-dumps
+          path: "**/TestResults/**/*.dmp"
+          if-no-files-found: ignore
+  installer:
+    # Builds the MSI and installs, upgrades, downgrades and uninstalls it for real (installer/test-install.ps1), which
+    # only a throwaway machine may do: the hosted runner is a fresh VM where the job runs as an administrator. Gated
+    # like test, in parallel with it. About 7 minutes on the first runs: two builds of the MSI (the first restoring and
+    # downloading PresentMon) and eight msiexec runs of a few seconds each.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $version = ([regex]::Match((Get-Content Directory.Build.props -Raw), '<Version>([^<]+)</Version>')).Groups[1].Value
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "No version in Directory.Build.props (got '$version')." }
+          "current=$version" >> $env:GITHUB_OUTPUT
+      # Windows PowerShell 5.1 (powershell, not pwsh) runs the scripts, as releasing.md says to.
+      - name: Build an older MSI (0.0.1) to upgrade from
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File installer\build.ps1 -Version 0.0.1
+      - name: Build the MSI
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File installer\build.ps1
+      - name: Check the older MSI's tables
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File installer\check-msi.ps1 artifacts\Marquee-0.0.1-x64.msi -Version 0.0.1
+      - name: Check the MSI's tables
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File installer\check-msi.ps1 artifacts\Marquee-${{ steps.version.outputs.current }}-x64.msi
+      - name: Install, upgrade, refuse a downgrade, uninstall
+        run: >-
+          powershell -NoProfile -ExecutionPolicy Bypass -File installer\test-install.ps1
+          -OlderMsi artifacts\Marquee-0.0.1-x64.msi
+          -CurrentMsi artifacts\Marquee-${{ steps.version.outputs.current }}-x64.msi
+          -LogDir artifacts\install-logs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: install-logs
+          path: artifacts/install-logs/
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: msi
+          path: artifacts/Marquee-${{ steps.version.outputs.current }}-x64.msi
+          retention-days: 7
+          if-no-files-found: error

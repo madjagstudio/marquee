@@ -4,17 +4,21 @@ Checks a built Marquee MSI's tables against what the installer sources say it mu
 
 .DESCRIPTION
 Opens the MSI read-only through Windows Installer's own COM object (nothing is installed) and checks: the version (from
-Directory.Build.props), the UpgradeCode (from Package.wxs), a per-machine install, the files Marquee needs where it
+Directory.Build.props, or -Version), the UpgradeCode (from Package.wxs), a per-machine install, the files Marquee needs where it
 looks for them, marquee.exe's folder on the system PATH, the Start menu shortcut, the custom actions with their
 conditions and flags (deferred or commit, as SYSTEM), and that Windows Installer makes nothing under %ProgramData%
 (marquee task install makes %ProgramData%\Marquee itself).
 Prints each check; exits 1 with every mismatch listed if any fails. No prompts, so CI can run it as it is:
 
     powershell -NoProfile -ExecutionPolicy Bypass -File installer\check-msi.ps1 artifacts\Marquee-0.1.0-x64.msi
+
+.PARAMETER Version
+The version the MSI must have, for one built with build.ps1 -Version. Directory.Build.props's when not given.
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)] [string] $Msi
+    [Parameter(Mandatory = $true)] [string] $Msi,
+    [string] $Version
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,7 +28,10 @@ $root = Split-Path -Parent $PSScriptRoot
 $Msi = (Resolve-Path $Msi).Path
 
 # What the sources say. Each value is read from the one place it is set.
-$version = ([regex]::Match((Get-Content (Join-Path $root 'Directory.Build.props') -Raw), '<Version>([^<]+)</Version>')).Groups[1].Value
+# PowerShell's names ignore case: $version is the -Version parameter, which defaults to Directory.Build.props's.
+if (-not $Version) {
+    $version = ([regex]::Match((Get-Content (Join-Path $root 'Directory.Build.props') -Raw), '<Version>([^<]+)</Version>')).Groups[1].Value
+}
 [xml] $package = Get-Content (Join-Path $PSScriptRoot 'Package.wxs') -Raw
 $upgradeCode = '{' + $package.Wix.Package.UpgradeCode.ToUpperInvariant() + '}'
 $presentMon = ([regex]::Match((Get-Content (Join-Path $root 'src\Marquee.Providers.Fps\PresentMon.targets') -Raw),

@@ -88,6 +88,13 @@ The version is `<Version>` in `Directory.Build.props`, the only place it is set:
 `check-msi.ps1` reads the built MSI's tables (installing nothing) and checks the version, the files, the PATH entry,
 the shortcut and the custom actions. `artifacts\` is ignored by git.
 
+CI's `installer` job (`.github/workflows/ci.yml`) also builds an older MSI from the same source with
+`build.ps1 -Version 0.0.1` (checked with `check-msi.ps1 -Version 0.0.1`), and then `installer\test-install.ps1`
+installs, upgrades, refuses a downgrade and uninstalls them for real on the runner, checking the files, the PATH, the
+shortcut, the logon task and `%ProgramData%\Marquee`. It installs machine-wide, so it refuses to run anywhere but a
+GitHub Actions runner. Its msiexec logs are the job's `install-logs` artifact. `-Version` is for that test only: a
+release's version is the one in `Directory.Build.props`.
+
 WiX stays on 5.0.2: v6 adds the Open Source Maintenance Fee. WiX's validation (ICE) runs as part of the build; keep it
 on. `build.ps1 -SkipValidation` exists only for a PC where the Windows Installer service can't run it.
 
