@@ -15,9 +15,20 @@ static class RunCommand
     static readonly TimeSpan StatusEvery = TimeSpan.FromSeconds(1);
 
     /// Null means the options were wrong and the caller should print usage.
-    public static int? Run(string[] args)
+    public static int? Run(string[] args) => Run(args, TrayNames.Screen);
+
+    /// `trayScreen` names the tray's screen marker (TrayScreen); tests pass one of their own.
+    internal static int? Run(string[] args, string trayScreen)
     {
         if (Parse(args) is not { } options) return null;
+
+        // Before anything else, so the user hears who has the screen rather than that it is busy, and nothing is
+        // logged or started for a run that can't show anything.
+        if (TrayHasScreen(options, trayScreen))
+        {
+            new ConsoleLog().Error(Strings.TrayHoldsScreen);
+            return 1;
+        }
 
         // Elevated, the log and the Claude limits go in an admin-only folder under %ProgramData%; one that can't be made
         // safe stops Marquee here, with the reason, before anything writes there.
@@ -143,6 +154,11 @@ static class RunCommand
 
         return options;
     }
+
+    /// Whether the tray app holds the screen this run would need. A sink folder needs no screen, so it runs beside the
+    /// tray.
+    internal static bool TrayHasScreen(RunOptions options, string trayScreen) =>
+        options.Sink is null && TrayScreen.IsHeld(trayScreen);
 
     static int? Integer(string? text) =>
         int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;

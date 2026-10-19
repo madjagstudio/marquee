@@ -65,6 +65,9 @@ sealed class EngineRun : IDisposable
     public EngineStatus Status =>
         new(Live && Paused ? Idle : _loop!.Stats, _loop!.Fps, _loop.FramesPushed, _themeName, _device!.Info.Name);
 
+    /// Only for a run that started. Read from any thread: ProviderRunner.Problems.
+    public IReadOnlyList<string> ProviderProblems => _providers!.Problems;
+
     /// Starts everything, or returns null (with the reason logged, and everything it had made released) when there is
     /// no screen or the theme doesn't load. A paused run starts with the screen closed.
     public static EngineRun? Start(MarqueeEngine engine, EngineSettings settings, bool live, bool paused, ILog log,

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The tray app's text in English: its menu, balloons and log lines. To translate, copy this file to
+     Strings.<culture>.resx (Strings.de.resx, say) and translate the values: see docs/localization.md. Keep every
+     {0}-style placeholder. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppName" xml:space="preserve">
+    <value>Marquee</value>
+    <comment>The product's name, as message box titles show it. Usually left as it is.</comment>
+  </data>
+  <data name="Tooltip" xml:space="preserve">
+    <value>Marquee: {0}</value>
+    <comment>Shown when the pointer rests on the tray icon. {0} is the status line, such as "example-landscape · 30 fps · Universal Screen 8.8". Windows cuts it at 127 characters.</comment>
+  </data>
+  <data name="StatusShowing" xml:space="preserve">
+    <value>{0} · {1:0} fps · {2}</value>
+    <comment>The menu's first line while a theme is on the screen. {0} is the theme's name, {1:0} the frames per second it reaches, {2} the screen's name.</comment>
+  </data>
+  <data name="StatusPaused" xml:space="preserve">
+    <value>Paused: the screen is free for other programs</value>
+    <comment>The menu's first line after Pause.</comment>
+  </data>
+  <data name="StatusWaitingForScreen" xml:space="preserve">
+    <value>Waiting for the screen</value>
+    <comment>The menu's first line when no screen is plugged in, or another program has it. Marquee takes it as soon as it can.</comment>
+  </data>
+  <data name="StatusThemeFailed" xml:space="preserve">
+    <value>Not showing: the theme didn't load</value>
+    <comment>The menu's first line when the theme had an error at start; the error is on the next line.</comment>
+  </data>
+  <data name="StatusNoTheme" xml:space="preserve">
+    <value>Not showing anything</value>
+    <comment>The menu's first line when config.yaml names a theme that can't be found; the reason is on the next line.</comment>
+  </data>
+  <data name="MenuThemes" xml:space="preserve">
+    <value>Themes</value>
+    <comment>The submenu listing the themes to pick from: the user's own, then the installed examples.</comment>
+  </data>
+  <data name="MenuNoThemes" xml:space="preserve">
+    <value>No themes found</value>
+    <comment>The Themes submenu's only line when no theme folder holds a theme.</comment>
+  </data>
+  <data name="MenuOrientation" xml:space="preserve">
+    <value>Orientation</value>
+    <comment>The submenu for how the screen is mounted.</comment>
+  </data>
+  <data name="OrientationLandscape" xml:space="preserve">
+    <value>Landscape</value>
+    <comment>The screen mounted wide, the way it ships.</comment>
+  </data>
+  <data name="OrientationLandscapeFlipped" xml:space="preserve">
+    <value>Landscape, upside down</value>
+    <comment>The screen mounted wide and turned over.</comment>
+  </data>
+  <data name="OrientationPortrait" xml:space="preserve">
+    <value>Portrait</value>
+    <comment>The screen mounted tall.</comment>
+  </data>
+  <data name="OrientationPortraitFlipped" xml:space="preserve">
+    <value>Portrait, upside down</value>
+    <comment>The screen mounted tall and turned over.</comment>
+  </data>
+  <data name="MenuOpenPreview" xml:space="preserve">
+    <value>Open preview</value>
+    <comment>Opens a window showing what the screen shows.</comment>
+  </data>
+  <data name="MenuOpenThemesFolder" xml:space="preserve">
+    <value>Open themes folder</value>
+    <comment>Opens the folder where the user's own themes go, in File Explorer.</comment>
+  </data>
+  <data name="MenuOpenLogs" xml:space="preserve">
+    <value>Open logs</value>
+    <comment>Opens the folder of Marquee's daily log files, in File Explorer.</comment>
+  </data>
+  <data name="MenuEditSettings" xml:space="preserve">
+    <value>Edit settings</value>
+    <comment>Opens config.yaml in the user's editor for .yaml files.</comment>
+  </data>
+  <data name="MenuPause" xml:space="preserve">
+    <value>Pause</value>
+    <comment>Stops showing and lets go of the screen, so another program can use it.</comment>
+  </data>
+  <data name="MenuResume" xml:space="preserve">
+    <value>Resume</value>
+    <comment>Shows the theme again after Pause.</comment>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>About Marquee</value>
+    <comment>Shows the version and license.</comment>
+  </data>
+  <data name="MenuQuit" xml:space="preserve">
+    <value>Quit</value>
+    <comment>Stops Marquee and removes the tray icon until the next logon.</comment>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>Marquee {0}
+
+Shows themes on the Lian Li 8.8" Universal Screen.
+Free for noncommercial use: PolyForm Noncommercial License 1.0.0.</value>
+    <comment>The About box's text. {0} is the version, such as 0.1.0. Lian Li and Universal Screen are product names.</comment>
+  </data>
+  <data name="FirstRunHintTitle" xml:space="preserve">
+    <value>Marquee is showing an example theme</value>
+    <comment>The title of the balloon shown once, on the first start.</comment>
+  </data>
+  <data name="FirstRunHint" xml:space="preserve">
+    <value>Pick your theme and the screen's orientation from Marquee's menu: click its icon here.</value>
+    <comment>The balloon shown once, on the first start, pointing at the tray icon's menu.</comment>
+  </data>
+  <data name="ThemeFailedTitle" xml:space="preserve">
+    <value>The theme didn't load</value>
+    <comment>The title of the balloon that shows a theme's error, with its file and line.</comment>
+  </data>
+  <data name="ThemeProblem" xml:space="preserve">
+    <value>Theme error: {0}</value>
+    <comment>A line in the menu under the status. {0} is the error, in English, starting with its file and line.</comment>
+  </data>
+  <data name="ConfigFailedTitle" xml:space="preserve">
+    <value>config.yaml has an error</value>
+    <comment>The title of the balloon shown when config.yaml can't be used. config.yaml is a file name.</comment>
+  </data>
+  <data name="ConfigInvalid" xml:space="preserve">
+    <value>config.yaml has an error, so Marquee uses the default settings: {0}</value>
+    <comment>Logged and shown in the menu at start. {0} is the error, in English, starting with its line number where there is one.</comment>
+  </data>
+  <data name="ConfigUnreadable" xml:space="preserve">
+    <value>config.yaml can't be read, so Marquee uses the default settings: {0}</value>
+    <comment>Logged and shown in the menu at start. {0} is Windows' reason.</comment>
+  </data>
+  <data name="ConfigChangeInvalid" xml:space="preserve">
+    <value>{0} (the current settings stay until config.yaml is fixed)</value>
+    <comment>Logged and shown when config.yaml changes while Marquee runs but can't be used. {0} is the error, starting with its line number where there is one.</comment>
+  </data>
+  <data name="FpsNeedsAdministrator" xml:space="preserve">
+    <value>Game FPS is off: Marquee isn't running as administrator.</value>
+    <comment>A line in the menu when the FPS provider is on but the tray isn't elevated (started by hand, or by a user who isn't an administrator).</comment>
+  </data>
+  <data name="ConfigNotWatched" xml:space="preserve">
+    <value>Marquee can't watch config.yaml for changes, so edits apply at the next start: {0}</value>
+    <comment>Logged when the folder config.yaml goes in can't be made. {0} is Windows' reason.</comment>
+  </data>
+  <data name="ScreenRetryFailed" xml:space="preserve">
+    <value>Trying the screen again failed: {0}</value>
+    <comment>Logged when the timed retry for a screen that wasn't there fails unexpectedly. {0} is the reason.</comment>
+  </data>
+  <data name="ScreenMarkerFailed" xml:space="preserve">
+    <value>Marquee couldn't mark the screen as the tray's, so marquee run won't say that the tray has it: {0}</value>
+    <comment>Logged when the named object that tells marquee run the tray has the screen can't be made. {0} is the reason. "marquee run" stays as it is.</comment>
+  </data>
+  <data name="CommandFailedTitle" xml:space="preserve">
+    <value>Marquee couldn't do that</value>
+    <comment>The title of the balloon shown when a menu command fails; the text says why.</comment>
+  </data>
+  <data name="CommandFailed" xml:space="preserve">
+    <value>A menu command failed: {0}</value>
+    <comment>Logged when a menu command fails. {0} is the reason.</comment>
+  </data>
+  <data name="NoDesktopShell" xml:space="preserve">
+    <value>Explorer, the Windows desktop, isn't running, so Marquee opened nothing: without it, what the tray opens would run as administrator. Try again once the taskbar is back.</value>
+    <comment>The balloon text when a menu item that opens a folder, a file or a web page is clicked while Explorer, the Windows desktop shell, isn't running (after it crashed, say).</comment>
+  </data>
+  <data name="PreviewStatus" xml:space="preserve">
+    <value>{0:0.0} fps (target {1}) · render {2:0.0} ms · send {3:0.0} ms · {4} frames sent</value>
+    <comment>Shown each second in the preview opened from the tray. {0:0.0} is the frame rate, {1} the target rate, {2:0.0} and {3:0.0} milliseconds per frame to render and to send, {4} the frames sent so far.</comment>
+  </data>
+  <data name="DataFolderUnusable" xml:space="preserve">
+    <value>Marquee is running as administrator, so it keeps its log and the Claude Code limits in a folder only administrators can change, and that folder can't be used. {0}</value>
+    <comment>A message box when the tray, elevated, can't use its folder under %ProgramData%\Marquee, and stops. {0} says which folder and why, and what to do, in English.</comment>
+  </data>
+  <data name="TrayStarted" xml:space="preserve">
+    <value>Marquee's tray {0} started.</value>
+    <comment>The log's first line from the tray. {0} is the version.</comment>
+  </data>
+  <data name="TrayStopped" xml:space="preserve">
+    <value>Marquee's tray stopped.</value>
+    <comment>The log's last line from the tray, after Quit.</comment>
+  </data>
+</root>

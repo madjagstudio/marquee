@@ -48,6 +48,27 @@ public class MarqueeEngineTests : IDisposable
     }
 
     [Fact]
+    public void A_provider_that_fails_is_a_problem_until_it_works_again()
+    {
+        using var engine = Engine();
+        Assert.Empty(engine.ProviderProblems);
+        Assert.True(engine.Start());
+        var hwinfo = _services.Providers.Single(provider => provider.Name == "hwinfo");
+
+        hwinfo.Fault = new InvalidOperationException("HWiNFO isn't running.");
+        Assert.True(Wait.Until(() => engine.ProviderProblems.Count > 0), "The failure never became a problem.");
+        Assert.Equal(["hwinfo failed: HWiNFO isn't running."], engine.ProviderProblems);
+
+        hwinfo.Fault = null;
+        Assert.True(Wait.Until(() => engine.ProviderProblems.Count == 0), "The problem stayed after the provider recovered.");
+
+        hwinfo.Fault = new InvalidOperationException("HWiNFO isn't running.");
+        Assert.True(Wait.Until(() => engine.ProviderProblems.Count > 0), "The failure never became a problem.");
+        engine.Stop();
+        Assert.Empty(engine.ProviderProblems);
+    }
+
+    [Fact]
     public void Start_without_a_screen_fails_before_starting_anything()
     {
         _services.Device = _ => null;

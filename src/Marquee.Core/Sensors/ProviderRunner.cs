@@ -32,6 +32,9 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
         // Under the entry's own lock, so the thread and Finish agree on who disposes the provider.
         public bool Ended { get; set; } // the thread is past its last poll
         public bool LeftToThread { get; set; } // Finish stopped waiting, so the thread disposes the provider when it ends
+
+        // Why the last poll failed, until one works again; written by the thread, read by Problems.
+        public volatile string? Problem;
     }
 
     readonly TimeSpan _firstRetry = firstRetry ?? TimeSpan.FromSeconds(1);
@@ -40,6 +43,17 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
 
     /// How long Stop and Dispose wait for each provider's thread to finish its current poll. A setting only for tests.
     internal TimeSpan StopTimeout { get; init; } = TimeSpan.FromSeconds(3);
+
+    /// What is wrong right now, one line per provider whose last poll failed ("FPS failed: PresentMon is missing…"),
+    /// in the order they started, for a status line such as the tray's. A provider drops out once a poll works again
+    /// or it is stopped. The log has each failure once, as it happened. Thread-safe.
+    public IReadOnlyList<string> Problems
+    {
+        get
+        {
+            lock (_running) return _running.Select(r => r.Problem).OfType<string>().ToList();
+        }
+    }
 
     public void Start(ISensorProvider provider)
     {
@@ -145,15 +159,17 @@ public sealed class ProviderRunner(SensorStore store, ILog log, TimeSpan? firstR
                     if (failures > 0) log.Info($"{provider.Name} is working again.");
                     failures = 0;
                     lastError = null;
+                    running.Problem = null;
                     wait = provider.Interval;
                 }
                 catch (Exception ex)
                 {
                     failures++;
+                    running.Problem = $"{provider.Name} failed: {ex.Message}";
                     if (ex.Message != lastError)
                     {
                         lastError = ex.Message;
-                        log.Error($"{provider.Name} failed: {ex.Message} Its values will go stale until it recovers.");
+                        log.Error($"{running.Problem} Its values will go stale until it recovers.");
                     }
 
                     wait = Backoff(_firstRetry, failures);

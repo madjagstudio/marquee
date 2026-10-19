@@ -85,6 +85,10 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
     <value>Marquee is running as administrator, so it keeps its log and the Claude Code limits in a folder only administrators can change, and that folder can't be used. {0}</value>
     <comment>Printed when marquee run, elevated, can't use its folder under %ProgramData%\Marquee, and stops. {0} says which folder and why, and what to do, in English.</comment>
   </data>
+  <data name="TrayHoldsScreen" xml:space="preserve">
+    <value>Marquee's tray app is showing the screen; pause it from the tray (or quit it) to use marquee run.</value>
+    <comment>Printed when marquee run is started while the tray app (MarqueeTray.exe) is showing the screen, and run stops. "marquee run" stays as it is.</comment>
+  </data>
   <data name="SettingsUnchanged" xml:space="preserve">
     <value>{0} (the current settings stay until the file is fixed)</value>
     <comment>Logged when config.yaml changes while marquee run is going but can't be used. {0} is the error, starting with its line number where there is one.</comment>

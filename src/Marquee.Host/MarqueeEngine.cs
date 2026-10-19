@@ -70,6 +70,11 @@ public sealed class MarqueeEngine : IDisposable
 
     public EngineStatus Status => _run?.Status ?? EngineStatus.Stopped;
 
+    /// The providers that are failing right now, a line each ("FPS failed: PresentMon is missing…"), until each works
+    /// again; none while stopped. For a status line or the tray's menu, which have no log to show. Takes no lock, as
+    /// Status doesn't.
+    public IReadOnlyList<string> ProviderProblems => _run?.ProviderProblems ?? [];
+
     /// The theme folder that settings Apply couldn't apply are waiting for (see Apply), for tests.
     internal string? WaitingForTheme
     {

@@ -1,15 +1,16 @@
 # Localization
 
-Marquee's own text is in English today. The text that people read in the command line and the preview window lives
-in `.resx` resource files, so it can be translated without touching the code.
+Marquee's own text is in English today. The text that people read in the command line, the tray and the preview
+window lives in `.resx` resource files, so it can be translated without touching the code.
 
 ## Where the strings live
 
 | Project | Resources | Read through |
 |---|---|---|
 | `marquee.exe` (the command line) | `src/Marquee.Cli/Resources/Strings.resx` | `src/Marquee.Cli/Resources/Strings.cs` |
+| `MarqueeTray.exe` (the tray icon: its menu, balloons and log lines) | `src/Marquee.App/Resources/Strings.resx` | `src/Marquee.App/Resources/Strings.cs` |
 | The preview window | `src/Marquee.Preview/Resources/Strings.resx` | `src/Marquee.Preview/Resources/Strings.cs` |
-| The engine's log messages (`marquee run`, later the tray) | `src/Marquee.Host/Resources/Strings.resx` | `src/Marquee.Host/Resources/Strings.cs` |
+| The engine's log messages (`marquee run` and the tray) | `src/Marquee.Host/Resources/Strings.resx` | `src/Marquee.Host/Resources/Strings.cs` |
 
 Each entry has a name (`NoSupportedScreens`) and an English value. Values with parts that change, such as a file name
 or a frame count, use numbered placeholders: `Sent {0} to {1}.` The `<comment>` beside an entry says what each
@@ -27,8 +28,9 @@ Messages from the libraries (`Marquee.Core` and the sensor providers), such as t
    are.
 5. An entry you leave out falls back to English, so a partial translation still works.
 6. Run `dotnet build -c Release` and `dotnet test -c Release`. The build puts the translation in a folder named for
-   the culture beside `marquee.exe` (`de\marquee.resources.dll`, `de\Marquee.Preview.resources.dll` and
-   `de\Marquee.Host.resources.dll`), and Marquee picks it when that is Windows' display language.
+   the culture beside `marquee.exe` (`de\marquee.resources.dll`, `de\MarqueeTray.resources.dll`,
+   `de\Marquee.Preview.resources.dll` and `de\Marquee.Host.resources.dll`), and Marquee picks it when that is Windows'
+   display language.
 
 ## Adding a message
 

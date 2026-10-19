@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- MarqueeTray.exe: the tray icon that runs the engine. The logon task starts it elevated; it asks for nothing itself
+       (asInvoker), so a user who starts it by hand gets it unelevated, with FPS and the handover off. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- Not Marquee.exe: it sits next to marquee.exe, and Windows file names ignore case. -->
+    <AssemblyName>MarqueeTray</AssemblyName>
+    <!-- Resources are named from the root namespace and their folder: Resources\Strings.resx becomes
+         Marquee.App.Resources.Strings, the name Strings.cs looks up, as in the other projects. -->
+    <RootNamespace>Marquee.App</RootNamespace>
+    <EmbeddedResourceUseDependentUponConvention>false</EmbeddedResourceUseDependentUponConvention>
+    <NeutralLanguage>en</NeutralLanguage>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>marquee.ico</ApplicationIcon>
+    <!-- WinForms takes DPI awareness from here (ApplicationConfiguration.Initialize), not from the manifest: the SDK's
+         WFAC010 check refuses DPI settings in app.manifest. -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Marquee.Host\Marquee.Host.csproj" />
+    <ProjectReference Include="..\Marquee.Preview\Marquee.Preview.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The tray icon, read at the size the notification area asks for (TrayIcons). A fixed name, so moving the file
+         doesn't change the lookup. -->
+    <EmbeddedResource Include="marquee.ico" LogicalName="marquee.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Only TrayApp and Program use WinForms; without these global usings, the rest (the menu model, the runtime) shows
+         by its own usings that it is plain C#, and Orientation and Timer mean Marquee's and System.Threading's. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marquee.App.Tests" />
+  </ItemGroup>
+</Project>
