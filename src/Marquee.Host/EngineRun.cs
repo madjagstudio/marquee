@@ -13,6 +13,8 @@ namespace Marquee.Host;
 /// engine calls it under its lock.
 sealed class EngineRun : IDisposable
 {
+    static readonly RenderStats Idle = new(0, 0, 0);
+
     readonly MarqueeEngine _engine;
     readonly ILog _log;
     readonly Dictionary<AgentSource, ISensorProvider> _agents = [];
@@ -25,6 +27,7 @@ sealed class EngineRun : IDisposable
     IDisposable? _statusLine;
     IDisposable? _http;
     volatile string? _themeName;
+    volatile bool _paused; // Status reads it without the engine's lock
     bool _showing; // whether a theme has loaded; theme loads never overlap (one watcher at a time, or Apply under the lock)
     int _stepped;
 
@@ -45,10 +48,16 @@ sealed class EngineRun : IDisposable
 
     /// Whether rendering is paused and the screen closed (Pause). Only a live run renders on its own, so only a live
     /// run's screen is closed by it.
-    public bool Paused { get; private set; }
+    public bool Paused
+    {
+        get => _paused;
+        private set => _paused = value;
+    }
 
-    /// Only for a run that started.
-    public EngineStatus Status => new(_loop!.Stats, _loop.Fps, _loop.FramesPushed, _themeName, _device!.Info.Name);
+    /// Only for a run that started. Read from any thread. While paused, nothing is rendered or sent, so the measured
+    /// rate and costs are zero rather than the last ones measured before the pause.
+    public EngineStatus Status =>
+        new(Live && Paused ? Idle : _loop!.Stats, _loop!.Fps, _loop.FramesPushed, _themeName, _device!.Info.Name);
 
     /// Starts everything, or returns null (with the reason logged, and everything it had made released) when there is
     /// no screen or the theme doesn't load. A paused run starts with the screen closed.

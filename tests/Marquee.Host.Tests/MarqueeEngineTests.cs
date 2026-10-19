@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using Marquee.Core.Devices;
+using Marquee.Core.Rendering;
 using Marquee.Host.Tests.TestSupport;
 using Marquee.Providers.Custom;
 using SkiaSharp;
@@ -567,7 +568,7 @@ public class MarqueeEngineTests : IDisposable
         using var engine = Engine();
         engine.Start();
         var screen = _services.LastDevice;
-        Assert.True(Wait.Until(() => screen.FramesPushed > 0));
+        Assert.True(Wait.Until(() => screen.FramesPushed > 0 && engine.Status.Stats.Fps > 0));
 
         engine.Pause();
 
@@ -575,6 +576,7 @@ public class MarqueeEngineTests : IDisposable
         Assert.Equal((1, 1), (screen.Opens, screen.Closes));
         Assert.All(_services.Providers, p => Assert.False(p.Disposed));
         Assert.All(_services.Servers, s => Assert.False(s.Disposed));
+        Assert.Equal(new RenderStats(0, 0, 0), engine.Status.Stats); // not the rate from before the pause
 
         engine.Resume();
 
@@ -582,6 +584,7 @@ public class MarqueeEngineTests : IDisposable
         var pushed = screen.FramesPushed;
         Assert.True(Wait.Until(() => screen.FramesPushed > pushed), "Nothing reached the screen after Resume.");
         Assert.Equal(2, screen.Opens);
+        Assert.True(Wait.Until(() => engine.Status.Stats.Fps > 0), "No rate after Resume.");
     }
 
     [Fact]

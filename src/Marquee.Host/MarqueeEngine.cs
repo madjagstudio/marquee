@@ -75,9 +75,12 @@ public sealed class MarqueeEngine : IDisposable
     }
 
     /// A theme loaded: at start, after its files changed, or for Apply and SwitchTheme. The theme events are raised
-    /// with no engine or watcher lock held, one at a time and in order: for a load that Start, Apply or SwitchTheme did,
-    /// on the calling thread just before the call returns; for a hot reload, on a thread-pool thread. So a handler may
-    /// block, wait for a UI thread (Control.Invoke) or call back into the engine. A handler that throws is logged.
+    /// with no engine or watcher lock held, one at a time and in the order they happened. For a load that Start, Apply
+    /// or SwitchTheme did, that is usually on the calling thread, just before the call returns; but if another thread
+    /// is raising events at that moment (a hot reload's slow handler, say), that thread raises this one too, after the
+    /// call has returned. For a hot reload, or a change that waited for its theme (see Apply), it is a thread-pool
+    /// thread. So a handler may block, wait for a UI thread (Control.Invoke) or call back into the engine, and must not
+    /// count on running on the thread that made the change. A handler that throws is logged.
     public event Action<LoadedThemeInfo>? ThemeLoaded;
 
     /// A theme failed to load: the error, with its file and line. At start this means Start returns false; for Apply,
