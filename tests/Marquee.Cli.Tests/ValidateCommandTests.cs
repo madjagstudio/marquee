@@ -2,6 +2,7 @@ using System.IO.Compression;
 using Marquee.Cli.Tests.TestSupport;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Validation;
+using Marquee.Host;
 
 namespace Marquee.Cli.Tests;
 
@@ -23,7 +24,7 @@ public class ValidateCommandTests
     static (int? Exit, string[] Lines) Run(ThemeValidator validator, params string[] args)
     {
         using var console = new ConsoleCapture();
-        var exit = ValidateCommand.Run(args, validator);
+        var exit = ValidateCommand.Run(args, validator, new ThemeLocator([], Environment.CurrentDirectory));
         Assert.Equal("", console.Error);
         return (exit, console.Out.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries));
     }
@@ -228,5 +229,30 @@ public class ValidateCommandTests
                 $"[!{theme.Name} (landscape, 1920×480): [!1 error!].!]",
             ],
             lines);
+    }
+
+    [Fact]
+    public void A_theme_name_is_found_where_marquee_run_finds_it()
+    {
+        using var theme = new TempTheme("canvas: { orientation: portrait }\n");
+        var locator = new ThemeLocator([Path.GetDirectoryName(theme.Folder)!], Path.GetTempPath());
+
+        using var console = new ConsoleCapture();
+        var exit = ValidateCommand.Run([theme.Name], Free, locator);
+
+        Assert.Equal(0, exit);
+        Assert.Equal($"{theme.Name} (portrait, 480×1920): no problems found.", console.Out.Trim());
+    }
+
+    [Fact]
+    public void A_name_found_nowhere_says_where_it_looked()
+    {
+        var locator = new ThemeLocator([Path.Combine(Path.GetTempPath(), "marquee-no-themes-here")], Path.GetTempPath());
+
+        using var console = new ConsoleCapture();
+        var exit = ValidateCommand.Run(["no-such-theme-4f2a"], Free, locator);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("marquee-no-themes-here", console.Out);
     }
 }

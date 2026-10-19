@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Validation;
+using Marquee.Host;
 
 /// `marquee validate <theme-folder|zip> [--fps N]`: every problem in a theme, one a line as `file:line: error: …`,
 /// sorted by file then line, then a summary naming the orientation and size the theme targets. Exits 0 with no errors
@@ -10,9 +11,10 @@ using Marquee.Core.Themes.Validation;
 static class ValidateCommand
 {
     /// Null means the arguments were wrong and the caller should print usage.
-    public static int? Run(string[] args) => Run(args, ThemeValidator.Default);
+    public static int? Run(string[] args) => Run(args, ThemeValidator.Default, ThemeLocator.Default);
 
-    internal static int? Run(string[] args, ThemeValidator validator)
+    /// `locator` finds a theme given by name, as `marquee run` and config.yaml do.
+    internal static int? Run(string[] args, ThemeValidator validator, ThemeLocator locator)
     {
         if (args is not [var path, .. var options] || path.StartsWith("--", StringComparison.Ordinal)) return null;
 
@@ -27,7 +29,22 @@ static class ValidateCommand
             }
         }
 
-        var report = validator.Validate(path, fps);
+        // A path is validated as given. A bare name that isn't a folder or zip here is looked up the way `marquee run`
+        // finds a theme by name; one found nowhere is reported with where it was looked for.
+        var target = path;
+        if (IsBareName(path) && !File.Exists(path) && !Directory.Exists(path))
+        {
+            if (!locator.TryLocate(path, out var folder, out var notFound))
+            {
+                Console.WriteLine(Strings.ValidateError(Printable(path), Printable(notFound)));
+                Console.WriteLine(Strings.ValidateSummaryNoCanvas(Printable(path), Strings.OneError));
+                return 1;
+            }
+
+            target = folder;
+        }
+
+        var report = validator.Validate(target, fps);
         foreach (var issue in report.Issues)
             Console.WriteLine(Line(issue, path));
         Console.WriteLine(Summary(report));
@@ -84,6 +101,10 @@ static class ValidateCommand
     }
 
     static bool Hidden(char c) => char.IsControl(c) || c is (>= '‪' and <= '‮') or (>= '⁦' and <= '⁩');
+
+    /// A theme name rather than a path: no folder separator and not a drive or `.`/`..`.
+    static bool IsBareName(string text) =>
+        text.IndexOfAny(['/', '\\']) < 0 && !Path.IsPathRooted(text) && text is not ("." or "..");
 
     static int? Integer(string? text) =>
         int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;

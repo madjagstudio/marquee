@@ -200,8 +200,10 @@ reason is logged once. Saving over a clip reloads the theme, like editing `layou
 
     marquee validate themes/example-agents
     marquee validate neon.zip --fps 60
+    marquee validate my-theme
 
-`marquee validate` loads a theme the way `marquee run` does, but it lists every problem instead of stopping at the
+A bare name is looked up where `marquee run` looks for one (see Settings). `marquee validate` loads a theme the way
+`marquee run` does, but it lists every problem instead of stopping at the
 first: each independent mistake in `layout.yaml` with its line; images, fonts, shaders and clips that are missing or
 can't be used; shaders that don't compile or are over the frame budget (at `--fps` if given, otherwise the theme's
 `canvas.fps`); clips that can't be decoded or can't keep up; files over the limits below; and symbolic links or
