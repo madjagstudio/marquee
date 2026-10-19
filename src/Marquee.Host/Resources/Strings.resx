@@ -110,4 +110,24 @@
     <value>A handler of the engine's events failed: {0}</value>
     <comment>{0} is the reason. A handler is code in the tray or `marquee run` that reacts to a theme loading or failing.</comment>
   </data>
+  <data name="LogonTaskDescription" xml:space="preserve">
+    <value>Starts Marquee's tray app when you log on, with administrator rights where your account has them, so it can read game FPS and take the screen over from L-Connect. Installed and removed with Marquee.</value>
+    <comment>The logon task's description, shown in Task Scheduler's window. "Marquee" and "L-Connect" are names.</comment>
+  </data>
+  <data name="SchTasksFailed" xml:space="preserve">
+    <value>schtasks exited with code {0}: {1}</value>
+    <comment>{0} is schtasks.exe's exit code, {1} what it printed (Windows' own text, already in the user's language). "schtasks" is a program's name.</comment>
+  </data>
+  <data name="TaskFileChanged" xml:space="preserve">
+    <value>The logon task's file {0} changed after Marquee wrote it, so the task was not installed. Something else is writing in that folder: install Marquee into Program Files.</value>
+    <comment>{0} is the path of the XML file Marquee writes for Task Scheduler. "Program Files" is Windows' folder: use its name in the user's language.</comment>
+  </data>
+  <data name="SchTasksTimedOut" xml:space="preserve">
+    <value>schtasks did not finish within {0} seconds and was stopped.</value>
+    <comment>{0} is a number of seconds. "schtasks" is a program's name.</comment>
+  </data>
+  <data name="SchTasksDidNotStart" xml:space="preserve">
+    <value>schtasks did not start.</value>
+    <comment>"schtasks" is a program's name.</comment>
+  </data>
 </root>

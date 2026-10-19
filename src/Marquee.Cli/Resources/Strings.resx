@@ -25,6 +25,7 @@
   marquee validate &lt;theme-folder|zip&gt; [--fps 1-60]
   marquee push &lt;key&gt; &lt;value&gt; [--ttl 30s|5m|2h] [--port 1024-65535] [--config &lt;file&gt;]
   marquee setup-claude [--undo] [--dry-run]
+  marquee task install [--tray &lt;file&gt;] | remove | status
   marquee statusline        (Claude Code runs this; see setup-claude)
 Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.yaml, or the file --config names.</value>
     <comment>Printed when the arguments are wrong. Commands, options and paths stay as they are; names such as &lt;file&gt;, the note in parentheses and the last sentence may be translated.</comment>
@@ -183,5 +184,61 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
   <data name="ErrorsAndWarnings" xml:space="preserve">
     <value>{0}, {1}</value>
     <comment>{0} is OneError or ManyErrors, {1} OneWarning or ManyWarnings.</comment>
+  </data>
+  <data name="TaskNeedsAdministrator" xml:space="preserve">
+    <value>`{0}` needs an administrator terminal, because the logon task runs with administrator rights. Open Terminal or PowerShell with "Run as administrator" and run it again.</value>
+    <comment>{0} is the command, such as `marquee task install`, which stays as it is. "Run as administrator" is Windows' own menu item: use its name in the user's language.</comment>
+  </data>
+  <data name="TrayNotFound" xml:space="preserve">
+    <value>The tray app {0} does not exist. Install Marquee, which puts it next to marquee.exe, or give its path with --tray.</value>
+    <comment>{0} is the path of MarqueeTray.exe. "--tray" is an option and stays as it is.</comment>
+  </data>
+  <data name="TrayNotInProgramFiles" xml:space="preserve">
+    <value>{0} is not under Program Files, so the logon task was not installed. The task starts the tray with administrator rights at every logon, so anyone who can change that file would get them. Install Marquee with its installer, or name a tray you trust with --tray.</value>
+    <comment>{0} is the path of MarqueeTray.exe beside marquee.exe. "Program Files" is Windows' folder: use its name in the user's language. "--tray" is an option and stays as it is.</comment>
+  </data>
+  <data name="TrayOutsideProgramFiles" xml:space="preserve">
+    <value>Warning: {0} is not under Program Files. The logon task starts it with administrator rights, so anyone who can change that file gets them at the next logon.</value>
+    <comment>{0} is the path the logon task will start.</comment>
+  </data>
+  <data name="TaskInstalled" xml:space="preserve">
+    <value>Installed the logon task {0}: it starts {1} at every logon.</value>
+    <comment>{0} is the task's name in Task Scheduler, {1} the path of the exe it starts.</comment>
+  </data>
+  <data name="TaskInstallFailed" xml:space="preserve">
+    <value>Could not install the logon task: {0}</value>
+    <comment>{0} is the reason, usually schtasks's exit code and what it printed.</comment>
+  </data>
+  <data name="TaskRemoved" xml:space="preserve">
+    <value>Removed the logon task {0}.</value>
+    <comment>{0} is the task's name in Task Scheduler.</comment>
+  </data>
+  <data name="TaskWasNotInstalled" xml:space="preserve">
+    <value>The logon task {0} was not installed, so there was nothing to remove.</value>
+    <comment>{0} is the task's name in Task Scheduler.</comment>
+  </data>
+  <data name="TaskRemoveFailed" xml:space="preserve">
+    <value>Could not remove the logon task: {0}</value>
+    <comment>{0} is the reason, usually schtasks's exit code and what it printed.</comment>
+  </data>
+  <data name="TaskInstalledStarts" xml:space="preserve">
+    <value>The logon task {0} is installed; it starts {1}.</value>
+    <comment>{0} is the task's name in Task Scheduler, {1} the path of the exe it starts.</comment>
+  </data>
+  <data name="TaskInstalledUnknownExe" xml:space="preserve">
+    <value>The logon task {0} is installed.</value>
+    <comment>{0} is the task's name in Task Scheduler. Used when the exe it starts couldn't be read.</comment>
+  </data>
+  <data name="TaskTrayMissing" xml:space="preserve">
+    <value>Warning: {0} does not exist, so the logon task starts nothing. Reinstall Marquee, or run `marquee task install` from an administrator terminal.</value>
+    <comment>{0} is the path the logon task starts. The command stays as it is.</comment>
+  </data>
+  <data name="TaskNotInstalled" xml:space="preserve">
+    <value>The logon task {0} is not installed. Run `marquee task install` from an administrator terminal to add it.</value>
+    <comment>{0} is the task's name in Task Scheduler. The command stays as it is.</comment>
+  </data>
+  <data name="TaskStatusFailed" xml:space="preserve">
+    <value>Could not read the logon task: {0}</value>
+    <comment>{0} is the reason, usually schtasks's exit code and what it printed.</comment>
   </data>
 </root>

@@ -60,6 +60,16 @@ internal static class Strings
 
     public static string HandlerFailed(string reason) => Format(nameof(HandlerFailed), reason);
 
+    public static string LogonTaskDescription => Get(nameof(LogonTaskDescription));
+
+    public static string SchTasksFailed(int exitCode, string output) => Format(nameof(SchTasksFailed), exitCode, output);
+
+    public static string TaskFileChanged(string file) => Format(nameof(TaskFileChanged), file);
+
+    public static string SchTasksTimedOut(int seconds) => Format(nameof(SchTasksTimedOut), seconds);
+
+    public static string SchTasksDidNotStart => Get(nameof(SchTasksDidNotStart));
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages get the platform's line breaks back, like the rest of the log.
     static string Get(string name) =>

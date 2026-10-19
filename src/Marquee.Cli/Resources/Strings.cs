@@ -99,6 +99,34 @@ internal static class Strings
 
     public static string ErrorsAndWarnings(string errors, string warnings) => Format(nameof(ErrorsAndWarnings), errors, warnings);
 
+    public static string TaskNeedsAdministrator(string command) => Format(nameof(TaskNeedsAdministrator), command);
+
+    public static string TrayNotFound(string path) => Format(nameof(TrayNotFound), path);
+
+    public static string TrayNotInProgramFiles(string path) => Format(nameof(TrayNotInProgramFiles), path);
+
+    public static string TrayOutsideProgramFiles(string path) => Format(nameof(TrayOutsideProgramFiles), path);
+
+    public static string TaskInstalled(string task, string path) => Format(nameof(TaskInstalled), task, path);
+
+    public static string TaskInstallFailed(string reason) => Format(nameof(TaskInstallFailed), reason);
+
+    public static string TaskRemoved(string task) => Format(nameof(TaskRemoved), task);
+
+    public static string TaskWasNotInstalled(string task) => Format(nameof(TaskWasNotInstalled), task);
+
+    public static string TaskRemoveFailed(string reason) => Format(nameof(TaskRemoveFailed), reason);
+
+    public static string TaskInstalledStarts(string task, string path) => Format(nameof(TaskInstalledStarts), task, path);
+
+    public static string TaskInstalledUnknownExe(string task) => Format(nameof(TaskInstalledUnknownExe), task);
+
+    public static string TaskTrayMissing(string path) => Format(nameof(TaskTrayMissing), path);
+
+    public static string TaskNotInstalled(string task) => Format(nameof(TaskNotInstalled), task);
+
+    public static string TaskStatusFailed(string reason) => Format(nameof(TaskStatusFailed), reason);
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages such as the usage get the platform's line breaks back, like the rest of the console output.
     static string Get(string name) =>
