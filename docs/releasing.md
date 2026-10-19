@@ -32,7 +32,10 @@ Until the ceremony below, `release-key.pub.pem` holds a placeholder public key. 
 moment the pair was made, so nothing anyone has can sign for it, and no private key is committed anywhere: the tests
 sign with keys they make in memory, and `ReleaseKeyTests` fails if a private key ever turns up in the repository.
 Marquee knows the placeholder by its fingerprint (`ReleaseKey.IsPlaceholder`), and while it is built in the updater
-installs nothing, whatever a signature says. Never publish a release built with the placeholder.
+installs nothing, whatever a signature says. Never publish a release built with the placeholder: build the release MSI
+only after the key ceremony. Nothing stops `build.ps1` from packaging the placeholder, and `sign-release.ps1` would
+sign such an MSI once the ceremony is done (the tool checks the key it signs with, not the key inside the MSI). Every
+copy installed from it would then refuse every update, and its users would have to install the next release by hand.
 
 ## The key ceremony (once)
 
@@ -85,18 +88,31 @@ with PresentMon, the example themes, `LICENSE` and `THIRD-PARTY-NOTICES.md` in `
 `marquee.exe` runs from there, and builds `artifacts\Marquee-<version>-x64.msi` with WiX 5.0.2
 (`installer\Marquee.Installer.wixproj`, which is not in `Marquee.sln`). That file name is the one the updater looks for.
 The version is `<Version>` in `Directory.Build.props`, the only place it is set: change it there for a release.
-`check-msi.ps1` reads the built MSI's tables (installing nothing) and checks the version, the files, the PATH entry,
-the shortcut and the custom actions. `artifacts\` is ignored by git.
+`artifacts\` is ignored by git.
+
+`build.ps1` also checks the notices. Every staged file other than Marquee's own, the themes and PresentMon must be one
+that `marquee.deps.json` or `MarqueeTray.deps.json` lists, and every NuGet package (or .NET runtime pack) those files
+came from must be named in `THIRD-PARTY-NOTICES.md`, as must PresentMon's exe. Each package's own license and notices
+files are copied into `licenses\<package>`, and Inter's `OFL.txt` into `licenses\Inter`, so they install with Marquee.
+A new dependency stops the build until `THIRD-PARTY-NOTICES.md` names it with its license; it prints a `Notices:` line
+for each package it found.
+
+`check-msi.ps1` reads the built MSI's tables (installing nothing) and checks the version and the UpgradeCode, the files
+(the license files included), the PATH entry, the shortcut, that no install folder can be set from the command line,
+the custom actions with their conditions and order, the upgrade and downgrade rules, and that Windows Installer makes
+nothing under `%ProgramData%` (`marquee task install` makes `%ProgramData%\Marquee` itself, safely).
 
 CI's `installer` job (`.github/workflows/ci.yml`) also builds an older MSI from the same source with
 `build.ps1 -Version 0.0.1` (checked with `check-msi.ps1 -Version 0.0.1`), and then `installer\test-install.ps1`
-installs, upgrades, refuses a downgrade and uninstalls them for real on the runner, checking the files, the PATH, the
-shortcut, the logon task and `%ProgramData%\Marquee`. It installs machine-wide, so it refuses to run anywhere but a
-GitHub Actions runner. Its msiexec logs are the job's `install-logs` artifact. `-Version` is for that test only: a
-release's version is the one in `Directory.Build.props`.
+installs, upgrades, repairs, reinstalls a rebuild of the same version, refuses a downgrade and uninstalls for real on
+the runner, checking the files, the PATH, the shortcut, the logon task, the permissions of `%ProgramData%\Marquee`,
+that `INSTALLFOLDER` is ignored and what uninstalling leaves. It installs machine-wide, so it refuses to run anywhere
+but a GitHub-hosted Actions runner. Its msiexec logs are the job's `install-logs` artifact. `-Version` is for that test
+only: a release's version is the one in `Directory.Build.props`.
 
 WiX stays on 5.0.2: v6 adds the Open Source Maintenance Fee. WiX's validation (ICE) runs as part of the build; keep it
-on. `build.ps1 -SkipValidation` exists only for a PC where the Windows Installer service can't run it.
+on. `build.ps1 -SkipValidation` exists only for a PC where the Windows Installer service can't run it: never build a
+release with it.
 
 ## Signing a release
 

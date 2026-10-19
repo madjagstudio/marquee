@@ -5,7 +5,9 @@ Builds Marquee's MSI: artifacts\Marquee-<version>-x64.msi.
 .DESCRIPTION
 Publishes marquee.exe (src\Marquee.Cli) and MarqueeTray.exe (src\Marquee.App) self-contained for win-x64, so users need
 no .NET installed, and stages them side by side in artifacts\staging with the example themes, LICENSE and
-THIRD-PARTY-NOTICES.md. Then checks that marquee.exe runs from there and builds installer\Marquee.Installer.wixproj.
+THIRD-PARTY-NOTICES.md. Checks that THIRD-PARTY-NOTICES.md names every package a staged file came from, and copies each
+package's own license and notices files into licenses\. Then checks that marquee.exe runs from there and builds
+installer\Marquee.Installer.wixproj.
 
 Not single-file: two self-contained single-file exes would each carry the whole runtime (twice the size), PresentMon
 and the themes must stay loose files anyway, and a single-file app that extracts its native libraries does so into a
@@ -105,7 +107,78 @@ $themes = New-Item -ItemType Directory (Join-Path $staging 'themes')
 Get-ChildItem (Join-Path $root 'themes') -Directory -Filter 'example-*' | ForEach-Object { Copy-Item $_.FullName $themes -Recurse }
 Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md') $staging
 
+# Everything else in the folder came from a NuGet package or the .NET runtime, and THIRD-PARTY-NOTICES.md must name each
+# one, so a new dependency can't ship without its notice. The two apps' deps.json say which library every file came
+# from; a satellite assembly (de\X.resources.dll) isn't listed there and belongs to X.dll's. The build stops on a file
+# that came from nowhere they list, or from a package the notices don't name. Each package's own license and notices
+# files go into licenses\<package>, and Inter's (built into Marquee.Core.dll) into licenses\Inter.
+$notices = Get-Content (Join-Path $root 'THIRD-PARTY-NOTICES.md') -Raw
+$packagesRoot = ((& dotnet nuget locals global-packages --list | Out-String).Trim() -replace '^global-packages:\s*', '').TrimEnd('\')
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path $packagesRoot)) { throw "Could not find the NuGet packages folder (got '$packagesRoot')." }
+
+$origins = @{} # a published file's name, lowercased -> the libraries (Id, Version, Type) that list it
+foreach ($deps in 'marquee.deps.json', 'MarqueeTray.deps.json') {
+    $json = Get-Content (Join-Path $staging $deps) -Raw | ConvertFrom-Json
+    foreach ($target in $json.targets.PSObject.Properties) {
+        foreach ($library in $target.Value.PSObject.Properties) {
+            $id, $libraryVersion = $library.Name -split '/', 2
+            $origin = @{ Id = $id -replace '^runtimepack\.', ''; Version = $libraryVersion; Type = $json.libraries.($library.Name).type }
+            foreach ($kind in 'runtime', 'native', 'runtimeTargets') {
+                $assets = $library.Value.PSObject.Properties[$kind]
+                if ($null -eq $assets) { continue }
+                foreach ($asset in $assets.Value.PSObject.Properties) {
+                    $name = (Split-Path -Leaf $asset.Name).ToLowerInvariant()
+                    if (-not $origins.ContainsKey($name)) { $origins[$name] = @() }
+                    $origins[$name] += $origin
+                }
+            }
+        }
+    }
+}
+
+$ownFiles = 'marquee.exe', 'MarqueeTray.exe', 'marquee.deps.json', 'MarqueeTray.deps.json', 'marquee.runtimeconfig.json',
+    'MarqueeTray.runtimeconfig.json', 'LICENSE', 'THIRD-PARTY-NOTICES.md'
+$unknown = @()
+$shipped = @{} # "id/version" -> the package or runtime pack, for each one a staged file came from
+foreach ($file in Get-ChildItem $staging -Recurse -File) {
+    $relative = $file.FullName.Substring($staging.Length + 1)
+    if ($relative -match '^(themes|PresentMon|licenses)\\' -or $ownFiles -contains $relative) { continue }
+    $name = if ($relative -match '^[^\\]+\\(.+)\.resources\.dll$') { "$($Matches[1]).dll" } else { $relative }
+    $from = $origins[$name.ToLowerInvariant()]
+    if (-not $from) { $unknown += $relative; continue }
+    foreach ($origin in $from | Where-Object { $_.Type -ne 'project' }) { $shipped["$($origin.Id)/$($origin.Version)"] = $origin }
+}
+if ($unknown.Count -gt 0) {
+    throw "The staging folder has files no deps.json accounts for: $($unknown -join ', '). Find where each comes from and add it to THIRD-PARTY-NOTICES.md and to this check."
+}
+
+# A name counts only whole: SkiaSharp.NativeAssets.Win32 doesn't name SkiaSharp. A sentence's closing period may follow.
+$unnamed = @($shipped.Values | Where-Object { $notices -notmatch ('(?i)(?<![\w.-])' + [regex]::Escape($_.Id) + '(?![\w-]|\.\w)') } |
+    ForEach-Object { $_.Id } | Sort-Object -Unique)
+$presentMonExe = (Get-ChildItem (Join-Path $staging 'PresentMon') -Filter 'PresentMon-*-x64.exe' -ErrorAction SilentlyContinue | Select-Object -First 1)
+if ($presentMonExe -and -not $notices.Contains($presentMonExe.Name)) { $unnamed += $presentMonExe.Name }
+if ($unnamed.Count -gt 0) {
+    throw "THIRD-PARTY-NOTICES.md doesn't name $($unnamed -join ', '), which the installer would redistribute. Add each, with its license."
+}
+
+$licenses = Join-Path $staging 'licenses'
+foreach ($package in $shipped.Values | Sort-Object { $_.Id }) {
+    $folder = Join-Path $packagesRoot "$($package.Id.ToLowerInvariant())\$($package.Version)"
+    if (-not (Test-Path $folder)) { throw "Package $($package.Id) $($package.Version) is not in $packagesRoot, so its license files can't be copied." }
+    $texts = @(Get-ChildItem $folder -File | Where-Object { $_.Name -match '^(LICENSE|THIRD-PARTY-NOTICES|ThirdPartyNotices|NOTICE)' })
+    if ($texts.Count -gt 0) {
+        $into = New-Item -ItemType Directory -Force (Join-Path $licenses $package.Id)
+        $texts | Copy-Item -Destination $into
+    }
+    Write-Host ("Notices: {0} {1} is named{2}" -f $package.Id, $package.Version,
+        $(if ($texts.Count -gt 0) { "; licenses\$($package.Id) has $(($texts | ForEach-Object Name) -join ', ')" } else { ' (it ships no license file)' }))
+}
+New-Item -ItemType Directory -Force (Join-Path $licenses 'Inter') | Out-Null
+Copy-Item (Join-Path $root 'src\Marquee.Core\Fonts\OFL.txt') (Join-Path $licenses 'Inter')
+Write-Host "Notices: $($presentMonExe.Name) is named; licenses\Inter has OFL.txt"
+
 foreach ($required in 'marquee.exe', 'MarqueeTray.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
+    'licenses\Microsoft.NETCore.App.Runtime.win-x64\THIRD-PARTY-NOTICES.TXT', 'licenses\Inter\OFL.txt',
     'themes\example-landscape\layout.yaml', 'themes\example-portrait\layout.yaml', 'themes\example-agents\layout.yaml') {
     if (-not (Test-Path (Join-Path $staging $required))) { throw "The staging folder has no $required." }
 }
