@@ -113,7 +113,7 @@ static class WidgetParser
     static YamlNode? Find(YamlMappingNode map, string key) =>
         map.Children.FirstOrDefault(kv => kv.Key is YamlScalarNode { Value: { } k } && k == key).Value;
 
-    static Expression Source(YamlNode node)
+    public static Expression Source(YamlNode node)
     {
         try
         {
@@ -199,22 +199,31 @@ static class WidgetParser
         var value = f.Required(kind);
         var style = styles.Reference(f.Required("style"), "when style");
 
+        var (condition, number, text) = Condition(kind, value, hasSource, "widget");
+        return new WhenRule(condition, number, text, style);
+    }
+
+    /// A `when` rule's condition, shared with the ring's rules: `kind` is the key the rule uses (above, below, equals or
+    /// stale) and `value` that key's value. `owner` names what the rule belongs to, for a rule with nothing to compare.
+    public static (WhenCondition Condition, double Number, string? Text) Condition(string kind, YamlNode value, bool hasSource,
+        string owner)
+    {
         if (kind != "stale" && !hasSource)
-            throw Yaml.Error(value, $"when '{kind}' compares the widget's source, but this widget has no source");
+            throw Yaml.Error(value, $"when '{kind}' compares the {owner}'s source, but this {owner} has no source");
 
         switch (kind)
         {
             case "above":
-                return new WhenRule(WhenCondition.Above, Yaml.Number(value, "above"), null, style);
+                return (WhenCondition.Above, Yaml.Number(value, "above"), null);
             case "below":
-                return new WhenRule(WhenCondition.Below, Yaml.Number(value, "below"), null, style);
+                return (WhenCondition.Below, Yaml.Number(value, "below"), null);
             case "equals":
                 var text = Yaml.Text(value, "equals");
                 var number = double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? n : double.NaN;
-                return new WhenRule(WhenCondition.Equals, number, text, style);
+                return (WhenCondition.Equals, number, text);
             default:
                 return Yaml.Bool(value, "stale")
-                    ? new WhenRule(WhenCondition.Stale, double.NaN, null, style)
+                    ? (WhenCondition.Stale, double.NaN, null)
                     : throw Yaml.Error(value, "stale only takes true; remove the rule instead of setting it to false");
         }
     }

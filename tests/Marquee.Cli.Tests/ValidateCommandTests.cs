@@ -61,7 +61,7 @@ public class ValidateCommandTests
             [
                 "a.png: error: Image 'a.png' was not found and was skipped.",
                 "b.png: error: Image 'b.png' was not found and was skipped.",
-                "layout.yaml:2: error: Unknown key 'widget' in layout.yaml. Expected one of: canvas, styles, background, widgets",
+                "layout.yaml:2: error: Unknown key 'widget' in layout.yaml. Expected one of: canvas, styles, background, widgets, ring",
                 "layout.yaml:5: error: fill: 'nope' is not a color. Use \"#RRGGBB\", \"#RRGGBBAA\" or \"transparent\"",
                 "layout.yaml: warning: Font 'NoSuchFamily123' is not installed on this PC; using Inter instead.",
                 $"{theme.Name} (landscape, 1920×480): 4 errors, 1 warning.",
@@ -152,7 +152,7 @@ public class ValidateCommandTests
         Assert.Equal(1, exit);
         Assert.Equal(
             "layout.yaml:2: error: Unknown key '\\u001B[1A\\u001B[2K\\u009B2K\\u007F\\u202Eok\\u0009' in layout.yaml. " +
-            "Expected one of: canvas, styles, background, widgets",
+            "Expected one of: canvas, styles, background, widgets, ring",
             lines[0]);
     }
 

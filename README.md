@@ -206,6 +206,32 @@ Marquee also times a few frames of each clip and skips one that decodes slower t
 with fewer frames per second, fixes that. A clip that fails partway through stays on its last good frame, and the
 reason is logged once. Saving over a clip reloads the theme, like editing `layout.yaml`.
 
+### LED ring
+
+The screen's ring of 60 LEDs is set by a theme's `ring:` block:
+
+```yaml
+ring:
+  color: "#3A7BFF"
+  effect: breathe            # static | breathe | spin | rainbow
+  speed: 1.0                 # 0.1-10
+  brightness: 80             # 0-100
+  source: cpu.temp
+  when:
+    - { above: 85, color: "#FF3A2E", effect: static }
+```
+
+- **Effects:** `static` is the color on every LED; `breathe` fades it between a fifth of the brightness and full,
+  every 3 seconds; `spin` sends a bright segment with a fading tail round the ring, once every 2 seconds; `rainbow`
+  spreads the hues round the ring and turns them, once every 6 seconds, ignoring `color`. `speed: 2` is twice as fast.
+- **`when` rules** work as a widget's do (`above`, `below`, `equals`, `stale`), comparing the ring's `source`, and
+  change any of `color`, `effect`, `speed` and `brightness`. Every matching rule applies, in order, so a later rule wins.
+- **The default:** a theme without a `ring:` block shows a soft static warm white (`#FFF1E0` at 40%). A field a `ring:`
+  block leaves out is `static`, white (`#FFFFFF`), speed 1 and brightness 100 instead, so `ring: { color: "#3A7BFF" }`
+  shows that blue at full brightness.
+
+`ring: off` or `ring: "#RRGGBB"` in `config.yaml` overrides every theme's ring.
+
 ### Checking a theme
 
     marquee validate themes/example-agents

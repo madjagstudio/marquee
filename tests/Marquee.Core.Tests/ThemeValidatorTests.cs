@@ -130,6 +130,19 @@ public class ThemeValidatorTests
     }
 
     [Fact]
+    public void Ring_errors_are_reported_with_their_line()
+    {
+        using var folder = new TempTheme(Canvas + "ring:\n  effect: strobe\n  brightness: 120\n");
+
+        Assert.Equal(
+            [
+                "layout.yaml:3: error: ring.effect must be one of: static, breathe, spin, rainbow; not 'strobe'",
+                "layout.yaml:4: error: ring.brightness must be between 0 and 100",
+            ],
+            Lines(Validate(folder.Folder)));
+    }
+
+    [Fact]
     public void A_canvas_error_leaves_the_canvas_unknown_and_the_rest_still_checked()
     {
         using var folder = new TempTheme("canvas: { orientation: sideways }\nbackground:\n  - image: gone.png\n");

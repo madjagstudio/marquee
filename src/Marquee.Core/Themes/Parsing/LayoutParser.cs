@@ -13,10 +13,10 @@ public static class LayoutParser
     public static ThemeSpec Parse(string yaml) => Parse(yaml, ParseErrors.Throwing);
 
     /// For `marquee validate`: adds every independent error to `errors`, in document order, and returns the spec built
-    /// from the parts that were valid. Recovery is per section, style, background layer and widget (through groups), so
-    /// one mistake doesn't hide the others, and a problem that only follows from one already reported isn't reported
-    /// again. A YAML syntax error or a limit (layers, widgets, group depth) stops what it applies to. At most
-    /// ParseErrors.MaxErrors are kept; then a last error, with no line, says how many more there were.
+    /// from the parts that were valid. Recovery is per section, style, background layer, widget (through groups), ring
+    /// field and ring rule, so one mistake doesn't hide the others, and a problem that only follows from one already
+    /// reported isn't reported again. A YAML syntax error or a limit (layers, widgets, group depth) stops what it applies
+    /// to. At most ParseErrors.MaxErrors are kept; then a last error, with no line, says how many more there were.
     public static ThemeSpec Parse(string yaml, List<ThemeException> errors)
     {
         var collected = ParseErrors.Collecting();
@@ -31,7 +31,7 @@ public static class LayoutParser
         var fields = errors.Recover(() =>
         {
             var root = Yaml.Load(yaml) ?? throw new ThemeException("layout.yaml is empty. It needs at least a canvas section.");
-            return Yaml.Map(root, "layout.yaml", errors, "canvas", "styles", "background", "widgets");
+            return Yaml.Map(root, "layout.yaml", errors, "canvas", "styles", "background", "widgets", "ring");
         });
         if (fields is null) return empty; // no tree, or a root that isn't a mapping: there is nothing more to check
 
@@ -39,7 +39,8 @@ public static class LayoutParser
         var styles = StyleTable.Parse(fields.Optional("styles"), errors);
         var background = fields.Optional("background") is { } b ? errors.Recover(() => BackgroundParser.Parse(b, errors)) ?? [] : [];
         var widgets = fields.Optional("widgets") is { } w ? errors.Recover(() => WidgetParser.ParseList(w, styles, "widgets", errors)) ?? [] : [];
-        return new ThemeSpec(canvas, background, widgets);
+        var ring = fields.Optional("ring") is { } r ? errors.Recover(() => RingParser.Parse(r, errors)) : null;
+        return new ThemeSpec(canvas, background, widgets, ring);
     }
 
     /// False when a collecting parse put its stand-in canvas in the spec, because the canvas section is missing or

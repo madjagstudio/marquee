@@ -8,16 +8,19 @@ public enum WhenCondition { Above, Below, Equals, Stale }
 /// Number holds the threshold for above/below; equals keeps both the text and, if it parses, the number.
 public sealed record WhenRule(WhenCondition Condition, double Number, string? Text, StyleSpec Style)
 {
-    public bool Matches(SensorValue? value, bool stale)
+    public bool Matches(SensorValue? value, bool stale) => Matches(Condition, Number, Text, value, stale);
+
+    /// Also the test for the LED ring's rules, so a condition means the same on the ring as on a widget.
+    internal static bool Matches(WhenCondition condition, double number, string? text, SensorValue? value, bool stale)
     {
-        if (Condition == WhenCondition.Stale) return stale;
+        if (condition == WhenCondition.Stale) return stale;
         if (stale || value is not { } v) return false;
 
-        return Condition switch
+        return condition switch
         {
-            WhenCondition.Above => v.Number > Number,
-            WhenCondition.Below => v.Number < Number,
-            _ => v.Number is { } n ? Math.Abs(n - Number) < 1e-9 : v.Text == Text,
+            WhenCondition.Above => v.Number > number,
+            WhenCondition.Below => v.Number < number,
+            _ => v.Number is { } n ? Math.Abs(n - number) < 1e-9 : v.Text == text,
         };
     }
 }
