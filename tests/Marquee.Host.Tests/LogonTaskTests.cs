@@ -21,6 +21,13 @@ public class LogonTaskTests
     /// output isn't decoded with, so its accented letters arrive garbled.
     const string GarbledNotFound = "ERREUR : le fichier sp�cifi� est introuvable.\r\n";
 
+    /// What schtasks prints for a missing task in a folder with no task in it, as after the task was deleted in Task
+    /// Scheduler's window: "ERROR: The system cannot find the path specified." on an English Windows.
+    static readonly string PathNotFound = $"ERROR: {new Win32Exception(3).Message}.{Environment.NewLine}";
+
+    /// The same on a French Windows, garbled as GarbledNotFound is.
+    const string GarbledPathNotFound = "ERREUR : le chemin d�acc�s sp�cifi� est introuvable.\r\n";
+
     /// schtasks answering `answer` about the logon task, and GarbledNotFound about any other: what it says for a task
     /// that can't exist.
     static FakeSchTasks Answering(int exitCode, string answer) => new(arguments => arguments.Contains(LogonTask.TaskName)
@@ -221,6 +228,37 @@ public class LogonTaskTests
     }
 
     [Fact]
+    public void A_missing_task_in_its_empty_folder_is_recognised()
+    {
+        Assert.False(LogonTask.Remove(Answering(1, PathNotFound)));
+        Assert.Equal(new LogonTaskStatus(Installed: false, TrayExePath: null), LogonTask.Status(Answering(1, PathNotFound)));
+    }
+
+    /// \Microsoft is on every Windows and holds only folders, so a task missing from it gets the same answer as one
+    /// missing from an empty \Marquee, in whatever language and code page.
+    [Fact]
+    public void A_missing_task_in_its_empty_folder_is_recognised_in_any_language_and_code_page()
+    {
+        static FakeSchTasks EmptyFolder() => new(arguments => arguments.Contains(LogonTask.TaskName)
+            || arguments.Any(argument => argument.StartsWith(@"\Microsoft\", StringComparison.Ordinal))
+                ? new SchTasksResult(1, GarbledPathNotFound)
+                : new SchTasksResult(1, GarbledNotFound));
+        var removing = EmptyFolder();
+        var querying = EmptyFolder();
+
+        Assert.False(LogonTask.Remove(removing));
+        Assert.Equal(new LogonTaskStatus(Installed: false, TrayExePath: null), LogonTask.Status(querying));
+
+        // The third call asks, read-only, about a task missing from \Microsoft.
+        Assert.All([removing.Calls[2], querying.Calls[2]], probe =>
+        {
+            Assert.Equal(["/Query", "/TN"], probe.Take(2));
+            Assert.Matches(@"^\\Microsoft\\Marquee-missing-[0-9a-f]{32}$", probe[2]);
+            Assert.Equal(3, probe.Count);
+        });
+    }
+
+    [Fact]
     public void Another_error_is_not_taken_for_a_missing_task_in_any_language()
     {
         const string Denied = "ERREUR : acc�s refus�.";
@@ -295,6 +333,19 @@ public class LogonTaskTests
     {
         var schtasks = new SchTasks();
         var result = schtasks.Run(["/Query", "/TN", $@"\Marquee-test-{Guid.NewGuid():N}\Missing"]);
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.True(LogonTask.IsNotFound(result.Output), result.Output);
+        Assert.True(LogonTask.AnswersAsForAMissingTask(result, schtasks), result.Output);
+    }
+
+    /// Read-only, as above, for a task missing from \Microsoft, a folder with no task of its own: what schtasks says
+    /// about a task deleted from an otherwise empty \Marquee.
+    [Fact]
+    public void A_missing_task_in_a_folder_without_tasks_is_recognised_in_the_real_schtasks_output()
+    {
+        var schtasks = new SchTasks();
+        var result = schtasks.Run(["/Query", "/TN", $@"\Microsoft\Marquee-test-{Guid.NewGuid():N}"]);
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.True(LogonTask.IsNotFound(result.Output), result.Output);

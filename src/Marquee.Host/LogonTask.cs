@@ -157,17 +157,27 @@ public static class LogonTask
         result.ExitCode != 0 && (IsNotFound(result.Output) || AnswersAsForAMissingTask(result, schtasks));
 
     /// schtasks says a task or its folder is missing with Windows' own text for ERROR_FILE_NOT_FOUND ("The system
-    /// cannot find the file specified."), in the PC's language, which is the text Windows gives .NET for that code.
+    /// cannot find the file specified."), in the PC's language, which is the text Windows gives .NET for that code. A
+    /// task missing from a folder with no task in it, as \Marquee is once the task was deleted in Task Scheduler's
+    /// window, gets ERROR_PATH_NOT_FOUND's ("The system cannot find the path specified.") instead.
     internal static bool IsNotFound(string output) =>
-        output.Contains(new Win32Exception(2).Message, StringComparison.OrdinalIgnoreCase);
+        output.Contains(new Win32Exception(2).Message, StringComparison.OrdinalIgnoreCase)
+        || output.Contains(new Win32Exception(3).Message, StringComparison.OrdinalIgnoreCase);
 
     /// The same without reading the text, which can arrive garbled: schtasks writes it in a code page that depends on
     /// its console, and with none (the installer runs marquee.exe without one) that need not be the one its output is
     /// decoded with, so a translated message's accented letters no longer match. schtasks is asked, read-only, about a
-    /// task in a folder that can't exist; if it answers exactly as it did, the task is missing too.
-    internal static bool AnswersAsForAMissingTask(SchTasksResult result, ISchTasks schtasks)
+    /// task in a folder that can't exist; if it answers exactly as it did, the task is missing too. If not, it is asked
+    /// about a task missing from \Microsoft, which every Windows has and which holds only folders, for the answer about
+    /// a task missing from an empty folder. (Where \Microsoft does hold a task, that answer is the first one again, and
+    /// only the text above recognises an empty \Marquee.)
+    internal static bool AnswersAsForAMissingTask(SchTasksResult result, ISchTasks schtasks) =>
+        AnswersAs(result, schtasks, $@"\Marquee-missing-{Guid.NewGuid():N}\Marquee")
+        || AnswersAs(result, schtasks, $@"\Microsoft\Marquee-missing-{Guid.NewGuid():N}");
+
+    static bool AnswersAs(SchTasksResult result, ISchTasks schtasks, string missingTask)
     {
-        var missing = schtasks.Run(["/Query", "/TN", $@"\Marquee-missing-{Guid.NewGuid():N}\Marquee"]);
+        var missing = schtasks.Run(["/Query", "/TN", missingTask]);
         return missing.ExitCode == result.ExitCode && missing.Output.Trim() == result.Output.Trim();
     }
 

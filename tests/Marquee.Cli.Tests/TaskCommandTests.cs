@@ -221,6 +221,19 @@ public sealed class TaskCommandTests : IDisposable
         Assert.Equal([@"\Marquee"], _runner.DeletedFolders);
     }
 
+    /// A task deleted in Task Scheduler's window leaves its folder empty, and schtasks then says the path, not the
+    /// file, can't be found.
+    [Fact]
+    public void Removing_a_task_deleted_by_hand_succeeds_and_deletes_its_empty_folder()
+    {
+        var (exit, output, error) = Run(Failing(1, $"ERROR: {new Win32Exception(3).Message}."), elevated: true, ["remove"]);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(@"The logon task \Marquee\Marquee was not installed, so there was nothing to remove.", output);
+        Assert.Equal("", error);
+        Assert.Equal([@"\Marquee"], _runner.DeletedFolders);
+    }
+
     [Fact]
     public void A_failed_remove_leaves_the_folder()
     {
