@@ -28,6 +28,9 @@ sealed class FakeServiceControl(params (string Name, ServiceControllerStatus Sta
     /// Start throws and the service stays stopped.
     public HashSet<string> FailToStart { get; } = [];
 
+    /// Runs during each wait, with the service's name: something that happens while the handover waits.
+    public Action<string>? DuringWait { get; set; }
+
     public ServiceControllerStatus? Status(string name) => _status.TryGetValue(name, out var status) ? status : null;
 
     public void SetStatus(string name, ServiceControllerStatus status) => _status[name] = status;
@@ -57,6 +60,7 @@ sealed class FakeServiceControl(params (string Name, ServiceControllerStatus Sta
     {
         Calls.Add($"wait {name} {status}");
         WaitTimeouts.Add(timeout);
+        DuringWait?.Invoke(name);
         if (Status(name) == status) return true;
         if (status == ServiceControllerStatus.Stopped && StopLate.Remove(name))
         {

@@ -257,6 +257,28 @@ public class LConnectHandoverTests
     }
 
     [Fact]
+    public void A_handover_cancelled_while_the_watcher_stops_leaves_the_service_running_and_starts_the_watcher_again()
+    {
+        var services = BothRunning();
+        var log = new ListLog();
+        using var cancel = new CancellationTokenSource();
+        services.DuringWait = name =>
+        {
+            if (name == Watcher) cancel.Cancel(); // Marquee pauses or quits while the watcher stops
+        };
+
+        var result = new LConnectHandover(services, log).TakeScreen(Screen(services), cancel.Token);
+
+        Assert.Equal([$"stop {Watcher}", $"wait {Watcher} Stopped", $"start {Watcher}"], services.Calls);
+        Assert.Equal(HandoverOutcome.Cancelled, result.Outcome);
+        Assert.Equal("Marquee paused or is quitting, so L-Connect's service was left running.", result.Message);
+        Assert.Equal([Watcher], result.Restarted);
+        Assert.Equal(Running, services.Status(Service));
+        Assert.Equal(Running, services.Status(Watcher));
+        Assert.DoesNotContain(log.Entries, e => e.StartsWith("warn:", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void A_service_that_fails_to_start_does_not_keep_the_watcher_from_starting()
     {
         var services = BothRunning();

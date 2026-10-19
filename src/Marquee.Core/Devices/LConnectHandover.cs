@@ -50,8 +50,9 @@ public sealed class LConnectHandover(IServiceControl services, ILog log, TimeSpa
     /// `waitForScreen` is the engine opening the screen and the ring: it gets the time it may take and returns true once
     /// Marquee has the screen. Never throws: errors, including the ones from stopping the services without admin rights,
     /// come back as a Failed result, and whatever happened, every service the handover stopped is started again.
-    /// `cancel` is Marquee no longer wanting the screen: set before anything was stopped, nothing is; set while
-    /// `waitForScreen` waits (which then returns false), the result is Cancelled rather than Failed.
+    /// `cancel` is Marquee no longer wanting the screen: set before anything was stopped, nothing is; set while the
+    /// watcher stops, the service is left running and the watcher started again; set while `waitForScreen` waits (which
+    /// then returns false), the result is Cancelled rather than Failed.
     public HandoverResult TakeScreen(Func<TimeSpan, bool> waitForScreen, CancellationToken cancel = default)
     {
         var stopped = new List<string>();
@@ -103,13 +104,7 @@ public sealed class LConnectHandover(IServiceControl services, ILog log, TimeSpa
             return (HandoverOutcome.NotNeeded, message);
         }
 
-        if (cancel.IsCancellationRequested)
-        {
-            // The screen won't open now, so stopping L-Connect would only pause its fans and RGB for nothing.
-            const string message = "Marquee paused or is quitting, so L-Connect's service was left running.";
-            log.Info(message);
-            return (HandoverOutcome.Cancelled, message);
-        }
+        if (cancel.IsCancellationRequested) return LeftRunning();
 
         if (IsRunning(services.Status(WatcherName)))
         {
@@ -125,6 +120,10 @@ public sealed class LConnectHandover(IServiceControl services, ILog log, TimeSpa
                 log.Warn(message);
                 return (HandoverOutcome.Failed, message);
             }
+
+            // A Pause or Quit during that wait (up to _stopTimeout) leaves the service alone; the caller starts the
+            // watcher again.
+            if (cancel.IsCancellationRequested) return LeftRunning();
         }
 
         log.Info($"Stopping L-Connect's service ({ServiceName}) so Marquee can open the screen.");
@@ -155,6 +154,15 @@ public sealed class LConnectHandover(IServiceControl services, ILog log, TimeSpa
 
         log.Info("Marquee has the screen.");
         return (HandoverOutcome.Taken, "");
+    }
+
+    /// Marquee no longer wants the screen before the service was stopped: the screen won't open now, so stopping
+    /// L-Connect's service would only pause its fans and RGB for nothing.
+    (HandoverOutcome, string) LeftRunning()
+    {
+        const string message = "Marquee paused or is quitting, so L-Connect's service was left running.";
+        log.Info(message);
+        return (HandoverOutcome.Cancelled, message);
     }
 
     /// Starts a service the handover stopped. Each start is tried on its own, so a service that won't start doesn't
