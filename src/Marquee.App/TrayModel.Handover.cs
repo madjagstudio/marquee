@@ -33,9 +33,14 @@ sealed partial class TrayModel
 
     /// "Always take over at start": writes `lconnect.handover: auto` to config.yaml, or `ask` when unchecked, keeping
     /// the rest of the file as it is. The config watcher sees the write and applies it, so the item's check mark
-    /// follows the file, as it does after an edit by hand.
-    public Task SetAlwaysTakeOver(bool always) =>
-        Run(() => ConfigEditor.SetInFile(_paths.ConfigFile, "lconnect.handover", always ? "auto" : "ask"));
+    /// follows the file, as it does after an edit by hand. Checked while L-Connect has the screen and it can be taken,
+    /// it also takes it now: the engine reported this busy episode under the old mode, so Auto alone would wait for the
+    /// next one. Not when config.yaml can't be written, since then nothing was chosen.
+    public Task SetAlwaysTakeOver(bool always) => Run(() =>
+    {
+        ConfigEditor.SetInFile(_paths.ConfigFile, "lconnect.handover", always ? "auto" : "ask");
+        if (always && LConnectHasScreen && _busy is { CanTakeOver: true }) _engine.TakeOverScreen();
+    });
 
     /// The lines under the status: why the last handover failed, and why an unelevated tray offers no take-over.
     IEnumerable<TrayMenuItem> HandoverProblems()
@@ -67,15 +72,19 @@ sealed partial class TrayModel
 
     /// On the engine's thread. Ask's prompt shows once per busy episode, because the engine reports each once; its
     /// click, and only its, takes over. With the handover off by default rather than by choice, the same prompt shows
-    /// once per user (FirstRun.ClaimHandoverOffer), the first time it could work.
+    /// once per user (FirstRun.ClaimHandoverOffer), the first time it could work, and then also names "Always take over
+    /// at start", since its click takes over only this once.
     void OnScreenBusy(ScreenBusyInfo info)
     {
         _busy = info;
         if (!info.CanTakeOver) return;
-        var prompt = info.Action == HandoverAction.Prompt
-            || (info.Action == HandoverAction.None && !_engine.HandoverChosen && FirstRun.ClaimHandoverOffer(_paths.DataFolder));
-        if (prompt)
-            _host.ShowBalloon(Strings.TakeOverTitle, Strings.TakeOverPrompt, isError: false, onClick: () => _ = TakeOverScreen());
+        string? prompt = null;
+        if (info.Action == HandoverAction.Prompt)
+            prompt = Strings.TakeOverPrompt;
+        else if (info.Action == HandoverAction.None && !_engine.HandoverChosen && FirstRun.ClaimHandoverOffer(_paths.DataFolder))
+            prompt = Strings.FirstRunTakeOverPrompt(Strings.TakeOverPrompt, Strings.MenuAlwaysTakeOver);
+        if (prompt is not null)
+            _host.ShowBalloon(Strings.TakeOverTitle, prompt, isError: false, onClick: () => _ = TakeOverScreen());
     }
 
     /// On the handover's thread. Success is quiet, since the picture on the screen says it; so is a handover cut short

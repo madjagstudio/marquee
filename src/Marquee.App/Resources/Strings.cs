@@ -67,6 +67,8 @@ internal static class Strings
 
     public static string TakeOverPrompt => Get(nameof(TakeOverPrompt));
 
+    public static string FirstRunTakeOverPrompt(string prompt, string menuItem) => Format(nameof(FirstRunTakeOverPrompt), prompt, menuItem);
+
     public static string HandoverFailedTitle => Get(nameof(HandoverFailedTitle));
 
     public static string HandoverFailed(string message) => Format(nameof(HandoverFailed), message);

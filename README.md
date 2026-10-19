@@ -172,8 +172,9 @@ closing the tray included) starts L-Connect again at once, and doesn't count as 
 
 - `off` (the default): not on its own. While L-Connect has the screen, the tray's menu still offers "Take over the
   screen from L-Connect". The first time L-Connect holds the screen, a user who hasn't set `lconnect.handover` gets the
-  `ask` balloon below, once, so that they hear the handover exists; writing `lconnect: { handover: off }` yourself turns
-  that off too. Without the tray, the log says how to hand the screen over by hand (below).
+  `ask` balloon below, once, so that they hear the handover exists. Its click takes the screen this once, and it adds:
+  "To do this at every start, choose "Always take over at start" in Marquee's menu." Writing
+  `lconnect: { handover: off }` yourself turns that balloon off too. Without the tray, the log says how to hand the screen over by hand (below).
 - `ask`: whenever Marquee finds L-Connect using the screen, the tray shows a balloon: "L-Connect is using the screen.
   Marquee can take it over while L-Connect keeps running your fans and RGB. Click here to take over." Clicking it does.
 - `auto`: at start, and whenever Marquee finds the screen busy again (after you unplug it, say). If a try fails, Marquee
@@ -183,7 +184,8 @@ closing the tray included) starts L-Connect again at once, and doesn't count as 
   or after a pause. "Take over the screen from L-Connect" never waits for them. This holds for `marquee run` too.
 
 The tray's "Always take over at start" item writes `lconnect.handover: auto` to `config.yaml` when you check it, and
-`ask` when you uncheck it. It shows only where L-Connect is installed, or while it is checked, so it can be turned off.
+`ask` when you uncheck it. Checking it while L-Connect has the screen also takes the screen at once, rather than at the
+next time it is found busy. It shows only where L-Connect is installed, or while it is checked, so it can be turned off.
 "Take over the screen from L-Connect" shows only while L-Connect has the screen, in any mode, and does nothing once
 Marquee has it. A handover that fails says why in a balloon (with `auto`, that Marquee will keep trying) and in a menu
 line until Marquee gets the screen.

@@ -12,6 +12,9 @@ public sealed class TrayHandoverTests : IDisposable
 {
     const string PromptText = "Marquee can take it over while L-Connect keeps running your fans and RGB. Click here to take over.";
 
+    /// The one-time offer to a user who never set `lconnect.handover` also says how to have it every time.
+    const string FirstRunPromptText = PromptText + " To do this at every start, choose \"Always take over at start\" in Marquee's menu.";
+
     readonly TrayRig _rig = new();
 
     public void Dispose() => _rig.Dispose();
@@ -173,6 +176,42 @@ public sealed class TrayHandoverTests : IDisposable
         Assert.Empty(Engine.Calls); // the watcher applies it, not the menu
     }
 
+    /// The engine reported this busy episode before the mode was auto, so Auto alone would wait for the next one.
+    [Fact]
+    public async Task Checking_always_take_over_while_L_Connect_has_the_screen_takes_it_over_now()
+    {
+        File.WriteAllText(_rig.Paths.ConfigFile, "theme: example-landscape\n");
+        Engine.Settings = Engine.Settings! with { Handover = HandoverMode.Off };
+        Engine.RaiseScreenBusy(Busy(HandoverAction.None));
+
+        _rig.Item(MenuKeys.AlwaysTakeOver)!.Command!();
+        await _rig.Flush();
+
+        Assert.Equal(HandoverMode.Auto, ConfigFile.Read(_rig.Paths.ConfigFile).Handover);
+        var call = Assert.Single(Engine.Calls);
+        Assert.Equal("TakeOverScreen", call.Call);
+        Assert.NotEqual(Environment.CurrentManagedThreadId, call.Thread);
+    }
+
+    [Fact]
+    public async Task Unchecking_always_take_over_or_checking_it_with_nothing_to_take_doesnt_take_over()
+    {
+        File.WriteAllText(_rig.Paths.ConfigFile, "theme: example-landscape\n");
+        Engine.Settings = Engine.Settings! with { Handover = HandoverMode.Auto };
+        Engine.RaiseScreenBusy(Busy(HandoverAction.None)); // held back after a failure, say
+        _rig.Item(MenuKeys.AlwaysTakeOver)!.Command!();
+        await _rig.Flush();
+        Assert.Equal(HandoverMode.Ask, ConfigFile.Read(_rig.Paths.ConfigFile).Handover);
+
+        Engine.Settings = Engine.Settings with { Handover = HandoverMode.Ask };
+        Engine.RaiseScreenOpened();
+        _rig.Item(MenuKeys.AlwaysTakeOver)!.Command!();
+        await _rig.Flush();
+        Assert.Equal(HandoverMode.Auto, ConfigFile.Read(_rig.Paths.ConfigFile).Handover);
+
+        Assert.Equal(0, TakeOvers);
+    }
+
     [Fact]
     public async Task A_config_yaml_marquee_cant_change_says_so_and_stays_as_it_is()
     {
@@ -261,7 +300,7 @@ public sealed class TrayHandoverTests : IDisposable
 
         Engine.RaiseScreenBusy(Busy(HandoverAction.None));
 
-        Assert.Equal([("L-Connect is using the screen", PromptText, false)], Host.Balloons);
+        Assert.Equal([("L-Connect is using the screen", FirstRunPromptText, false)], Host.Balloons);
         Host.ClickBalloon();
         await _rig.Flush();
         Assert.Equal(1, TakeOvers);
@@ -305,7 +344,7 @@ public sealed class TrayHandoverTests : IDisposable
         await _rig.Model.Start().WaitAsync(Wait.Timeout);
         Engine.RaiseScreenBusy(Busy(HandoverAction.None));
 
-        Assert.Equal([("L-Connect is using the screen", PromptText, false)], Host.Balloons);
+        Assert.Equal([("L-Connect is using the screen", FirstRunPromptText, false)], Host.Balloons);
         Assert.False(File.Exists(Path.Combine(_rig.Paths.DataFolder, FirstRun.HintMarker)));
 
         Engine.RaiseScreenOpened();

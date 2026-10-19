@@ -127,6 +127,10 @@
     <value>Marquee can take it over while L-Connect keeps running your fans and RGB. Click here to take over.</value>
     <comment>The text of the balloon that offers to take the screen from L-Connect; clicking the balloon does it. "RGB" means the PC's colored lights.</comment>
   </data>
+  <data name="FirstRunTakeOverPrompt" xml:space="preserve">
+    <value>{0} To do this at every start, choose "{1}" in Marquee's menu.</value>
+    <comment>The text of the balloon that offers, once, to take the screen from L-Connect to a user who hasn't chosen what Marquee does when L-Connect holds the screen. {0} is TakeOverPrompt; {1} is the menu item MenuAlwaysTakeOver.</comment>
+  </data>
   <data name="HandoverFailedTitle" xml:space="preserve">
     <value>Couldn't take the screen from L-Connect</value>
     <comment>The title of the balloon shown when taking the screen from L-Connect failed; the text says why.</comment>
