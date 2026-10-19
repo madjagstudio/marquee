@@ -9,6 +9,7 @@ Marquee is licensed under the PolyForm Noncommercial License 1.0.0. It uses thes
 | [System.ServiceProcess.ServiceController](https://github.com/dotnet/runtime) | Checking whether L-Connect's service holds the screen | MIT |
 | [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) | Hardware sensors, used unmodified as a NuGet library | MPL-2.0 |
 | [Inter](https://github.com/rsms/inter) | Bundled default font (`src/Marquee.Core/Fonts`) | SIL Open Font License 1.1 (`src/Marquee.Core/Fonts/OFL.txt`) |
+| [lian-li-linux](https://github.com/sgtaziz/lian-li-linux) | Protocol facts for the screen's LED ring (60 LEDs in three 64-byte packets, from `crates/lianli-devices/src/winusb/led.rs`); Marquee copies none of its code | MIT |
 | [PresentMon](https://github.com/GameTechDev/PresentMon) 2.6.0 | Game FPS: Intel's console exe, redistributed unmodified as `PresentMon\PresentMon-2.6.0-x64.exe` next to `marquee.exe` | MIT (its copyright notice and license text are [below](#presentmon-license)) |
 
 LibreHardwareMonitorLib's source is available from the link above, as MPL-2.0 requires. Marquee does not include or
