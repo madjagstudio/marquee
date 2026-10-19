@@ -1,3 +1,4 @@
+using Marquee.Core.Config;
 using Marquee.Providers.Custom;
 
 /// `marquee push <key> <value> [--ttl 30s] [--port N]`: sets a custom value in a running Marquee. The "custom." prefix
@@ -39,5 +40,6 @@ static class PushCommand
 
 static class HttpPort
 {
-    public static bool TryParse(string? text, out int port) => int.TryParse(text, out port) && port is >= 1024 and <= 65535;
+    public static bool TryParse(string? text, out int port) =>
+        int.TryParse(text, out port) && port is >= MarqueeConfig.MinHttpPort and <= MarqueeConfig.MaxHttpPort;
 }

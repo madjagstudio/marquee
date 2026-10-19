@@ -6,10 +6,12 @@ using YamlDotNet.RepresentationModel;
 namespace Marquee.Core.Themes.Parsing;
 
 /// Reading helpers over YamlDotNet's node model. Every failure is a ThemeException carrying the line of the node at fault.
-/// `what` names the thing being read in messages, e.g. "canvas.fps".
+/// `what` names the thing being read in messages, e.g. "canvas.fps". config.yaml reuses them and turns the
+/// ThemeException's reason and line into its own exception.
 static class Yaml
 {
-    public static YamlNode? Load(string text)
+    /// `fileName` is only for the one syntax error YamlDotNet reports without a line, which has no "file line N:" prefix.
+    public static YamlNode? Load(string text, string fileName = ThemeLoader.LayoutFileName)
     {
         var stream = new YamlStream();
         try
@@ -22,8 +24,9 @@ static class Yaml
         }
         catch (InvalidOperationException ex)
         {
-            // YamlDotNet throws this, without a position, for some malformed flow collections such as an unclosed [.
-            throw new ThemeException($"YAML syntax error in layout.yaml: {ex.Message} Check for an unclosed [ or {{.");
+            // YamlDotNet throws this, without a position, for some malformed flow collections, such as an unclosed [
+            // followed by another line.
+            throw new ThemeException($"YAML syntax error in {fileName}: {ex.Message} Check for an unclosed [ or {{.");
         }
 
         return stream.Documents.Count == 0 ? null : stream.Documents[0].RootNode;

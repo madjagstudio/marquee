@@ -85,6 +85,11 @@ public class LayoutParserTests
         Assert.StartsWith("YAML syntax error:", Layouts.Error("canvas: { orientation: landscape }\nbackground: [1, 2").Reason);
 
     [Fact]
+    public void Unclosed_flow_list_before_another_key_names_layout_yaml() =>
+        Assert.StartsWith("YAML syntax error in layout.yaml:",
+            Layouts.Error("background: [1, 2\ncanvas: { orientation: landscape }").Reason);
+
+    [Fact]
     public void Message_leads_with_file_and_line() =>
         Assert.Equal("layout.yaml line 1: canvas must be a mapping of keys to values", Layouts.Error("canvas: 3").Message);
 }
