@@ -15,7 +15,7 @@ static class VideoAssets
 
     /// A player for the clip, or null when the layer is skipped: the clip is missing, too large, can't be decoded, or
     /// `probe` says it decodes slower than it plays. `maxBytes` is MaxClipBytes except in tests.
-    public static VideoPlayer? Load(string folder, VideoLayer layer, List<string> warnings, SKSizeI canvas, VideoProbe probe,
+    public static VideoPlayer? Load(string folder, VideoLayer layer, List<ThemeWarning> warnings, SKSizeI canvas, VideoProbe probe,
         long maxBytes = MaxClipBytes)
     {
         var path = layer.Path;
@@ -74,9 +74,9 @@ static class VideoAssets
             "Use a smaller clip, or one with fewer frames per second.";
     }
 
-    static VideoPlayer? Skip(List<string> warnings, string path, string reason)
+    static VideoPlayer? Skip(List<ThemeWarning> warnings, string path, string reason)
     {
-        warnings.Add($"Video '{path}' was skipped: {reason}");
+        warnings.Add(new($"Video '{path}' was skipped: {reason}", path, Skipped: true));
         return null;
     }
 }

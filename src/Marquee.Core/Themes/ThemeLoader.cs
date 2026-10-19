@@ -51,9 +51,12 @@ public static class ThemeLoader
             throw new ThemeException($"Theme folder {full} has no {LayoutFileName}.");
 
         var spec = LayoutParser.Parse(File.ReadAllText(layout));
-        var warnings = new List<string>();
-        var fps = Math.Clamp(fpsOverride ?? spec.Canvas.Fps, 1, CanvasSpec.MaxFps); // the rate RenderLoop will run at
-        var assets = ThemeAssets.Load(full, spec, warnings, fps, probe, videoProbe);
-        return new LoadedTheme(full, spec, assets, warnings);
+        var warnings = new List<ThemeWarning>();
+        var assets = ThemeAssets.Load(full, spec, warnings, FrameRate(spec.Canvas, fpsOverride), probe, videoProbe);
+        return new LoadedTheme(full, spec, assets, warnings.Select(w => w.Message).ToList());
     }
+
+    /// The rate RenderLoop will run a theme at, which sets the frame budget its shader layers must fit in: `--fps` if
+    /// given, otherwise the theme's canvas.fps.
+    internal static int FrameRate(CanvasSpec canvas, int? fpsOverride) => Math.Clamp(fpsOverride ?? canvas.Fps, 1, CanvasSpec.MaxFps);
 }

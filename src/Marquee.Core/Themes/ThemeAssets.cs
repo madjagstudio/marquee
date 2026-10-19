@@ -20,27 +20,31 @@ public sealed class ThemeAssets : IDisposable
     ThemeAssets() { }
 
     /// `fps` is the rate the theme will run at, which sets the frame budget each shader layer must fit in. Video
-    /// layers start playing here, each on its own thread, until the assets are disposed.
-    internal static ThemeAssets Load(string folder, ThemeSpec spec, List<string> warnings, int fps, ShaderProbe probe,
-        VideoProbe videoProbe)
+    /// layers start playing here, each on its own thread, until the assets are disposed. `refused` says which files, as
+    /// layout.yaml names them, are not to be opened at all: `marquee validate` has already reported them (a file through
+    /// a link, or over the size limit), and they are left out with no warning of their own.
+    internal static ThemeAssets Load(string folder, ThemeSpec spec, List<ThemeWarning> warnings, int fps, ShaderProbe probe,
+        VideoProbe videoProbe, Func<string, bool>? refused = null)
     {
         var assets = new ThemeAssets();
+        var allowed = (string path) => refused?.Invoke(path) != true;
         try
         {
             var widgets = Flatten(spec.Widgets).ToList();
 
             var imagePaths = spec.Background.OfType<ImageLayer>().Select(l => l.Path)
                 .Concat(widgets.OfType<ImageWidget>().Select(w => w.Path))
-                .Distinct(StringComparer.OrdinalIgnoreCase);
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(allowed);
             foreach (var path in imagePaths)
                 if (LoadImage(folder, path, warnings) is { } image)
                     assets._images[path] = image;
 
-            foreach (var layer in spec.Background.OfType<ShaderLayer>())
+            foreach (var layer in spec.Background.OfType<ShaderLayer>().Where(l => allowed(l.Path)))
                 if (ShaderAssets.Load(folder, layer, warnings, spec.Canvas.Size, fps, probe) is { } effect)
                     assets._shaders[layer] = effect;
 
-            foreach (var layer in spec.Background.OfType<VideoLayer>())
+            foreach (var layer in spec.Background.OfType<VideoLayer>().Where(l => allowed(l.Path)))
                 if (VideoAssets.Load(folder, layer, warnings, spec.Canvas.Size, videoProbe) is { } player)
                     assets._videos[layer] = player;
 
@@ -52,12 +56,12 @@ public sealed class ThemeAssets : IDisposable
             {
                 if (IsFontFile(font))
                 {
-                    if (LoadFontFile(folder, font, warnings) is { } typeface)
+                    if (allowed(font) && LoadFontFile(folder, font, warnings) is { } typeface)
                         assets._fontFiles[font] = typeface;
                 }
                 else if (!IsBundled(font) && !IsInstalled(font))
                 {
-                    warnings.Add($"Font '{font}' is not installed on this PC; using {BundledFonts.Family} instead.");
+                    warnings.Add(new($"Font '{font}' is not installed on this PC; using {BundledFonts.Family} instead.", null, Skipped: false));
                 }
             }
         }
@@ -146,23 +150,23 @@ public sealed class ThemeAssets : IDisposable
         }
     }
 
-    static SKImage? LoadImage(string folder, string path, List<string> warnings)
+    static SKImage? LoadImage(string folder, string path, List<ThemeWarning> warnings)
     {
         if (!TryInsideFolder(folder, path, out var full))
         {
-            warnings.Add($"Image '{path}' is not a valid path and was skipped.");
+            warnings.Add(new($"Image '{path}' is not a valid path and was skipped.", path, Skipped: true));
             return null;
         }
 
         if (full is null)
         {
-            warnings.Add($"Image '{path}' is outside the theme folder and was skipped.");
+            warnings.Add(new($"Image '{path}' is outside the theme folder and was skipped.", path, Skipped: true));
             return null;
         }
 
         if (!File.Exists(full))
         {
-            warnings.Add($"Image '{path}' was not found and was skipped.");
+            warnings.Add(new($"Image '{path}' was not found and was skipped.", path, Skipped: true));
             return null;
         }
 
@@ -172,7 +176,7 @@ public sealed class ThemeAssets : IDisposable
             using var codec = SKCodec.Create(full);
             if (codec is not null && (codec.Info.Width > MaxImageSize || codec.Info.Height > MaxImageSize))
             {
-                warnings.Add($"Image '{path}' is larger than {MaxImageSize}×{MaxImageSize} and was skipped.");
+                warnings.Add(new($"Image '{path}' is larger than {MaxImageSize}×{MaxImageSize} and was skipped.", path, Skipped: true));
                 return null;
             }
 
@@ -185,15 +189,15 @@ public sealed class ThemeAssets : IDisposable
             // Reported below like any other unreadable image.
         }
 
-        warnings.Add($"Image '{path}' could not be read and was skipped.");
+        warnings.Add(new($"Image '{path}' could not be read and was skipped.", path, Skipped: true));
         return null;
     }
 
-    static SKTypeface? LoadFontFile(string folder, string font, List<string> warnings)
+    static SKTypeface? LoadFontFile(string folder, string font, List<ThemeWarning> warnings)
     {
         if (!TryInsideFolder(folder, font, out var full))
         {
-            warnings.Add($"Font file '{font}' is not a valid path; using {BundledFonts.Family} instead.");
+            warnings.Add(new($"Font file '{font}' is not a valid path; using {BundledFonts.Family} instead.", font, Skipped: true));
             return null;
         }
 
@@ -208,7 +212,7 @@ public sealed class ThemeAssets : IDisposable
         }
 
         if (typeface is null)
-            warnings.Add($"Font file '{font}' was not found or could not be read; using {BundledFonts.Family} instead.");
+            warnings.Add(new($"Font file '{font}' was not found or could not be read; using {BundledFonts.Family} instead.", font, Skipped: true));
         return typeface;
     }
 

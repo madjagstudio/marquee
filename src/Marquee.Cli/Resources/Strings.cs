@@ -69,6 +69,32 @@ internal static class Strings
 
     public static string CouldNotUpdateClaudeSettings(string reason) => Format(nameof(CouldNotUpdateClaudeSettings), reason);
 
+    public static string ValidateErrorOnLine(string file, int line, string message) => Format(nameof(ValidateErrorOnLine), file, line, message);
+
+    public static string ValidateError(string file, string message) => Format(nameof(ValidateError), file, message);
+
+    public static string ValidateWarningOnLine(string file, int line, string message) =>
+        Format(nameof(ValidateWarningOnLine), file, line, message);
+
+    public static string ValidateWarning(string file, string message) => Format(nameof(ValidateWarning), file, message);
+
+    public static string ValidateSummary(string theme, string orientation, int width, int height, string counts) =>
+        Format(nameof(ValidateSummary), theme, orientation, width, height, counts);
+
+    public static string ValidateSummaryNoCanvas(string theme, string counts) => Format(nameof(ValidateSummaryNoCanvas), theme, counts);
+
+    public static string NoProblemsFound => Get(nameof(NoProblemsFound));
+
+    public static string OneError => Get(nameof(OneError));
+
+    public static string ManyErrors(int count) => Format(nameof(ManyErrors), count);
+
+    public static string OneWarning => Get(nameof(OneWarning));
+
+    public static string ManyWarnings(int count) => Format(nameof(ManyWarnings), count);
+
+    public static string ErrorsAndWarnings(string errors, string warnings) => Format(nameof(ErrorsAndWarnings), errors, warnings);
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages such as the usage get the platform's line breaks back, like the rest of the console output.
     static string Get(string name) =>

@@ -22,6 +22,7 @@ return args switch
     ["show-image", var file, .. var options] => ShowImage(file, options),
     ["sensors", .. var options] => SensorsCommand.Run(options) ?? Usage(),
     ["run", .. var options] => RunCommand.Run(options) ?? Usage(),
+    ["validate", .. var options] => ValidateCommand.Run(options) ?? Usage(),
     ["push", var key, var value, .. var options] => PushCommand.Run(key, value, options) ?? Usage(),
     ["statusline"] => StatusLineCommand.Run(),
     ["setup-claude", .. var options] => SetupClaudeCommand.Run(options) ?? Usage(),

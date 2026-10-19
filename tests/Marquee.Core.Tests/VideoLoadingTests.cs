@@ -74,14 +74,15 @@ public class VideoLoadingTests
         // The real limit would need a 200 MB file; a smaller one exercises the same check.
         using var folder = new TempFolder();
         File.WriteAllBytes(folder.File("big.gif"), new byte[1024 * 1024 + 1]);
-        var warnings = new List<string>();
+        var warnings = new List<ThemeWarning>();
         var probe = new FakeProbe(1);
 
         var player = VideoAssets.Load(folder.Path, new VideoLayer("big.gif", ImageFit.Cover, 1, SKBlendMode.SrcOver), warnings,
             new SKSizeI(1920, 480), probe.Measure, maxBytes: 1024 * 1024);
 
         Assert.Null(player);
-        Assert.Equal(["Video 'big.gif' was skipped: The file is 2 MB, over the 1 MB limit."], warnings);
+        Assert.Equal([new ThemeWarning("Video 'big.gif' was skipped: The file is 2 MB, over the 1 MB limit.", "big.gif", Skipped: true)],
+            warnings);
         Assert.Empty(probe.Calls);
     }
 

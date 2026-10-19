@@ -42,6 +42,10 @@ public static class LayoutParser
         return new ThemeSpec(canvas, background, widgets);
     }
 
+    /// False when a collecting parse put its stand-in canvas in the spec, because the canvas section is missing or
+    /// invalid (that error is among the ones collected): then the spec says nothing about the theme's orientation.
+    internal static bool HasCanvas(ThemeSpec spec) => !ReferenceEquals(spec.Canvas, FallbackCanvas);
+
     static CanvasSpec Canvas(YamlNode node)
     {
         var fields = Yaml.Map(node, "canvas", "orientation", "fps");

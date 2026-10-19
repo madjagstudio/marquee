@@ -22,6 +22,7 @@
   marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage] [--config &lt;file&gt;]
   marquee run [&lt;theme-folder&gt;] [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink &lt;folder&gt;] [--frames N]
               [--http-port 1024-65535 | --no-http] [--no-claude-usage] [--no-fps] [--config &lt;file&gt;]
+  marquee validate &lt;theme-folder|zip&gt; [--fps 1-60]
   marquee push &lt;key&gt; &lt;value&gt; [--ttl 30s|5m|2h] [--port 1024-65535] [--config &lt;file&gt;]
   marquee setup-claude [--undo] [--dry-run]
   marquee statusline        (Claude Code runs this; see setup-claude)
@@ -128,5 +129,51 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
   <data name="CouldNotUpdateClaudeSettings" xml:space="preserve">
     <value>Could not update Claude Code's settings: {0}</value>
     <comment>{0} is the reason.</comment>
+  </data>
+  <data name="ValidateErrorOnLine" xml:space="preserve">
+    <value>{0}:{1}: error: {2}</value>
+    <comment>marquee validate, one problem. {0} is a file in the theme (layout.yaml, say), {1} the line, {2} the problem (English). Editors and scripts read "file:line:", so keep that part as it is.</comment>
+  </data>
+  <data name="ValidateError" xml:space="preserve">
+    <value>{0}: error: {1}</value>
+    <comment>marquee validate, a problem not on one line. {0} is a file in the theme, or the theme's path for the theme as a whole; {1} the problem (English).</comment>
+  </data>
+  <data name="ValidateWarningOnLine" xml:space="preserve">
+    <value>{0}:{1}: warning: {2}</value>
+    <comment>As ValidateErrorOnLine, for something that works but may not be what the author meant.</comment>
+  </data>
+  <data name="ValidateWarning" xml:space="preserve">
+    <value>{0}: warning: {1}</value>
+    <comment>As ValidateError, for something that works but may not be what the author meant.</comment>
+  </data>
+  <data name="ValidateSummary" xml:space="preserve">
+    <value>{0} ({1}, {2}×{3}): {4}.</value>
+    <comment>marquee validate's last line. {0} is the theme's name, {1} its orientation as layout.yaml says it (landscape or portrait, which stay as they are), {2}×{3} its width and height in pixels, {4} NoProblemsFound or the counts.</comment>
+  </data>
+  <data name="ValidateSummaryNoCanvas" xml:space="preserve">
+    <value>{0}: {1}.</value>
+    <comment>As ValidateSummary, for a theme whose layout.yaml declares no valid canvas.</comment>
+  </data>
+  <data name="NoProblemsFound" xml:space="preserve">
+    <value>no problems found</value>
+    <comment>Fills {4} in ValidateSummary.</comment>
+  </data>
+  <data name="OneError" xml:space="preserve">
+    <value>1 error</value>
+  </data>
+  <data name="ManyErrors" xml:space="preserve">
+    <value>{0} errors</value>
+    <comment>{0} is how many, 2 or more.</comment>
+  </data>
+  <data name="OneWarning" xml:space="preserve">
+    <value>1 warning</value>
+  </data>
+  <data name="ManyWarnings" xml:space="preserve">
+    <value>{0} warnings</value>
+    <comment>{0} is how many, 2 or more.</comment>
+  </data>
+  <data name="ErrorsAndWarnings" xml:space="preserve">
+    <value>{0}, {1}</value>
+    <comment>{0} is OneError or ManyErrors, {1} OneWarning or ManyWarnings.</comment>
   </data>
 </root>
