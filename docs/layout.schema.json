@@ -59,7 +59,7 @@
       "description": "A quoted hex color: \"#RGB\", \"#RRGGBB\" or \"#RRGGBBAA\", where AA is the alpha, or \"transparent\". Quote it: an unquoted # starts a YAML comment."
     },
     "paint": {
-      "description": "A color, or a gradient: { linear: [\"#000000\", \"#1E2A44\"], angle: 90 } or { radial: [\"#1E2A44\", \"#000000\"] }.",
+      "description": "A color, or a gradient: { linear: [\"#000000\", \"#1E2A44\"], angle: 90 } or { radial: [\"#1E2A44\", \"#000000\"] }. Either takes stops to place its colors, as in { linear: [\"#000000\", \"#36D1DC\", \"#FFFFFF\"], stops: [0, 0.8, 1] }, and a radial one center and radius to move and size it: { radial: [\"#FFFFFF60\", \"#00000000\"], center: [0.3, 0.4], radius: 0.8 }.",
       "oneOf": [
         {
           "$ref": "#/definitions/color"
@@ -847,7 +847,7 @@
       ]
     },
     "gradient.linear": {
-      "description": "Linear gradient: Colors spread evenly in a straight line across the area.",
+      "description": "Linear gradient: Colors spread in a straight line across the area.",
       "type": "object",
       "properties": {
         "linear": {
@@ -864,6 +864,17 @@
           "description": "The line's direction, clockwise: 0 runs left to right, 90 top to bottom. (degrees)",
           "markdownDescription": "The line's direction, clockwise: 0 runs left to right, 90 top to bottom. (degrees)",
           "default": 0
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 2,
+          "description": "Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. (fraction, at least 2, each 0 to 1)",
+          "markdownDescription": "Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. (fraction, at least 2, each 0 to 1)"
         }
       },
       "required": [
@@ -872,7 +883,7 @@
       "additionalProperties": false
     },
     "gradient.radial": {
-      "description": "Radial gradient: Colors spread evenly from the centre of the area outwards.",
+      "description": "Radial gradient: Colors spread in a circle from a centre point outwards.",
       "type": "object",
       "properties": {
         "radial": {
@@ -881,8 +892,43 @@
             "$ref": "#/definitions/color"
           },
           "minItems": 2,
-          "description": "The colors, from the centre out to half the area's longer side.",
-          "markdownDescription": "The colors, from the centre out to half the area's longer side."
+          "description": "The colors, from the centre out to the radius.",
+          "markdownDescription": "The colors, from the centre out to the radius."
+        },
+        "center": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the circle starts, as [x, y] fractions of the area: [0, 0] is its top-left corner. (fraction, 2, each 0 to 1)",
+          "markdownDescription": "Where the circle starts, as [x, y] fractions of the area: [0, 0] is its top-left corner. (fraction, 2, each 0 to 1)",
+          "default": [
+            0.5,
+            0.5
+          ]
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "How far the colors reach, as a fraction of half the area's longer side. 3 covers the whole area from any centre, even a corner. (fraction, 0 to 3)",
+          "markdownDescription": "How far the colors reach, as a fraction of half the area's longer side. 3 covers the whole area from any centre, even a corner. (fraction, 0 to 3)",
+          "default": 1
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 2,
+          "description": "Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. (fraction, at least 2, each 0 to 1)",
+          "markdownDescription": "Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. (fraction, at least 2, each 0 to 1)"
         }
       },
       "required": [

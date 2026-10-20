@@ -282,6 +282,27 @@ public class ThemeSchemaDriftTests
             }
         });
 
+    /// A list of numbers, such as a gradient's stops, takes its range in every entry, and no more.
+    [Fact]
+    public void Lists_of_numbers_take_their_range_and_no_more() =>
+        Check(Probes().Where(p => p.Key is { Kind: SchemaKind.List, ItemKind: SchemaKind.Number }), (place, key) =>
+        {
+            JsonArray All(double value) =>
+                new(Enumerable.Range(0, key.MinItems ?? 1).Select(_ => (JsonNode?)JsonValue.Create(value)).ToArray());
+
+            if (key.Min is { } min)
+            {
+                Parses(place, place.With(key.Name, All(min)), $"{key.Name} of {min}");
+                Fails(place, place.With(key.Name, All(min - 0.01)), $"{key.Name} of {min - 0.01}");
+            }
+
+            if (key.Max is { } max)
+            {
+                Parses(place, place.With(key.Name, All(max)), $"{key.Name} of {max}");
+                Fails(place, place.With(key.Name, All(max + 0.01)), $"{key.Name} of {max + 0.01}");
+            }
+        });
+
     /// A list, a map or a shader's uniforms takes as few and as many entries as the catalog says, and no fewer or more.
     [Fact]
     public void Lists_take_their_count_and_no_more() =>
@@ -583,8 +604,8 @@ public class ThemeSchemaDriftTests
         SchemaKind.FontWeight => key.Values[^1],
         SchemaKind.Enum => key.Values[0],
         SchemaKind.Block => new Place(ThemeSchema.Block(key.Of!)!, null).Base(),
-        SchemaKind.List when key.ItemKind is { } item =>
-            new JsonArray(Enumerable.Range(0, key.MinItems ?? 1).Select(_ => (JsonNode?)Sample(item)).ToArray()),
+        SchemaKind.List when key.ItemKind is not null =>
+            new JsonArray(Enumerable.Range(0, key.MinItems ?? 1).Select(_ => (JsonNode?)Entry(key)).ToArray()),
         // A list of blocks that must have entries, such as a graph's series, gets as many of the least each needs.
         SchemaKind.List when key is { Of: { } of, MinItems: > 0 } && ThemeSchema.Block(of) is { } entry =>
             new JsonArray(Enumerable.Range(0, key.MinItems.Value).Select(_ => (JsonNode?)new Place(entry, null).Base()).ToArray()),
@@ -615,6 +636,8 @@ public class ThemeSchemaDriftTests
     {
         SchemaKind.Number or SchemaKind.Integer => JsonValue.Create(double.Parse(key.Default!, CultureInfo.InvariantCulture)),
         SchemaKind.Boolean => JsonValue.Create(key.Default == "true"),
+        // A list's default, such as a radial gradient's `[0.5, 0.5]`, is written as YAML's flow form, which is JSON.
+        SchemaKind.List => JsonNode.Parse(key.Default!)!,
         _ => JsonValue.Create(key.Default!),
     };
 
@@ -631,8 +654,10 @@ public class ThemeSchemaDriftTests
     }
 
     /// One entry of a list or map: a value of its item kind, or the least its block, or its union's first variant, needs.
+    /// A list of numbers holds its lowest, which keeps one that must rise, such as a gradient's stops, in order.
     static JsonNode Entry(SchemaKey key) =>
-        key.ItemKind is { } item ? Sample(item)
+        key.ItemKind is SchemaKind.Number ? JsonValue.Create(key.Min ?? 0)
+        : key.ItemKind is { } item ? Sample(item)
         : ThemeSchema.Union(key.Of!) is { } union ? new Place(union.Variants[0], union).Base()
         : new Place(ThemeSchema.Block(key.Of!)!, null).Base();
 

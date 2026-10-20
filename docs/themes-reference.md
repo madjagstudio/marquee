@@ -117,9 +117,17 @@ A steady beat: the opacity or the glow eases from max down to min and back, once
 
 A paint is a color or a gradient. A gradient is a mapping with `linear:` or `radial:` and two or more colors, and goes wherever a key takes a paint: `fill`, `track`, a stroke's `color` or a fill layer.
 
+### Every gradient
+
+Both kinds of gradient take these.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `stops` | list of numbers (fraction) | at least 2, each 0 to 1 |  | Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. |
+
 ### Linear gradient
 
-Colors spread evenly in a straight line across the area.
+Colors spread in a straight line across the area.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -128,11 +136,13 @@ Colors spread evenly in a straight line across the area.
 
 ### Radial gradient
 
-Colors spread evenly from the centre of the area outwards.
+Colors spread in a circle from a centre point outwards.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `radial` | list of colors | at least 2 | required | The colors, from the centre out to half the area's longer side. |
+| `radial` | list of colors | at least 2 | required | The colors, from the centre out to the radius. |
+| `center` | list of numbers (fraction) | 2, each 0 to 1 | `[0.5, 0.5]` | Where the circle starts, as [x, y] fractions of the area: [0, 0] is its top-left corner. |
+| `radius` | number (fraction) | 0 to 3 | `1` | How far the colors reach, as a fraction of half the area's longer side. 3 covers the whole area from any centre, even a corner. |
 
 ## Background layers
 
@@ -438,7 +448,7 @@ Each needs exactly one of `above`, `below`, `equals` and `stale`, and at least o
 | text or number | A word or a number, such as idle or 3. |
 | choice | One of the words listed for the key. |
 | color | A quoted hex color: "#RGB", "#RRGGBB" or "#RRGGBBAA", where AA is the alpha, or "transparent". Quote it: an unquoted # starts a YAML comment. |
-| paint | A color, or a gradient: { linear: ["#000000", "#1E2A44"], angle: 90 } or { radial: ["#1E2A44", "#000000"] }. |
+| paint | A color, or a gradient: { linear: ["#000000", "#1E2A44"], angle: 90 } or { radial: ["#1E2A44", "#000000"] }. Either takes stops to place its colors, as in { linear: ["#000000", "#36D1DC", "#FFFFFF"], stops: [0, 0.8, 1] }, and a radial one center and radius to move and size it: { radial: ["#FFFFFF60", "#00000000"], center: [0.3, 0.4], radius: 0.8 }. |
 | font | A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. A font that isn't there falls back to Inter, with a warning. |
 | font weight | 100 to 900, or light (300), normal (400), medium (500), semibold (600) or bold (700). |
 | expression | A sensor key such as cpu.temp, or arithmetic on keys and numbers such as "max(cpu.load, gpu.load)" or "claude.five_hour.resets_at - now". |

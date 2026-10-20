@@ -316,6 +316,10 @@ widgets:
 - **Background:** `fill` (color or gradient), `image`, `shader` and `video` layers, each with `opacity` and `blend`; up
   to 16 layers, at most 4 of them shaders and 2 of them videos.
 - **Colors** are quoted CSS hex (`"#RRGGBB"` or `"#RRGGBBAA"`): an unquoted `#` starts a YAML comment.
+- **Gradients** go in `fill`, `track`, a stroke's `color` and fill layers:
+  `{ linear: ["#000000", "#36D1DC", "#FFFFFF"], stops: [0, 0.8, 1], angle: 90 }` or
+  `{ radial: ["#FFFFFF60", "#00000000"], center: [0.3, 0.4], radius: 0.8 }`. `stops` place the colors, and a radial
+  gradient's `center` and `radius` move and size it.
 - **Fonts:** the bundled Inter by default, an installed font by name, or a `.ttf`/`.otf` file in the theme folder.
 - **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so
   `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m". `"{now|time}"` is the local short time, and

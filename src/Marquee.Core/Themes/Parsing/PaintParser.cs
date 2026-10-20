@@ -5,13 +5,16 @@ using YamlDotNet.RepresentationModel;
 namespace Marquee.Core.Themes.Parsing;
 
 /// Colors are CSS-style hex: "#RGB", "#RRGGBB" or "#RRGGBBAA", or "transparent".
-/// Paints are a color, `{ linear: [colors], angle: 90 }` or `{ radial: [colors] }`.
+/// Paints are a color, `{ linear: [colors], angle: 90 }` or `{ radial: [colors] }`. Either gradient takes `stops`, and a
+/// radial one `center` and `radius`.
 static class PaintParser
 {
     const string ColorHint = "Use \"#RRGGBB\", \"#RRGGBBAA\" or \"transparent\"";
 
     /// The keys a gradient accepts. ThemeSchema describes each, and its drift test reads this list.
-    internal static readonly string[] GradientKeys = ["linear", "radial", "angle"];
+    internal static readonly string[] GradientKeys = ["linear", "radial", "angle", "stops", "center", "radius"];
+
+    static readonly string[] RadialOnlyKeys = ["center", "radius"];
 
     public static bool TryParseColor(string text, out SKColor color)
     {
@@ -52,15 +55,50 @@ static class PaintParser
             .ToArray();
         if (colors.Length < 2)
             throw Yaml.Error(fields.Required(kind), $"{what}.{kind} needs at least two colors");
+        var stops = fields.Optional("stops") is { } stopsNode ? Stops(stopsNode, $"{what}.stops", colors.Length) : null;
 
         if (kind == "radial")
         {
             if (fields.Optional("angle") is { } angleNode)
                 throw Yaml.Error(angleNode, $"{what}: angle only applies to linear gradients");
-            return new RadialGradientPaint(colors);
+            return new RadialGradientPaint(colors)
+            {
+                Stops = stops,
+                Center = fields.Optional("center") is { } c ? Center(c, $"{what}.center") : RadialGradientPaint.DefaultCenter,
+                Radius = fields.Optional("radius") is { } r ? Yaml.Float(r, $"{what}.radius", 0, RadialGradientPaint.MaxRadius) : RadialGradientPaint.DefaultRadius,
+            };
         }
 
+        foreach (var key in RadialOnlyKeys)
+            if (fields.Optional(key) is { } radialNode)
+                throw Yaml.Error(radialNode, $"{what}: {key} only applies to radial gradients");
         var angle = fields.Optional("angle") is { } a ? Yaml.Float(a, $"{what}.angle") : 0f;
-        return new LinearGradientPaint(colors, angle);
+        return new LinearGradientPaint(colors, angle) { Stops = stops };
+    }
+
+    /// One position per color, each 0 to 1 and none below the one before: equal neighbours make a hard edge.
+    static float[] Stops(YamlNode node, string what, int colors)
+    {
+        var items = Yaml.List(node, what);
+        if (items.Count != colors)
+            throw Yaml.Error(node, $"{what} needs {colors} positions, one per color, not {items.Count}");
+
+        var stops = new float[items.Count];
+        for (var i = 0; i < items.Count; i++)
+        {
+            stops[i] = Yaml.Float(items[i], what, 0, 1);
+            if (i > 0 && stops[i] < stops[i - 1])
+                throw Yaml.Error(items[i], string.Create(CultureInfo.InvariantCulture, $"{what} must rise: {stops[i]} comes after {stops[i - 1]}"));
+        }
+
+        return stops;
+    }
+
+    /// `[x, y]` as fractions of the area's width and height. A range error names the one that is out, as both share a line.
+    static SKPoint Center(YamlNode node, string what)
+    {
+        if (node is not YamlSequenceNode { Children.Count: 2 } pair)
+            throw Yaml.Error(node, $"{what} must be a pair of fractions like [0.5, 0.5]");
+        return new SKPoint(Yaml.Float(pair.Children[0], $"{what}'s x", 0, 1), Yaml.Float(pair.Children[1], $"{what}'s y", 0, 1));
     }
 }

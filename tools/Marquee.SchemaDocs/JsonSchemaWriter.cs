@@ -161,7 +161,10 @@ static class JsonSchemaWriter
         SchemaKind.List => Bounded(new JsonObject
         {
             ["type"] = "array",
-            ["items"] = key.Of is { } of ? Ref(of) : Plain(key.ItemKind!.Value),
+            ["items"] = key.Of is { } of ? Ref(of)
+                // A list of numbers, such as a gradient's stops, gives each one the key's range.
+                : key.ItemKind == SchemaKind.Number ? Bounded(new JsonObject { ["type"] = "number" }, key.Min, key.Max)
+                : Plain(key.ItemKind!.Value),
         }, key.MinItems, key.MaxItems, "minItems", "maxItems"),
         SchemaKind.Map => new JsonObject { ["type"] = "object", ["additionalProperties"] = Ref(key.Of!) },
         SchemaKind.Uniforms => Bounded(new JsonObject
@@ -218,6 +221,8 @@ static class JsonSchemaWriter
     {
         SchemaKind.Number or SchemaKind.Integer => Number(double.Parse(value, CultureInfo.InvariantCulture)),
         SchemaKind.Boolean => JsonValue.Create(value == "true"),
+        // Written in YAML's flow form, `[0.5, 0.5]`, which is also JSON.
+        SchemaKind.List => JsonNode.Parse(value)!,
         _ => JsonValue.Create(value),
     };
 

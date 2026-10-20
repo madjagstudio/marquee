@@ -49,7 +49,9 @@ public static partial class ThemeSchema
         SchemaKind.Color => "A quoted hex color: \"#RGB\", \"#RRGGBB\" or \"#RRGGBBAA\", where AA is the alpha, or "
             + "\"transparent\". Quote it: an unquoted # starts a YAML comment.",
         SchemaKind.Paint => "A color, or a gradient: { linear: [\"#000000\", \"#1E2A44\"], angle: 90 } or "
-            + "{ radial: [\"#1E2A44\", \"#000000\"] }.",
+            + "{ radial: [\"#1E2A44\", \"#000000\"] }. Either takes stops to place its colors, as in { linear: [\"#000000\", "
+            + "\"#36D1DC\", \"#FFFFFF\"], stops: [0, 0.8, 1] }, and a radial one center and radius to move and size it: "
+            + "{ radial: [\"#FFFFFF60\", \"#00000000\"], center: [0.3, 0.4], radius: 0.8 }.",
         SchemaKind.FontFamily => "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. "
             + "A font that isn't there falls back to Inter, with a warning.",
         SchemaKind.FontWeight => "100 to 900, or light (300), normal (400), medium (500), semibold (600) or bold (700).",
