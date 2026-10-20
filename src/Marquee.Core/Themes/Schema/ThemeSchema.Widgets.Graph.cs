@@ -11,7 +11,7 @@ public static partial class ThemeSchema
             new("source", SchemaKind.SensorKey, "The sensor whose history is drawn: one key, such as gpu.load, not an expression. "
                 + "It's what the graph's `when` rules compare."),
             new("series", SchemaKind.List, "Several sensors on one chart, each with its own history and style, drawn in order so "
-                + "the last is in front.")
+                + "the last is in front. A graph with series takes no `when` rules: style each series instead.")
             {
                 Of = "graph.series", MinItems = GraphParser.MinSeries, MaxItems = GraphParser.MaxSeries,
             },

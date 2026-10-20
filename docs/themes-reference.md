@@ -292,7 +292,7 @@ A chart of sensors' recent values, newest at the right: one `source`, or up to 8
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `source` | sensor key |  |  | The sensor whose history is drawn: one key, such as gpu.load, not an expression. It's what the graph's `when` rules compare. |
-| `series` | list of [Graph series](#graph-series) | 1 to 8 |  | Several sensors on one chart, each with its own history and style, drawn in order so the last is in front. |
+| `series` | list of [Graph series](#graph-series) | 1 to 8 |  | Several sensors on one chart, each with its own history and style, drawn in order so the last is in front. A graph with series takes no `when` rules: style each series instead. |
 | `kind` | choice | `line`, `area`, `columns` | `line` | How each series is drawn: a line (with the area under it if the style sets `fill`), an area filled under a line, or one column per value. |
 | `min` | number |  |  | The value at the bottom. Left out, the scale fits the values shown; a columns graph's also takes in 0, so its columns rise from 0. |
 | `max` | number |  |  | The value at the top; more than min if both are set. Left out, the scale fits the values shown (and 0, on a columns graph). |

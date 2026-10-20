@@ -1809,8 +1809,8 @@
           },
           "minItems": 1,
           "maxItems": 8,
-          "description": "Several sensors on one chart, each with its own history and style, drawn in order so the last is in front.",
-          "markdownDescription": "Several sensors on one chart, each with its own history and style, drawn in order so the last is in front."
+          "description": "Several sensors on one chart, each with its own history and style, drawn in order so the last is in front. A graph with series takes no `when` rules: style each series instead.",
+          "markdownDescription": "Several sensors on one chart, each with its own history and style, drawn in order so the last is in front. A graph with series takes no `when` rules: style each series instead."
         },
         "kind": {
           "enum": [

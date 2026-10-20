@@ -116,6 +116,10 @@ static partial class WidgetParser
         if (type is "bar" or "gauge")
             widget = SegmentParser.Apply(f, widget, size.X, size.Y);
 
+        // A graph with series has no source of its own: a stale rule on it could never match, and nothing would say so.
+        if (type == "graph" && source is null && f.Optional("when") is { } rules)
+            throw Yaml.Error(rules, "when rules need a source, and a graph with series has none; give each series its own style instead");
+
         widget = widget with
         {
             Bounds = SKRect.Create(at.X, at.Y, size.X, size.Y),

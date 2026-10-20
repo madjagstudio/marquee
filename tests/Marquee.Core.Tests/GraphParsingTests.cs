@@ -142,7 +142,7 @@ public class GraphParsingTests
     [InlineData("- type: graph\n  at: [0, 0]\n  size: [10, 10]\n  series:\n    - { source: cpu.load, style: hot }", 10,
         "Unknown style 'hot'. Defined styles: cpu, gpu")]
     [InlineData("- type: graph\n  at: [0, 0]\n  size: [10, 10]\n  series:\n    - { source: cpu.load }\n  when:\n    - { above: 80, style: gpu }", 12,
-        "when 'above' compares the widget's source, but this widget has no source")]
+        SeriesWhen)]
     public void Graph_errors(string widgets, int line, string reason)
     {
         var ex = Error(widgets);
@@ -234,4 +234,31 @@ public class GraphParsingTests
         var ex = Layouts.Error(layout);
         Assert.Equal((6, "source: Expression ended unexpectedly at character 11"), (ex.Line, ex.Reason));
     }
+
+    /// A series graph has no source, so a stale rule could never match and nothing would say why; any `when` rule on
+    /// one is a mistake with its line, for `marquee validate` and for the parser `marquee run` uses.
+    [Fact]
+    public void When_rules_on_a_series_graph_are_an_error_at_their_line()
+    {
+        const string layout = """
+            canvas: { orientation: landscape }
+            widgets:
+              - type: graph
+                at: [0, 0]
+                size: [10, 10]
+                series: [{ source: cpu.load }, { source: gpu.load }]
+                when:
+                  - { stale: true, style: { track: "#FF0000" } }
+              - { type: bar, at: [0, 0], size: [10, 10] }
+            """;
+        using var theme = new TempTheme(layout);
+
+        Assert.Equal(
+            ["layout.yaml:8: error: " + SeriesWhen, "layout.yaml:9: error: bar widget is missing 'source'"],
+            Validations.Lines(Validations.Validate(theme.Folder)));
+        var ex = Layouts.Error(layout);
+        Assert.Equal((8, SeriesWhen), (ex.Line, ex.Reason));
+    }
+
+    const string SeriesWhen = "when rules need a source, and a graph with series has none; give each series its own style instead";
 }
