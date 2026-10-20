@@ -87,6 +87,9 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
     public double? Min { get; init; }
     public double? Max { get; init; }
 
+    /// A number that can't be 0 though its range spans it, as an arc's sweep.
+    public bool NotZero { get; init; }
+
     /// A lower Min in one form of the block, such as 0 for a line shape's size: the key that chooses the form, the value
     /// it must have, and the Min there.
     public (string Key, string Value, double Min)? MinFor { get; init; }
