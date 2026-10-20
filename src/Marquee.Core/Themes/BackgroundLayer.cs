@@ -11,6 +11,9 @@ public abstract record BackgroundLayer(float Opacity, SKBlendMode Blend)
 
     /// For the editor, which won't change a locked layer. The renderer ignores it.
     public bool Locked { get; init; }
+
+    /// What the editor's layers list calls the layer; null when the theme gives no name. The renderer ignores it.
+    public string? Name { get; init; }
 }
 
 public sealed record FillLayer(PaintSpec Paint, float Opacity, SKBlendMode Blend) : BackgroundLayer(Opacity, Blend);

@@ -106,6 +106,9 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
     public int? MinItems { get; init; }
     public int? MaxItems { get; init; }
 
+    /// How many characters a String may have; null where there is no limit.
+    public int? MaxLength { get; init; }
+
     /// The extensions a ThemeFile must have, lower case with the dot; empty when the parser takes any file.
     public IReadOnlyList<string> FileTypes { get; init; } = [];
 

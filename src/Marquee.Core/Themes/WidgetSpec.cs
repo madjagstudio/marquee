@@ -22,6 +22,9 @@ public abstract record WidgetSpec
 
     /// For the editor, which won't move or resize a locked widget with the mouse. The renderer ignores it.
     public bool Locked { get; init; }
+
+    /// What the editor's layers list calls the widget; null when the theme gives no name. The renderer ignores it.
+    public string? Name { get; init; }
 }
 
 /// Static text or a template such as "{claude.sessions.busy}/{claude.sessions.total} working".

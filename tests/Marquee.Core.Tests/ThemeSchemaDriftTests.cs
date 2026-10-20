@@ -303,6 +303,20 @@ public class ThemeSchemaDriftTests
             }
         });
 
+    /// Text with a length limit, such as a name, takes that many characters and no more.
+    [Fact]
+    public void Text_takes_its_length_and_no_more()
+    {
+        var probes = Probes().Where(p => p.Key.MaxLength is not null).ToList();
+        Assert.NotEmpty(probes);
+        Check(probes, (place, key) =>
+        {
+            var max = key.MaxLength!.Value;
+            Parses(place, place.With(key.Name, new string('n', max)), $"{key.Name} of {max} characters");
+            Fails(place, place.With(key.Name, new string('n', max + 1)), $"{key.Name} of {max + 1} characters");
+        });
+    }
+
     /// A list, a map or a shader's uniforms takes as few and as many entries as the catalog says, and no fewer or more.
     [Fact]
     public void Lists_take_their_count_and_no_more() =>

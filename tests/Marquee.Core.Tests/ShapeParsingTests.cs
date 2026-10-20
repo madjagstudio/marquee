@@ -98,7 +98,7 @@ public class ShapeParsingTests
     [InlineData("- { type: shape, shape: arc, at: [0, 0], size: [10, 10], start: -361 }", 6, "start must be between -360 and 360")]
     [InlineData("- { type: shape, shape: arc, at: [0, 0], size: [10, 10], thickness: 0.5 }", 6, "thickness must be at least 1")]
     [InlineData("- { type: shape, shape: rect, at: [0, 0], size: [10, 10], format: x }", 6,
-        "Unknown key 'format' in shape widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, shape, start, sweep, thickness")]
+        "Unknown key 'format' in shape widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, name, shape, start, sweep, thickness")]
     public void Shape_errors(string widgets, int line, string reason)
     {
         var ex = Error(widgets);

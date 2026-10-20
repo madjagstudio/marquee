@@ -154,6 +154,8 @@ static class JsonSchemaWriter
         {
             ["anyOf"] = new JsonArray(Bounded(new JsonObject { ["type"] = "integer" }, key.Min, key.Max), new JsonObject { ["enum"] = Strings(key.Values) }),
         },
+        // JSON Schema checks the length of a string only, so a name written as a number still passes, as YAML allows.
+        SchemaKind.String when key.MaxLength is { } length => Bounded(Plain(SchemaKind.String), null, length, maxKey: "maxLength"),
         SchemaKind.ThemeFile when key.FileTypes.Count > 0 => new JsonObject { ["type"] = "string", ["pattern"] = Extensions(key.FileTypes) },
         // A shape's size may be 0 one way, for a line: the lowest Min of any form, which MinFor raises in the others.
         SchemaKind.Size when (key.MinFor?.Min ?? key.Min) is { } min => Pair(new JsonObject { ["type"] = "number", ["minimum"] = Number(min) }),

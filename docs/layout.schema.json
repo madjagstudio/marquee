@@ -1000,6 +1000,16 @@
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
           "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         }
       },
       "required": [
@@ -1060,6 +1070,16 @@
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
           "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         }
       },
       "required": [
@@ -1154,6 +1174,16 @@
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
           "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         }
       },
       "required": [
@@ -1215,6 +1245,16 @@
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
           "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         }
       },
       "required": [
@@ -1364,6 +1404,16 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "text": {
           "type": [
             "string",
@@ -1466,6 +1516,16 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "format": {
           "type": "string",
           "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", duration, bytes, or time for Unix seconds as a local time (\"time:HH:mm\" gives a pattern). Left out, a number shows up to two decimals.",
@@ -1564,6 +1624,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "min": {
           "type": "number",
@@ -1693,6 +1763,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "min": {
           "type": "number",
@@ -1852,6 +1932,16 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "series": {
           "type": "array",
           "items": {
@@ -2004,6 +2094,16 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "src": {
           "type": "string",
           "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads.",
@@ -2113,6 +2213,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "src": {
           "type": "string",
@@ -2224,6 +2334,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "shape": {
           "enum": [
@@ -2398,6 +2518,16 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "hole": {
           "type": "number",
           "minimum": 0,
@@ -2540,6 +2670,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "children": {
           "type": "array",

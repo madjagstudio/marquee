@@ -148,6 +148,7 @@ static class ReferenceWriter
         SchemaKind.List when key.ItemKind == SchemaKind.Number && Range(key) is { Length: > 0 } range => $"{Count(key.MinItems, key.MaxItems)}, each {range}",
         SchemaKind.List or SchemaKind.Map or SchemaKind.Uniforms => Count(key.MinItems, key.MaxItems),
         SchemaKind.ThemeFile when key.FileTypes.Count > 0 => Codes(key.FileTypes),
+        SchemaKind.String when key.MaxLength is { } length => $"up to {length} characters",
         _ => Range(key) + (key.MinFor is { } lower ? $", or {Number(lower.Min)} with `{lower.Key}: {lower.Value}`" : ""),
     };
 

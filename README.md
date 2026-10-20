@@ -321,6 +321,8 @@ widgets:
   `{ radial: ["#FFFFFF60", "#00000000"], center: [0.3, 0.4], radius: 0.8 }`. `stops` place the colors, and a radial
   gradient's `center` and `radius` move and size it.
 - **Fonts:** the bundled Inter by default, an installed font by name, or a `.ttf`/`.otf` file in the theme folder.
+- **Names:** `name` (up to 64 characters) on a widget or a background layer is what the theme editor's layers list
+  calls it; the screen ignores it.
 - **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so
   `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m". `"{now|time}"` is the local short time, and
   `"{now|time:ddd HH:mm}"` or a value's `format: "time:HH:mm"` takes a .NET date and time pattern. Times follow the

@@ -183,7 +183,7 @@ public class DonutParsingTests
         [
             "9: Unknown key 'colour' in donut slice. Expected one of: source, label, style",
             "10: donut slice is missing 'source'",
-            "12: Unknown key 'nope' in text widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, text",
+            "12: Unknown key 'nope' in text widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, name, text",
         ], Layouts.Lines(errors));
         Assert.Empty(spec.Widgets);
     }

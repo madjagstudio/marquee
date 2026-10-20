@@ -32,6 +32,7 @@ public static partial class ThemeSchema
             },
             Hidden("Leaves the layer off the screen; `marquee validate` still checks it."),
             Locked("Stops the theme editor changing the layer. The screen ignores it."),
+            Name("layer"),
         ]),
         [
             new("layer.fill", "fill", "Fill layer", "A color or gradient.",

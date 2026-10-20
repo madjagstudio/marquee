@@ -160,6 +160,7 @@ Every layer takes these.
 | `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the layer mixes with the layers under it. |
 | `hidden` | true or false |  | `false` | Leaves the layer off the screen; `marquee validate` still checks it. |
 | `locked` | true or false |  | `false` | Stops the theme editor changing the layer. The screen ignores it. |
+| `name` | text or number | up to 64 characters |  | What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it. |
 
 ### Fill layer
 
@@ -219,6 +220,7 @@ Every widget takes these.
 | `rotate` | number (degrees) | -360 to 360 | `0` | Turns the widget clockwise about its own centre. A group's children turn with it. |
 | `hidden` | true or false |  | `false` | Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children. |
 | `locked` | true or false |  | `false` | Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it. |
+| `name` | text or number | up to 64 characters |  | What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it. |
 
 ### Text
 

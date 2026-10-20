@@ -69,7 +69,7 @@ public class VideoWidgetParsingTests
     [InlineData("  - { type: video, at: [0, 0], size: [10, 10], src: a.mp4, fit: tile }", 3,
         "fit must be one of: cover, contain, stretch, none; not 'tile'")]
     [InlineData("  - { type: video, at: [0, 0], size: [10, 10], src: a.mp4, loop: false }", 3,
-        "Unknown key 'loop' in video widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, src, fit")]
+        "Unknown key 'loop' in video widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, name, src, fit")]
     public void Errors(string widget, int line, string reason)
     {
         var ex = Layouts.Error(Header + "widgets:\n" + widget + "\n");

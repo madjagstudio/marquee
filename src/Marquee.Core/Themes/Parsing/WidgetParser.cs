@@ -9,7 +9,7 @@ static partial class WidgetParser
 {
     // The keys each widget accepts: Common, plus its type's own. ThemeSchema describes each, and its drift test reads
     // these lists.
-    internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth", "rotate", "hidden", "locked"];
+    internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth", "rotate", "hidden", "locked", "name"];
 
     internal static readonly (string Name, string Value)[] Types =
         [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"),
@@ -138,6 +138,7 @@ static partial class WidgetParser
             Rotate = f.Optional("rotate") is { } rotate ? Yaml.Float(rotate, "rotate", -MaxRotate, MaxRotate) : 0,
             Hidden = f.Optional("hidden") is { } hidden && Yaml.Bool(hidden, "hidden"),
             Locked = f.Optional("locked") is { } locked && Yaml.Bool(locked, "locked"),
+            Name = f.Optional("name") is { } name ? NameParser.Parse(name) : null,
         };
 
         if (widget is ShapeWidget shape) CheckStroked(shape, f);

@@ -112,6 +112,16 @@ public class ThemeSchemaDocsTests
         Assert.Equal(description, property["markdownDescription"]?.GetValue<string>());
     }
 
+    /// A name's limit reaches both: VS Code flags a longer name, and the reference's Values column gives the limit.
+    [Fact]
+    public void Docs_give_a_names_length()
+    {
+        var definitions = JsonNode.Parse(JsonSchemaWriter.Write())!["definitions"]!;
+        Assert.Equal(64, definitions["widget.text"]!["properties"]!["name"]!["maxLength"]?.GetValue<int>());
+        Assert.Equal(64, definitions["layer.fill"]!["properties"]!["name"]!["maxLength"]?.GetValue<int>());
+        Assert.Contains("| `name` | text or number | up to 64 characters |", ReferenceWriter.Write());
+    }
+
     [Fact]
     public void Reference_gives_defaults_by_widget_type()
     {
