@@ -9,7 +9,10 @@ sealed class StyleTable
 {
     // The keys a style and its nested blocks accept. ThemeSchema describes each, and its drift test reads these lists.
     internal static readonly string[] Keys =
-        ["extends", "font", "size", "weight", "color", "fill", "track", "stroke", "shadow", "glow", "pulse", "opacity", "radius", "padding", "align", "blend"];
+    [
+        "extends", "font", "size", "weight", "color", "fill", "track", "stroke", "shadow", "glow", "pulse", "opacity", "radius", "padding", "align",
+        "blend", "letter_spacing", "line_height", "wrap",
+    ];
 
     internal static readonly string[] StrokeKeys = ["width", "color", "cap"];
     internal static readonly string[] ShadowKeys = ["color", "x", "y", "blur"];
@@ -113,6 +116,9 @@ sealed class StyleTable
                 ? Yaml.Choice(align, "align", ("left", TextAlign.Left), ("center", TextAlign.Center), ("right", TextAlign.Right))
                 : null,
             Blend = f.Optional("blend") is { } blend ? BackgroundParser.Blend(blend) : null,
+            LetterSpacing = f.Optional("letter_spacing") is { } spacing ? Yaml.Float(spacing, "letter_spacing", -20, 100) : null,
+            LineHeight = f.Optional("line_height") is { } lineHeight ? Yaml.Float(lineHeight, "line_height", 0.5, 4) : null,
+            Wrap = f.Optional("wrap") is { } wrap ? Yaml.Bool(wrap, "wrap") : null,
         };
         return new Raw(style, f.Optional("extends"), definition);
     }

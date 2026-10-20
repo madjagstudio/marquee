@@ -27,6 +27,16 @@ public sealed record StyleSpec
     /// a layer of its own.
     public SKBlendMode? Blend { get; init; }
 
+    /// Px added between characters; negative tightens.
+    public float? LetterSpacing { get; init; }
+
+    /// How far apart the baselines of wrapped lines are, as a multiple of the size.
+    public float? LineHeight { get; init; }
+
+    /// Whether text too wide for its box breaks at spaces onto more lines. Off by default, so text that overflows its
+    /// box draws on one line as it always has; a `\n` starts a new line either way.
+    public bool? Wrap { get; init; }
+
     /// `over` wins wherever it sets a property. Stroke, shadow, glow and pulse merge field by field,
     /// so a rule can change a stroke's color and keep its width.
     public static StyleSpec Merge(StyleSpec under, StyleSpec over) => new()
@@ -46,10 +56,17 @@ public sealed record StyleSpec
         Padding = over.Padding ?? under.Padding,
         Align = over.Align ?? under.Align,
         Blend = over.Blend ?? under.Blend,
+        LetterSpacing = over.LetterSpacing ?? under.LetterSpacing,
+        LineHeight = over.LineHeight ?? under.LineHeight,
+        Wrap = over.Wrap ?? under.Wrap,
     };
 
     /// What a group passes down to its children. Box properties (fill, stroke, radius, ...) stay with the group.
-    public StyleSpec Inherited() => new() { Font = Font, Size = Size, Weight = Weight, Color = Color, Align = Align };
+    public StyleSpec Inherited() => new()
+    {
+        Font = Font, Size = Size, Weight = Weight, Color = Color, Align = Align, LetterSpacing = LetterSpacing, LineHeight = LineHeight,
+        Wrap = Wrap,
+    };
 }
 
 /// Values used where no style sets a property.
@@ -78,6 +95,9 @@ public static class StyleDefaults
     public const float PulsePeriodMs = 1000;
     public const float PulseMin = 0.4f;
     public const float PulseMax = 1f;
+    public const float LetterSpacing = 0;
+    public const float LineHeight = 1.2f;
+    public const bool Wrap = false;
 }
 
 public enum TextAlign { Left, Center, Right }

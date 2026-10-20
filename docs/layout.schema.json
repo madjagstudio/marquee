@@ -89,7 +89,7 @@
       "additionalProperties": false
     },
     "style": {
-      "description": "Styles: How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align) down to its children; the others stay with its box.",
+      "description": "Styles: How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.",
       "type": "object",
       "properties": {
         "extends": {
@@ -210,7 +210,7 @@
             "center",
             "right"
           ],
-          "description": "Where text sits across its box. It is always centred from top to bottom.",
+          "description": "Where each line of text sits across its box. The lines together are always centred from top to bottom.",
           "default": "left"
         },
         "blend": {
@@ -225,6 +225,25 @@
           ],
           "description": "How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one.",
           "default": "normal"
+        },
+        "letter_spacing": {
+          "type": "number",
+          "minimum": -20,
+          "maximum": 100,
+          "description": "Space added between the characters of text; below 0 draws them closer.",
+          "default": 0
+        },
+        "line_height": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 4,
+          "description": "How far apart the lines of text are, as a multiple of the text's size.",
+          "default": 1.2
+        },
+        "wrap": {
+          "type": "boolean",
+          "description": "Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way.",
+          "default": false
         }
       },
       "additionalProperties": false
@@ -923,7 +942,7 @@
       ]
     },
     "widget.text": {
-      "description": "Text: Text on one line, which can show values. Without a `source`, its `when` rules can only use `stale`, which matches while any value in the text is missing.",
+      "description": "Text: Text, which can show values. A line break (`\\n` in double quotes, or a `|` block) starts a new line, and with the style's `wrap` a line too wide for the box breaks at spaces. Without a `source`, its `when` rules can only use `stale`, which matches while any value in the text is missing.",
       "type": "object",
       "properties": {
         "type": {
@@ -1015,7 +1034,7 @@
       "additionalProperties": false
     },
     "widget.value": {
-      "description": "Value: One value as text. A missing or stale value shows as —.",
+      "description": "Value: One value as text, laid out as a text widget's is. A missing or stale value shows as —.",
       "type": "object",
       "properties": {
         "type": {

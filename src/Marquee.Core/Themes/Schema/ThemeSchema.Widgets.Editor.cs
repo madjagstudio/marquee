@@ -13,7 +13,7 @@ public static partial class ThemeSchema
     internal static string[] EveryWidgetStyles => ["extends", "opacity", "pulse", "blend"];
 
     /// The text keys a text or value widget draws with, which a group passes down to its children (StyleSpec.Inherited).
-    static string[] TextStyles => ["font", "size", "weight", "color", "align"];
+    static string[] TextStyles => ["font", "size", "weight", "color", "align", "letter_spacing", "line_height", "wrap"];
 
     /// A box's fill and outline (BoxPainter), with `radius` corners.
     static string[] BoxStyles => ["fill", "stroke.width", "stroke.color", "radius"];

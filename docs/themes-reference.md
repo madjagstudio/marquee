@@ -40,7 +40,7 @@ The screen the theme is made for. A theme fits both ways up of its orientation.
 
 Goes under `styles:` in [layout.yaml](#layoutyaml).
 
-How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align) down to its children; the others stay with its box.
+How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -58,8 +58,11 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `opacity` | number (fraction) | 0 to 1 | `1` | How solid the whole widget is: 0 hides it, 1 is fully solid. |
 | `radius` | number (px) | at least 0 | `0` | Rounds the corners of a box, a bar, a graph's background and what a group or image clips to. |
 | `padding` | number (px) | at least 0 | `0` | Space between a text or value widget's box and its text. |
-| `align` | choice | `left`, `center`, `right` | `left` | Where text sits across its box. It is always centred from top to bottom. |
+| `align` | choice | `left`, `center`, `right` | `left` | Where each line of text sits across its box. The lines together are always centred from top to bottom. |
 | `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one. |
+| `letter_spacing` | number (px) | -20 to 100 | `0` | Space added between the characters of text; below 0 draws them closer. |
+| `line_height` | number (times) | 0.5 to 4 | `1.2` | How far apart the lines of text are, as a multiple of the text's size. |
+| `wrap` | true or false |  | `false` | Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way. |
 
 ### Stroke
 
@@ -209,7 +212,7 @@ Every widget takes these.
 
 ### Text
 
-Text on one line, which can show values. Without a `source`, its `when` rules can only use `stale`, which matches while any value in the text is missing.
+Text, which can show values. A line break (`\n` in double quotes, or a `|` block) starts a new line, and with the style's `wrap` a line too wide for the box breaks at spaces. Without a `source`, its `when` rules can only use `stale`, which matches while any value in the text is missing.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -217,7 +220,7 @@ Text on one line, which can show values. Without a `source`, its `when` rules ca
 
 ### Value
 
-One value as text. A missing or stale value shows as —.
+One value as text, laid out as a text widget's is. A missing or stale value shows as —.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|

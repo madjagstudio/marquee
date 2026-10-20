@@ -154,6 +154,9 @@ public class ThemeSchemaDriftTests
         (nameof(StyleDefaults.PulsePeriodMs), "style.pulse", "period", s => s.Pulse?.Period),
         (nameof(StyleDefaults.PulseMin), "style.pulse", "min", s => s.Pulse?.Min),
         (nameof(StyleDefaults.PulseMax), "style.pulse", "max", s => s.Pulse?.Max),
+        (nameof(StyleDefaults.LetterSpacing), "style", "letter_spacing", s => s.LetterSpacing),
+        (nameof(StyleDefaults.LineHeight), "style", "line_height", s => s.LineHeight),
+        (nameof(StyleDefaults.Wrap), "style", "wrap", s => s.Wrap),
     ];
 
     [Fact]

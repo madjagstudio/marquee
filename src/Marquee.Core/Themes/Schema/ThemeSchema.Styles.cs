@@ -6,7 +6,7 @@ public static partial class ThemeSchema
     /// style, the widget's and its rules can layer.
     static SchemaBlock StyleBlock() => new("style", "style", "Styles",
         "How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group "
-        + "passes its text keys (font, size, weight, color, align) down to its children; the others stay with its box.",
+        + "passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.",
         [
             new("extends", SchemaKind.StyleName, "Another named style to start from; keys set here override it."),
             new("font", SchemaKind.FontFamily,
@@ -47,7 +47,8 @@ public static partial class ThemeSchema
             {
                 Default = Number(StyleDefaults.Padding), Min = 0, Unit = SchemaUnit.Px,
             },
-            new("align", SchemaKind.Enum, "Where text sits across its box. It is always centred from top to bottom.")
+            new("align", SchemaKind.Enum,
+                "Where each line of text sits across its box. The lines together are always centred from top to bottom.")
             {
                 Default = "left", Values = ["left", "center", "right"],
             },
@@ -56,6 +57,20 @@ public static partial class ThemeSchema
                 + "blend with it, as one.")
             {
                 Default = "normal", Values = BlendModes,
+            },
+            new("letter_spacing", SchemaKind.Number, "Space added between the characters of text; below 0 draws them closer.")
+            {
+                Default = Number(StyleDefaults.LetterSpacing), Min = -20, Max = 100, Unit = SchemaUnit.Px,
+            },
+            new("line_height", SchemaKind.Number, "How far apart the lines of text are, as a multiple of the text's size.")
+            {
+                Default = Number(StyleDefaults.LineHeight), Min = 0.5, Max = 4, Unit = SchemaUnit.Multiplier,
+            },
+            new("wrap", SchemaKind.Boolean,
+                "Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its "
+                + "box. A line break starts a new line either way.")
+            {
+                Default = "false",
             },
         ]);
 }
