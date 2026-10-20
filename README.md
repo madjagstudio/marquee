@@ -305,7 +305,8 @@ widgets:
 ```
 
 - **Widgets:** `text` (templates like `"{gpu.load:0}% · {gpu.vram_used|bytes}"`), `value`, `bar`, `gauge`, `graph`, `image`,
-  `shape` (a `rect`, `ellipse`, `line` or `arc`, which `when` rules can recolor), `group`.
+  `shape` (a `rect`, `ellipse`, `line` or `arc`, which `when` rules can recolor), `donut` (a pie or donut of up to 12
+  slices), `group`.
 - **Styles:** named in `styles:`, layered with `extends:`, changed by `when:` rules (`above`, `below`, `equals`, `stale`), animated with `pulse:`.
 - **Background:** `fill` (color or gradient), `image`, `shader` and `video` layers, each with `opacity` and `blend`; up
   to 16 layers, at most 4 of them shaders and 2 of them videos.
@@ -314,8 +315,13 @@ widgets:
 - **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so
   `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m".
 
-See `themes/example-landscape`, `themes/example-portrait` and `themes/example-agents`. A full theme authoring guide
-comes with the public release.
+Every key, with its values and default, is in [docs/themes-reference.md](docs/themes-reference.md). VS Code completes
+and checks theme files once the YAML extension (Red Hat) is installed: the examples' first line,
+`# yaml-language-server: $schema=../../docs/layout.schema.json`, points it at [the schema](docs/layout.schema.json).
+
+See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents` and `themes/example-showcase`, a
+tour that uses every part of the format once: shapes, dials, segmented meters, charts, a donut, wrapped text, rotation,
+blending and hidden widgets. A full theme authoring guide comes with the public release.
 
 ### Shader backgrounds
 
