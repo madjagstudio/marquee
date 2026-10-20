@@ -11,5 +11,6 @@ public static partial class ThemeSchema
             {
                 Default = "horizontal", Values = ["horizontal", "vertical"],
             },
+            .. Segments("bar", SchemaUnit.Px, SegmentSpec.DefaultBarGap, "Each segment must keep at least 1 px."),
         ]);
 }

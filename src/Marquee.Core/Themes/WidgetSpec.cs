@@ -33,10 +33,18 @@ public sealed record ValueWidget(string? Format) : WidgetSpec;
 public enum BarDirection { Horizontal, Vertical }
 
 /// Fills left → right (horizontal) or bottom → top (vertical) between Min and Max.
-public sealed record BarWidget(double Min, double Max, BarDirection Direction) : WidgetSpec;
+public sealed record BarWidget(double Min, double Max, BarDirection Direction) : WidgetSpec
+{
+    /// Null draws one continuous fill.
+    public SegmentSpec? Segments { get; init; }
+}
 
 /// A ring or arc. Angles are degrees clockwise from 3 o'clock; the default arc opens at the bottom.
-public sealed record GaugeWidget(double Min, double Max, float StartAngle, float SweepAngle, float Thickness) : WidgetSpec;
+public sealed record GaugeWidget(double Min, double Max, float StartAngle, float SweepAngle, float Thickness) : WidgetSpec
+{
+    /// Null draws one continuous arc.
+    public SegmentSpec? Segments { get; init; }
+}
 
 /// A sparkline over the last Points samples of one sensor key. Min/Max fix the vertical scale; null scales to the data.
 public sealed record GraphWidget(string Key, double? Min, double? Max, int Points) : WidgetSpec;

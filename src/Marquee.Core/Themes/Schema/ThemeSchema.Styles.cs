@@ -41,7 +41,8 @@ public static partial class ThemeSchema
                 Default = Number(StyleDefaults.Opacity), Min = 0, Max = 1, Unit = SchemaUnit.Fraction,
             },
             new("radius", SchemaKind.Number,
-                "Rounds the corners of a box, a bar, a rect shape, a graph's background and what a group or image clips to.")
+                "Rounds the corners of a box, a bar, the segments of a bar or gauge, a rect shape, a graph's background and what "
+                + "a group or image clips to.")
             {
                 Default = Number(StyleDefaults.Radius), Min = 0, Unit = SchemaUnit.Px,
             },

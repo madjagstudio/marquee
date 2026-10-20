@@ -195,7 +195,7 @@
         "radius": {
           "type": "number",
           "minimum": 0,
-          "description": "Rounds the corners of a box, a bar, a rect shape, a graph's background and what a group or image clips to.",
+          "description": "Rounds the corners of a box, a bar, the segments of a bar or gauge, a rect shape, a graph's background and what a group or image clips to.",
           "default": 0
         },
         "padding": {
@@ -272,7 +272,7 @@
             "round",
             "square"
           ],
-          "description": "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A graph's line is round when this is left out.",
+          "description": "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A graph's line is round when this is left out. It doesn't shape a segmented gauge, whose segments `radius` rounds.",
           "default": "butt"
         }
       },
@@ -1219,6 +1219,18 @@
           ],
           "description": "Which way it fills: horizontal fills left to right, vertical bottom to top.",
           "default": "horizontal"
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 120,
+          "description": "Cuts the bar into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners."
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 0,
+          "description": "The space between segments, used only with `segments`. Each segment must keep at least 1 px.",
+          "default": 4
         }
       },
       "required": [
@@ -1334,6 +1346,18 @@
           "minimum": 1,
           "description": "How thick the arc is.",
           "default": 12
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 120,
+          "description": "Cuts the arc into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners."
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 0,
+          "description": "The space between segments, used only with `segments`. Each segment must keep at least 1°, and a full ring has a gap at the join too.",
+          "default": 3
         }
       },
       "required": [

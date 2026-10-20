@@ -17,5 +17,7 @@ public static partial class ThemeSchema
                 Default = Number(Arcs.DefaultSweep), Min = -Arcs.MaxAngle, Max = Arcs.MaxAngle, Unit = SchemaUnit.Degrees,
             },
             new("thickness", SchemaKind.Number, "How thick the arc is.") { Default = "12", Min = 1, Unit = SchemaUnit.Px },
+            .. Segments("arc", SchemaUnit.Degrees, SegmentSpec.DefaultGaugeGap,
+                "Each segment must keep at least 1°, and a full ring has a gap at the join too."),
         ]);
 }

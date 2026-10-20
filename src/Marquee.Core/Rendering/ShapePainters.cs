@@ -9,6 +9,13 @@ static class ShapePainters
 {
     public static void Bar(RenderContext ctx, BarWidget bar, StyleSpec style, double? value)
     {
+        if (bar.Segments is { } segments)
+        {
+            SegmentPainter.Bar(ctx.Canvas, bar, segments, style, value);
+            BoxPainter.Outline(ctx, bar.Bounds, style);
+            return;
+        }
+
         var canvas = ctx.Canvas;
         var bounds = bar.Bounds;
         if (style.Track is { } track)
@@ -36,10 +43,17 @@ static class ShapePainters
         var (square, oval) = ArcBounds(gauge.Bounds, gauge.Thickness);
         var cap = style.Stroke?.Cap ?? StyleDefaults.StrokeCap;
 
-        if (style.Track is { } track)
-            Arc(ctx.Canvas, oval, gauge.StartAngle, gauge.SweepAngle, track, square, gauge.Thickness, cap);
-        if (value is { } v && Fraction(v, gauge.Min, gauge.Max) is var fraction and > 0)
-            Arc(ctx.Canvas, oval, gauge.StartAngle, gauge.SweepAngle * fraction, ValuePaint(style), square, gauge.Thickness, cap);
+        if (gauge.Segments is { } segments)
+        {
+            SegmentPainter.Gauge(ctx.Canvas, gauge, segments, style, value, square);
+        }
+        else
+        {
+            if (style.Track is { } track)
+                Arc(ctx.Canvas, oval, gauge.StartAngle, gauge.SweepAngle, track, square, gauge.Thickness, cap);
+            if (value is { } v && Fraction(v, gauge.Min, gauge.Max) is var fraction and > 0)
+                Arc(ctx.Canvas, oval, gauge.StartAngle, gauge.SweepAngle * fraction, ValuePaint(style), square, gauge.Thickness, cap);
+        }
     }
 
     /// Newest sample at the right edge, one step per sample, so a filling history grows in from the right.
@@ -108,7 +122,7 @@ static class ShapePainters
 
     static float Fraction(double value, double min, double max) => (float)Math.Clamp((value - min) / (max - min), 0, 1);
 
-    static PaintSpec ValuePaint(StyleSpec style) => style.Fill ?? new SolidPaint(style.Color ?? StyleDefaults.Color);
+    public static PaintSpec ValuePaint(StyleSpec style) => style.Fill ?? new SolidPaint(style.Color ?? StyleDefaults.Color);
 
     static void Arc(SKCanvas canvas, SKRect oval, float start, float sweep, PaintSpec spec, SKRect area, float thickness, SKStrokeCap cap)
     {

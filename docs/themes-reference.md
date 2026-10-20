@@ -56,7 +56,7 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `glow` | block: [Glow](#glow) |  |  | A soft glow round text or a shape. |
 | `pulse` | block: [Pulse](#pulse) |  |  | Makes the opacity or the glow beat steadily. |
 | `opacity` | number (fraction) | 0 to 1 | `1` | How solid the whole widget is: 0 hides it, 1 is fully solid. |
-| `radius` | number (px) | at least 0 | `0` | Rounds the corners of a box, a bar, a rect shape, a graph's background and what a group or image clips to. |
+| `radius` | number (px) | at least 0 | `0` | Rounds the corners of a box, a bar, the segments of a bar or gauge, a rect shape, a graph's background and what a group or image clips to. |
 | `padding` | number (px) | at least 0 | `0` | Space between a text or value widget's box and its text. |
 | `align` | choice | `left`, `center`, `right` | `left` | Where each line of text sits across its box. The lines together are always centred from top to bottom. |
 | `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one. |
@@ -74,7 +74,7 @@ A line: the outline drawn just inside a box or a shape, a line shape itself, a g
 |---|---|---|---|---|
 | `width` | number (px) | at least 0 | `1` | How thick the line is; 0 draws none. A graph's line is 2 px when this is left out. |
 | `color` | paint |  |  | The line's color or gradient. A box has no outline without it; a graph's line uses the style's color. |
-| `cap` | choice | `butt`, `round`, `square` | `butt` | How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A graph's line is round when this is left out. |
+| `cap` | choice | `butt`, `round`, `square` | `butt` | How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A graph's line is round when this is left out. It doesn't shape a segmented gauge, whose segments `radius` rounds. |
 
 ### Shadow
 
@@ -237,6 +237,8 @@ A bar filled in proportion to a value: `track` paints the empty part, `fill` (or
 | `min` | number |  | `0` | The value at which the bar is empty. |
 | `max` | number |  | `100` | The value at which the bar is full. It must be more than min. |
 | `direction` | choice | `horizontal`, `vertical` | `horizontal` | Which way it fills: horizontal fills left to right, vertical bottom to top. |
+| `segments` | whole number | 2 to 120 |  | Cuts the bar into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners. |
+| `gap` | number (px) | at least 0 | `4` | The space between segments, used only with `segments`. Each segment must keep at least 1 px. |
 
 ### Gauge
 
@@ -250,6 +252,8 @@ An arc filled in proportion to a value, in the largest square that fits its box.
 | `start` | number (degrees) | -360 to 360 | `135` | Where the arc starts. |
 | `sweep` | number (degrees) | -360 to 360 | `270` | How far the arc runs from its start; negative runs anticlockwise. It can't be 0. |
 | `thickness` | number (px) | at least 1 | `12` | How thick the arc is. |
+| `segments` | whole number | 2 to 120 |  | Cuts the arc into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners. |
+| `gap` | number (degrees) | at least 0 | `3` | The space between segments, used only with `segments`. Each segment must keep at least 1°, and a full ring has a gap at the join too. |
 
 ### Graph
 

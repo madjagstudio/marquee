@@ -20,8 +20,8 @@ static partial class WidgetParser
     {
         ["text"] = ["text"],
         ["value"] = ["format"],
-        ["bar"] = ["min", "max", "direction"],
-        ["gauge"] = ["min", "max", "start", "sweep", "thickness"],
+        ["bar"] = ["min", "max", "direction", .. SegmentParser.Keys],
+        ["gauge"] = ["min", "max", "start", "sweep", "thickness", .. SegmentParser.Keys],
         ["graph"] = ["min", "max", "points"],
         ["image"] = ["src", "fit"],
         ["shape"] = ["shape", .. ArcKeys],
@@ -111,6 +111,9 @@ static partial class WidgetParser
             "shape" => Shape(f),
             _ => new GroupWidget(children ?? ParseList(f.Required("children"), "children", context, groupDepth + 1)),
         };
+
+        if (type is "bar" or "gauge")
+            widget = SegmentParser.Apply(f, widget, size.X, size.Y);
 
         widget = widget with
         {

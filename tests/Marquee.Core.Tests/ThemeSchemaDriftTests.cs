@@ -454,7 +454,8 @@ public class ThemeSchemaDriftTests
             _ => new JsonObject(),
         };
 
-        /// Base with `name` set to `value`, without the others of an exactly-one-of group it belongs to.
+        /// Base with `name` set to `value`, without the others of an exactly-one-of group it belongs to, and with the
+        /// room the key needs from its neighbours (RoomFor).
         public JsonObject With(string name, JsonNode? value)
         {
             var probe = Base(name);
@@ -462,6 +463,8 @@ public class ThemeSchemaDriftTests
                 foreach (var other in Block.ExactlyOneOf.Where(o => o != name))
                     probe.Remove(other);
             probe[name] = value;
+            foreach (var (key, json) in RoomFor.GetValueOrDefault($"{Block.Id}.{name}", []))
+                probe[key] = JsonNode.Parse(json);
             return probe;
         }
 
@@ -527,6 +530,14 @@ public class ThemeSchemaDriftTests
 
     const string StyleName = "s";
     const string ProbeStyle = "probe";
+
+    /// Keys whose range only fits with room from the keys beside them, by block id and key name, as JSON: the most
+    /// segments need a bar longer than a probe's and no gap, since each segment keeps at least 1 px or 1°.
+    static readonly Dictionary<string, (string Key, string Json)[]> RoomFor = new(StringComparer.Ordinal)
+    {
+        ["widget.bar.segments"] = [("size", $"[{SegmentSpec.MaxCount * SegmentSpec.MinLength}, 10]"), ("gap", "0")],
+        ["widget.gauge.segments"] = [("gap", "0")],
+    };
 
     static bool IsStyle(SchemaBlock block) => block.Id == "style" || block.Id.StartsWith("style.", StringComparison.Ordinal);
 

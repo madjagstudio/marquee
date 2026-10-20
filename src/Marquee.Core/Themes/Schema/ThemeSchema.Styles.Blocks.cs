@@ -15,7 +15,7 @@ public static partial class ThemeSchema
             },
             new("color", SchemaKind.Paint, "The line's color or gradient. A box has no outline without it; a graph's line uses the style's color."),
             new("cap", SchemaKind.Enum, "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A "
-                + "graph's line is round when this is left out.")
+                + "graph's line is round when this is left out. It doesn't shape a segmented gauge, whose segments `radius` rounds.")
             {
                 Default = "butt", Values = ["butt", "round", "square"], DefaultFor = new Dictionary<string, string> { ["graph"] = "round" },
             },

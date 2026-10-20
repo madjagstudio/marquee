@@ -25,7 +25,7 @@ public static partial class ThemeSchema
         ("text", [.. TextStyles, .. BoxStyles, "padding", "shadow", "glow"]),
         ("value", [.. TextStyles, .. BoxStyles, "padding", "shadow", "glow"]),
         ("bar", [.. BoxStyles, "color", "track"]),
-        ("gauge", ["color", "fill", "track", "stroke.cap"]),
+        ("gauge", ["color", "fill", "track", "stroke.cap", "radius"]),
         ("graph", ["color", "fill", "track", "stroke", "radius"]),
         ("image", [.. BoxStyles]),
         ("shape", ["fill", "stroke", "shadow", "glow", "radius"]),
