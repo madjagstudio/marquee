@@ -61,6 +61,8 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
     public IDisposable StartCustomValuesServer(SensorStore store, ILog log, int port, int maxKeys) =>
         Server(new FakeServer("http", port, maxKeys));
 
+    public IDisposable StartSensorFeedServer(SensorStore store, ILog log) => Server(new FakeServer("sensor feed", store: store));
+
     public ClaudeLimitsFile CreateClaudeLimits(ILog log) => new(claudeLimitsPath, log);
 
     /// The LED ring the engine's ring senders find, or null (the default) for no ring sender at all, as where Marquee

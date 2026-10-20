@@ -160,6 +160,10 @@ internal static class Strings
 
     public static string InstallerDidNotStart(string reason) => Format(nameof(InstallerDidNotStart), reason);
 
+    public static string SensorFeedUnavailable(string pipe, string reason) => Format(nameof(SensorFeedUnavailable), pipe, reason);
+
+    public static string SensorFeedFailed(string pipe, string reason) => Format(nameof(SensorFeedFailed), pipe, reason);
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages get the platform's line breaks back, like the rest of the log.
     static string Get(string name) =>

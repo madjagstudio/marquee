@@ -32,6 +32,9 @@ public interface IEngineServices
     /// The custom-values HTTP server on 127.0.0.1:`port`, already started. Disposing it stops it.
     IDisposable StartCustomValuesServer(SensorStore store, ILog log, int port, int maxKeys);
 
+    /// The theme editor's sensor feed (SensorFeedServer) for `store`, already started. Disposing it stops it.
+    IDisposable StartSensorFeedServer(SensorStore store, ILog log);
+
     /// Where the last Claude Code limits are kept between runs. An engine made for a sink folder doesn't ask.
     ClaudeLimitsFile CreateClaudeLimits(ILog log);
 
