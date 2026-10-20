@@ -1,3 +1,4 @@
+using Marquee.Core.Expressions;
 using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
 using SkiaSharp;
@@ -15,6 +16,9 @@ sealed class RenderContext(SKCanvas canvas, SensorSnapshot sensors, TimeSpan tim
     public TimeSpan Time { get; } = time;
 
     public ThemeAssets Assets { get; } = assets;
+
+    /// The time zone and culture that `time` placeholders and formats write in.
+    public TimeLocale Locale { get; init; } = TimeLocale.Pc;
 
     /// The number to display for a widget this frame, eased if the widget has `smooth`.
     public double Smoothed(WidgetSpec widget, double target)

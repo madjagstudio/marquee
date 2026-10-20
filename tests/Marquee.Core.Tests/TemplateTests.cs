@@ -61,7 +61,7 @@ public class TemplateTests
     [InlineData("a } b", "Unmatched '}' (write '}}' for a literal brace)", 3)]
     [InlineData("x {1 +}", "Expression ended unexpectedly", 7)]
     [InlineData("{}", "Expression is empty", 2)]
-    [InlineData("{gpu.load|kelvin}", "Unknown helper 'kelvin' (use duration or bytes)", 11)]
+    [InlineData("{gpu.load|kelvin}", "Unknown helper 'kelvin' (use duration, bytes or time)", 11)]
     [InlineData("{gpu.load:0|bytes}", "A placeholder takes a format after ':' or a helper after '|', not both", 10)]
     [InlineData("{gpu.load:}", "Empty format after ':'", 10)]
     [InlineData("{gpu.load:X}", "Invalid number format 'X'", 11)]

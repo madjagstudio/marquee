@@ -1,3 +1,4 @@
+using Marquee.Core.Expressions;
 using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
 using SkiaSharp;
@@ -22,13 +23,20 @@ public sealed class ThemeRenderer : IDisposable
 
     public SKSizeI Size => _theme.Spec.Canvas.Size;
 
+    /// The time zone and culture that `time` placeholders and formats write in. Null, the default, is the PC's own,
+    /// read each frame; tests set a fixed one so clocks draw the same on every machine.
+    public TimeLocale? Locale { get; set; }
+
     /// One frame. `time` is animation time (pulse, smoothing); `sensors.Now` is the wall clock seen by expressions.
     public SKImage Render(SensorSnapshot sensors, TimeSpan time)
     {
         var canvas = _surface.Canvas;
         canvas.Clear(SKColors.Black);
 
-        var ctx = new RenderContext(canvas, sensors, time, _theme.Assets, _smoothers, _shaderSurfaces);
+        var ctx = new RenderContext(canvas, sensors, time, _theme.Assets, _smoothers, _shaderSurfaces)
+        {
+            Locale = Locale ?? TimeLocale.Pc,
+        };
         BackgroundPainter.Paint(ctx, _theme.Spec.Background, SKRect.Create(Size.Width, Size.Height));
         foreach (var widget in _theme.Spec.Widgets)
             WidgetPainter.Paint(ctx, widget, StyleSpec.Empty);

@@ -15,7 +15,7 @@ static class WidgetPainter
         if (widget.Hidden) return;
 
         var subject = widget.Source?.Evaluate(ctx.Sensors);
-        var text = widget is TextWidget t ? t.Text.Render(ctx.Sensors) : (TemplateResult?)null;
+        var text = widget is TextWidget t ? t.Text.Render(ctx.Sensors, ctx.Locale) : (TemplateResult?)null;
         var stale = (widget.Source is not null && subject is null) || text is { Stale: true };
         var style = StyleEvaluator.Effective(widget, inherited, subject, stale);
 
@@ -80,7 +80,7 @@ static class WidgetPainter
     {
         if (stale || subject is not { } value) return Formatting.Missing;
         if (value.Number is { } n) value = SensorValue.Of(ctx.Smoothed(widget, n));
-        return Formatting.Apply(widget.Format, value);
+        return Formatting.Apply(widget.Format, value, ctx.Locale);
     }
 
     static double? Number(RenderContext ctx, WidgetSpec widget, SensorValue? subject, bool stale) =>

@@ -318,7 +318,11 @@ widgets:
 - **Colors** are quoted CSS hex (`"#RRGGBB"` or `"#RRGGBBAA"`): an unquoted `#` starts a YAML comment.
 - **Fonts:** the bundled Inter by default, an installed font by name, or a `.ttf`/`.otf` file in the theme folder.
 - **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so
-  `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m".
+  `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m". `"{now|time}"` is the local short time, and
+  `"{now|time:ddd HH:mm}"` or a value's `format: "time:HH:mm"` takes a .NET date and time pattern. Times follow the
+  PC's time zone and regional format (day and month names, the short time, a 24-hour clock), as the taskbar clock does.
+  Letters in a pattern are pattern letters, so quote words (`"{now|time:'Today is' dddd}"`) and write a letter alone
+  as `%H` (`"{now|time:%H}"`). The pattern runs to the closing brace, so spaces before the brace are kept.
 
 Every key, with its values and default, is in [docs/themes-reference.md](docs/themes-reference.md). VS Code completes
 and checks theme files once the YAML extension (Red Hat) is installed: the examples' first line,

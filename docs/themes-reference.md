@@ -216,7 +216,7 @@ Text, which can show values. A line break (`\n` in double quotes, or a `|` block
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `text` | text template |  | required | The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used\|bytes} uses a helper. |
+| `text` | text template |  | required | The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used\|bytes} uses a helper and {now\|time:ddd HH:mm} shows the day and time. |
 
 ### Value
 
@@ -225,7 +225,7 @@ One value as text, laid out as a text widget's is. A missing or stale value show
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `source` | expression |  | required | The value to show: a sensor key such as cpu.temp, or an expression. |
-| `format` | format |  |  | How to write the value: a .NET format such as "{0:0.0}°C", or duration or bytes. Left out, a number shows up to two decimals. |
+| `format` | format |  |  | How to write the value: a .NET format such as "{0:0.0}°C", duration, bytes, or time for Unix seconds as a local time ("time:HH:mm" gives a pattern). Left out, a number shows up to two decimals. |
 
 ### Bar
 
@@ -443,8 +443,8 @@ Each needs exactly one of `above`, `below`, `equals` and `stale`, and at least o
 | font weight | 100 to 900, or light (300), normal (400), medium (500), semibold (600) or bold (700). |
 | expression | A sensor key such as cpu.temp, or arithmetic on keys and numbers such as "max(cpu.load, gpu.load)" or "claude.five_hour.resets_at - now". |
 | sensor key | One sensor key, such as gpu.load. |
-| text template | Text with values in braces: "{cpu.temp:0}°C". {key:0.0} formats a number, {key\|duration} and {key\|bytes} use a helper, and {{ and }} are braces. |
-| format | A .NET format that includes {0}, such as "{0:0.0}°C", or a helper: duration or bytes. |
+| text template | Text with values in braces: "{cpu.temp:0}°C". {key:0.0} formats a number, {key\|duration} and {key\|bytes} use a helper, {now\|time:HH:mm} writes Unix seconds as a local time (the PC's short time without a pattern), and {{ and }} are braces. Letters in a time pattern are pattern letters: quote words, as in {now\|time:'Today is' dddd}, and write a letter alone as %H. The pattern runs to the closing brace, so spaces before it are kept. |
+| format | A .NET format that includes {0}, such as "{0:0.0}°C", or a helper: duration, bytes, or time with an optional date and time pattern, such as "time:HH:mm". Letters in the pattern are pattern letters: quote words, as in "time:'at' HH:mm", and write a letter alone as "time:%H". Spaces in it are kept. |
 | file | A path relative to the theme folder, such as images/logo.png. It can't leave the folder. |
 | point | [x, y] in px, from the top-left corner. |
 | size | [width, height] in px. |

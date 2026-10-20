@@ -1319,8 +1319,8 @@
             "string",
             "number"
           ],
-          "description": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper.",
-          "markdownDescription": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper."
+          "description": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used|bytes} uses a helper and {now|time:ddd HH:mm} shows the day and time.",
+          "markdownDescription": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used|bytes} uses a helper and {now|time:ddd HH:mm} shows the day and time."
         }
       },
       "required": [
@@ -1418,8 +1418,8 @@
         },
         "format": {
           "type": "string",
-          "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals.",
-          "markdownDescription": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals."
+          "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", duration, bytes, or time for Unix seconds as a local time (\"time:HH:mm\" gives a pattern). Left out, a number shows up to two decimals.",
+          "markdownDescription": "How to write the value: a .NET format such as \"{0:0.0}°C\", duration, bytes, or time for Unix seconds as a local time (\"time:HH:mm\" gives a pattern). Left out, a number shows up to two decimals."
         }
       },
       "required": [

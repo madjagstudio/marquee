@@ -8,7 +8,8 @@ public static partial class ThemeSchema
         + "`stale`, which matches while any value in the text is missing.",
         [
             new("text", SchemaKind.Template,
-                "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper.")
+                "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used|bytes} uses a helper and "
+                + "{now|time:ddd HH:mm} shows the day and time.")
             {
                 Required = true,
             },
