@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Marquee.Core.Tests.TestSupport;
@@ -128,6 +127,19 @@ public class ThemeValidatorTests
             ],
             lines.SkipLast(1));
         Assert.StartsWith("shaders/broken.sksl:0: error: Shader 'shaders/broken.sksl' doesn't compile: error:", lines[^1]);
+    }
+
+    [Fact]
+    public void Ring_errors_are_reported_with_their_line()
+    {
+        using var folder = new TempTheme(Canvas + "ring:\n  effect: strobe\n  brightness: 120\n");
+
+        Assert.Equal(
+            [
+                "layout.yaml:3: error: ring.effect must be one of: static, breathe, spin, rainbow; not 'strobe'",
+                "layout.yaml:4: error: ring.brightness must be between 0 and 100",
+            ],
+            Lines(Validate(folder.Folder)));
     }
 
     [Fact]
@@ -280,7 +292,7 @@ public class ThemeValidatorTests
         using var outside = new TempFolder();
         for (var i = 0; i < 5; i++) File.WriteAllBytes(outside.File($"{i}.bin"), new byte[1024 * 1024 + 1]);
         var link = Path.Combine(folder.Folder, "linked");
-        MakeJunction(link, outside.Path);
+        Links.MakeJunction(link, outside.Path);
         try
         {
             // Followed, the junction would bring five files over both limits; only the link itself is reported.
@@ -335,7 +347,7 @@ public class ThemeValidatorTests
         foreach (var name in new[] { "logo.png", "s.sksl", "rain.gif", "f.ttf" })
             File.WriteAllText(outside.File(name), "not what its name says");
         var link = Path.Combine(folder.Folder, "linked");
-        MakeJunction(link, outside.Path);
+        Links.MakeJunction(link, outside.Path);
         try
         {
             var probed = 0;
@@ -384,16 +396,5 @@ public class ThemeValidatorTests
         Assert.Empty(report.Issues);
         Assert.Equal(name, report.Name);
         Assert.Equal(new CanvasSpec(orientation, 30), report.Canvas);
-    }
-
-    static void MakeJunction(string link, string target)
-    {
-        // Junctions, unlike symbolic links, need no special rights; .NET has no API to make one.
-        var start = new ProcessStartInfo("cmd.exe") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true };
-        foreach (var arg in new[] { "/c", "mklink", "/J", link, target }) start.ArgumentList.Add(arg);
-        using var process = Process.Start(start)!;
-        process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        Assert.True(process.ExitCode == 0 && Directory.Exists(link), "mklink /J failed");
     }
 }

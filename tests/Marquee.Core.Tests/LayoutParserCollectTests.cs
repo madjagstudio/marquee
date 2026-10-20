@@ -123,7 +123,7 @@ public class LayoutParserCollectTests
 
         Assert.Equal(
             [
-                "2: Unknown key 'widget' in layout.yaml. Expected one of: canvas, styles, background, widgets",
+                "2: Unknown key 'widget' in layout.yaml. Expected one of: canvas, styles, background, widgets, ring",
                 $"4: {WidgetTypes}; not 'nope'",
             ],
             Layouts.Lines(errors));

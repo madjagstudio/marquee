@@ -1,3 +1,6 @@
+# Release signing keys never go in the repository (docs/releasing.md); the public key Marquee is built with does.
+*.pem
+!/src/Marquee.Host/Updates/release-key.pub.pem
 bin/
 obj/
 .vs/
@@ -6,3 +9,4 @@ out/
 .superpowers/
 *.received.png
 .cache/
+artifacts/

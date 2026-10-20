@@ -25,6 +25,8 @@
   marquee validate &lt;theme-folder|zip&gt; [--fps 1-60]
   marquee push &lt;key&gt; &lt;value&gt; [--ttl 30s|5m|2h] [--port 1024-65535] [--config &lt;file&gt;]
   marquee setup-claude [--undo] [--dry-run]
+  marquee task install [--tray &lt;file&gt;] | remove [--updates] | status | start [--user &lt;SID&gt;] | stop
+  marquee claim-screen      (in an administrator terminal: stops L-Connect until a running Marquee has the screen)
   marquee statusline        (Claude Code runs this; see setup-claude)
 Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.yaml, or the file --config names.</value>
     <comment>Printed when the arguments are wrong. Commands, options and paths stay as they are; names such as &lt;file&gt;, the note in parentheses and the last sentence may be translated.</comment>
@@ -78,6 +80,14 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
   <data name="ConfigFileMissing" xml:space="preserve">
     <value>There is no {0}; using the default settings.</value>
     <comment>{0} is the config file --config names, as a full path.</comment>
+  </data>
+  <data name="DataFolderUnusable" xml:space="preserve">
+    <value>Marquee is running as administrator, so it keeps its log and the Claude Code limits in a folder only administrators can change, and that folder can't be used. {0}</value>
+    <comment>Printed when marquee run, elevated, can't use its folder under %ProgramData%\Marquee, and stops. {0} says which folder and why, and what to do, in English.</comment>
+  </data>
+  <data name="TrayHoldsScreen" xml:space="preserve">
+    <value>Marquee's tray app is showing the screen; pause it from the tray (or quit it) to use marquee run.</value>
+    <comment>Printed when marquee run is started while the tray app (MarqueeTray.exe) is showing the screen, and run stops. "marquee run" stays as it is.</comment>
   </data>
   <data name="SettingsUnchanged" xml:space="preserve">
     <value>{0} (the current settings stay until the file is fixed)</value>
@@ -154,6 +164,10 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
     <value>{0}: {1}.</value>
     <comment>As ValidateSummary, for a theme whose layout.yaml declares no valid canvas.</comment>
   </data>
+  <data name="ValidateZipElevated" xml:space="preserve">
+    <value>Marquee is running as administrator, so it won't check a .zip: it would unpack it into your temp folder, which your other programs can change. Run marquee validate on the .zip from a normal terminal, or unzip it and validate the folder.</value>
+    <comment>marquee validate, run as administrator on a .zip, checked nothing. The command name stays as it is.</comment>
+  </data>
   <data name="NoProblemsFound" xml:space="preserve">
     <value>no problems found</value>
     <comment>Fills {4} in ValidateSummary.</comment>
@@ -175,5 +189,113 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
   <data name="ErrorsAndWarnings" xml:space="preserve">
     <value>{0}, {1}</value>
     <comment>{0} is OneError or ManyErrors, {1} OneWarning or ManyWarnings.</comment>
+  </data>
+  <data name="TaskNeedsAdministrator" xml:space="preserve">
+    <value>`{0}` needs an administrator terminal, because the logon task runs with administrator rights. Open Terminal or PowerShell with "Run as administrator" and run it again.</value>
+    <comment>{0} is the command, such as `marquee task install`, which stays as it is. "Run as administrator" is Windows' own menu item: use its name in the user's language.</comment>
+  </data>
+  <data name="TrayNotFound" xml:space="preserve">
+    <value>The tray app {0} does not exist. Install Marquee, which puts it next to marquee.exe, or give its path with --tray.</value>
+    <comment>{0} is the path of MarqueeTray.exe. "--tray" is an option and stays as it is.</comment>
+  </data>
+  <data name="TrayNotInProgramFiles" xml:space="preserve">
+    <value>{0} is not under Program Files, so the logon task was not installed. The task starts the tray with administrator rights at every logon, so anyone who can change that file would get them. Install Marquee with its installer, or name a tray you trust with --tray.</value>
+    <comment>{0} is the path of MarqueeTray.exe beside marquee.exe. "Program Files" is Windows' folder: use its name in the user's language. "--tray" is an option and stays as it is.</comment>
+  </data>
+  <data name="TrayOutsideProgramFiles" xml:space="preserve">
+    <value>Warning: {0} is not under Program Files. The logon task starts it with administrator rights, so anyone who can change that file gets them at the next logon.</value>
+    <comment>{0} is the path the logon task will start.</comment>
+  </data>
+  <data name="TaskInstalled" xml:space="preserve">
+    <value>Installed the logon task {0}: it starts {1} at every logon.</value>
+    <comment>{0} is the task's name in Task Scheduler, {1} the path of the exe it starts.</comment>
+  </data>
+  <data name="TaskInstallFailed" xml:space="preserve">
+    <value>Could not install the logon task: {0}</value>
+    <comment>{0} is the reason, usually schtasks's exit code and what it printed.</comment>
+  </data>
+  <data name="TaskRemoved" xml:space="preserve">
+    <value>Removed the logon task {0}.</value>
+    <comment>{0} is the task's name in Task Scheduler.</comment>
+  </data>
+  <data name="TaskWasNotInstalled" xml:space="preserve">
+    <value>The logon task {0} was not installed, so there was nothing to remove.</value>
+    <comment>{0} is the task's name in Task Scheduler.</comment>
+  </data>
+  <data name="TaskRemoveFailed" xml:space="preserve">
+    <value>Could not remove the logon task: {0}</value>
+    <comment>{0} is the reason, usually schtasks's exit code and what it printed.</comment>
+  </data>
+  <data name="TaskInstalledStarts" xml:space="preserve">
+    <value>The logon task {0} is installed; it starts {1}.</value>
+    <comment>{0} is the task's name in Task Scheduler, {1} the path of the exe it starts.</comment>
+  </data>
+  <data name="TaskInstalledUnknownExe" xml:space="preserve">
+    <value>The logon task {0} is installed.</value>
+    <comment>{0} is the task's name in Task Scheduler. Used when the exe it starts couldn't be read.</comment>
+  </data>
+  <data name="TaskTrayMissing" xml:space="preserve">
+    <value>Warning: {0} does not exist, so the logon task starts nothing. Reinstall Marquee, or run `marquee task install` from an administrator terminal.</value>
+    <comment>{0} is the path the logon task starts. The command stays as it is.</comment>
+  </data>
+  <data name="TaskNotInstalled" xml:space="preserve">
+    <value>The logon task {0} is not installed. Run `marquee task install` from an administrator terminal to add it.</value>
+    <comment>{0} is the task's name in Task Scheduler. The command stays as it is.</comment>
+  </data>
+  <data name="TaskStatusFailed" xml:space="preserve">
+    <value>Could not read the logon task: {0}</value>
+    <comment>{0} is the reason, usually schtasks's exit code and what it printed.</comment>
+  </data>
+  <data name="TaskStarted" xml:space="preserve">
+    <value>Started the logon task {0}: the tray is starting.</value>
+    <comment>{0} is the task's name in Task Scheduler.</comment>
+  </data>
+  <data name="TaskStartNoSession" xml:space="preserve">
+    <value>{0} is not signed in, so the tray was not started now. It starts at their next logon.</value>
+    <comment>{0} is the user's security identifier (SID), such as S-1-5-21-…; it stays as it is.</comment>
+  </data>
+  <data name="TaskStartFailed" xml:space="preserve">
+    <value>Could not start the logon task: {0}</value>
+    <comment>{0} is the reason, usually Task Scheduler's own text.</comment>
+  </data>
+  <data name="TraysStopped" xml:space="preserve">
+    <value>Closed the trays running from {0}: {1} quit when asked, {2} had to be ended.</value>
+    <comment>{0} is the path of MarqueeTray.exe; {1} and {2} are numbers of running copies of it.</comment>
+  </data>
+  <data name="NoTrayRunning" xml:space="preserve">
+    <value>No tray was running from {0}.</value>
+    <comment>{0} is the path of MarqueeTray.exe.</comment>
+  </data>
+  <data name="TrayStopFailed" xml:space="preserve">
+    <value>Could not close the tray: {0}</value>
+    <comment>{0} is the reason (Windows' own text, already in the user's language).</comment>
+  </data>
+  <data name="UpdatesRemoved" xml:space="preserve">
+    <value>Deleted {0} downloaded update files and the folder {1}.</value>
+    <comment>{0} is a number of files, {1} the folder they were in (%ProgramData%\Marquee\updates). Printed when Marquee is uninstalled.</comment>
+  </data>
+  <data name="UpdatesNotRemoved" xml:space="preserve">
+    <value>Warning: {0}</value>
+    <comment>{0} is the reason the downloaded updates were not deleted, a sentence.</comment>
+  </data>
+  <data name="TaskFolderNotRemoved" xml:space="preserve">
+    <value>Warning: could not delete the task folder {0}: {1}</value>
+    <comment>{0} is the logon task's folder in Task Scheduler (\Marquee), {1} Task Scheduler's reason (Windows' own text, already in the user's language).</comment>
+  </data>
+  <data name="DataFolderNotSecured" xml:space="preserve">
+    <value>Warning: {0} Marquee is installed, but until then its tray won't start with administrator rights.</value>
+    <comment>{0} is why Marquee's folder in %ProgramData% isn't safe to use, sentences that end by saying how to fix it. Printed into the installer's log.</comment>
+  </data>
+  <data name="ClaimScreenNeedsAdministrator" xml:space="preserve">
+    <value>`{0}` needs an administrator terminal, because stopping L-Connect's service takes administrator rights. Open Terminal or PowerShell with "Run as administrator" and run it again.</value>
+    <comment>{0} is the command, `marquee claim-screen`, which stays as it is. "L-Connect" is a program's name. "Run as administrator" is Windows' own menu item: use its name in the user's language.</comment>
+  </data>
+  <data name="ClaimScreenNoMarquee" xml:space="preserve">
+    <value>No Marquee is running to take the screen. Start `marquee run` (or the tray) first, then run `marquee claim-screen` again.</value>
+    <comment>marquee claim-screen found no running Marquee, so it left L-Connect alone. The commands stay as they are.</comment>
+  </data>
+  <data name="ClaimScreenAlreadyHeld" xml:space="preserve">
+    <value>Marquee already has the screen.</value>
+    <comment>marquee claim-screen found a running Marquee that has the screen already, so it left L-Connect alone.</comment>
   </data>
 </root>

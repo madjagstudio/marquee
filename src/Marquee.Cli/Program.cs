@@ -26,6 +26,8 @@ return args switch
     ["push", var key, var value, .. var options] => PushCommand.Run(key, value, options) ?? Usage(),
     ["statusline"] => StatusLineCommand.Run(),
     ["setup-claude", .. var options] => SetupClaudeCommand.Run(options) ?? Usage(),
+    ["task", .. var options] => TaskCommand.Run(options) ?? Usage(),
+    ["claim-screen", .. var options] => ClaimScreenCommand.Run(options) ?? Usage(),
     _ => Usage(),
 };
 

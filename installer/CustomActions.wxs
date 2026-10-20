@@ -1,0 +1,95 @@
+<!-- What the installer runs: the installed marquee.exe's `task` commands, through WixQuietExec (WiX's Util extension),
+     which runs a command line with no console window and writes its output to the MSI log. Each command line is set,
+     with its properties resolved, into a property named after its action, which is how a deferred action gets data.
+
+     All of them run as SYSTEM (Impersonate="no"), which can do all of it whichever account started msiexec and whether
+     or not that was elevated: create a logon task that runs elevated, see and close every user's tray, and run the
+     task in a user's session.
+
+     An upgrade removes the old version inside the new one's transaction (MajorUpgrade, Package.wxs): right after
+     InstallInitialize, RemoveExistingProducts runs the OLD package's own uninstall, with UPGRADINGPRODUCTCODE set, and
+     only then does this package copy its files. So in an upgrade it is the old version's StopTrays that closes the
+     trays, and its RemoveTask doesn't run. If anything after that fails, Windows Installer undoes all of it, the old
+     version's uninstall included, and the old version is installed again as it was. In this package's own sequence an
+     upgrade (or a reinstall of a rebuilt same version) shows as WIX_UPGRADE_DETECTED, never as Installed, which is set
+     only when this very product is installed: a repair or an uninstall.
+
+     The order they run in. A rollback action runs only if the install fails after it was reached, and rollback goes
+     backwards, so each one is placed before what it undoes: StartTrayRollback before StopTrays and the rest, so that it
+     runs last, once the files are back and the task is installed again.
+
+     Action               Kind      When                                        Runs                         If it fails
+       (RemoveExistingProducts: in an upgrade, the old version's uninstall, which runs the old package's
+        StartTrayRollback and StopTrays below, as an uninstall's)
+     StartTrayRollback    rollback  repair, uninstall (an upgrade's too),       task start for the user      carry on
+                                    if they fail
+     StopTrays            deferred  repair, uninstall (an upgrade's too)        task stop (before files)     carry on (files in use: restart)
+     RemoveTaskRollback   rollback  uninstall (not an upgrade's), if it fails   task install                 carry on
+     RemoveTask           deferred  uninstall (not an upgrade's)                task remove, and updates     carry on (never block an uninstall)
+       (RemoveFiles, InstallFiles)
+     InstallTaskRollback  rollback  first install, if it fails                  task remove                  carry on
+     InstallTask          deferred  install, upgrade, repair                    task install                 the install fails and rolls back
+     StartTray            commit    install, upgrade, repair, once it is done   task start for the user      carry on (it starts at next logon)
+
+     So every failure that rolls back ends as it began: a failed first install leaves no task; a failed upgrade leaves
+     the old version, its task (which InstallTask may have rewritten, for the same path) and its tray running again; a
+     failed repair or uninstall leaves Marquee installed with its task and its tray. A tray that started an update waits,
+     paused, and quits only when StopTrays asks it to, so StartTrayRollback is what brings the screen back.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    <!-- If a repair or an uninstall fails after StopTrays closed the trays, starts the tray again for the user who ran
+         the installer, once the rollback has put the files and the task back. An upgrade that fails is the same case:
+         the old version's uninstall inside it ran the old package's StopTrays and registered the old package's
+         StartTrayRollback just before, so rolling back puts the old version back and then starts its tray, from the
+         same folder. That is why this can't be the new package's: its own sequence may place nothing between
+         InstallInitialize and RemoveExistingProducts (ICE63), and anywhere after that its rollback would run before the
+         old files are back. It relies on the version being upgraded having this action, which every release has. -->
+    <SetProperty Id="StartTrayRollback" Value="&quot;[InstallDir]marquee.exe&quot; task start --user [UserSID]" Before="StartTrayRollback" Sequence="execute" />
+    <CustomAction Id="StartTrayRollback" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="rollback" Impersonate="no" Return="ignore" />
+
+    <!-- Closes every tray running from this folder, in every session, so its files are free: on uninstall, on repair,
+         and in the old version's uninstall during an upgrade. -->
+    <SetProperty Id="StopTrays" Value="&quot;[InstallDir]marquee.exe&quot; task stop" Before="StopTrays" Sequence="execute" />
+    <CustomAction Id="StopTrays" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- If an uninstall fails after RemoveTask, puts the task back once the files are: Marquee stays installed and
+         needs it. -->
+    <SetProperty Id="RemoveTaskRollback" Value="&quot;[InstallDir]marquee.exe&quot; task install" Before="RemoveTaskRollback" Sequence="execute" />
+    <CustomAction Id="RemoveTaskRollback" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="rollback" Impersonate="no" Return="ignore" />
+
+    <!-- Only on a real uninstall: an upgrade's removal of the old version keeps the task, which the new version then
+         replaces. The downloaded update installers go too, and the task's folder once it is empty. -->
+    <SetProperty Id="RemoveTask" Value="&quot;[InstallDir]marquee.exe&quot; task remove --updates" Before="RemoveTask" Sequence="execute" />
+    <CustomAction Id="RemoveTask" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- Replaces a task of the same name (an upgrade, a repair). Without the task the tray never starts at logon, so a
+         failure fails the install, which rolls back. It also makes %ProgramData%\Marquee and its updates folder
+         admin-only, as SYSTEM, before any other program can make them (TaskCommand.SecureDataFolder); a folder someone
+         else made first is left alone and only warned about in the log. -->
+    <SetProperty Id="InstallTask" Value="&quot;[InstallDir]marquee.exe&quot; task install" Before="InstallTask" Sequence="execute" />
+    <CustomAction Id="InstallTask" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
+
+    <!-- Runs if a first install fails after InstallTask, before the rollback deletes marquee.exe. Not for a repair or an
+         upgrade, whose rollback leaves Marquee installed (after an upgrade, the old version) and so needs its task. -->
+    <SetProperty Id="InstallTaskRollback" Value="&quot;[InstallDir]marquee.exe&quot; task remove" Before="InstallTaskRollback" Sequence="execute" />
+    <CustomAction Id="InstallTaskRollback" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="rollback" Impersonate="no" Return="ignore" />
+
+    <!-- Starts the tray once the install has committed, by running the logon task in the sessions of the user who ran
+         the installer (UserSID), so it starts elevated as at logon whether or not their msiexec was. After the tray's
+         own update (msiexec /passive; the tray quit when StopTrays asked) this brings it back. With no such session (a
+         deployment tool running as SYSTEM, CI) it starts nothing and the tray starts at the next logon. -->
+    <SetProperty Id="StartTray" Value="&quot;[InstallDir]marquee.exe&quot; task start --user [UserSID]" Before="StartTray" Sequence="execute" />
+    <CustomAction Id="StartTray" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="commit" Impersonate="no" Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="StartTrayRollback" Before="StopTrays" Condition="Installed" />
+      <Custom Action="StopTrays" Before="RemoveTaskRollback" Condition="Installed" />
+      <Custom Action="RemoveTaskRollback" Before="RemoveTask" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="RemoveTask" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="InstallTaskRollback" Before="InstallTask" Condition="NOT Installed AND NOT REMOVE=&quot;ALL&quot; AND NOT WIX_UPGRADE_DETECTED" />
+      <Custom Action="InstallTask" After="InstallFiles" Condition="NOT REMOVE=&quot;ALL&quot;" />
+      <Custom Action="StartTray" Before="InstallFinalize" Condition="NOT REMOVE=&quot;ALL&quot;" />
+    </InstallExecuteSequence>
+  </Fragment>
+</Wix>

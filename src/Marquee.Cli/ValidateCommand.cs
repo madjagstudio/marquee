@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Marquee.Core.Processes;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Validation;
 using Marquee.Host;
@@ -11,10 +12,12 @@ using Marquee.Host;
 static class ValidateCommand
 {
     /// Null means the arguments were wrong and the caller should print usage.
-    public static int? Run(string[] args) => Run(args, ThemeValidator.Default, ThemeLocator.Default);
+    public static int? Run(string[] args) =>
+        Run(args, ThemeValidator.Default, ThemeLocator.Default, ProcessElevation.IsCurrentProcessElevated);
 
-    /// `locator` finds a theme given by name, as `marquee run` and config.yaml do.
-    internal static int? Run(string[] args, ThemeValidator validator, ThemeLocator locator)
+    /// `locator` finds a theme given by name, as `marquee run` and config.yaml do. `isElevated` is asked only for a zip; with
+    /// none, as in most tests, Marquee counts as not elevated.
+    internal static int? Run(string[] args, ThemeValidator validator, ThemeLocator locator, Func<bool>? isElevated = null)
     {
         if (args is not [var path, .. var options] || path.StartsWith("--", StringComparison.Ordinal)) return null;
 
@@ -42,6 +45,14 @@ static class ValidateCommand
             }
 
             target = folder;
+        }
+
+        // A zip is unpacked into %TEMP%, a folder the user's unelevated programs control, where a junction placed while it
+        // unpacks could send an administrator's writes anywhere. A folder is only read, so it is checked either way.
+        if (string.Equals(Path.GetExtension(target), ".zip", StringComparison.OrdinalIgnoreCase) && isElevated?.Invoke() == true)
+        {
+            Console.Error.WriteLine(Strings.ValidateZipElevated);
+            return 1;
         }
 
         var report = validator.Validate(target, fps);

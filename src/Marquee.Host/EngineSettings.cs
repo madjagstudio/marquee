@@ -2,6 +2,7 @@ using Marquee.Core.Config;
 using Marquee.Core.Devices;
 using Marquee.Core.Sensors;
 using Marquee.Providers.Custom;
+using SkiaSharp;
 
 namespace Marquee.Host;
 
@@ -37,6 +38,15 @@ public sealed record EngineSettings
 
     /// How many distinct custom.* keys the HTTP server takes.
     public int MaxCustomKeys { get; init; } = MarqueeConfig.DefaultMaxCustomKeys;
+
+    /// The LED ring: each theme's own ring, off, or RingColor for every theme (config.yaml's `ring:`).
+    public RingMode Ring { get; init; } = RingMode.Theme;
+
+    /// The color for every theme's ring when Ring is Color; null otherwise.
+    public SKColor? RingColor { get; init; }
+
+    /// Whether to take the screen from L-Connect (`lconnect.handover`).
+    public HandoverMode Handover { get; init; } = HandoverMode.Off;
 
     /// A folder to write each frame to as a PNG (FileSinkDevice) instead of the screen, or null for the screen.
     public string? Sink { get; init; }

@@ -110,4 +110,204 @@
     <value>A handler of the engine's events failed: {0}</value>
     <comment>{0} is the reason. A handler is code in the tray or `marquee run` that reacts to a theme loading or failing.</comment>
   </data>
+  <data name="LogonTaskDescription" xml:space="preserve">
+    <value>Starts Marquee's tray app when you log on, with administrator rights where your account has them, so it can read game FPS and take the screen over from L-Connect. Installed and removed with Marquee.</value>
+    <comment>The logon task's description, shown in Task Scheduler's window. "Marquee" and "L-Connect" are names.</comment>
+  </data>
+  <data name="SchTasksFailed" xml:space="preserve">
+    <value>schtasks exited with code {0}: {1}</value>
+    <comment>{0} is schtasks.exe's exit code, {1} what it printed (Windows' own text, already in the user's language). "schtasks" is a program's name.</comment>
+  </data>
+  <data name="TaskFileChanged" xml:space="preserve">
+    <value>The logon task's file {0} changed after Marquee wrote it, so the task was not installed. Something else is writing in that folder: install Marquee into Program Files.</value>
+    <comment>{0} is the path of the XML file Marquee writes for Task Scheduler. "Program Files" is Windows' folder: use its name in the user's language.</comment>
+  </data>
+  <data name="SchTasksTimedOut" xml:space="preserve">
+    <value>schtasks did not finish within {0} seconds and was stopped.</value>
+    <comment>{0} is a number of seconds. "schtasks" is a program's name.</comment>
+  </data>
+  <data name="SchTasksDidNotStart" xml:space="preserve">
+    <value>schtasks did not start.</value>
+    <comment>"schtasks" is a program's name.</comment>
+  </data>
+  <data name="TaskSchedulerFailed" xml:space="preserve">
+    <value>Task Scheduler could not start the task: {0}</value>
+    <comment>{0} is Task Scheduler's reason (Windows' own text, already in the user's language).</comment>
+  </data>
+  <data name="UpdatesFolderIsLink" xml:space="preserve">
+    <value>{0} or the folder above it is a junction or symbolic link, so the downloaded updates in it were not deleted.</value>
+    <comment>{0} is the folder of downloaded updates, %ProgramData%\Marquee\updates.</comment>
+  </data>
+  <data name="RingUnavailable" xml:space="preserve">
+    <value>The LED ring is unavailable: {0} Retrying every {1} s.</value>
+    <comment>{0} is the reason, a sentence ending in a full stop; {1} is a number of seconds. The LED ring is the ring of lights around the screen.</comment>
+  </data>
+  <data name="RingNotFound" xml:space="preserve">
+    <value>No LED ring was found; Marquee keeps looking for one.</value>
+    <comment>Logged once when no LED ring (the ring of lights around the screen) is plugged in, which is normal for a screen without one.</comment>
+  </data>
+  <data name="RingConnected" xml:space="preserve">
+    <value>Connected to the LED ring.</value>
+    <comment>Follows RingUnavailable or RingNotFound once the ring works.</comment>
+  </data>
+  <data name="RingFrameFailed" xml:space="preserve">
+    <value>Lighting the LED ring failed: {0}</value>
+    <comment>{0} is the reason, an unexpected error while working out the ring's colors.</comment>
+  </data>
+  <data name="HandoverAuto" xml:space="preserve">
+    <value>L-Connect's service has the screen; taking it over, as `lconnect.handover: auto` says.</value>
+    <comment>Logged when Marquee starts taking the screen from L-Connect by itself. "L-Connect" is a program's name; `lconnect.handover: auto` is a config.yaml setting and stays as it is.</comment>
+  </data>
+  <data name="HandoverRetry" xml:space="preserve">
+    <value>Trying again to take the screen from L-Connect's service, as `lconnect.handover: auto` says.</value>
+    <comment>Logged when Marquee tries again by itself, minutes after taking the screen from L-Connect failed (1, 2, 5, then every 10). "L-Connect" is a program's name; `lconnect.handover: auto` is a config.yaml setting and stays as it is.</comment>
+  </data>
+  <data name="HandoverScreenOpen" xml:space="preserve">
+    <value>Marquee has the screen already, so there's nothing to take from L-Connect.</value>
+    <comment>Logged when a "Take over" (from the tray menu or a notification clicked late) comes after Marquee already got the screen, so nothing is done. "L-Connect" is a program's name.</comment>
+  </data>
+  <data name="HandoverHeldBack" xml:space="preserve">
+    <value>L-Connect's service has the screen again, but taking it failed less than {0} s ago, so Marquee waits until then to try again.</value>
+    <comment>{0} is a number of seconds. Logged instead of taking the screen from L-Connect again straight after a failed try; Marquee tries again once the seconds are up. "L-Connect" is a program's name.</comment>
+  </data>
+  <data name="HandoverNeedsAdministrator" xml:space="preserve">
+    <value>Marquee can't take the screen from L-Connect: stopping L-Connect's service needs Marquee to run as administrator. Set `lconnect: { handover: off }` in config.yaml to stop this message.</value>
+    <comment>Logged once when L-Connect holds the screen and `lconnect.handover` is ask or auto, but Marquee isn't elevated. "L-Connect" is a program's name; `lconnect: { handover: off }` and config.yaml stay as they are.</comment>
+  </data>
+  <data name="TakeOverNeedsAdministrator" xml:space="preserve">
+    <value>Marquee can't take the screen from L-Connect: stopping L-Connect's service needs Marquee to run as administrator, as its logon task starts it.</value>
+    <comment>Logged when someone asks Marquee to take the screen (the tray's "Take over") but Marquee isn't elevated. "L-Connect" is a program's name.</comment>
+  </data>
+  <data name="HandoverFailed" xml:space="preserve">
+    <value>Couldn't take the screen from L-Connect: {0}</value>
+    <comment>{0} is the reason, an unexpected error. "L-Connect" is a program's name.</comment>
+  </data>
+  <data name="ReleaseNotJson" xml:space="preserve">
+    <value>GitHub's answer isn't JSON Marquee can read: {0}</value>
+    <comment>{0} is the JSON reader's own description of the problem. "GitHub" is a name.</comment>
+  </data>
+  <data name="ReleaseUnreadable" xml:space="preserve">
+    <value>GitHub's answer doesn't describe a release: it should have a tag, say whether it is a draft or a prerelease, and list its files.</value>
+    <comment>"GitHub" is a name. A release's tag is its version, such as v1.2.3.</comment>
+  </data>
+  <data name="ReleaseIsDraft" xml:space="preserve">
+    <value>Release {0} is a draft.</value>
+    <comment>{0} is the release's tag, such as v1.2.3.</comment>
+  </data>
+  <data name="ReleaseIsPrerelease" xml:space="preserve">
+    <value>Release {0} is a prerelease.</value>
+    <comment>{0} is the release's tag, such as v1.2.3.</comment>
+  </data>
+  <data name="ReleaseTagNotAVersion" xml:space="preserve">
+    <value>Release tag '{0}' isn't a version Marquee installs, which is v and three numbers, such as v1.2.3.</value>
+    <comment>{0} is the release's tag as GitHub gave it.</comment>
+  </data>
+  <data name="ReleaseFileMissing" xml:space="preserve">
+    <value>Release {0} has no file named {1}.</value>
+    <comment>{0} is the release's tag, such as v1.2.3; {1} a file name, such as Marquee-1.2.3-x64.msi.</comment>
+  </data>
+  <data name="ReleaseFileUnreadable" xml:space="preserve">
+    <value>The release doesn't say how big {0} is.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.</comment>
+  </data>
+  <data name="ReleaseFileSize" xml:space="preserve">
+    <value>The release says {0} is {1} bytes, and Marquee only downloads it at 1 to {2} bytes.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi; {1} and {2} are numbers of bytes.</comment>
+  </data>
+  <data name="ReleaseFileNotOnGitHub" xml:space="preserve">
+    <value>The release doesn't serve {0} from github.com over https, so Marquee won't download it.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi. "github.com" and "https" stay as they are.</comment>
+  </data>
+  <data name="UpdateCheckSkippedDevelopmentKey" xml:space="preserve">
+    <value>This build of Marquee carries the placeholder release key, which no release is signed with, so it doesn't look for updates.</value>
+    <comment>The signing key is what proves an update comes from Marquee's author; a development build has a placeholder whose private half was never kept.</comment>
+  </data>
+  <data name="UpdateCheckSkippedNoVersion" xml:space="preserve">
+    <value>Marquee doesn't look for updates: its own version, '{0}', isn't one it can compare.</value>
+    <comment>{0} is the version Marquee was built with, as text.</comment>
+  </data>
+  <data name="UpdateCheckTimedOut" xml:space="preserve">
+    <value>GitHub didn't answer the update check within {0} seconds. Marquee looks again tomorrow.</value>
+    <comment>{0} is a number of seconds. "GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateCheckFailed" xml:space="preserve">
+    <value>The update check failed ({0}). Marquee looks again tomorrow.</value>
+    <comment>{0} is the reason, such as Windows' own text for a network error.</comment>
+  </data>
+  <data name="UpdateCheckHttpError" xml:space="preserve">
+    <value>GitHub answered the update check with HTTP {0} {1}. Marquee looks again tomorrow.</value>
+    <comment>{0} is an HTTP status code, {1} its English name from the server. "GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateCheckRateLimited" xml:space="preserve">
+    <value>GitHub turned the update check away: requests from this network without a GitHub account have reached their hourly limit. Marquee looks again tomorrow.</value>
+    <comment>"GitHub" is a name. Marquee makes one request a day; the limit counts every program on the network.</comment>
+  </data>
+  <data name="NoReleaseYet" xml:space="preserve">
+    <value>No Marquee release has been published on GitHub yet.</value>
+    <comment>"GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateCheckAnswerTooLarge" xml:space="preserve">
+    <value>GitHub's answer to the update check was over {0} bytes, so Marquee didn't read it. It looks again tomorrow.</value>
+    <comment>{0} is a number of bytes. "GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateCheckUnusableRelease" xml:space="preserve">
+    <value>The latest release on GitHub isn't one Marquee can install: {0} Marquee looks again tomorrow.</value>
+    <comment>{0} is the reason, one of the Release messages above, ending with a full stop.</comment>
+  </data>
+  <data name="UpToDate" xml:space="preserve">
+    <value>Marquee {0} is up to date.</value>
+    <comment>{0} is the running version, such as 1.2.3.</comment>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Marquee {0} is available (this is {1}).</value>
+    <comment>{0} is the new version, {1} the running one, such as 1.2.3.</comment>
+  </data>
+  <data name="UpdateCheckTimeNotSaved" xml:space="preserve">
+    <value>Couldn't save the time of the update check in {0} ({1}). Until Marquee restarts it still checks once a day.</value>
+    <comment>{0} is a file's path, {1} the reason.</comment>
+  </data>
+  <data name="UpdateRefusedDevelopmentKey" xml:space="preserve">
+    <value>Marquee won't install updates: this build carries the placeholder release key, which no release is signed with.</value>
+    <comment>The signing key is what proves an update comes from Marquee's author; a development build has a placeholder whose private half was never kept.</comment>
+  </data>
+  <data name="UpdateSignatureMissing" xml:space="preserve">
+    <value>The update's signature, {0}, isn't there, so Marquee won't install the update.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.sig.</comment>
+  </data>
+  <data name="UpdateSignatureTooLarge" xml:space="preserve">
+    <value>{0} is over {1} bytes, which no signature is, so Marquee won't install the update.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.sig; {1} a number of bytes.</comment>
+  </data>
+  <data name="UpdateSignatureInvalid" xml:space="preserve">
+    <value>{0} couldn't be verified: its signature doesn't match the key built into Marquee, so it may have been changed. Marquee won't install it.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.</comment>
+  </data>
+  <data name="UpdateWrongSize" xml:space="preserve">
+    <value>{0} isn't the {1} bytes the release says it is, so Marquee won't install it.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi; {1} a number of bytes.</comment>
+  </data>
+  <data name="UpdateDownloadHttpError" xml:space="preserve">
+    <value>Downloading {0} failed: GitHub answered HTTP {1}.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi; {1} an HTTP status code. "GitHub" is a name.</comment>
+  </data>
+  <data name="UpdateDownloadFailed" xml:space="preserve">
+    <value>Downloading the update failed: {0}</value>
+    <comment>{0} is the reason, such as Windows' own text for a network or disk error.</comment>
+  </data>
+  <data name="UpdateDownloadStalled" xml:space="preserve">
+    <value>Downloading the update stopped: nothing arrived for {0} seconds.</value>
+    <comment>{0} is a number of seconds.</comment>
+  </data>
+  <data name="UpdateVerified" xml:space="preserve">
+    <value>Downloaded {0} and verified its signature.</value>
+    <comment>{0} is a file name, such as Marquee-1.2.3-x64.msi.</comment>
+  </data>
+  <data name="InstallerStarting" xml:space="preserve">
+    <value>Starting the installer for Marquee {0}.</value>
+    <comment>{0} is the new version, such as 1.2.3.</comment>
+  </data>
+  <data name="InstallerDidNotStart" xml:space="preserve">
+    <value>The installer could not be started: {0}</value>
+    <comment>{0} is the reason, Windows' own text.</comment>
+  </data>
 </root>

@@ -219,6 +219,44 @@ public class ProviderRunnerTests
         Assert.Equal(1, stuck.Polls);
     }
 
+    [Fact]
+    public void A_failing_provider_is_a_problem_until_a_poll_works_again()
+    {
+        var failing = 1;
+        var provider = new FakeProvider("FPS", (_, s) =>
+        {
+            if (Volatile.Read(ref failing) == 1) throw new FileNotFoundException("PresentMon is missing.");
+            s.Set("fps", 60);
+        });
+        using var runner = new ProviderRunner(new SensorStore(), new ListLog(), TimeSpan.FromMilliseconds(10));
+        Assert.Empty(runner.Problems);
+
+        runner.Start(provider);
+        Assert.True(Wait.Until(() => runner.Problems.Count > 0), "The failure never became a problem.");
+        Assert.Equal(["FPS failed: PresentMon is missing."], runner.Problems);
+
+        Volatile.Write(ref failing, 0);
+        Assert.True(Wait.Until(() => runner.Problems.Count == 0), "The problem stayed after the provider recovered.");
+    }
+
+    [Fact]
+    public void Each_failing_provider_has_its_latest_problem_and_a_stopped_one_has_none()
+    {
+        var changing = new FakeProvider("Claude Code limits", (n, _) =>
+            throw new InvalidOperationException(n == 1 ? "claude.exe wasn't found." : "claude.exe timed out."));
+        var broken = new FakeProvider("Hardware sensors", (_, _) => throw new IOException("The driver is gone."));
+        using var runner = new ProviderRunner(new SensorStore(), new ListLog(), TimeSpan.FromMilliseconds(10));
+        string[] both = ["Claude Code limits failed: claude.exe timed out.", "Hardware sensors failed: The driver is gone."];
+
+        runner.Start(changing);
+        runner.Start(broken);
+        Assert.True(Wait.Until(() => runner.Problems.SequenceEqual(both)), "The latest problems never showed.");
+
+        runner.Stop(broken);
+
+        Assert.Equal(["Claude Code limits failed: claude.exe timed out."], runner.Problems);
+    }
+
     [Theory]
     [InlineData(1, 1)]
     [InlineData(2, 2)]

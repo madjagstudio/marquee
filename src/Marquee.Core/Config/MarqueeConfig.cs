@@ -1,4 +1,5 @@
 using Marquee.Core.Devices;
+using SkiaSharp;
 
 namespace Marquee.Core.Config;
 
@@ -52,4 +53,22 @@ public sealed record MarqueeConfig
 
     /// How many distinct custom.* keys may be pushed (`custom.max_keys`), 1 to MaxCustomKeysCeiling.
     public int MaxCustomKeys { get; init; } = DefaultMaxCustomKeys;
+
+    /// The LED ring (`ring:`): each theme's own ring (the default), off, or RingColor for every theme.
+    public RingMode Ring { get; init; } = RingMode.Theme;
+
+    /// The one color `ring: "#RRGGBB"` shows for every theme, in the hex forms a theme's colors take, alpha included
+    /// when given. Null unless Ring is Color.
+    public SKColor? RingColor { get; init; }
+
+    /// Whether Marquee takes the screen from L-Connect (`lconnect.handover`): off (the default), ask or auto.
+    public HandoverMode Handover { get; init; } = HandoverMode.Off;
+
+    /// Whether config.yaml sets `lconnect.handover` at all, so off is the user's choice rather than the default. The
+    /// tray offers the handover once to a user who hasn't chosen, and leaves one who wrote `off` alone.
+    public bool HandoverSet { get; init; }
+
+    /// The tray's daily check for a newer release (`updates: check`, the default); `updates: off` turns it off, and
+    /// with it Marquee's only outbound request.
+    public bool CheckForUpdates { get; init; } = true;
 }

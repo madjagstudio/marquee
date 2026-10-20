@@ -5,8 +5,9 @@ using Marquee.Core.Sensors;
 
 namespace Marquee.Providers.Agents.Claude;
 
-/// The last Claude Code limits, kept in %LOCALAPPDATA%\Marquee\claude-limits.json so a restarted `marquee run` shows
-/// them at once instead of waiting for `/usage` or the status line. The file holds only each window's `pct` and
+/// The last Claude Code limits, kept in claude-limits.json (AgentPaths.ClaudeLimits: %LOCALAPPDATA%\Marquee, or an
+/// elevated Marquee's admin-only folder under %ProgramData%) so a restarted `marquee run` shows them at once instead of
+/// waiting for `/usage` or the status line. The file holds only each window's `pct` and
 /// `resets_at` and `updated_at`, as Unix seconds:
 /// `{ "five_hour": { "pct": 42.5, "resets_at": … }, "seven_day": { … }, "updated_at": … }`.
 public sealed class ClaudeLimitsFile(string path, ILog log)

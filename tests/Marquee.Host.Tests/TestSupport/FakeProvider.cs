@@ -2,7 +2,8 @@ using Marquee.Core.Sensors;
 
 namespace Marquee.Host.Tests.TestSupport;
 
-/// A provider that writes nothing and remembers whether it was disposed.
+/// A provider that writes nothing and remembers whether it was disposed. While Fault is set, each poll throws it, as a
+/// provider whose source is missing does.
 sealed class FakeProvider(string name) : ISensorProvider
 {
     volatile bool _disposed;
@@ -13,7 +14,12 @@ sealed class FakeProvider(string name) : ISensorProvider
 
     public bool Disposed => _disposed;
 
-    public void Poll(SensorStore store) { }
+    public volatile Exception? Fault;
+
+    public void Poll(SensorStore store)
+    {
+        if (Fault is { } fault) throw fault;
+    }
 
     public void Dispose() => _disposed = true;
 }

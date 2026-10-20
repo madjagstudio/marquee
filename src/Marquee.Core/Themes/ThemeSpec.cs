@@ -3,8 +3,10 @@ using SkiaSharp;
 
 namespace Marquee.Core.Themes;
 
-/// A parsed layout.yaml: what to draw, before any assets are loaded.
-public sealed record ThemeSpec(CanvasSpec Canvas, IReadOnlyList<BackgroundLayer> Background, IReadOnlyList<WidgetSpec> Widgets);
+/// A parsed layout.yaml: what to draw, before any assets are loaded. Ring is null when the layout has no `ring:` block,
+/// and the engine then shows RingSpec.Default.
+public sealed record ThemeSpec(CanvasSpec Canvas, IReadOnlyList<BackgroundLayer> Background, IReadOnlyList<WidgetSpec> Widgets,
+    RingSpec? Ring = null);
 
 /// The orientation family a theme is designed for. It fits both the plain and -flipped device orientations.
 public enum ThemeOrientation { Portrait, Landscape }

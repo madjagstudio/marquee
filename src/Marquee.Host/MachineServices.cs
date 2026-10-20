@@ -1,4 +1,5 @@
 using Marquee.Core.Devices;
+using Marquee.Core.Devices.LedRing;
 using Marquee.Core.Logging;
 using Marquee.Core.Processes;
 using Marquee.Core.Sensors;
@@ -50,4 +51,15 @@ public sealed class MachineServices : IEngineServices
     }
 
     public ClaudeLimitsFile CreateClaudeLimits(ILog log) => new(log);
+
+    /// The screen's LED ring, which the sender looks for itself, so one that enumerates after the screen still lights.
+    /// A sink folder gets none: a run that writes its frames to files must not light a real ring.
+    public RingSender? CreateRing(EngineSettings settings, SensorStore store, ILog log) =>
+        settings.Sink is null ? new RingSender(LedRings.Find, store, log) : null;
+
+    public LConnectDetector LConnect => LConnectDetector.Default;
+
+    public IServiceControl CreateServiceControl() => new WindowsServiceControl();
+
+    public string ScreenSignalName => ScreenSignal.DefaultName;
 }

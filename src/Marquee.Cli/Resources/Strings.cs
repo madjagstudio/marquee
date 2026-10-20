@@ -41,6 +41,10 @@ internal static class Strings
 
     public static string ConfigFileMissing(string path) => Format(nameof(ConfigFileMissing), path);
 
+    public static string DataFolderUnusable(string reason) => Format(nameof(DataFolderUnusable), reason);
+
+    public static string TrayHoldsScreen => Get(nameof(TrayHoldsScreen));
+
     public static string SettingsUnchanged(string error) => Format(nameof(SettingsUnchanged), error);
 
     public static string FramesNotDelivered(long delivered, int requested, string screen) =>
@@ -83,6 +87,8 @@ internal static class Strings
 
     public static string ValidateSummaryNoCanvas(string theme, string counts) => Format(nameof(ValidateSummaryNoCanvas), theme, counts);
 
+    public static string ValidateZipElevated => Get(nameof(ValidateZipElevated));
+
     public static string NoProblemsFound => Get(nameof(NoProblemsFound));
 
     public static string OneError => Get(nameof(OneError));
@@ -94,6 +100,60 @@ internal static class Strings
     public static string ManyWarnings(int count) => Format(nameof(ManyWarnings), count);
 
     public static string ErrorsAndWarnings(string errors, string warnings) => Format(nameof(ErrorsAndWarnings), errors, warnings);
+
+    public static string TaskNeedsAdministrator(string command) => Format(nameof(TaskNeedsAdministrator), command);
+
+    public static string TrayNotFound(string path) => Format(nameof(TrayNotFound), path);
+
+    public static string TrayNotInProgramFiles(string path) => Format(nameof(TrayNotInProgramFiles), path);
+
+    public static string TrayOutsideProgramFiles(string path) => Format(nameof(TrayOutsideProgramFiles), path);
+
+    public static string TaskInstalled(string task, string path) => Format(nameof(TaskInstalled), task, path);
+
+    public static string TaskInstallFailed(string reason) => Format(nameof(TaskInstallFailed), reason);
+
+    public static string TaskRemoved(string task) => Format(nameof(TaskRemoved), task);
+
+    public static string TaskWasNotInstalled(string task) => Format(nameof(TaskWasNotInstalled), task);
+
+    public static string TaskRemoveFailed(string reason) => Format(nameof(TaskRemoveFailed), reason);
+
+    public static string TaskInstalledStarts(string task, string path) => Format(nameof(TaskInstalledStarts), task, path);
+
+    public static string TaskInstalledUnknownExe(string task) => Format(nameof(TaskInstalledUnknownExe), task);
+
+    public static string TaskTrayMissing(string path) => Format(nameof(TaskTrayMissing), path);
+
+    public static string TaskNotInstalled(string task) => Format(nameof(TaskNotInstalled), task);
+
+    public static string TaskStatusFailed(string reason) => Format(nameof(TaskStatusFailed), reason);
+
+    public static string TaskStarted(string task) => Format(nameof(TaskStarted), task);
+
+    public static string TaskStartNoSession(string user) => Format(nameof(TaskStartNoSession), user);
+
+    public static string TaskStartFailed(string reason) => Format(nameof(TaskStartFailed), reason);
+
+    public static string TraysStopped(string path, int quit, int killed) => Format(nameof(TraysStopped), path, quit, killed);
+
+    public static string NoTrayRunning(string path) => Format(nameof(NoTrayRunning), path);
+
+    public static string TrayStopFailed(string reason) => Format(nameof(TrayStopFailed), reason);
+
+    public static string UpdatesRemoved(int count, string folder) => Format(nameof(UpdatesRemoved), count, folder);
+
+    public static string UpdatesNotRemoved(string reason) => Format(nameof(UpdatesNotRemoved), reason);
+
+    public static string TaskFolderNotRemoved(string folder, string reason) => Format(nameof(TaskFolderNotRemoved), folder, reason);
+
+    public static string DataFolderNotSecured(string reason) => Format(nameof(DataFolderNotSecured), reason);
+
+    public static string ClaimScreenNeedsAdministrator(string command) => Format(nameof(ClaimScreenNeedsAdministrator), command);
+
+    public static string ClaimScreenNoMarquee => Get(nameof(ClaimScreenNoMarquee));
+
+    public static string ClaimScreenAlreadyHeld => Get(nameof(ClaimScreenAlreadyHeld));
 
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages such as the usage get the platform's line breaks back, like the rest of the console output.

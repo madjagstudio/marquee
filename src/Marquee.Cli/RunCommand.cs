@@ -15,11 +15,35 @@ static class RunCommand
     static readonly TimeSpan StatusEvery = TimeSpan.FromSeconds(1);
 
     /// Null means the options were wrong and the caller should print usage.
-    public static int? Run(string[] args)
+    public static int? Run(string[] args) => Run(args, TrayNames.Screen);
+
+    /// `trayScreen` names the tray's screen marker (TrayScreen); tests pass one of their own.
+    internal static int? Run(string[] args, string trayScreen)
     {
         if (Parse(args) is not { } options) return null;
 
-        using var fileLog = new FileLog(MarqueePaths.Logs);
+        // Before anything else, so the user hears who has the screen rather than that it is busy, and nothing is
+        // logged or started for a run that can't show anything.
+        if (TrayHasScreen(options, trayScreen))
+        {
+            new ConsoleLog().Error(Strings.TrayHoldsScreen);
+            return 1;
+        }
+
+        // Elevated, the log and the Claude limits go in an admin-only folder under %ProgramData%; one that can't be made
+        // safe stops Marquee here, with the reason, before anything writes there.
+        string logs;
+        try
+        {
+            logs = MarqueePaths.ProcessLogs;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            new ConsoleLog().Error(Strings.DataFolderUnusable(ex.Message));
+            return 1;
+        }
+
+        using var fileLog = new FileLog(logs);
         var log = new TeeLog(new ConsoleLog(), fileLog);
         var configPath = ConfigOption.Path(options.ConfigFile);
         var locator = ThemeLocator.Default;
@@ -47,8 +71,8 @@ static class RunCommand
         if (options.Frames is { } count) return RenderFrames(engine, count, log);
         if (!engine.Start()) return 1;
 
-        // The default folder is %LOCALAPPDATA%\Marquee, which the log has made by now anyway. Making sure of it here
-        // means a config.yaml written there later, while this runs, is seen. A --config file's folder is left alone.
+        // The default folder is %LOCALAPPDATA%\Marquee, which an unelevated log has made by now anyway. Making sure of it
+        // here means a config.yaml written there later, while this runs, is seen. A --config file's folder is left alone.
         if (options.ConfigFile is null) Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
         using var configWatcher = new ConfigWatcher(configPath,
             config =>
@@ -130,6 +154,11 @@ static class RunCommand
 
         return options;
     }
+
+    /// Whether the tray app holds the screen this run would need. A sink folder needs no screen, so it runs beside the
+    /// tray.
+    internal static bool TrayHasScreen(RunOptions options, string trayScreen) =>
+        options.Sink is null && TrayScreen.IsHeld(trayScreen);
 
     static int? Integer(string? text) =>
         int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;

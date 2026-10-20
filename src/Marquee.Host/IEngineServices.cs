@@ -34,4 +34,20 @@ public interface IEngineServices
 
     /// Where the last Claude Code limits are kept between runs.
     ClaudeLimitsFile CreateClaudeLimits(ILog log);
+
+    /// The LED ring's sender for these settings, not started yet, or null where Marquee drives no ring (a sink folder,
+    /// tests that don't ask for one). The sender finds the ring itself, so a ring that isn't plugged in yet is fine.
+    RingSender? CreateRing(EngineSettings settings, SensorStore store, ILog log);
+
+    // The L-Connect handover. Tests fake these too, so no test touches L-Connect's real services.
+
+    /// Says who holds a busy screen. The render loop asks it at each busy retry, every 2 s.
+    LConnectDetector LConnect { get; }
+
+    /// Stops and starts L-Connect's services. The engine asks for it only when IsElevated: stopping them takes
+    /// administrator rights.
+    IServiceControl CreateServiceControl();
+
+    /// The name of the named event the engine sets while it has the screen (ScreenSignal), for `marquee claim-screen`.
+    string ScreenSignalName { get; }
 }

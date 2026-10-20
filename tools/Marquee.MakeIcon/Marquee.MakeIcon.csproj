@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Draws Marquee's icon (IconMark) and packs it into src/Marquee.App/marquee.ico (IcoFile); Program.cs says how to
+       run it. Not shipped; it is in the solution so the drawing keeps compiling. Its messages are for whoever
+       regenerates the icon, so they are written in the code rather than in a resource file. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Marquee.MakeIcon</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The version Marquee.Core uses, so the icon is drawn by the same Skia as everything else. -->
+    <PackageReference Include="SkiaSharp" Version="3.116.1" />
+  </ItemGroup>
+</Project>

@@ -1,6 +1,6 @@
 namespace Marquee.Core.Usb;
 
-/// Bulk transfers to one opened USB device: OUT pipe 0x01, IN pipe 0x81.
+/// Transfers to one opened USB device: OUT pipe 0x01, IN pipe 0x81, bulk or interrupt.
 public interface IUsbTransport : IDisposable
 {
     void Write(byte[] data, int timeoutMs);

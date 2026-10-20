@@ -5,5 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Marquee's version, set here and nowhere else. Every assembly gets it, as its version and its informational
+         version (which the update check reads; the SDK adds "+<commit>", which ReleaseVersion drops), and the installer
+         reads it from this file for the MSI's ProductVersion and file name (installer/Marquee.Installer.wixproj). Three
+         numbers, as release tags and MSI versions have. -->
+    <Version>0.1.0</Version>
   </PropertyGroup>
 </Project>

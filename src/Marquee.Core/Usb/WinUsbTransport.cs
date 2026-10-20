@@ -7,6 +7,8 @@ using static Marquee.Core.Usb.WinUsbNative;
 namespace Marquee.Core.Usb;
 
 /// Bulk transfers through Windows' inbox WinUSB driver. Calls are synchronous (null OVERLAPPED).
+/// WinUsb_WritePipe and WinUsb_ReadPipe work the same on interrupt pipes, so the LED ring, whose OUT pipe 0x01 may be
+/// interrupt rather than bulk, needs nothing different.
 public sealed class WinUsbTransport : IUsbTransport
 {
     const byte OutPipe = 0x01;
