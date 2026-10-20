@@ -84,4 +84,15 @@ public class ThemeSchemaDocsTests
             Assert.Equal("# yaml-language-server: $schema=../../docs/layout.schema.json",
                 File.ReadLines(Path.Combine(theme, "layout.yaml")).First());
     }
+
+    /// As the parser has it, only a line shape may be 0 wide or high: the size takes 0, then 1 unless `shape: line`.
+    [Fact]
+    public void Json_schema_lets_only_a_line_shape_be_0_wide()
+    {
+        var shape = JsonNode.Parse(JsonSchemaWriter.Write())!["definitions"]!["widget.shape"]!;
+        Assert.Equal(0, shape["properties"]!["size"]!["items"]!["minimum"]!.GetValue<int>());
+
+        var line = Assert.Single(shape["allOf"]!.AsArray(), form => form!["if"]!["properties"]!["shape"]!["const"]!.GetValue<string>() == "line");
+        Assert.Equal(1, line!["else"]!["properties"]!["size"]!["items"]!["minimum"]!.GetValue<int>());
+    }
 }

@@ -51,12 +51,12 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `color` | color |  | `#FFFFFF` | The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. |
 | `fill` | paint |  |  | The background of a text, value, image or group box. On a bar or gauge, the filled part (the style's color when left out); on a graph, the area under the line. |
 | `track` | paint |  |  | The empty part of a bar or gauge, and the background behind a graph. |
-| `stroke` | block: [Stroke](#stroke) |  |  | An outline round a box or bar, a graph's line, and the ends of a gauge's arc (its cap). |
-| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text. |
-| `glow` | block: [Glow](#glow) |  |  | A soft glow round text. |
+| `stroke` | block: [Stroke](#stroke) |  |  | An outline round a box, a bar or a shape (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap). |
+| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text or a shape. |
+| `glow` | block: [Glow](#glow) |  |  | A soft glow round text or a shape. |
 | `pulse` | block: [Pulse](#pulse) |  |  | Makes the opacity or the glow beat steadily. |
 | `opacity` | number (fraction) | 0 to 1 | `1` | How solid the whole widget is: 0 hides it, 1 is fully solid. |
-| `radius` | number (px) | at least 0 | `0` | Rounds the corners of a box, a bar, a graph's background and what a group or image clips to. |
+| `radius` | number (px) | at least 0 | `0` | Rounds the corners of a box, a bar, a rect shape, a graph's background and what a group or image clips to. |
 | `padding` | number (px) | at least 0 | `0` | Space between a text or value widget's box and its text. |
 | `align` | choice | `left`, `center`, `right` | `left` | Where each line of text sits across its box. The lines together are always centred from top to bottom. |
 | `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one. |
@@ -68,13 +68,13 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 
 Goes under `stroke:` in [Styles](#styles).
 
-A line: the outline drawn just inside a box, a graph's line, or the ends of a gauge's arc.
+A line: the outline drawn just inside a box or a shape, a line shape itself, a graph's line, or the ends of a gauge's arc or an arc shape.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `width` | number (px) | at least 0 | `1` | How thick the line is; 0 draws none. A graph's line is 2 px when this is left out. |
 | `color` | paint |  |  | The line's color or gradient. A box has no outline without it; a graph's line uses the style's color. |
-| `cap` | choice | `butt`, `round`, `square` | `butt` | How the ends of a gauge's arc and a graph's line are drawn. A graph's line is round when this is left out. |
+| `cap` | choice | `butt`, `round`, `square` | `butt` | How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A graph's line is round when this is left out. |
 
 ### Shadow
 
@@ -93,7 +93,7 @@ A copy of the text drawn under it, offset and softened.
 
 Goes under `glow:` in [Styles](#styles).
 
-A blurred copy of the text drawn behind it.
+A blurred copy of the text, or of a shape, drawn behind it.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -199,7 +199,7 @@ Every widget takes these.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `group` | required | What kind of widget this is. |
+| `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `shape`, `group` | required | What kind of widget this is. |
 | `at` | point |  | required | Where the widget's top-left corner goes, relative to the canvas or its group. |
 | `size` | size |  | required | The widget's width and height, each at least 1. |
 | `source` | expression |  |  | The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one. |
@@ -270,6 +270,18 @@ A picture from the theme folder, over the style's `fill` and under its stroke, c
 |---|---|---|---|---|
 | `src` | file |  | required | The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads. |
 | `fit` | choice | `cover`, `contain`, `stretch`, `none` | `contain` | How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred. |
+
+### Shape
+
+A rectangle, ellipse, line or arc, drawn with its style's `fill`, `stroke` and `opacity`, and a `shadow` and `glow` that follow its outline as they follow text. A `source` and `when` rules can restyle it, so a shape can change color on a condition.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `size` | size | at least 1, or 0 with `shape: line` | required | The shape's width and height, each at least 1; a line's may be 0 one way, which makes it horizontal or vertical. |
+| `shape` | choice | `rect`, `ellipse`, `line`, `arc` | required | Which shape: a rect has the style's `radius` corners, an ellipse fills the box, a line runs from the top-left corner to the bottom-right and is drawn by its stroke alone (which it must have), and an arc is a band like a gauge's. |
+| `start` | number (degrees) | -360 to 360 | `135` | Where the arc starts, clockwise from 3 o'clock. Only with `shape: arc`. |
+| `sweep` | number (degrees) | -360 to 360 | `270` | How far the arc runs from its start; negative runs anticlockwise. It can't be 0. Only with `shape: arc`. |
+| `thickness` | number (px) | at least 1 | `12` | How thick the arc's band is. The style's `stroke.cap` shapes its ends. Only with `shape: arc`. |
 
 ### Group
 

@@ -125,7 +125,7 @@ public class ThemeSchemaDriftTests
     {
         Check(Probes().Where(p => p.Key.Default is not null && !IsStyle(p.Place.Block)), (place, key) =>
         {
-            var omitted = Layouts.Parse(place.Layout(place.Base()));
+            var omitted = Layouts.Parse(place.Layout(place.Base(key.Name)));
             var written = Layouts.Parse(place.Layout(place.With(key.Name, Default(key))));
             var difference = Record.Exception(() => Structural.Equal(omitted, written));
             Assert.True(difference is null,
@@ -363,6 +363,48 @@ public class ThemeSchemaDriftTests
                 Fails(place, place.With(other.Name, Sample(other)), $"'{other.Name}' on {place.Block.Id}");
         });
 
+    /// A key that belongs to one form of its block, such as an arc shape's `start`, is refused on each other form.
+    [Fact]
+    public void Keys_of_one_form_are_refused_on_the_others() =>
+        Check(Probes().Where(p => p.Key.OnlyFor is not null), (place, key) =>
+        {
+            var (chooser, form) = key.OnlyFor!.Value;
+            var choice = place.Keys.FirstOrDefault(k => k.Name == chooser);
+            Assert.True(choice is { Kind: SchemaKind.Enum } && choice.Values.Contains(form),
+                $"{place.Block.Id}.{key.Name} is only for {chooser}: {form}, which isn't one of the block's choices");
+            foreach (var other in choice!.Values.Where(v => v != form))
+            {
+                var probe = place.With(key.Name, Sample(key));
+                probe[chooser] = other;
+                Fails(place, probe, $"'{key.Name}' with {chooser}: {other}");
+            }
+        });
+
+    /// A key with a lower minimum in one form of its block, such as a line shape's size, takes it in that form only,
+    /// and its own minimum in every form.
+    [Fact]
+    public void Lower_minimums_hold_in_their_form_only() =>
+        Check(Probes().Where(p => p.Key.MinFor is not null), (place, key) =>
+        {
+            var (chooser, form, lower) = key.MinFor!.Value;
+            JsonNode Value(double v) => key.Kind == SchemaKind.Size ? new JsonArray(v, 10) : JsonValue.Create(v);
+            Assert.True(key.Min is not null, $"{place.Block.Id}.{key.Name} has a lower minimum for {chooser}: {form}, but no Min of its own");
+
+            foreach (var choice in place.Block.Key(chooser)!.Values)
+            {
+                JsonObject Probe(double value)
+                {
+                    var probe = place.With(key.Name, Value(value));
+                    probe[chooser] = choice;
+                    return probe;
+                }
+
+                if (choice == form) Parses(place, Probe(lower), $"{key.Name}: {lower} with {chooser}: {choice}");
+                else Fails(place, Probe(lower), $"{key.Name}: {lower} with {chooser}: {choice}");
+                Parses(place, Probe(key.Min!.Value), $"{key.Name}: {key.Min} with {chooser}: {choice}");
+            }
+        });
+
     // ---- Probes: a block's minimal valid mapping, with one key changed, placed in a layout ----
 
     sealed record Probe(Place Place, SchemaKey Key);
@@ -382,13 +424,14 @@ public class ThemeSchemaDriftTests
     /// Where a block goes in layout.yaml, and the least it needs to parse there.
     sealed record Place(SchemaBlock Block, SchemaUnion? Union)
     {
-        IReadOnlyList<SchemaKey> Keys => Union?.KeysOf(Block) ?? Block.Keys;
+        public IReadOnlyList<SchemaKey> Keys => Union?.KeysOf(Block) ?? Block.Keys;
 
         /// Whether `key` is the union's discriminator, which names the variant (a widget's `type`).
         public bool Names(SchemaKey key) => key.Name == Union?.Discriminator;
 
-        /// The required keys, the variant's name and the first of each group the block needs one of.
-        public JsonObject Base()
+        /// The required keys, the variant's name and the first of each group the block needs one of; with `forKey`, in
+        /// the form that key belongs to (`shape: arc` for an arc's `start`).
+        public JsonObject Base(string? forKey = null)
         {
             var probe = new JsonObject();
             foreach (var key in Keys.Where(k => k.Required))
@@ -396,13 +439,25 @@ public class ThemeSchemaDriftTests
             foreach (var group in new[] { Block.ExactlyOneOf, Block.AtLeastOneOf }.Where(g => g.Count > 0))
                 if (!group.Any(probe.ContainsKey))
                     probe[group[0]] = Sample(Keys.First(k => k.Name == group[0]));
+            foreach (var (key, value) in Needs(Block.Id))
+                probe[key] = value?.DeepClone();
+            if (Keys.FirstOrDefault(k => k.Name == forKey)?.OnlyFor is { } form)
+                probe[form.Key] = form.Value;
             return probe;
         }
+
+        /// What a block needs to parse in every form, beyond what the catalog can say: a line shape is drawn by its
+        /// stroke alone and must have one, and every shape takes one.
+        static JsonObject Needs(string id) => id switch
+        {
+            "widget.shape" => new JsonObject { ["style"] = new JsonObject { ["stroke"] = new JsonObject { ["color"] = "#102030" } } },
+            _ => new JsonObject(),
+        };
 
         /// Base with `name` set to `value`, without the others of an exactly-one-of group it belongs to.
         public JsonObject With(string name, JsonNode? value)
         {
-            var probe = Base();
+            var probe = Base(name);
             if (Block.ExactlyOneOf.Contains(name))
                 foreach (var other in Block.ExactlyOneOf.Where(o => o != name))
                     probe.Remove(other);

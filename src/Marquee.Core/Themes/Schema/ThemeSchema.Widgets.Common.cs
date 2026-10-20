@@ -8,7 +8,7 @@ public static partial class ThemeSchema
     static SchemaUnion WidgetUnion() => new("widget", "Widgets",
         "Each entry of `widgets:`, and of a group's `children:`, is one widget, chosen by its `type`.",
         WidgetCommon(),
-        [TextWidget(), ValueWidget(), BarWidget(), GaugeWidget(), GraphWidget(), ImageWidget(), GroupWidget()])
+        [TextWidget(), ValueWidget(), BarWidget(), GaugeWidget(), GraphWidget(), ImageWidget(), ShapeWidget(), GroupWidget()])
     {
         Discriminator = "type",
         DiscriminatorHelp = "What kind of widget this is.",

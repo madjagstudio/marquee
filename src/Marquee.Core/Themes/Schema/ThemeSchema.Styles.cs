@@ -28,18 +28,20 @@ public static partial class ThemeSchema
                 "The background of a text, value, image or group box. On a bar or gauge, the filled part (the style's color "
                 + "when left out); on a graph, the area under the line."),
             new("track", SchemaKind.Paint, "The empty part of a bar or gauge, and the background behind a graph."),
-            new("stroke", SchemaKind.Block, "An outline round a box or bar, a graph's line, and the ends of a gauge's arc (its cap).")
+            new("stroke", SchemaKind.Block, "An outline round a box, a bar or a shape (a line shape is the stroke alone), a graph's "
+                + "line, and the ends of a gauge's arc, an arc shape or a line (its cap).")
             {
                 Of = "style.stroke",
             },
-            new("shadow", SchemaKind.Block, "A shadow under text.") { Of = "style.shadow" },
-            new("glow", SchemaKind.Block, "A soft glow round text.") { Of = "style.glow" },
+            new("shadow", SchemaKind.Block, "A shadow under text or a shape.") { Of = "style.shadow" },
+            new("glow", SchemaKind.Block, "A soft glow round text or a shape.") { Of = "style.glow" },
             new("pulse", SchemaKind.Block, "Makes the opacity or the glow beat steadily.") { Of = "style.pulse" },
             new("opacity", SchemaKind.Number, "How solid the whole widget is: 0 hides it, 1 is fully solid.")
             {
                 Default = Number(StyleDefaults.Opacity), Min = 0, Max = 1, Unit = SchemaUnit.Fraction,
             },
-            new("radius", SchemaKind.Number, "Rounds the corners of a box, a bar, a graph's background and what a group or image clips to.")
+            new("radius", SchemaKind.Number,
+                "Rounds the corners of a box, a bar, a rect shape, a graph's background and what a group or image clips to.")
             {
                 Default = Number(StyleDefaults.Radius), Min = 0, Unit = SchemaUnit.Px,
             },

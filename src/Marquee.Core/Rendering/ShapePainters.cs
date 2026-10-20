@@ -33,10 +33,7 @@ static class ShapePainters
 
     public static void Gauge(RenderContext ctx, GaugeWidget gauge, StyleSpec style, double? value)
     {
-        var bounds = gauge.Bounds;
-        var size = Math.Min(bounds.Width, bounds.Height);
-        var square = SKRect.Create(bounds.MidX - size / 2, bounds.MidY - size / 2, size, size);
-        var oval = SKRect.Inflate(square, -gauge.Thickness / 2, -gauge.Thickness / 2);
+        var (square, oval) = ArcBounds(gauge.Bounds, gauge.Thickness);
         var cap = style.Stroke?.Cap ?? StyleDefaults.StrokeCap;
 
         if (style.Track is { } track)
@@ -119,5 +116,14 @@ static class ShapePainters
         paint.StrokeWidth = thickness;
         paint.StrokeCap = cap;
         canvas.DrawArc(oval, start, sweep, false, paint);
+    }
+
+    /// The largest square that fits `bounds`, centred in it, and the oval inside it that a band `thickness` wide runs
+    /// along: where a gauge's arc and an arc shape lie.
+    public static (SKRect Square, SKRect Oval) ArcBounds(SKRect bounds, float thickness)
+    {
+        var size = Math.Min(bounds.Width, bounds.Height);
+        var square = SKRect.Create(bounds.MidX - size / 2, bounds.MidY - size / 2, size, size);
+        return (square, SKRect.Inflate(square, -thickness / 2, -thickness / 2));
     }
 }

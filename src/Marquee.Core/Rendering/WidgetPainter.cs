@@ -58,6 +58,9 @@ static class WidgetPainter
                 case ImageWidget image:
                     Image(ctx, image, style);
                     break;
+                case ShapeWidget shape:
+                    ShapeWidgetPainter.Paint(ctx, shape, style);
+                    break;
                 case GroupWidget group:
                     Group(ctx, group, style);
                     break;

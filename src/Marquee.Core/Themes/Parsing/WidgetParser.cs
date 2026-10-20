@@ -6,14 +6,15 @@ using YamlDotNet.RepresentationModel;
 
 namespace Marquee.Core.Themes.Parsing;
 
-static class WidgetParser
+static partial class WidgetParser
 {
     // The keys each widget accepts: Common, plus its type's own. ThemeSchema describes each, and its drift test reads
     // these lists.
     internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth", "rotate", "hidden", "locked"];
 
     internal static readonly (string Name, string Value)[] Types =
-        [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"), ("group", "group")];
+        [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"),
+         ("shape", "shape"), ("group", "group")];
 
     internal static readonly IReadOnlyDictionary<string, string[]> TypeKeys = new Dictionary<string, string[]>
     {
@@ -23,6 +24,7 @@ static class WidgetParser
         ["gauge"] = ["min", "max", "start", "sweep", "thickness"],
         ["graph"] = ["min", "max", "points"],
         ["image"] = ["src", "fit"],
+        ["shape"] = ["shape", .. ArcKeys],
         ["group"] = ["children"],
     };
 
@@ -91,7 +93,7 @@ static class WidgetParser
         var what = $"{type} widget";
         var f = Yaml.Map(node, what, [.. Common, .. TypeKeys[type]]);
         var at = Yaml.Pair(f.Required("at"), "at");
-        var size = Yaml.Pair(f.Required("size"), "size", min: 1);
+        var size = type == "shape" ? ShapeSize(f) : Yaml.Pair(f.Required("size"), "size", min: 1);
 
         var source = f.Optional("source") is { } s ? Source(s) : null;
         if (source is null && type is "value" or "bar" or "gauge" or "graph")
@@ -106,10 +108,11 @@ static class WidgetParser
             "graph" => Graph(f, f.Required("source")),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
+            "shape" => Shape(f),
             _ => new GroupWidget(children ?? ParseList(f.Required("children"), "children", context, groupDepth + 1)),
         };
 
-        return widget with
+        widget = widget with
         {
             Bounds = SKRect.Create(at.X, at.Y, size.X, size.Y),
             Source = source,
@@ -120,6 +123,9 @@ static class WidgetParser
             Hidden = f.Optional("hidden") is { } hidden && Yaml.Bool(hidden, "hidden"),
             Locked = f.Optional("locked") is { } locked && Yaml.Bool(locked, "locked"),
         };
+
+        if (widget is ShapeWidget shape) CheckStroked(shape, f);
+        return widget;
     }
 
     static YamlNode? Find(YamlMappingNode map, string key) =>

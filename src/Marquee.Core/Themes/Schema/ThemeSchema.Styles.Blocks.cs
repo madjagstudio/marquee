@@ -5,7 +5,8 @@ public static partial class ThemeSchema
     // A rule's style merges these blocks key by key, so it can change a stroke's color and keep its width.
 
     static SchemaBlock StrokeBlock() => new("style.stroke", "stroke", "Stroke",
-        "A line: the outline drawn just inside a box, a graph's line, or the ends of a gauge's arc.",
+        "A line: the outline drawn just inside a box or a shape, a line shape itself, a graph's line, or the ends of a gauge's "
+        + "arc or an arc shape.",
         [
             new("width", SchemaKind.Number, "How thick the line is; 0 draws none. A graph's line is 2 px when this is left out.")
             {
@@ -13,7 +14,8 @@ public static partial class ThemeSchema
                 DefaultFor = new Dictionary<string, string> { ["graph"] = Number(StyleDefaults.GraphStrokeWidth) },
             },
             new("color", SchemaKind.Paint, "The line's color or gradient. A box has no outline without it; a graph's line uses the style's color."),
-            new("cap", SchemaKind.Enum, "How the ends of a gauge's arc and a graph's line are drawn. A graph's line is round when this is left out.")
+            new("cap", SchemaKind.Enum, "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A "
+                + "graph's line is round when this is left out.")
             {
                 Default = "butt", Values = ["butt", "round", "square"], DefaultFor = new Dictionary<string, string> { ["graph"] = "round" },
             },
@@ -38,7 +40,7 @@ public static partial class ThemeSchema
         ]);
 
     static SchemaBlock GlowBlock() => new("style.glow", "glow", "Glow",
-        "A blurred copy of the text drawn behind it.",
+        "A blurred copy of the text, or of a shape, drawn behind it.",
         [
             new("color", SchemaKind.Color, "The glow's color. There is no glow without it."),
             new("radius", SchemaKind.Number, "How far the glow spreads.")

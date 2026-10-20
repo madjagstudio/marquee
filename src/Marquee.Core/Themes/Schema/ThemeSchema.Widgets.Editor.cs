@@ -28,6 +28,7 @@ public static partial class ThemeSchema
         ("gauge", ["color", "fill", "track", "stroke.cap"]),
         ("graph", ["color", "fill", "track", "stroke", "radius"]),
         ("image", [.. BoxStyles]),
+        ("shape", ["fill", "stroke", "shadow", "glow", "radius"]),
         ("group", [.. TextStyles, .. BoxStyles]),
     ];
 
@@ -96,6 +97,13 @@ public static partial class ThemeSchema
             at: [0, 0]
             size: [120, 120]
             src: images/picture.png
+            """,
+        "shape" => """
+            type: shape
+            at: [0, 0]
+            size: [120, 60]
+            shape: rect
+            style: { fill: "#3A7BD5", radius: 8 }
             """,
         "group" => """
             type: group

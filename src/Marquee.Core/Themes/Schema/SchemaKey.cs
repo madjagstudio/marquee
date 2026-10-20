@@ -39,7 +39,7 @@ public enum SchemaKind
     /// `[x, y]` in px.
     Point,
 
-    /// `[width, height]` in px, each at least 1.
+    /// `[width, height]` in px, each at least 1, or at least SchemaKey.Min when that is set.
     Size,
 
     /// The name of a style in `styles:`.
@@ -82,9 +82,14 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
     /// a line's ends have one. Empty for keys outside a style. ThemeSchema.WidgetStyles is the table it comes from.
     public IReadOnlyList<string> AppliesTo { get; init; } = [];
 
-    /// The range of a number or integer, inclusive; null where it has no bound.
+    /// The range of a number or integer, or of each number of a size, inclusive; null where it has no bound.
     public double? Min { get; init; }
     public double? Max { get; init; }
+
+    /// A lower Min in one form of the block, such as 0 for a line shape's size: the key that chooses the form, the value
+    /// it must have, and the Min there.
+    public (string Key, string Value, double Min)? MinFor { get; init; }
+
     public SchemaUnit Unit { get; init; }
 
     /// An enum's values, or the names a font weight also takes, in the order the parser lists them.
@@ -102,4 +107,8 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
 
     /// The extensions a ThemeFile must have, lower case with the dot; empty when the parser takes any file.
     public IReadOnlyList<string> FileTypes { get; init; } = [];
+
+    /// Set when the key belongs to one form of its block, such as `start` to `shape: arc`: the key that chooses the form
+    /// and the value it must have. The parser refuses the key with any other value.
+    public (string Key, string Value)? OnlyFor { get; init; }
 }

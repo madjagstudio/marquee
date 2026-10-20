@@ -84,7 +84,7 @@ static class ReferenceWriter
         md.Append("| Key | Kind | Values | Default | What it does |\n");
         md.Append("|---|---|---|---|---|\n");
         foreach (var key in keys)
-            md.Append($"| `{key.Name}` | {Cell(Kind(key))} | {Cell(Values(key))} | {Cell(Default(key))} | {Cell(key.Help)} |\n");
+            md.Append($"| `{key.Name}` | {Cell(Kind(key))} | {Cell(Values(key))} | {Cell(Default(key))} | {Cell(Help(key))} |\n");
         md.Append('\n');
 
         if (block.ExactlyOneOf.Count > 0)
@@ -145,7 +145,7 @@ static class ReferenceWriter
         SchemaKind.FontWeight => $"{Range(key)}, or {Codes(key.Values)}",
         SchemaKind.List or SchemaKind.Map or SchemaKind.Uniforms => Count(key.MinItems, key.MaxItems),
         SchemaKind.ThemeFile when key.FileTypes.Count > 0 => Codes(key.FileTypes),
-        _ => Range(key),
+        _ => Range(key) + (key.MinFor is { } lower ? $", or {Number(lower.Min)} with `{lower.Key}: {lower.Value}`" : ""),
     };
 
     static string Range(SchemaKey key) => (key.Min, key.Max) switch
@@ -163,6 +163,10 @@ static class ReferenceWriter
         (null, { } b) => $"up to {b}",
         _ => "",
     };
+
+    /// The key's help, and the form of its block it belongs to, if just one.
+    public static string Help(SchemaKey key) =>
+        key.OnlyFor is { } only ? $"{key.Help} Only with `{only.Key}: {only.Value}`." : key.Help;
 
     static string Default(SchemaKey key) => key.Required ? "required" : key.Default is { } value ? $"`{value}`" : "";
 

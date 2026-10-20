@@ -204,7 +204,7 @@ public class WidgetParsingTests
 
     [Theory]
     [InlineData("- at: [0, 0]", 6, "widget is missing 'type'")]
-    [InlineData("- type: dial", 6, "widget type must be one of: text, value, bar, gauge, graph, image, group; not 'dial'")]
+    [InlineData("- type: dial", 6, "widget type must be one of: text, value, bar, gauge, graph, image, shape, group; not 'dial'")]
     [InlineData("- text", 6, "Each widget must be a mapping with a type, e.g. - type: value")]
     [InlineData("- { type: value, size: [10, 10], source: x }", 6, "value widget is missing 'at'")]
     [InlineData("- { type: value, at: [0, 0], size: [0, 10], source: x }", 6, "size must be at least 1")]

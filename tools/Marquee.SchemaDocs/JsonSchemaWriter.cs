@@ -85,8 +85,38 @@ static class JsonSchemaWriter
             node["oneOf"] = new JsonArray(block.ExactlyOneOf.Select(k => (JsonNode?)Requires(k)).ToArray());
         if (block.AtLeastOneOf.Count > 0)
             node["anyOf"] = new JsonArray(block.AtLeastOneOf.Select(k => (JsonNode?)Requires(k)).ToArray());
+        var forms = keys.Where(k => k.OnlyFor is not null).GroupBy(k => k.OnlyFor!.Value).Select(OnlyFor)
+            .Concat(keys.Where(k => k.MinFor is not null).Select(MinFor))
+            .ToArray();
+        if (forms.Length > 0)
+            node["allOf"] = new JsonArray(forms);
         return node;
     }
+
+    /// Keys that belong to one form of the block, such as an arc shape's `start`, aren't allowed in any other form.
+    static JsonNode? OnlyFor(IGrouping<(string Key, string Value), SchemaKey> keys) => new JsonObject
+    {
+        ["if"] = Form(keys.Key.Key, keys.Key.Value),
+        ["else"] = new JsonObject
+        {
+            ["properties"] = new JsonObject(keys.Select(k => KeyValuePair.Create(k.Name, (JsonNode?)JsonValue.Create(false)))),
+        },
+    };
+
+    /// A key with a lower minimum in one form, such as a line shape's size, takes the lower one there (Kind gives it
+    /// that) and its own Min in every other form.
+    static JsonNode? MinFor(SchemaKey key) => new JsonObject
+    {
+        ["if"] = Form(key.MinFor!.Value.Key, key.MinFor.Value.Value),
+        ["else"] = new JsonObject { ["properties"] = new JsonObject { [key.Name] = Kind(key with { MinFor = null }) } },
+    };
+
+    /// Matches the form of a block whose `key` is `value`.
+    static JsonObject Form(string key, string value) => new()
+    {
+        ["properties"] = new JsonObject { [key] = new JsonObject { ["const"] = value } },
+        ["required"] = new JsonArray(key),
+    };
 
     static JsonObject Requires(string key) => new() { ["required"] = new JsonArray(key) };
 
@@ -96,7 +126,7 @@ static class JsonSchemaWriter
         var node = Kind(key);
         // A $ref's siblings are ignored in draft-07, so a description goes on an allOf around it.
         if (node.ContainsKey("$ref")) node = new JsonObject { ["allOf"] = new JsonArray(node) };
-        node["description"] = key.Help;
+        node["description"] = ReferenceWriter.Help(key);
         if (key.Default is { } value) node["default"] = Default(key, value);
         return node;
     }
@@ -111,6 +141,8 @@ static class JsonSchemaWriter
             ["anyOf"] = new JsonArray(Bounded(new JsonObject { ["type"] = "integer" }, key.Min, key.Max), new JsonObject { ["enum"] = Strings(key.Values) }),
         },
         SchemaKind.ThemeFile when key.FileTypes.Count > 0 => new JsonObject { ["type"] = "string", ["pattern"] = Extensions(key.FileTypes) },
+        // A shape's size may be 0 one way, for a line: the lowest Min of any form, which MinFor raises in the others.
+        SchemaKind.Size when (key.MinFor?.Min ?? key.Min) is { } min => Pair(new JsonObject { ["type"] = "number", ["minimum"] = Number(min) }),
         SchemaKind.Block => Ref(key.Of!),
         SchemaKind.List => Bounded(new JsonObject
         {

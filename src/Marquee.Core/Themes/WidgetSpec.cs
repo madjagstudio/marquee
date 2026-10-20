@@ -46,3 +46,21 @@ public sealed record ImageWidget(string Path, ImageFit Fit) : WidgetSpec;
 
 /// Positions and clips its children. Text properties of its style cascade to them.
 public sealed record GroupWidget(IReadOnlyList<WidgetSpec> Children) : WidgetSpec;
+
+public enum ShapeKind { Rect, Ellipse, Line, Arc }
+
+/// A plain shape drawn with its style's fill, stroke, shadow and glow. A line runs from the box's top-left to its
+/// bottom-right corner. StartAngle, SweepAngle and Thickness are an arc's, in degrees clockwise from 3 o'clock as a
+/// gauge's are; the other shapes keep the defaults and don't use them.
+public sealed record ShapeWidget(ShapeKind Shape, float StartAngle = Arcs.DefaultStart, float SweepAngle = Arcs.DefaultSweep,
+    float Thickness = Arcs.DefaultThickness) : WidgetSpec;
+
+/// What a gauge's arc and an arc shape share: angles in degrees clockwise from 3 o'clock, a start and a sweep of at most
+/// a whole turn either way, and the defaults that open the arc at the bottom.
+public static class Arcs
+{
+    public const float DefaultStart = 135;
+    public const float DefaultSweep = 270;
+    public const float DefaultThickness = 12;
+    public const float MaxAngle = 360;
+}

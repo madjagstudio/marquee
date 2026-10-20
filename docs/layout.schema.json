@@ -159,7 +159,7 @@
               "$ref": "#/definitions/style.stroke"
             }
           ],
-          "description": "An outline round a box or bar, a graph's line, and the ends of a gauge's arc (its cap)."
+          "description": "An outline round a box, a bar or a shape (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap)."
         },
         "shadow": {
           "allOf": [
@@ -167,7 +167,7 @@
               "$ref": "#/definitions/style.shadow"
             }
           ],
-          "description": "A shadow under text."
+          "description": "A shadow under text or a shape."
         },
         "glow": {
           "allOf": [
@@ -175,7 +175,7 @@
               "$ref": "#/definitions/style.glow"
             }
           ],
-          "description": "A soft glow round text."
+          "description": "A soft glow round text or a shape."
         },
         "pulse": {
           "allOf": [
@@ -195,7 +195,7 @@
         "radius": {
           "type": "number",
           "minimum": 0,
-          "description": "Rounds the corners of a box, a bar, a graph's background and what a group or image clips to.",
+          "description": "Rounds the corners of a box, a bar, a rect shape, a graph's background and what a group or image clips to.",
           "default": 0
         },
         "padding": {
@@ -249,7 +249,7 @@
       "additionalProperties": false
     },
     "style.stroke": {
-      "description": "Stroke: A line: the outline drawn just inside a box, a graph's line, or the ends of a gauge's arc.",
+      "description": "Stroke: A line: the outline drawn just inside a box or a shape, a line shape itself, a graph's line, or the ends of a gauge's arc or an arc shape.",
       "type": "object",
       "properties": {
         "width": {
@@ -272,7 +272,7 @@
             "round",
             "square"
           ],
-          "description": "How the ends of a gauge's arc and a graph's line are drawn. A graph's line is round when this is left out.",
+          "description": "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A graph's line is round when this is left out.",
           "default": "butt"
         }
       },
@@ -310,7 +310,7 @@
       "additionalProperties": false
     },
     "style.glow": {
-      "description": "Glow: A blurred copy of the text drawn behind it.",
+      "description": "Glow: A blurred copy of the text, or of a shape, drawn behind it.",
       "type": "object",
       "properties": {
         "color": {
@@ -912,6 +912,7 @@
             "gauge",
             "graph",
             "image",
+            "shape",
             "group"
           ],
           "description": "What kind of widget this is."
@@ -935,6 +936,9 @@
         },
         {
           "$ref": "#/definitions/widget.image"
+        },
+        {
+          "$ref": "#/definitions/widget.shape"
         },
         {
           "$ref": "#/definitions/widget.group"
@@ -1535,6 +1539,166 @@
         "src"
       ],
       "additionalProperties": false
+    },
+    "widget.shape": {
+      "description": "Shape: A rectangle, ellipse, line or arc, drawn with its style's `fill`, `stroke` and `opacity`, and a `shadow` and `glow` that follow its outline as they follow text. A `source` and `when` rules can restyle it, so a shape can change color on a condition.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "shape",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The shape's width and height, each at least 1; a line's may be 0 one way, which makes it horizontal or vertical."
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "default": 0
+        },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
+        },
+        "shape": {
+          "enum": [
+            "rect",
+            "ellipse",
+            "line",
+            "arc"
+          ],
+          "description": "Which shape: a rect has the style's `radius` corners, an ellipse fills the box, a line runs from the top-left corner to the bottom-right and is drawn by its stroke alone (which it must have), and an arc is a band like a gauge's."
+        },
+        "start": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Where the arc starts, clockwise from 3 o'clock. Only with `shape: arc`.",
+          "default": 135
+        },
+        "sweep": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "How far the arc runs from its start; negative runs anticlockwise. It can't be 0. Only with `shape: arc`.",
+          "default": 270
+        },
+        "thickness": {
+          "type": "number",
+          "minimum": 1,
+          "description": "How thick the arc's band is. The style's `stroke.cap` shapes its ends. Only with `shape: arc`.",
+          "default": 12
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "shape"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "shape": {
+                "const": "arc"
+              }
+            },
+            "required": [
+              "shape"
+            ]
+          },
+          "else": {
+            "properties": {
+              "start": false,
+              "sweep": false,
+              "thickness": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "shape": {
+                "const": "line"
+              }
+            },
+            "required": [
+              "shape"
+            ]
+          },
+          "else": {
+            "properties": {
+              "size": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 1
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          }
+        }
+      ]
     },
     "widget.group": {
       "description": "Group: A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style. Groups nest up to 16 deep.",
