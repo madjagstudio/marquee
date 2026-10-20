@@ -52,7 +52,7 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `fill` | paint |  |  | The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments, and on a donut, each slice (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it). |
 | `track` | paint |  |  | The empty part of a bar or gauge, or its unlit segments, the background behind a graph, and the ring behind a donut's slices. |
 | `stroke` | block: [Stroke](#stroke) |  |  | An outline round a box, a bar, a shape or a donut's slice (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap). |
-| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text, a shape, a gauge's needle or a donut's slices. |
+| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box. |
 | `glow` | block: [Glow](#glow) |  |  | A soft glow round text, a shape or a donut's slices. |
 | `pulse` | block: [Pulse](#pulse) |  |  | Makes the opacity or the glow beat steadily. |
 | `opacity` | number (fraction) | 0 to 1 | `1` | How solid the whole widget is: 0 hides it, 1 is fully solid. |
@@ -80,7 +80,7 @@ A line: the outline drawn just inside a box or a shape and round a donut's slice
 
 Goes under `shadow:` in [Styles](#styles).
 
-A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.
+A copy of the text, a shape, a gauge's needle or a donut's slices, or of an image or video widget's box, drawn under it, offset and softened.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -209,7 +209,7 @@ Every widget takes these.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `shape`, `donut`, `group` | required | What kind of widget this is. |
+| `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `video`, `shape`, `donut`, `group` | required | What kind of widget this is. |
 | `at` | point |  | required | Where the widget's top-left corner goes, relative to the canvas or its group. |
 | `size` | size |  | required | The widget's width and height, each at least 1. |
 | `source` | expression |  |  | The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`. |
@@ -336,12 +336,21 @@ One sensor on a graph with several. Its style is layered over the graph's, so th
 
 ### Image
 
-A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box.
+A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box. The style's `shadow` is the box's, so a picture that leaves part of the box empty still casts the whole box's shadow.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `src` | file |  | required | The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads. |
 | `fit` | choice | `cover`, `contain`, `stretch`, `none` | `contain` | How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred. |
+
+### Video
+
+A clip from the theme folder, played over and over, over the style's `fill` and under its stroke, clipped to the box. The box can cover at most as many pixels as the canvas (1920×480), and a theme can have at most 4 videos, counting its video layers and video widgets.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `src` | file | `.mp4`, `.m4v`, `.mov`, `.wmv`, `.gif`, `.webp` | required | The clip, relative to the theme folder. |
+| `fit` | choice | `cover`, `contain`, `stretch`, `none` | `cover` | How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred. |
 
 ### Shape
 

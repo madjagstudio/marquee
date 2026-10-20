@@ -1,6 +1,7 @@
 using Marquee.Core.Tests.TestSupport;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Schema;
+using Marquee.Core.Video;
 using SkiaSharp;
 using static Marquee.Core.Tests.TestSupport.Validations;
 
@@ -24,8 +25,18 @@ public class ThemeSchemaExampleTests
         var lines = example.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
         var layout = "canvas: { orientation: landscape }\nwidgets:\n" + string.Join("\n", lines.Select((l, i) => (i == 0 ? "  - " : "    ") + l)) + "\n";
         using var theme = new TempTheme(layout);
-        foreach (var image in Images(Layouts.Parse(layout).Widgets))
+        var widgets = Layouts.Parse(layout).Widgets;
+        foreach (var image in Images(widgets))
             theme.AddImage(image, SKColors.Teal);
+        var clips = Clips(widgets).ToList();
+        // Nothing can write a clip without Media Foundation; MediaFoundationDecoderTests checks the error it gives.
+        if (clips.Count > 0 && !MediaFoundation.IsAvailable) return;
+        foreach (var clip in clips)
+        {
+            var path = Path.Combine(theme.Folder, clip);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            ClipWriter.Write(path, 64, 36, SKColors.Teal, SKColors.Teal);
+        }
 
         Assert.Empty(Lines(Validate(theme.Folder)));
         using var loaded = theme.Load();
@@ -39,6 +50,15 @@ public class ThemeSchemaExampleTests
         {
             ImageWidget image => [image.Path],
             GroupWidget group => Images(group.Children),
+            _ => [],
+        });
+
+    /// The clips the widgets play, which the test writes as H.264 MP4s.
+    static IEnumerable<string> Clips(IEnumerable<WidgetSpec> widgets) =>
+        widgets.SelectMany(w => w switch
+        {
+            VideoWidget video => [video.Path],
+            GroupWidget group => Clips(group.Children),
             _ => [],
         });
 }

@@ -42,7 +42,10 @@ public static class LayoutParser
         var canvas = errors.Recover(() => Canvas(fields.Required("canvas"))) ?? FallbackCanvas;
         var styles = StyleTable.Parse(fields.Optional("styles"), errors);
         var background = fields.Optional("background") is { } b ? errors.Recover(() => BackgroundParser.Parse(b, errors)) ?? [] : [];
-        var widgets = fields.Optional("widgets") is { } w ? errors.Recover(() => WidgetParser.ParseList(w, styles, "widgets", errors)) ?? [] : [];
+        var videoLayers = background.Count(layer => layer is VideoLayer);
+        var widgets = fields.Optional("widgets") is { } w
+            ? errors.Recover(() => WidgetParser.ParseList(w, styles, "widgets", errors, videoLayers)) ?? []
+            : [];
         var ring = fields.Optional("ring") is { } r ? errors.Recover(() => RingParser.Parse(r, errors)) : null;
         return new ThemeSpec(canvas, background, widgets, ring);
     }

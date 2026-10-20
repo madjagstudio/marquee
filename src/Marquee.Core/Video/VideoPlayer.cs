@@ -2,9 +2,9 @@ using SkiaSharp;
 
 namespace Marquee.Core.Video;
 
-/// Plays a clip for a video layer at its own speed, looping forever. A background thread decodes a few frames ahead
-/// and scales each to the size it is drawn at (see FrameScaler); the render thread asks for the frame for its current
-/// time and draws it, never waiting on the decoder.
+/// Plays a clip for a video layer or video widget at its own speed, looping forever. A background thread decodes a few
+/// frames ahead and scales each to the size it is drawn at (see FrameScaler); the render thread asks for the frame for
+/// its current time and draws it, never waiting on the decoder.
 ///
 /// Whatever the render rate, the clip keeps to its own clock. Rendering slower than the clip's frame rate shows fewer of
 /// its frames rather than playing it in slow motion: the decode thread drops frames already over by the render
@@ -49,7 +49,8 @@ public sealed class VideoPlayer : IDisposable
     // Shared between the threads, under _gate.
     readonly object _gate = new();
     readonly Queue<Frame> _ready = new();
-    bool _disposed;
+    bool _disposed; // stop requested: the decode thread winds down and FrameAt returns null
+    bool _released; // Dispose has run, or is running, and frees the frames
     TimeSpan? _clipNow; // the clip time of the render thread's latest FrameAt, for the decode thread's dropping
     bool _decodeEnded; // the decode thread is past its last use of the decoder
     bool _decoderLeftToThread; // Dispose stopped waiting, so the decode thread disposes the decoder when it ends
@@ -89,7 +90,8 @@ public sealed class VideoPlayer : IDisposable
         _thread.Start();
     }
 
-    /// Where on the canvas the frames go; each image FrameAt returns is exactly this size.
+    /// Where the frames go, on the canvas for a layer and in its parent's coordinates for a widget; each image FrameAt
+    /// returns is exactly this size.
     public SKRectI Destination => _scaler.Destination;
 
     /// How long Dispose waits for the decode thread to finish the frame it is on. Decoding a frame takes milliseconds;
@@ -145,7 +147,9 @@ public sealed class VideoPlayer : IDisposable
     /// that happened; otherwise null. The last good frame stays on screen. The render loop logs it once.
     public string? TakeError() => Interlocked.Exchange(ref _error, null);
 
-    public void Dispose()
+    /// Tells the decode thread to stop, without waiting for it; FrameAt returns null from now on. An owner with several
+    /// players signals them all before disposing any, so their threads wind down together (see ThemeAssets).
+    public void RequestStop()
     {
         lock (_gate)
         {
@@ -153,13 +157,26 @@ public sealed class VideoPlayer : IDisposable
             _disposed = true;
             Monitor.PulseAll(_gate);
         }
+    }
+
+    public void Dispose() => Dispose(StopTimeout);
+
+    /// Stops the player, waiting at most `wait` for its decode thread, then frees its frames. A second call does nothing.
+    internal void Dispose(TimeSpan wait)
+    {
+        RequestStop();
+        lock (_gate)
+        {
+            if (_released) return;
+            _released = true;
+        }
 
         // At most the frame being decoded is still to finish, and after it the thread touches nothing else. A thread
         // stuck in a decoder call (a clip on a network share that went away, a codec that hangs) mustn't hold up the
-        // caller, the render thread, and every theme switch and stop with it: after StopTimeout it is left to finish on
+        // caller, the render thread, and every theme switch and stop with it: after the wait it is left to finish on
         // its own, and disposes the decoder itself if the call ever returns. If it never does, the decoder and the
         // thread stay until the process exits; it is a background thread, so it doesn't keep the process alive.
-        var ended = _thread.Join(StopTimeout);
+        var ended = _thread.Join(wait < TimeSpan.Zero ? TimeSpan.Zero : wait);
         lock (_gate)
         {
             if (!ended && !_decodeEnded) _decoderLeftToThread = true;

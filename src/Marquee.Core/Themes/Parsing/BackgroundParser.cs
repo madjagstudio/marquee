@@ -113,11 +113,12 @@ static partial class BackgroundParser
     }
 
     /// The extension picks the decoder, so a clip no decoder reads is caught here, with its line, rather than at load.
-    static string VideoPath(YamlNode node)
+    /// `what` is the key: a layer's `video`, or a video widget's `src`.
+    internal static string VideoPath(YamlNode node, string what = "video")
     {
-        var path = Yaml.Text(node, "video");
+        var path = Yaml.Text(node, what);
         if (!VideoExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
-            throw Yaml.Error(node, $"video must be a {string.Join(", ", VideoExtensions.SkipLast(1))} or {VideoExtensions[^1]} file, not '{path}'");
+            throw Yaml.Error(node, $"{what} must be a {string.Join(", ", VideoExtensions.SkipLast(1))} or {VideoExtensions[^1]} file, not '{path}'");
         return path;
     }
 

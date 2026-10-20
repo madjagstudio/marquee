@@ -22,7 +22,8 @@ public static partial class ThemeSchema
         ]);
 
     static SchemaBlock ShadowBlock() => new("style.shadow", "shadow", "Shadow",
-        "A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.",
+        "A copy of the text, a shape, a gauge's needle or a donut's slices, or of an image or video widget's box, drawn under "
+        + "it, offset and softened.",
         [
             new("color", SchemaKind.Color, "The shadow's color. There is no shadow without it."),
             new("x", SchemaKind.Number, "How far right the shadow sits; negative moves it left.")

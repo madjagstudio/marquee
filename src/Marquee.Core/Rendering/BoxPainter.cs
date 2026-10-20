@@ -31,6 +31,20 @@ static class BoxPainter
         Rect(ctx.Canvas, inset, Math.Max(0, (style.Radius ?? StyleDefaults.Radius) - width / 2), paint);
     }
 
+    /// The box's silhouette, with its radius, blurred and moved as the style's shadow says, for an image or video
+    /// widget. It is the box's rather than the picture's, as a rect shape's is: a picture with `contain` or `none` and
+    /// no fill still casts the box's shadow, and each frame costs a rounded rectangle's blur rather than a blur of the
+    /// picture. Nothing is drawn without a shadow color.
+    public static void Shadow(SKCanvas canvas, SKRect bounds, StyleSpec style)
+    {
+        if (Effect.Shadow(style) is not { } shadow) return;
+        using var blur = shadow.Blur();
+        using var paint = shadow.Paint(blur);
+        var moved = bounds;
+        moved.Offset(shadow.Dx, shadow.Dy);
+        Rect(canvas, moved, style.Radius ?? StyleDefaults.Radius, paint);
+    }
+
     public static void Rect(SKCanvas canvas, SKRect rect, float radius, SKPaint paint)
     {
         if (radius > 0) canvas.DrawRoundRect(rect, radius, radius, paint);

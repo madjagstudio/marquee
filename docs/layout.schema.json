@@ -182,8 +182,8 @@
               "$ref": "#/definitions/style.shadow"
             }
           ],
-          "description": "A shadow under text, a shape, a gauge's needle or a donut's slices.",
-          "markdownDescription": "A shadow under text, a shape, a gauge's needle or a donut's slices."
+          "description": "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box.",
+          "markdownDescription": "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box."
         },
         "glow": {
           "allOf": [
@@ -308,7 +308,7 @@
       "additionalProperties": false
     },
     "style.shadow": {
-      "description": "Shadow: A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.",
+      "description": "Shadow: A copy of the text, a shape, a gauge's needle or a donut's slices, or of an image or video widget's box, drawn under it, offset and softened.",
       "type": "object",
       "properties": {
         "color": {
@@ -1237,6 +1237,7 @@
             "gauge",
             "graph",
             "image",
+            "video",
             "shape",
             "donut",
             "group"
@@ -1263,6 +1264,9 @@
         },
         {
           "$ref": "#/definitions/widget.image"
+        },
+        {
+          "$ref": "#/definitions/widget.video"
         },
         {
           "$ref": "#/definitions/widget.shape"
@@ -1916,7 +1920,7 @@
       ]
     },
     "widget.image": {
-      "description": "Image: A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box.",
+      "description": "Image: A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box. The style's `shadow` is the box's, so a picture that leaves part of the box empty still casts the whole box's shadow.",
       "type": "object",
       "properties": {
         "type": {
@@ -2015,6 +2019,117 @@
           "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
           "markdownDescription": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
           "default": "contain"
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "src"
+      ],
+      "additionalProperties": false
+    },
+    "widget.video": {
+      "description": "Video: A clip from the theme folder, played over and over, over the style's `fill` and under its stroke, clipped to the box. The box can cover at most as many pixels as the canvas (1920×480), and a theme can have at most 4 videos, counting its video layers and video widgets.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "video",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`.",
+          "markdownDescription": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "default": 0
+        },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
+        },
+        "src": {
+          "type": "string",
+          "pattern": "\\.([mM][pP]4|[mM]4[vV]|[mM][oO][vV]|[wW][mM][vV]|[gG][iI][fF]|[wW][eE][bB][pP])$",
+          "description": "The clip, relative to the theme folder.",
+          "markdownDescription": "The clip, relative to the theme folder."
+        },
+        "fit": {
+          "enum": [
+            "cover",
+            "contain",
+            "stretch",
+            "none"
+          ],
+          "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "markdownDescription": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "default": "cover"
         }
       },
       "required": [

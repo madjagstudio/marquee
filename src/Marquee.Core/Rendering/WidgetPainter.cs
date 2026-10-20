@@ -62,6 +62,9 @@ static class WidgetPainter
                 case ImageWidget image:
                     Image(ctx, image, style);
                     break;
+                case VideoWidget video:
+                    VideoWidgetPainter.Paint(ctx, video, style);
+                    break;
                 case ShapeWidget shape:
                     ShapeWidgetPainter.Paint(ctx, shape, style);
                     break;
@@ -88,6 +91,7 @@ static class WidgetPainter
 
     static void Image(RenderContext ctx, ImageWidget image, StyleSpec style)
     {
+        BoxPainter.Shadow(ctx.Canvas, image.Bounds, style);
         BoxPainter.Background(ctx, image.Bounds, style);
         if (ctx.Assets.Image(image.Path) is { } picture)
         {

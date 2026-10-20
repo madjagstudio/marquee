@@ -310,8 +310,8 @@ widgets:
 ```
 
 - **Widgets:** `text` (templates like `"{gpu.load:0}% · {gpu.vram_used|bytes}"`), `value`, `bar`, `gauge`, `graph`, `image`,
-  `shape` (a `rect`, `ellipse`, `line` or `arc`, which `when` rules can recolor), `donut` (a pie or donut of up to 12
-  slices), `group`.
+  `video` (a clip in a box), `shape` (a `rect`, `ellipse`, `line` or `arc`, which `when` rules can recolor), `donut`
+  (a pie or donut of up to 12 slices), `group`.
 - **Styles:** named in `styles:`, layered with `extends:`, changed by `when:` rules (`above`, `below`, `equals`, `stale`), animated with `pulse:`.
 - **Background:** `fill` (color or gradient), `image`, `shader` and `video` layers, each with `opacity` and `blend`; up
   to 16 layers, at most 4 of them shaders and 2 of them videos.
@@ -387,8 +387,23 @@ MP4, M4V, MOV and WMV clips go through Windows' own decoder (Media Foundation), 
 needs nothing extra; HEVC, VP9 and AV1 need Microsoft's extension for that format from the Microsoft Store. Animated
 GIF and WebP go through Skia. Any other extension is an error in `layout.yaml`, with its line.
 
-A theme can have at most 2 video layers. A clip's file can be up to 200 MB, and its frames up to 3840×2160 either way
-round (2160×3840 suits a portrait theme). Each clip is decoded on its own thread, a few frames ahead and scaled to the
+A `video` widget plays a clip the same way inside a box of its own, over the style's `fill` and under its stroke,
+clipped to its `radius`. Its `shadow` is the box's, as an `image` widget's is, so a clip that leaves part of the box
+empty still casts the whole box's shadow:
+
+```yaml
+- type: video
+  at: [470, 130]
+  size: [360, 210]
+  src: video/tunnel.mp4
+  fit: cover          # as for a layer (default cover)
+  style: { radius: 8, stroke: { width: 2, color: "#FFFFFF40" } }
+```
+
+A theme can have at most 2 video layers, and at most 4 videos in all, counting its video layers and video widgets
+together; a hidden one isn't loaded, but it counts. A video widget's box can cover at most as many pixels as the
+canvas (1920×480). A clip's file can be up to 200 MB, and its frames up to 3840×2160 either way round (2160×3840
+suits a portrait theme). Each clip is decoded on its own thread, a few frames ahead and scaled to the
 size it is drawn at, and the layer draws the frame for the current time, so drawing never waits on decoding and the
 clip plays at its own speed.
 

@@ -13,7 +13,7 @@ static partial class WidgetParser
 
     internal static readonly (string Name, string Value)[] Types =
         [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"),
-         ("shape", "shape"), ("donut", "donut"), ("group", "group")];
+         ("video", "video"), ("shape", "shape"), ("donut", "donut"), ("group", "group")];
 
     internal static readonly IReadOnlyDictionary<string, string[]> TypeKeys = new Dictionary<string, string[]>
     {
@@ -23,6 +23,7 @@ static partial class WidgetParser
         ["gauge"] = ["min", "max", "start", "sweep", "thickness", .. SegmentParser.Keys, "needle", "ticks"],
         ["graph"] = GraphParser.Keys,
         ["image"] = ["src", "fit"],
+        ["video"] = ["src", "fit"],
         ["shape"] = ["shape", .. ArcKeys],
         ["group"] = ["children"],
         ["donut"] = DonutParser.Keys,
@@ -49,12 +50,17 @@ static partial class WidgetParser
         public ParseErrors Errors { get; } = errors;
         public int Widgets;
 
+        /// Videos so far, the background's included (see MaxVideos).
+        public int Videos;
+
         /// Past MaxWidgets the rest of the layout isn't checked, so an aliased one can't report millions of problems.
         public bool OverLimit => Widgets > MaxWidgets;
     }
 
-    public static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what, ParseErrors errors) =>
-        ParseList(node, what, new Context(styles, errors), groupDepth: 0);
+    /// `videoLayers` is how many video layers the background has, which count towards MaxVideos.
+    public static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what, ParseErrors errors,
+        int videoLayers = 0) =>
+        ParseList(node, what, new Context(styles, errors) { Videos = videoLayers }, groupDepth: 0);
 
     /// A bad widget is reported and left out, and its siblings are still checked.
     static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, string what, Context context, int groupDepth)
@@ -63,7 +69,8 @@ static partial class WidgetParser
         foreach (var widgetNode in Yaml.List(node, what))
         {
             if (context.OverLimit) break;
-            if (context.Errors.Recover(() => Parse(widgetNode, context, groupDepth)) is { } widget)
+            if (context.Errors.Recover(() => Parse(widgetNode, context, groupDepth)) is { } widget
+                && WithinVideoLimit(widget, widgetNode, context))
                 widgets.Add(widget);
         }
 
@@ -109,6 +116,7 @@ static partial class WidgetParser
             "donut" => DonutParser.Parse(f, context.Styles, context.Errors),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
+            "video" => Video(f),
             "shape" => Shape(f),
             _ => new GroupWidget(children ?? ParseList(f.Required("children"), "children", context, groupDepth + 1)),
         };

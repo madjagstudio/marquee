@@ -37,7 +37,7 @@ public static partial class ThemeSchema
             {
                 Of = "style.stroke",
             },
-            new("shadow", SchemaKind.Block, "A shadow under text, a shape, a gauge's needle or a donut's slices.") { Of = "style.shadow" },
+            new("shadow", SchemaKind.Block, "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box.") { Of = "style.shadow" },
             new("glow", SchemaKind.Block, "A soft glow round text, a shape or a donut's slices.") { Of = "style.glow" },
             new("pulse", SchemaKind.Block, "Makes the opacity or the glow beat steadily.") { Of = "style.pulse" },
             new("opacity", SchemaKind.Number, "How solid the whole widget is: 0 hides it, 1 is fully solid.")

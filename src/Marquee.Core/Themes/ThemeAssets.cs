@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Marquee.Core.Video;
 using SkiaSharp;
 
@@ -16,13 +17,14 @@ public sealed class ThemeAssets : IDisposable
     readonly Dictionary<(string Family, int Weight), SKTypeface> _families = [];
     readonly Dictionary<ShaderLayer, SKRuntimeEffect> _shaders = new(ReferenceEqualityComparer.Instance);
     readonly Dictionary<VideoLayer, VideoPlayer> _videos = new(ReferenceEqualityComparer.Instance);
+    readonly Dictionary<VideoWidget, VideoPlayer> _videoWidgets = new(ReferenceEqualityComparer.Instance);
 
     ThemeAssets() { }
 
     /// `fps` is the rate the theme will run at, which sets the frame budget each shader layer must fit in. Video
-    /// layers start playing here, each on its own thread, until the assets are disposed. `refused` says which files, as
-    /// layout.yaml names them, are not to be opened at all: `marquee validate` has already reported them (a file through
-    /// a link, or over the size limit), and they are left out with no warning of their own.
+    /// layers and video widgets start playing here, each on its own thread, until the assets are disposed. `refused`
+    /// says which files, as layout.yaml names them, are not to be opened at all: `marquee validate` has already reported
+    /// them (a file through a link, or over the size limit), and they are left out with no warning of their own.
     internal static ThemeAssets Load(string folder, ThemeSpec spec, List<ThemeWarning> warnings, int fps, ShaderProbe probe,
         VideoProbe videoProbe, Func<string, bool>? refused = null)
     {
@@ -47,6 +49,11 @@ public sealed class ThemeAssets : IDisposable
             foreach (var layer in spec.Background.OfType<VideoLayer>().Where(l => allowed(l.Path)))
                 if (VideoAssets.Load(folder, layer, warnings, spec.Canvas.Size, videoProbe) is { } player)
                     assets._videos[layer] = player;
+
+            // Each frame is scaled to the widget's box, in the coordinates it is drawn in: its group's, for a child.
+            foreach (var widget in widgets.OfType<VideoWidget>().Where(w => allowed(w.Path)))
+                if (VideoAssets.Load(folder, widget.Path, widget.Fit, widget.Bounds, warnings, videoProbe) is { } player)
+                    assets._videoWidgets[widget] = player;
 
             var fonts = widgets.SelectMany(w => w.When.Select(r => r.Style).Prepend(w.Style))
                 .Select(s => s.Font)
@@ -82,13 +89,18 @@ public sealed class ThemeAssets : IDisposable
     /// The playing clip for a layer, or null if it was skipped (see the theme's warnings).
     public VideoPlayer? Video(VideoLayer layer) => _videos.GetValueOrDefault(layer);
 
+    /// The playing clip for a video widget, or null if it was skipped (see the theme's warnings) or is hidden.
+    public VideoPlayer? Video(VideoWidget widget) => _videoWidgets.GetValueOrDefault(widget);
+
     /// Why clips stopped partway since this was last asked, one line per clip, each reported once. The render loop asks
     /// before each frame it renders, and logs them.
     internal IEnumerable<string> TakeVideoErrors()
     {
-        foreach (var (layer, player) in _videos)
+        var players = _videos.Select(video => (video.Key.Path, Player: video.Value))
+            .Concat(_videoWidgets.Select(video => (video.Key.Path, Player: video.Value)));
+        foreach (var (path, player) in players)
             if (player.TakeError() is { } error)
-                yield return $"Video '{layer.Path}' stopped playing and shows its last frame: {error}";
+                yield return $"Video '{path}' stopped playing and shows its last frame: {error}";
     }
 
     /// The typeface for a style's font (a family name, or a .ttf/.otf file in the theme folder) at a weight.
@@ -118,8 +130,9 @@ public sealed class ThemeAssets : IDisposable
 
     public void Dispose()
     {
-        foreach (var player in _videos.Values) player.Dispose(); // stops their threads
+        StopVideos([.. _videos.Values, .. _videoWidgets.Values]); // stops their threads
         _videos.Clear();
+        _videoWidgets.Clear();
         foreach (var image in _images.Values) image.Dispose();
         foreach (var typeface in _fontFiles.Values) typeface.Dispose();
         foreach (var effect in _shaders.Values) effect.Dispose();
@@ -127,6 +140,16 @@ public sealed class ThemeAssets : IDisposable
         _fontFiles.Clear();
         _shaders.Clear();
         _families.Clear(); // installed-font typefaces belong to the font manager and may be shared with other themes
+    }
+
+    /// Stops the players and disposes them. All are signalled first, then each is joined against one deadline from
+    /// that moment, so 4 decoders stuck in a call (a network share that went away) hold up a theme switch for one
+    /// player's StopTimeout, not 4 of them.
+    internal static void StopVideos(IReadOnlyList<VideoPlayer> players)
+    {
+        foreach (var player in players) player.RequestStop();
+        var clock = Stopwatch.StartNew();
+        foreach (var player in players) player.Dispose(player.StopTimeout - clock.Elapsed);
     }
 
     static IEnumerable<WidgetSpec> Flatten(IEnumerable<WidgetSpec> widgets) =>

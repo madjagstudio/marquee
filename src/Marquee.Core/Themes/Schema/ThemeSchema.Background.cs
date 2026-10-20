@@ -72,7 +72,7 @@ public static partial class ThemeSchema
             ]),
         ]);
 
-    /// An image layer's, a video layer's and an image widget's `fit`, which differ only in their default.
+    /// An image layer's, a video layer's, an image widget's and a video widget's `fit`, which differ only in their default.
     static SchemaKey Fit(string defaultFit) => new("fit", SchemaKind.Enum,
         "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and "
         + "none keeps its own size, centred.")

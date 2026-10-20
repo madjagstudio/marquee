@@ -27,7 +27,8 @@ public static partial class ThemeSchema
         ("bar", [.. BoxStyles, "color", "track"]),
         ("gauge", ["color", "fill", "track", "stroke.cap", "radius", "font", "size", "weight", "letter_spacing", "shadow"]),
         ("graph", ["color", "fill", "track", "stroke", "radius"]),
-        ("image", [.. BoxStyles]),
+        ("image", [.. BoxStyles, "shadow"]),
+        ("video", [.. BoxStyles, "shadow"]),
         ("shape", ["fill", "stroke", "shadow", "glow", "radius"]),
         ("donut", ["font", "size", "weight", "color", "letter_spacing", "fill", "track", "stroke.width", "stroke.color", "shadow", "glow"]),
         ("group", [.. TextStyles, .. BoxStyles]),
@@ -98,6 +99,12 @@ public static partial class ThemeSchema
             at: [0, 0]
             size: [120, 120]
             src: images/picture.png
+            """,
+        "video" => """
+            type: video
+            at: [0, 0]
+            size: [320, 180]
+            src: videos/clip.mp4
             """,
         "shape" => """
             type: shape

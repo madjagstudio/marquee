@@ -190,6 +190,52 @@ public class VideoPlayerTests
     }
 
     [Fact]
+    public void RequestStop_returns_at_once_and_stops_the_frames_while_Dispose_still_cleans_up()
+    {
+        var decoder = new FakeDecoder(100, Rgb) { BlockFrom = 1 };
+        var player = new VideoPlayer(decoder, new FrameScaler(ImageFit.Stretch, decoder.Size, SKRect.Create(8, 8)))
+        {
+            StopTimeout = Ms(200),
+        };
+        Assert.True(Wait.Until(() => decoder.ReadBy != Thread.CurrentThread)); // its thread is in Next, blocked
+
+        var clock = Stopwatch.StartNew();
+        player.RequestStop();
+        Assert.True(clock.Elapsed < Ms(100), $"RequestStop waited {clock.Elapsed.TotalMilliseconds:0} ms");
+        Assert.Null(player.FrameAt(Ms(100)));
+
+        decoder.Release();
+        player.Dispose();
+        Assert.True(decoder.IsDisposed);
+        player.Dispose(); // a second time does nothing
+    }
+
+    [Fact]
+    public void Stopping_several_stuck_players_waits_one_timeout_for_all_of_them_not_one_each()
+    {
+        // A theme can play 4 clips. With each decoder stuck (a network share that went away), stopping them one after
+        // another would hold the render thread for 4 timeouts on a theme switch; signalled together and joined against
+        // one deadline, they cost one.
+        var timeout = Ms(500);
+        var decoders = Enumerable.Range(0, 4).Select(_ => new FakeDecoder(100, Rgb) { BlockFrom = 1 }).ToList();
+        var players = decoders.Select(decoder =>
+            new VideoPlayer(decoder, new FrameScaler(ImageFit.Stretch, decoder.Size, SKRect.Create(8, 8))) { StopTimeout = timeout })
+            .ToList();
+        Assert.True(Wait.Until(() => decoders.All(d => d.ReadBy is { } thread && thread != Thread.CurrentThread)));
+
+        var clock = Stopwatch.StartNew();
+        ThemeAssets.StopVideos(players);
+        clock.Stop();
+
+        Assert.True(clock.Elapsed >= timeout - Ms(50), $"Stopping waited only {clock.Elapsed.TotalMilliseconds:0} ms");
+        Assert.True(clock.Elapsed < timeout * 2, $"Stopping waited {clock.Elapsed.TotalMilliseconds:0} ms for 4 stuck players");
+        Assert.All(players, player => Assert.Null(player.FrameAt(Ms(100))));
+        Assert.All(decoders, decoder => Assert.False(decoder.IsDisposed)); // still in use by the stuck calls
+        foreach (var decoder in decoders) decoder.Release();
+        Assert.True(Wait.Until(() => decoders.All(d => d.IsDisposed)), "A decoder was never disposed once its call returned");
+    }
+
+    [Fact]
     public void A_damaged_frame_stops_playback_on_the_last_good_frame_and_is_reported_once()
     {
         var decoder = new FakeDecoder(100, Rgb) { FailAt = 2 };
