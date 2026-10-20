@@ -32,6 +32,7 @@ public static partial class ThemeSchema
             },
             Hidden("Leaves the layer off the screen; `marquee validate` still checks it."),
             Locked("Stops the theme editor changing the layer. The screen ignores it."),
+            Name("layer"),
         ]),
         [
             new("layer.fill", "fill", "Fill layer", "A color or gradient.",
@@ -72,7 +73,7 @@ public static partial class ThemeSchema
             ]),
         ]);
 
-    /// An image layer's, a video layer's and an image widget's `fit`, which differ only in their default.
+    /// An image layer's, a video layer's, an image widget's and a video widget's `fit`, which differ only in their default.
     static SchemaKey Fit(string defaultFit) => new("fit", SchemaKind.Enum,
         "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and "
         + "none keeps its own size, centred.")

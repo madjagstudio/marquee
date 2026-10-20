@@ -75,21 +75,40 @@ public static class HwInfoSharedMemory
                 HwInfoReadingType.Power => (ReadingKind.Power, 1.0),
                 HwInfoReadingType.Clock => (ReadingKind.Clock, 1.0),
                 HwInfoReadingType.Usage => (ReadingKind.Load, 1.0),
+                HwInfoReadingType.Voltage => (ReadingKind.Voltage, 1.0),
                 HwInfoReadingType.Other when r.Unit == "MB" => (ReadingKind.Bytes, 1024.0 * 1024),
                 HwInfoReadingType.Other when r.Unit == "GB" => (ReadingKind.Bytes, 1024.0 * 1024 * 1024),
                 _ => (null, 0),
             };
             if (mapping.Kind is not { } k) continue;
 
-            var hardware = r.Label.StartsWith("Physical Memory", StringComparison.OrdinalIgnoreCase) ? HardwareKind.Memory
-                : r.Sensor.StartsWith("CPU", StringComparison.OrdinalIgnoreCase) ? HardwareKind.Cpu
-                : r.Sensor.StartsWith("GPU", StringComparison.OrdinalIgnoreCase) ? HardwareKind.Gpu
-                : HardwareKind.Other;
-            var label = k == ReadingKind.Fan && r.UserLabel.Length > 0 ? r.UserLabel : r.Label;
-            result.Add(new HardwareReading(hardware, k, label, r.Value * mapping.Scale));
+            result.Add(new HardwareReading(Hardware(r), k, Label(r), r.Value * mapping.Scale) { Device = Device(r.Sensor) });
         }
 
         return result;
+    }
+
+    /// Every reading as HWiNFO gives it, for `marquee sensors --raw`: its type and unit, whether or not a key takes it.
+    public static IReadOnlyList<RawReading> ToRaw(IEnumerable<HwInfoReading> readings) =>
+        readings.Select(r => new RawReading(Hardware(r), Device(r.Sensor), r.Type.ToString(), Label(r), r.Value, r.Unit)).ToList();
+
+    static HardwareKind Hardware(HwInfoReading r) =>
+        r.Label.StartsWith("Physical Memory", StringComparison.OrdinalIgnoreCase) ? HardwareKind.Memory
+        : r.Sensor.StartsWith("CPU", StringComparison.OrdinalIgnoreCase) ? HardwareKind.Cpu
+        : r.Sensor.StartsWith("GPU", StringComparison.OrdinalIgnoreCase) ? HardwareKind.Gpu
+        : HardwareKind.Other;
+
+    static string Label(HwInfoReading r) => r.Type == HwInfoReadingType.Fan && r.UserLabel.Length > 0 ? r.UserLabel : r.Label;
+
+    /// The device a sensor belongs to. HWiNFO numbers its CPUs and GPUs and can split one into several sensors
+    /// ("CPU [#0]: AMD Ryzen 9 7950X" and "CPU [#0]: AMD Ryzen 9 7950X: Enhanced"), so a numbered sensor's name is
+    /// cut at the colon after the device's own name; any other sensor is a device of its own.
+    internal static string Device(string sensor)
+    {
+        var numbered = sensor.IndexOf("]: ", StringComparison.Ordinal);
+        if (numbered < 0 || !sensor[..numbered].Contains("[#", StringComparison.Ordinal)) return sensor;
+        var end = sensor.IndexOf(':', numbered + 3);
+        return end < 0 ? sensor : sensor[..end];
     }
 
     static uint U32(ReadOnlySpan<byte> memory, int offset) => BinaryPrimitives.ReadUInt32LittleEndian(memory[offset..]);

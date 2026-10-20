@@ -204,7 +204,7 @@ public class WidgetParsingTests
 
     [Theory]
     [InlineData("- at: [0, 0]", 6, "widget is missing 'type'")]
-    [InlineData("- type: dial", 6, "widget type must be one of: text, value, bar, gauge, graph, image, shape, donut, group; not 'dial'")]
+    [InlineData("- type: dial", 6, "widget type must be one of: text, value, bar, gauge, graph, image, video, shape, donut, group; not 'dial'")]
     [InlineData("- text", 6, "Each widget must be a mapping with a type, e.g. - type: value")]
     [InlineData("- { type: value, size: [10, 10], source: x }", 6, "value widget is missing 'at'")]
     [InlineData("- { type: value, at: [0, 0], size: [0, 10], source: x }", 6, "size must be at least 1")]
@@ -216,7 +216,7 @@ public class WidgetParsingTests
     [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"°C\"", 10, "format \"°C\" never shows the value; include {0}, e.g. \"{0:0.0}°C\"")]
     [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"{0:F99}\"", 10, "number format 'F99' asks for too many digits (the limit is 15)")]
     [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"{0,1000}\"", 10, "format \"{0,1000}\" pads the value to 1000 characters (the limit is 100)")]
-    [InlineData("- { type: text, at: [0, 0], size: [10, 10], text: hi, format: x }", 6, "Unknown key 'format' in text widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, text")]
+    [InlineData("- { type: text, at: [0, 0], size: [10, 10], text: hi, format: x }", 6, "Unknown key 'format' in text widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, name, text, spans")]
     [InlineData("- { type: value, at: [0, 0], size: [10, 10], source: x, style: hott }", 6, "Unknown style 'hott'. Defined styles: base, hot")]
     [InlineData("- { type: bar, at: [0, 0], size: [10, 10], source: x, min: 50, max: 50 }", 6, "bar widget max must be greater than min")]
     [InlineData("- { type: bar, at: [0, 0], size: [10, 10], source: x, direction: up }", 6, "direction must be one of: horizontal, vertical; not 'up'")]

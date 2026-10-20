@@ -22,7 +22,8 @@ public static partial class ThemeSchema
         ]);
 
     static SchemaBlock ShadowBlock() => new("style.shadow", "shadow", "Shadow",
-        "A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.",
+        "A copy of the text, a shape, a gauge's needle or a donut's slices, or of an image or video widget's box, drawn under "
+        + "it, offset and softened.",
         [
             new("color", SchemaKind.Color, "The shadow's color. There is no shadow without it."),
             new("x", SchemaKind.Number, "How far right the shadow sits; negative moves it left.")
@@ -47,6 +48,17 @@ public static partial class ThemeSchema
             {
                 Default = Number(StyleDefaults.GlowRadius), Min = 0, Unit = SchemaUnit.Px,
             },
+        ]);
+
+    static SchemaBlock TextStrokeBlock() => new("style.text_stroke", "text_stroke", "Text stroke",
+        "An outline round each letter, and round the lines under and through them. It is drawn behind the letters' fill, "
+        + "so they keep their shape and the outline shows `width` px outside them, with rounded corners.",
+        [
+            new("width", SchemaKind.Number, "How far the outline shows outside the letters; 0 draws none.")
+            {
+                Default = Number(StyleDefaults.TextStrokeWidth), Min = 0, Unit = SchemaUnit.Px,
+            },
+            new("color", SchemaKind.Paint, "The outline's color or gradient, which spans the widget's box. There is no outline without it."),
         ]);
 
     static SchemaBlock PulseBlock() => new("style.pulse", "pulse", "Pulse",

@@ -116,7 +116,7 @@ it pauses or quits, and the others wait for it.
 
     marquee devices
     marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
-    marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage] [--config <file>]
+    marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage] [--raw] [--config <file>]
     marquee run [<theme-folder>] [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
                 [--http-port 1024-65535 | --no-http] [--no-claude-usage] [--no-fps] [--config <file>]
     marquee validate <theme-folder|zip> [--fps 1-60]
@@ -310,15 +310,55 @@ widgets:
 ```
 
 - **Widgets:** `text` (templates like `"{gpu.load:0}% · {gpu.vram_used|bytes}"`), `value`, `bar`, `gauge`, `graph`, `image`,
-  `shape` (a `rect`, `ellipse`, `line` or `arc`, which `when` rules can recolor), `donut` (a pie or donut of up to 12
-  slices), `group`.
+  `video` (a clip in a box), `shape` (a `rect`, `ellipse`, `line` or `arc`, which `when` rules can recolor), `donut`
+  (a pie or donut of up to 12 slices), `group`.
 - **Styles:** named in `styles:`, layered with `extends:`, changed by `when:` rules (`above`, `below`, `equals`, `stale`), animated with `pulse:`.
+  Letter effects: an outline (`text_stroke`), a color or gradient for the letters alone (`text_fill`), `italic`,
+  `underline`, `strike` and `case` (`upper`, `lower` or `title`).
 - **Background:** `fill` (color or gradient), `image`, `shader` and `video` layers, each with `opacity` and `blend`; up
   to 16 layers, at most 4 of them shaders and 2 of them videos.
 - **Colors** are quoted CSS hex (`"#RRGGBB"` or `"#RRGGBBAA"`): an unquoted `#` starts a YAML comment.
+- **Gradients** go in `fill`, `track`, a stroke's `color` and fill layers:
+  `{ linear: ["#000000", "#36D1DC", "#FFFFFF"], stops: [0, 0.8, 1], angle: 90 }` or
+  `{ radial: ["#FFFFFF60", "#00000000"], center: [0.3, 0.4], radius: 0.8 }`. `stops` place the colors, and a radial
+  gradient's `center` and `radius` move and size it.
 - **Fonts:** the bundled Inter by default, an installed font by name, or a `.ttf`/`.otf` file in the theme folder.
+  Characters the font lacks, such as Japanese with Inter, are drawn with a Windows font that has them. Those are the
+  right letters, but Arabic letters aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet
+  moved into place. Color emoji keep their own colors, and take no glow, shadow or outline.
+- **Names:** `name` (up to 64 characters) on a widget or a background layer is what the theme editor's layers list
+  calls it; the screen ignores it.
 - **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so
-  `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m".
+  `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m". `"{now|time}"` is the local short time, and
+  `"{now|time:ddd HH:mm}"` or a value's `format: "time:HH:mm"` takes a .NET date and time pattern. Times follow the
+  PC's time zone and regional format (day and month names, the short time, a 24-hour clock), as the taskbar clock does.
+  Letters in a pattern are pattern letters, so quote words (`"{now|time:'Today is' dddd}"`) and write a letter alone
+  as `%H` (`"{now|time:%H}"`). The pattern runs to the closing brace, so spaces before the brace are kept.
+
+A value with a smaller unit, such as a big "52" with a small "°C", is a value widget with `spans` instead of
+`format`. Each span has its own template and style, and they share a baseline, so the unit stays beside the number as
+the number's width changes. `{0}` is the widget's value after `smooth` (`{0:0.0}` formats it), and other placeholders
+still read their keys. A missing value shows a single "—" in the first span's style. The widget's style places the
+spans, and its `when` rules change every span:
+
+```yaml
+- type: value
+  at: [140, 500]
+  size: [300, 90]
+  source: cpu.temp
+  smooth: 400
+  style: { size: 72, color: "#F4F6FA", align: center }
+  spans:
+    - { text: "{0:0}" }
+    - { text: "°C", style: { size: 30, color: "#36D1DC" } }
+  when:
+    - { above: 85, style: { color: "#FF5A36" } }
+```
+
+A text widget takes `spans` instead of `text` in the same way, for words in several styles; its placeholders show
+each reading as it comes, as a text widget's always do, since only a value widget's `{0}` follows `smooth`. A span's
+style sets how its letters look. The box keys (`fill`, `stroke`, `radius`, `padding`, `align`, `wrap`, `line_height`,
+`opacity`, `blend` and `pulse`) are the widget's: a span's own style can't set them, and a named style's are left out.
 
 Every key, with its values and default, is in [docs/themes-reference.md](docs/themes-reference.md). VS Code completes
 and checks theme files once the YAML extension (Red Hat) is installed: the examples' first line,
@@ -327,8 +367,9 @@ That path works only inside this repo: a copied theme needs its first line point
 repo gives it a URL.
 
 See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents` and `themes/example-showcase`, a
-tour of the format's newer parts: shapes, dials, segmented meters, charts, a donut, wrapped text, rotation,
-blending and hidden widgets. A full theme authoring guide comes with the public release.
+tour of the format's newer parts: a clock with the weekday, an outlined title in gradient letters, a video box, a big
+number with a small unit, shapes, dials, segmented meters, charts, a donut, wrapped text, rotation, blending, names
+and hidden widgets. A full theme authoring guide comes with the public release.
 
 ### Shader backgrounds
 
@@ -379,8 +420,23 @@ MP4, M4V, MOV and WMV clips go through Windows' own decoder (Media Foundation), 
 needs nothing extra; HEVC, VP9 and AV1 need Microsoft's extension for that format from the Microsoft Store. Animated
 GIF and WebP go through Skia. Any other extension is an error in `layout.yaml`, with its line.
 
-A theme can have at most 2 video layers. A clip's file can be up to 200 MB, and its frames up to 3840×2160 either way
-round (2160×3840 suits a portrait theme). Each clip is decoded on its own thread, a few frames ahead and scaled to the
+A `video` widget plays a clip the same way inside a box of its own, over the style's `fill` and under its stroke,
+clipped to its `radius`. Its `shadow` is the box's, as an `image` widget's is, so a clip that leaves part of the box
+empty still casts the whole box's shadow:
+
+```yaml
+- type: video
+  at: [470, 130]
+  size: [360, 210]
+  src: video/tunnel.mp4
+  fit: cover          # as for a layer (default cover)
+  style: { radius: 8, stroke: { width: 2, color: "#FFFFFF40" } }
+```
+
+A theme can have at most 2 video layers, and at most 4 videos in all, counting its video layers and video widgets
+together; a hidden one isn't loaded, but it counts. A video widget's box can cover at most as many pixels as the
+canvas (1920×480). A clip's file can be up to 200 MB, and its frames up to 3840×2160 either way round (2160×3840
+suits a portrait theme). Each clip is decoded on its own thread, a few frames ahead and scaled to the
 size it is drawn at, and the layer draws the frame for the current time, so drawing never waits on decoding and the
 clip plays at its own speed.
 
@@ -557,8 +613,23 @@ give them a ttl. `custom: { max_keys: N }` in `config.yaml` sets the limit, from
 ## Hardware sensors
 
 `marquee sensors` lists every key and its current value. Keys include `cpu.temp`, `cpu.load`, `cpu.clock`,
-`cpu.power`, `gpu.temp`, `gpu.load`, `gpu.clock`, `gpu.power`, `gpu.vram_used`, `ram.used_pct`, `ram.used` and
-`fan.<name>`. A key whose source stops updating goes stale after 5 seconds and shows `—`.
+`cpu.power`, `cpu.voltage`, `gpu.temp`, `gpu.load`, `gpu.clock`, `gpu.power`, `gpu.voltage`, `gpu.fan`,
+`gpu.vram_used`, `ram.used_pct`, `ram.used` and `fan.<name>`. A key whose source stops updating goes stale after
+5 seconds and shows `—`.
+
+`cpu.voltage` and `gpu.voltage` are the CPU's and the GPU's core voltage, in volts. With LibreHardwareMonitor, the CPU
+voltage needs the elevated tray (or an elevated terminal), as CPU temperatures do, and is missing unelevated; the GPU
+voltage usually doesn't, as the card's driver reports it. With HWiNFO, HWiNFO reads both. `gpu.fan` is the GPU's
+fan speed in RPM: the first fan, on a card with several. The card's fans are still listed as `fan.<name>` too. On a
+PC with two GPUs, such as a CPU's integrated graphics beside a card, `gpu.voltage` and `gpu.fan` come from the one with
+the most dedicated memory, the card.
+
+`marquee sensors --raw` then lists every reading the hardware source reported, sorted, as the source gives them: the
+hardware (`Cpu`, `Gpu`, `Memory`, or `Other` for the motherboard and everything else), the source's type for the
+reading, its label, its value in the source's own unit (HWiNFO names it; LibreHardwareMonitor's `Data` is GB and
+`SmallData` MB), and the device. Readings no key uses are listed too, and so are the zeros an unelevated
+LibreHardwareMonitor reports for sensors it can't read. Keys are picked by label, so when one is missing on your PC,
+`--raw` shows what the source calls that sensor. Like the rest of `marquee sensors`, it only reads.
 
 The source is `--sensors`, or `sensors:` in `config.yaml`.
 

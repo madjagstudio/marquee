@@ -32,7 +32,7 @@ static partial class BackgroundParser
     // The keys a layer accepts: one of Kinds, which says what the layer is, and the others, some of which only apply to
     // some kinds. ThemeSchema describes each, and its drift test reads these lists.
     internal static readonly string[] Kinds = ["fill", "image", "shader", "video"];
-    internal static readonly string[] LayerKeys = [.. Kinds, "fit", "uniforms", "scale", "opacity", "blend", "hidden", "locked"];
+    internal static readonly string[] LayerKeys = [.. Kinds, "fit", "uniforms", "scale", "opacity", "blend", "hidden", "locked", "name"];
 
     internal static readonly (string Key, string[] Kinds)[] KindOnly =
         [("fit", ["image", "video"]), ("uniforms", ["shader"]), ("scale", ["shader"])];
@@ -80,10 +80,11 @@ static partial class BackgroundParser
         {
             Hidden = fields.Optional("hidden") is { } hidden && Yaml.Bool(hidden, "hidden"),
             Locked = fields.Optional("locked") is { } locked && Yaml.Bool(locked, "locked"),
+            Name = fields.Optional("name") is { } name ? NameParser.Parse(name) : null,
         };
     }
 
-    /// The layer's kind and how it draws: every key but hidden and locked.
+    /// The layer's kind and how it draws: every key but hidden, locked and name.
     static BackgroundLayer Content(Fields fields)
     {
         var what = fields.What;
@@ -113,11 +114,12 @@ static partial class BackgroundParser
     }
 
     /// The extension picks the decoder, so a clip no decoder reads is caught here, with its line, rather than at load.
-    static string VideoPath(YamlNode node)
+    /// `what` is the key: a layer's `video`, or a video widget's `src`.
+    internal static string VideoPath(YamlNode node, string what = "video")
     {
-        var path = Yaml.Text(node, "video");
+        var path = Yaml.Text(node, what);
         if (!VideoExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
-            throw Yaml.Error(node, $"video must be a {string.Join(", ", VideoExtensions.SkipLast(1))} or {VideoExtensions[^1]} file, not '{path}'");
+            throw Yaml.Error(node, $"{what} must be a {string.Join(", ", VideoExtensions.SkipLast(1))} or {VideoExtensions[^1]} file, not '{path}'");
         return path;
     }
 

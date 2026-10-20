@@ -15,6 +15,10 @@ public static partial class ThemeSchema
     /// The text keys a text or value widget draws with, which a group passes down to its children (StyleSpec.Inherited).
     static string[] TextStyles => ["font", "size", "weight", "color", "align", "letter_spacing", "line_height", "wrap"];
 
+    /// The letter effects (TextInk and TextCase), which every painter that draws text with a style takes: text and value
+    /// widgets, a dial's tick labels and a donut's labels. A group passes them down, as it does TextStyles.
+    static string[] LetterStyles => ["text_stroke", "text_fill", "italic", "underline", "strike", "case"];
+
     /// A box's fill and outline (BoxPainter), with `radius` corners.
     static string[] BoxStyles => ["fill", "stroke.width", "stroke.color", "radius"];
 
@@ -22,15 +26,17 @@ public static partial class ThemeSchema
     /// key of a style's stroke, shadow, glow or pulse is written as `stroke.cap`; the block's name alone means all of it.
     internal static IReadOnlyList<(string Type, string[] Keys)> WidgetStyles =>
     [
-        ("text", [.. TextStyles, .. BoxStyles, "padding", "shadow", "glow"]),
-        ("value", [.. TextStyles, .. BoxStyles, "padding", "shadow", "glow"]),
+        ("text", [.. TextStyles, .. BoxStyles, "padding", "shadow", "glow", .. LetterStyles]),
+        ("value", [.. TextStyles, .. BoxStyles, "padding", "shadow", "glow", .. LetterStyles]),
         ("bar", [.. BoxStyles, "color", "track"]),
-        ("gauge", ["color", "fill", "track", "stroke.cap", "radius", "font", "size", "weight", "letter_spacing", "shadow"]),
+        ("gauge", ["color", "fill", "track", "stroke.cap", "radius", "font", "size", "weight", "letter_spacing", "shadow", .. LetterStyles]),
         ("graph", ["color", "fill", "track", "stroke", "radius"]),
-        ("image", [.. BoxStyles]),
+        ("image", [.. BoxStyles, "shadow"]),
+        ("video", [.. BoxStyles, "shadow"]),
         ("shape", ["fill", "stroke", "shadow", "glow", "radius"]),
-        ("donut", ["font", "size", "weight", "color", "letter_spacing", "fill", "track", "stroke.width", "stroke.color", "shadow", "glow"]),
-        ("group", [.. TextStyles, .. BoxStyles]),
+        ("donut", ["font", "size", "weight", "color", "letter_spacing", "fill", "track", "stroke.width", "stroke.color", "shadow", "glow",
+            .. LetterStyles]),
+        ("group", [.. TextStyles, .. BoxStyles, .. LetterStyles]),
     ];
 
     /// The widget types that draw with a style key, written as WidgetStyles writes it (`radius`, `stroke.cap`): those
@@ -98,6 +104,12 @@ public static partial class ThemeSchema
             at: [0, 0]
             size: [120, 120]
             src: images/picture.png
+            """,
+        "video" => """
+            type: video
+            at: [0, 0]
+            size: [320, 180]
+            src: videos/clip.mp4
             """,
         "shape" => """
             type: shape

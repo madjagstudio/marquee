@@ -59,7 +59,7 @@
       "description": "A quoted hex color: \"#RGB\", \"#RRGGBB\" or \"#RRGGBBAA\", where AA is the alpha, or \"transparent\". Quote it: an unquoted # starts a YAML comment."
     },
     "paint": {
-      "description": "A color, or a gradient: { linear: [\"#000000\", \"#1E2A44\"], angle: 90 } or { radial: [\"#1E2A44\", \"#000000\"] }.",
+      "description": "A color, or a gradient: { linear: [\"#000000\", \"#1E2A44\"], angle: 90 } or { radial: [\"#1E2A44\", \"#000000\"] }. Either takes stops to place its colors, as in { linear: [\"#000000\", \"#36D1DC\", \"#FFFFFF\"], stops: [0, 0.8, 1] }, and a radial one center and radius to move and size it: { radial: [\"#FFFFFF60\", \"#00000000\"], center: [0.3, 0.4], radius: 0.8 }.",
       "oneOf": [
         {
           "$ref": "#/definitions/color"
@@ -96,7 +96,7 @@
       "additionalProperties": false
     },
     "style": {
-      "description": "Styles: How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.",
+      "description": "Styles: How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) and its letter effects (text_stroke, text_fill, italic, underline, strike, case) down to its children; the others stay with its box.",
       "type": "object",
       "properties": {
         "extends": {
@@ -106,8 +106,8 @@
         },
         "font": {
           "type": "string",
-          "description": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.",
-          "markdownDescription": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.",
+          "description": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. Characters the font lacks are drawn with a Windows font that has them: the right letters, but Arabic letters aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet moved into place. Color emoji keep their own colors, and take no glow, shadow or outline.",
+          "markdownDescription": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. Characters the font lacks are drawn with a Windows font that has them: the right letters, but Arabic letters aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet moved into place. Color emoji keep their own colors, and take no glow, shadow or outline.",
           "default": "Inter"
         },
         "size": {
@@ -182,8 +182,8 @@
               "$ref": "#/definitions/style.shadow"
             }
           ],
-          "description": "A shadow under text, a shape, a gauge's needle or a donut's slices.",
-          "markdownDescription": "A shadow under text, a shape, a gauge's needle or a donut's slices."
+          "description": "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box.",
+          "markdownDescription": "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box."
         },
         "glow": {
           "allOf": [
@@ -270,6 +270,53 @@
           "description": "Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way.",
           "markdownDescription": "Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way.",
           "default": false
+        },
+        "text_stroke": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/style.text_stroke"
+            }
+          ],
+          "description": "An outline round each letter, drawn behind the letters' fill.",
+          "markdownDescription": "An outline round each letter, drawn behind the letters' fill."
+        },
+        "text_fill": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/paint"
+            }
+          ],
+          "description": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one.",
+          "markdownDescription": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one."
+        },
+        "italic": {
+          "type": "boolean",
+          "description": "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.",
+          "markdownDescription": "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.",
+          "default": false
+        },
+        "underline": {
+          "type": "boolean",
+          "description": "A line under the text, as long as the text, in the letters' color.",
+          "markdownDescription": "A line under the text, as long as the text, in the letters' color.",
+          "default": false
+        },
+        "strike": {
+          "type": "boolean",
+          "description": "A line through the text, as long as the text, in the letters' color.",
+          "markdownDescription": "A line through the text, as long as the text, in the letters' color.",
+          "default": false
+        },
+        "case": {
+          "enum": [
+            "upper",
+            "lower",
+            "title",
+            "none"
+          ],
+          "description": "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.",
+          "markdownDescription": "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.",
+          "default": "none"
         }
       },
       "additionalProperties": false
@@ -308,7 +355,7 @@
       "additionalProperties": false
     },
     "style.shadow": {
-      "description": "Shadow: A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.",
+      "description": "Shadow: A copy of the text, a shape, a gauge's needle or a donut's slices, or of an image or video widget's box, drawn under it, offset and softened.",
       "type": "object",
       "properties": {
         "color": {
@@ -400,6 +447,29 @@
           "description": "The high point, as a fraction of the normal opacity or glow. (fraction, 0 to 1)",
           "markdownDescription": "The high point, as a fraction of the normal opacity or glow. (fraction, 0 to 1)",
           "default": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "style.text_stroke": {
+      "description": "Text stroke: An outline round each letter, and round the lines under and through them. It is drawn behind the letters' fill, so they keep their shape and the outline shows `width` px outside them, with rounded corners.",
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How far the outline shows outside the letters; 0 draws none. (px, at least 0)",
+          "markdownDescription": "How far the outline shows outside the letters; 0 draws none. (px, at least 0)",
+          "default": 1
+        },
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/paint"
+            }
+          ],
+          "description": "The outline's color or gradient, which spans the widget's box. There is no outline without it.",
+          "markdownDescription": "The outline's color or gradient, which spans the widget's box. There is no outline without it."
         }
       },
       "additionalProperties": false
@@ -640,6 +710,169 @@
         }
       ]
     },
+    "text.span": {
+      "description": "Text spans: One run of a text or value widget's `spans`. Its style goes over the widget's, and the widget's `when` rules go over every span, so a rule that turns the text red turns every span red. A line is as tall as its largest span, and its spans share the baseline of the tallest.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The span's text, a template as a text widget's is, where a value widget's {0} is its value. A line break in it starts a new line.",
+          "markdownDescription": "The span's text, a template as a text widget's is, where a value widget's {0} is its value. A line break in it starts a new line."
+        },
+        "style": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/text.span.style"
+            }
+          ],
+          "description": "The span's letters: a style's name, or a style written in place, with the text keys only. The box keys, such as `fill`, `padding`, `align` and `wrap`, are the widget's: written in place they are an error, and a named style's are left out without a warning.",
+          "markdownDescription": "The span's letters: a style's name, or a style written in place, with the text keys only. The box keys, such as `fill`, `padding`, `align` and `wrap`, are the widget's: written in place they are an error, and a named style's are left out without a warning."
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "text.span.style": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "extends": {
+              "type": "string",
+              "description": "Another named style to start from; keys set here override it.",
+              "markdownDescription": "Another named style to start from; keys set here override it."
+            },
+            "font": {
+              "type": "string",
+              "description": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. Characters the font lacks are drawn with a Windows font that has them: the right letters, but Arabic letters aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet moved into place. Color emoji keep their own colors, and take no glow, shadow or outline.",
+              "markdownDescription": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. Characters the font lacks are drawn with a Windows font that has them: the right letters, but Arabic letters aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet moved into place. Color emoji keep their own colors, and take no glow, shadow or outline.",
+              "default": "Inter"
+            },
+            "size": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Text size. (px, 1 to 1000)",
+              "markdownDescription": "Text size. (px, 1 to 1000)",
+              "default": 24
+            },
+            "weight": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 900
+                },
+                {
+                  "enum": [
+                    "light",
+                    "normal",
+                    "medium",
+                    "semibold",
+                    "bold"
+                  ]
+                }
+              ],
+              "description": "How heavy text is: 100 to 900, or a name (light 300 to bold 700).",
+              "markdownDescription": "How heavy text is: 100 to 900, or a name (light 300 to bold 700).",
+              "default": "normal"
+            },
+            "color": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/color"
+                }
+              ],
+              "description": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own.",
+              "markdownDescription": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own.",
+              "default": "#FFFFFF"
+            },
+            "shadow": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/style.shadow"
+                }
+              ],
+              "description": "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box.",
+              "markdownDescription": "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box."
+            },
+            "glow": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/style.glow"
+                }
+              ],
+              "description": "A soft glow round text, a shape or a donut's slices.",
+              "markdownDescription": "A soft glow round text, a shape or a donut's slices."
+            },
+            "letter_spacing": {
+              "type": "number",
+              "minimum": -20,
+              "maximum": 100,
+              "description": "Space added between the characters of text; below 0 draws them closer. (px, -20 to 100)",
+              "markdownDescription": "Space added between the characters of text; below 0 draws them closer. (px, -20 to 100)",
+              "default": 0
+            },
+            "text_stroke": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/style.text_stroke"
+                }
+              ],
+              "description": "An outline round each letter, drawn behind the letters' fill.",
+              "markdownDescription": "An outline round each letter, drawn behind the letters' fill."
+            },
+            "text_fill": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/paint"
+                }
+              ],
+              "description": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one.",
+              "markdownDescription": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one."
+            },
+            "italic": {
+              "type": "boolean",
+              "description": "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.",
+              "markdownDescription": "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.",
+              "default": false
+            },
+            "underline": {
+              "type": "boolean",
+              "description": "A line under the text, as long as the text, in the letters' color.",
+              "markdownDescription": "A line under the text, as long as the text, in the letters' color.",
+              "default": false
+            },
+            "strike": {
+              "type": "boolean",
+              "description": "A line through the text, as long as the text, in the letters' color.",
+              "markdownDescription": "A line through the text, as long as the text, in the letters' color.",
+              "default": false
+            },
+            "case": {
+              "enum": [
+                "upper",
+                "lower",
+                "title",
+                "none"
+              ],
+              "description": "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.",
+              "markdownDescription": "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.",
+              "default": "none"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "gauge.needle": {
       "description": "Gauge needle: A needle from the dial's centre to the value, drawn over the arc and the ticks. It eases with the gauge's `smooth`, takes the style's shadow, and isn't drawn while the value is missing or stale.",
       "type": "object",
@@ -847,7 +1080,7 @@
       ]
     },
     "gradient.linear": {
-      "description": "Linear gradient: Colors spread evenly in a straight line across the area.",
+      "description": "Linear gradient: Colors spread in a straight line across the area.",
       "type": "object",
       "properties": {
         "linear": {
@@ -864,6 +1097,17 @@
           "description": "The line's direction, clockwise: 0 runs left to right, 90 top to bottom. (degrees)",
           "markdownDescription": "The line's direction, clockwise: 0 runs left to right, 90 top to bottom. (degrees)",
           "default": 0
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 2,
+          "description": "Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. (fraction, at least 2, each 0 to 1)",
+          "markdownDescription": "Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. (fraction, at least 2, each 0 to 1)"
         }
       },
       "required": [
@@ -872,7 +1116,7 @@
       "additionalProperties": false
     },
     "gradient.radial": {
-      "description": "Radial gradient: Colors spread evenly from the centre of the area outwards.",
+      "description": "Radial gradient: Colors spread in a circle from a centre point outwards.",
       "type": "object",
       "properties": {
         "radial": {
@@ -881,8 +1125,43 @@
             "$ref": "#/definitions/color"
           },
           "minItems": 2,
-          "description": "The colors, from the centre out to half the area's longer side.",
-          "markdownDescription": "The colors, from the centre out to half the area's longer side."
+          "description": "The colors, from the centre out to the radius.",
+          "markdownDescription": "The colors, from the centre out to the radius."
+        },
+        "center": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the circle starts, as [x, y] fractions of the area: [0, 0] is its top-left corner. (fraction, 2, each 0 to 1)",
+          "markdownDescription": "Where the circle starts, as [x, y] fractions of the area: [0, 0] is its top-left corner. (fraction, 2, each 0 to 1)",
+          "default": [
+            0.5,
+            0.5
+          ]
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "How far the colors reach, as a fraction of half the area's longer side. 3 covers the whole area from any centre, even a corner. (fraction, 0 to 3)",
+          "markdownDescription": "How far the colors reach, as a fraction of half the area's longer side. 3 covers the whole area from any centre, even a corner. (fraction, 0 to 3)",
+          "default": 1
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 2,
+          "description": "Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. (fraction, at least 2, each 0 to 1)",
+          "markdownDescription": "Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. (fraction, at least 2, each 0 to 1)"
         }
       },
       "required": [
@@ -954,6 +1233,16 @@
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
           "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         }
       },
       "required": [
@@ -1014,6 +1303,16 @@
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
           "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         }
       },
       "required": [
@@ -1108,6 +1407,16 @@
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
           "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         }
       },
       "required": [
@@ -1169,6 +1478,16 @@
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
           "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         }
       },
       "required": [
@@ -1191,6 +1510,7 @@
             "gauge",
             "graph",
             "image",
+            "video",
             "shape",
             "donut",
             "group"
@@ -1217,6 +1537,9 @@
         },
         {
           "$ref": "#/definitions/widget.image"
+        },
+        {
+          "$ref": "#/definitions/widget.video"
         },
         {
           "$ref": "#/definitions/widget.shape"
@@ -1314,25 +1637,56 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "text": {
           "type": [
             "string",
             "number"
           ],
-          "description": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper.",
-          "markdownDescription": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper."
+          "description": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used|bytes} uses a helper and {now|time:ddd HH:mm} shows the day and time.",
+          "markdownDescription": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used|bytes} uses a helper and {now|time:ddd HH:mm} shows the day and time."
+        },
+        "spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/text.span"
+          },
+          "minItems": 1,
+          "maxItems": 32,
+          "description": "Instead of `text`: runs of text, each in its own style, side by side on one baseline, such as a big number with a small unit. The widget's style places them as it places text.",
+          "markdownDescription": "Instead of `text`: runs of text, each in its own style, side by side on one baseline, such as a big number with a small unit. The widget's style places them as it places text."
         }
       },
       "required": [
         "type",
         "at",
-        "size",
-        "text"
+        "size"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "text"
+          ]
+        },
+        {
+          "required": [
+            "spans"
+          ]
+        }
+      ]
     },
     "widget.value": {
-      "description": "Value: One value as text, laid out as a text widget's is. A missing or stale value shows as —.",
+      "description": "Value: One value as text, laid out as a text widget's is. A missing or stale value shows as —. A value with a smaller unit, such as a big 52 with a small °C, takes `spans` instead of `format`.",
       "type": "object",
       "properties": {
         "type": {
@@ -1416,10 +1770,30 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "format": {
           "type": "string",
-          "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals.",
-          "markdownDescription": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals."
+          "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", duration, bytes, or time for Unix seconds as a local time (\"time:HH:mm\" gives a pattern). Left out, a number shows up to two decimals.",
+          "markdownDescription": "How to write the value: a .NET format such as \"{0:0.0}°C\", duration, bytes, or time for Unix seconds as a local time (\"time:HH:mm\" gives a pattern). Left out, a number shows up to two decimals."
+        },
+        "spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/text.span"
+          },
+          "minItems": 1,
+          "maxItems": 32,
+          "description": "Instead of `format`: runs of text, each in its own style, side by side on one baseline, as a text widget's spans are. {0} in them is the value after `smooth`, and {0:0.0} formats it. A missing or stale value shows a single — in the first span's style.",
+          "markdownDescription": "Instead of `format`: runs of text, each in its own style, side by side on one baseline, as a text widget's spans are. {0} in them is the value after `smooth`, and {0:0.0} formats it. A missing or stale value shows a single — in the first span's style."
         }
       },
       "required": [
@@ -1428,7 +1802,17 @@
         "size",
         "source"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "format",
+              "spans"
+            ]
+          }
+        ]
+      }
     },
     "widget.bar": {
       "description": "Bar: A bar filled in proportion to a value: `track` paints the empty part, `fill` (or the style's color) the full part.",
@@ -1514,6 +1898,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "min": {
           "type": "number",
@@ -1643,6 +2037,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "min": {
           "type": "number",
@@ -1802,6 +2206,16 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "series": {
           "type": "array",
           "items": {
@@ -1870,7 +2284,7 @@
       ]
     },
     "widget.image": {
-      "description": "Image: A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box.",
+      "description": "Image: A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box. The style's `shadow` is the box's, so a picture that leaves part of the box empty still casts the whole box's shadow.",
       "type": "object",
       "properties": {
         "type": {
@@ -1954,6 +2368,16 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "src": {
           "type": "string",
           "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads.",
@@ -1969,6 +2393,127 @@
           "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
           "markdownDescription": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
           "default": "contain"
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "src"
+      ],
+      "additionalProperties": false
+    },
+    "widget.video": {
+      "description": "Video: A clip from the theme folder, played over and over, over the style's `fill` and under its stroke, clipped to the box. The box can cover at most as many pixels as the canvas (1920×480), and a theme can have at most 4 videos, counting its video layers and video widgets.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "video",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`.",
+          "markdownDescription": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "default": 0
+        },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
+        "src": {
+          "type": "string",
+          "pattern": "\\.([mM][pP]4|[mM]4[vV]|[mM][oO][vV]|[wW][mM][vV]|[gG][iI][fF]|[wW][eE][bB][pP])$",
+          "description": "The clip, relative to the theme folder.",
+          "markdownDescription": "The clip, relative to the theme folder."
+        },
+        "fit": {
+          "enum": [
+            "cover",
+            "contain",
+            "stretch",
+            "none"
+          ],
+          "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "markdownDescription": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "default": "cover"
         }
       },
       "required": [
@@ -2063,6 +2608,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "shape": {
           "enum": [
@@ -2237,6 +2792,16 @@
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
+        },
         "hole": {
           "type": "number",
           "minimum": 0,
@@ -2296,7 +2861,7 @@
       "additionalProperties": false
     },
     "widget.group": {
-      "description": "Group: A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style. Groups nest up to 16 deep.",
+      "description": "Group: A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style and letter effects. Groups nest up to 16 deep.",
       "type": "object",
       "properties": {
         "type": {
@@ -2379,6 +2944,16 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
+        },
+        "name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "maxLength": 64,
+          "description": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it.",
+          "markdownDescription": "What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it."
         },
         "children": {
           "type": "array",

@@ -40,19 +40,19 @@ The screen the theme is made for. A theme fits both ways up of its orientation.
 
 Goes under `styles:` in [layout.yaml](#layoutyaml).
 
-How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.
+How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) and its letter effects (text_stroke, text_fill, italic, underline, strike, case) down to its children; the others stay with its box.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `extends` | style name |  |  | Another named style to start from; keys set here override it. |
-| `font` | font |  | `Inter` | A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. |
+| `font` | font |  | `Inter` | A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. Characters the font lacks are drawn with a Windows font that has them: the right letters, but Arabic letters aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet moved into place. Color emoji keep their own colors, and take no glow, shadow or outline. |
 | `size` | number (px) | 1 to 1000 | `24` | Text size. |
 | `weight` | font weight | 100 to 900, or `light`, `normal`, `medium`, `semibold`, `bold` | `normal` | How heavy text is: 100 to 900, or a name (light 300 to bold 700). |
 | `color` | color |  | `#FFFFFF` | The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own. |
 | `fill` | paint |  |  | The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments, and on a donut, each slice (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it). |
 | `track` | paint |  |  | The empty part of a bar or gauge, or its unlit segments, the background behind a graph, and the ring behind a donut's slices. |
 | `stroke` | block: [Stroke](#stroke) |  |  | An outline round a box, a bar, a shape or a donut's slice (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap). |
-| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text, a shape, a gauge's needle or a donut's slices. |
+| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box. |
 | `glow` | block: [Glow](#glow) |  |  | A soft glow round text, a shape or a donut's slices. |
 | `pulse` | block: [Pulse](#pulse) |  |  | Makes the opacity or the glow beat steadily. |
 | `opacity` | number (fraction) | 0 to 1 | `1` | How solid the whole widget is: 0 hides it, 1 is fully solid. |
@@ -63,6 +63,12 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `letter_spacing` | number (px) | -20 to 100 | `0` | Space added between the characters of text; below 0 draws them closer. |
 | `line_height` | number (times) | 0.5 to 4 | `1.2` | How far apart the lines of text are, as a multiple of the text's size. |
 | `wrap` | true or false |  | `false` | Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way. |
+| `text_stroke` | block: [Text stroke](#text-stroke) |  |  | An outline round each letter, drawn behind the letters' fill. |
+| `text_fill` | paint |  |  | The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one. |
+| `italic` | true or false |  | `false` | Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted. |
+| `underline` | true or false |  | `false` | A line under the text, as long as the text, in the letters' color. |
+| `strike` | true or false |  | `false` | A line through the text, as long as the text, in the letters' color. |
+| `case` | choice | `upper`, `lower`, `title`, `none` | `none` | Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written. |
 
 ### Stroke
 
@@ -80,7 +86,7 @@ A line: the outline drawn just inside a box or a shape and round a donut's slice
 
 Goes under `shadow:` in [Styles](#styles).
 
-A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.
+A copy of the text, a shape, a gauge's needle or a donut's slices, or of an image or video widget's box, drawn under it, offset and softened.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -113,13 +119,32 @@ A steady beat: the opacity or the glow eases from max down to min and back, once
 | `min` | number (fraction) | 0 to 1 | `0.4` | The low point, as a fraction of the normal opacity or glow. |
 | `max` | number (fraction) | 0 to 1 | `1` | The high point, as a fraction of the normal opacity or glow. |
 
+### Text stroke
+
+Goes under `text_stroke:` in [Styles](#styles).
+
+An outline round each letter, and round the lines under and through them. It is drawn behind the letters' fill, so they keep their shape and the outline shows `width` px outside them, with rounded corners.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `width` | number (px) | at least 0 | `1` | How far the outline shows outside the letters; 0 draws none. |
+| `color` | paint |  |  | The outline's color or gradient, which spans the widget's box. There is no outline without it. |
+
 ## Gradients
 
 A paint is a color or a gradient. A gradient is a mapping with `linear:` or `radial:` and two or more colors, and goes wherever a key takes a paint: `fill`, `track`, a stroke's `color` or a fill layer.
 
+### Every gradient
+
+Both kinds of gradient take these.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `stops` | list of numbers (fraction) | at least 2, each 0 to 1 |  | Where each color sits, from 0 (the line's start, or the centre) to 1 (the line's end, or the radius): one per color, each no lower than the one before. Two equal stops make a hard edge. Left out, the colors spread evenly. |
+
 ### Linear gradient
 
-Colors spread evenly in a straight line across the area.
+Colors spread in a straight line across the area.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -128,11 +153,13 @@ Colors spread evenly in a straight line across the area.
 
 ### Radial gradient
 
-Colors spread evenly from the centre of the area outwards.
+Colors spread in a circle from a centre point outwards.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `radial` | list of colors | at least 2 | required | The colors, from the centre out to half the area's longer side. |
+| `radial` | list of colors | at least 2 | required | The colors, from the centre out to the radius. |
+| `center` | list of numbers (fraction) | 2, each 0 to 1 | `[0.5, 0.5]` | Where the circle starts, as [x, y] fractions of the area: [0, 0] is its top-left corner. |
+| `radius` | number (fraction) | 0 to 3 | `1` | How far the colors reach, as a fraction of half the area's longer side. 3 covers the whole area from any centre, even a corner. |
 
 ## Background layers
 
@@ -150,6 +177,7 @@ Every layer takes these.
 | `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the layer mixes with the layers under it. |
 | `hidden` | true or false |  | `false` | Leaves the layer off the screen; `marquee validate` still checks it. |
 | `locked` | true or false |  | `false` | Stops the theme editor changing the layer. The screen ignores it. |
+| `name` | text or number | up to 64 characters |  | What the theme editor's layers list calls the layer: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it. |
 
 ### Fill layer
 
@@ -199,7 +227,7 @@ Every widget takes these.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `shape`, `donut`, `group` | required | What kind of widget this is. |
+| `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `video`, `shape`, `donut`, `group` | required | What kind of widget this is. |
 | `at` | point |  | required | Where the widget's top-left corner goes, relative to the canvas or its group. |
 | `size` | size |  | required | The widget's width and height, each at least 1. |
 | `source` | expression |  |  | The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`. |
@@ -209,6 +237,7 @@ Every widget takes these.
 | `rotate` | number (degrees) | -360 to 360 | `0` | Turns the widget clockwise about its own centre. A group's children turn with it. |
 | `hidden` | true or false |  | `false` | Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children. |
 | `locked` | true or false |  | `false` | Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it. |
+| `name` | text or number | up to 64 characters |  | What the theme editor's layers list calls the widget: up to 64 characters (VS Code may count an emoji as two), not necessarily unique. The screen ignores it. |
 
 ### Text
 
@@ -216,16 +245,33 @@ Text, which can show values. A line break (`\n` in double quotes, or a `|` block
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `text` | text template |  | required | The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used\|bytes} uses a helper. |
+| `text` | text template |  |  | The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used\|bytes} uses a helper and {now\|time:ddd HH:mm} shows the day and time. |
+| `spans` | list of [Text spans](#text-spans) | 1 to 32 |  | Instead of `text`: runs of text, each in its own style, side by side on one baseline, such as a big number with a small unit. The widget's style places them as it places text. |
+
+Each needs exactly one of `text` and `spans`.
+
+#### Text spans
+
+Goes under `spans:` in [Text](#text) or `spans:` in [Value](#value).
+
+One run of a text or value widget's `spans`. Its style goes over the widget's, and the widget's `when` rules go over every span, so a rule that turns the text red turns every span red. A line is as tall as its largest span, and its spans share the baseline of the tallest.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `text` | text template |  | required | The span's text, a template as a text widget's is, where a value widget's {0} is its value. A line break in it starts a new line. |
+| `style` | style | only `extends`, `font`, `size`, `weight`, `color`, `shadow`, `glow`, `letter_spacing`, `text_stroke`, `text_fill`, `italic`, `underline`, `strike`, `case` |  | The span's letters: a style's name, or a style written in place, with the text keys only. The box keys, such as `fill`, `padding`, `align` and `wrap`, are the widget's: written in place they are an error, and a named style's are left out without a warning. |
 
 ### Value
 
-One value as text, laid out as a text widget's is. A missing or stale value shows as —.
+One value as text, laid out as a text widget's is. A missing or stale value shows as —. A value with a smaller unit, such as a big 52 with a small °C, takes `spans` instead of `format`.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `source` | expression |  | required | The value to show: a sensor key such as cpu.temp, or an expression. |
-| `format` | format |  |  | How to write the value: a .NET format such as "{0:0.0}°C", or duration or bytes. Left out, a number shows up to two decimals. |
+| `format` | format |  |  | How to write the value: a .NET format such as "{0:0.0}°C", duration, bytes, or time for Unix seconds as a local time ("time:HH:mm" gives a pattern). Left out, a number shows up to two decimals. |
+| `spans` | list of [Text spans](#text-spans) | 1 to 32 |  | Instead of `format`: runs of text, each in its own style, side by side on one baseline, as a text widget's spans are. {0} in them is the value after `smooth`, and {0:0.0} formats it. A missing or stale value shows a single — in the first span's style. |
+
+Each takes at most one of `format` and `spans`.
 
 ### Bar
 
@@ -326,12 +372,21 @@ One sensor on a graph with several. Its style is layered over the graph's, so th
 
 ### Image
 
-A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box.
+A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box. The style's `shadow` is the box's, so a picture that leaves part of the box empty still casts the whole box's shadow.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `src` | file |  | required | The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads. |
 | `fit` | choice | `cover`, `contain`, `stretch`, `none` | `contain` | How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred. |
+
+### Video
+
+A clip from the theme folder, played over and over, over the style's `fill` and under its stroke, clipped to the box. The box can cover at most as many pixels as the canvas (1920×480), and a theme can have at most 4 videos, counting its video layers and video widgets.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `src` | file | `.mp4`, `.m4v`, `.mov`, `.wmv`, `.gif`, `.webp` | required | The clip, relative to the theme folder. |
+| `fit` | choice | `cover`, `contain`, `stretch`, `none` | `cover` | How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred. |
 
 ### Shape
 
@@ -372,7 +427,7 @@ One part of a donut's whole. Its style goes over the donut's, and the donut's `w
 
 ### Group
 
-A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style. Groups nest up to 16 deep.
+A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style and letter effects. Groups nest up to 16 deep.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -438,13 +493,13 @@ Each needs exactly one of `above`, `below`, `equals` and `stale`, and at least o
 | text or number | A word or a number, such as idle or 3. |
 | choice | One of the words listed for the key. |
 | color | A quoted hex color: "#RGB", "#RRGGBB" or "#RRGGBBAA", where AA is the alpha, or "transparent". Quote it: an unquoted # starts a YAML comment. |
-| paint | A color, or a gradient: { linear: ["#000000", "#1E2A44"], angle: 90 } or { radial: ["#1E2A44", "#000000"] }. |
+| paint | A color, or a gradient: { linear: ["#000000", "#1E2A44"], angle: 90 } or { radial: ["#1E2A44", "#000000"] }. Either takes stops to place its colors, as in { linear: ["#000000", "#36D1DC", "#FFFFFF"], stops: [0, 0.8, 1] }, and a radial one center and radius to move and size it: { radial: ["#FFFFFF60", "#00000000"], center: [0.3, 0.4], radius: 0.8 }. |
 | font | A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. A font that isn't there falls back to Inter, with a warning. |
 | font weight | 100 to 900, or light (300), normal (400), medium (500), semibold (600) or bold (700). |
 | expression | A sensor key such as cpu.temp, or arithmetic on keys and numbers such as "max(cpu.load, gpu.load)" or "claude.five_hour.resets_at - now". |
 | sensor key | One sensor key, such as gpu.load. |
-| text template | Text with values in braces: "{cpu.temp:0}°C". {key:0.0} formats a number, {key\|duration} and {key\|bytes} use a helper, and {{ and }} are braces. |
-| format | A .NET format that includes {0}, such as "{0:0.0}°C", or a helper: duration or bytes. |
+| text template | Text with values in braces: "{cpu.temp:0}°C". {key:0.0} formats a number, {key\|duration} and {key\|bytes} use a helper, {now\|time:HH:mm} writes Unix seconds as a local time (the PC's short time without a pattern), and {{ and }} are braces. Letters in a time pattern are pattern letters: quote words, as in {now\|time:'Today is' dddd}, and write a letter alone as %H. The pattern runs to the closing brace, so spaces before it are kept. |
+| format | A .NET format that includes {0}, such as "{0:0.0}°C", or a helper: duration, bytes, or time with an optional date and time pattern, such as "time:HH:mm". Letters in the pattern are pattern letters: quote words, as in "time:'at' HH:mm", and write a letter alone as "time:%H". Spaces in it are kept. |
 | file | A path relative to the theme folder, such as images/logo.png. It can't leave the folder. |
 | point | [x, y] in px, from the top-left corner. |
 | size | [width, height] in px. |

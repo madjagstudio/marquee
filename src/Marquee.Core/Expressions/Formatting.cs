@@ -3,8 +3,9 @@ using Marquee.Core.Sensors;
 
 namespace Marquee.Core.Expressions;
 
-/// Turns values into display text. Everything uses the invariant culture, so a theme looks the same on every PC.
-public static class Formatting
+/// Turns values into display text. Numbers use the invariant culture, so a theme looks the same on every PC; only the
+/// `time` helper (Formatting.Time.cs) follows the PC's zone and culture.
+public static partial class Formatting
 {
     /// Shown in place of a value whose source is missing or stale.
     public const string Missing = "—";
@@ -17,10 +18,13 @@ public static class Formatting
     public static string Format(SensorValue value, string? numberFormat = null) =>
         value.Number is { } n ? n.ToString(numberFormat ?? DefaultNumberFormat, Invariant) : value.Text ?? "";
 
-    /// A value widget's `format`: a .NET composite format such as "{0:0.0}°C", or a helper name ("duration", "bytes").
-    public static string Apply(string? format, SensorValue value)
+    /// A value widget's `format`: a .NET composite format such as "{0:0.0}°C", a helper name ("duration", "bytes"), or
+    /// "time" with an optional pattern ("time:HH:mm"), which writes in the locale's zone and culture (the PC's if null).
+    public static string Apply(string? format, SensorValue value, TimeLocale? locale = null)
     {
         if (format is null) return Format(value);
+        if (TimeFormatPattern(format) is { } pattern)
+            return value.Number is { } seconds ? Time(seconds, pattern, locale ?? TimeLocale.Pc) : value.Text ?? "";
         if (Helper(format) is { } helper) return value.Number is { } n ? helper(n) : value.Text ?? "";
         return string.Format(Invariant, format, value.Number is { } number ? number : value.Text);
     }
@@ -54,6 +58,8 @@ public static class Formatting
     public static string? FormatError(string format)
     {
         if (Helper(format) is not null) return null;
+        if (TimeFormatPattern(format) is { } pattern)
+            return IsTimePattern(pattern) ? null : $"format \"{format}\" is not a valid time pattern such as \"time:HH:mm\"";
         if (!format.Contains("{0")) return $"format \"{format}\" never shows the value; include {{0}}, e.g. \"{{0:0.0}}°C\"";
 
         // Check what each item asks for before formatting anything with it. An item whose number format is merely

@@ -6,27 +6,33 @@ using static Marquee.Core.Video.MediaFoundation;
 namespace Marquee.Core.Tests.TestSupport;
 
 /// Writes small H.264 MP4 clips with Media Foundation's sink writer, so video tests decode real clips without a binary
-/// committed to the repo. Encoding lives here, not in Core, because Marquee itself only decodes.
+/// committed to the repo. Encoding lives here, not in Core, because Marquee itself only decodes. tools/Marquee.MakeClip
+/// compiles this file in, so the showcase's committed clip is written by the same code.
 static class ClipWriter
 {
     public const int Fps = 10;
 
-    /// 100 ns units, Media Foundation's time unit.
-    public const long FrameTicks = TimeSpan.TicksPerSecond / Fps;
+    /// Generous for the tests' 128×72 clips, so the lossy codec stays close to the written colors.
+    public const int Bitrate = 2_000_000;
 
     /// One solid-color frame per color, at 10 fps.
     public static void Write(string path, int width, int height, params SKColor[] colors) =>
         Write(path, width, height, colors.Length, (canvas, i) => canvas.Clear(colors[i]));
 
     /// frameCount frames at 10 fps, each painted by paint(canvas, index). Width and height must be even (H.264 4:2:0).
-    public static void Write(string path, int width, int height, int frameCount, Action<SKCanvas, int> paint)
+    public static void Write(string path, int width, int height, int frameCount, Action<SKCanvas, int> paint) =>
+        Write(path, width, height, frameCount, paint, Fps, Bitrate);
+
+    /// The same at fps frames a second, encoded at an average of bitrate bits a second, which sets the file's size.
+    public static void Write(string path, int width, int height, int frameCount, Action<SKCanvas, int> paint, int fps,
+        int bitrate)
     {
-        if (!IsAvailable) throw new InvalidOperationException("Media Foundation isn't available to write a test clip.");
+        if (!IsAvailable) throw new InvalidOperationException("Media Foundation isn't available to write a clip.");
         IMFSinkWriter? writer = null;
         try
         {
             Check(MFCreateSinkWriterFromURL(path, IntPtr.Zero, IntPtr.Zero, out writer));
-            var stream = AddStream(writer!, width, height);
+            var stream = AddStream(writer!, width, height, fps, bitrate);
             Check(writer!.BeginWriting());
             using var bitmap = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Opaque));
             using var canvas = new SKCanvas(bitmap);
@@ -34,7 +40,7 @@ static class ClipWriter
             {
                 paint(canvas, i);
                 canvas.Flush();
-                WriteFrame(writer, stream, bitmap, i);
+                WriteFrame(writer, stream, bitmap, Ticks(i, fps), Ticks(i + 1, fps) - Ticks(i, fps));
             }
 
             // Finalize drains the encoder, which holds back a few frames, and writes the MP4's index.
@@ -46,20 +52,23 @@ static class ClipWriter
         }
     }
 
-    static uint AddStream(IMFSinkWriter writer, int width, int height)
+    /// When frame index starts, in 100 ns units (Media Foundation's time unit). Each frame runs to the next one's start,
+    /// so frames at a rate that doesn't divide a second, such as 30 fps, don't drift.
+    static long Ticks(int index, int fps) => index * TimeSpan.TicksPerSecond / fps;
+
+    static uint AddStream(IMFSinkWriter writer, int width, int height, int fps, int bitrate)
     {
         IMFMediaType? output = null;
         IMFMediaType? input = null;
         try
         {
             Check(MFCreateMediaType(out output));
-            SetVideoFormat(output!, MFVideoFormat_H264, width, height);
-            // Generous for 128×72, so the lossy codec stays close to the written colors.
-            Check(output!.SetUINT32(MF_MT_AVG_BITRATE, 2_000_000));
+            SetVideoFormat(output!, MFVideoFormat_H264, width, height, fps);
+            Check(output!.SetUINT32(MF_MT_AVG_BITRATE, (uint)bitrate));
             Check(writer.AddStream(output, out var stream));
 
             Check(MFCreateMediaType(out input));
-            SetVideoFormat(input!, MFVideoFormat_RGB32, width, height);
+            SetVideoFormat(input!, MFVideoFormat_RGB32, width, height, fps);
             // A positive stride says the rows are top-down, as Skia lays them out.
             Check(input!.SetUINT32(MF_MT_DEFAULT_STRIDE, (uint)(width * 4)));
             Check(writer.SetInputMediaType(stream, input, IntPtr.Zero));
@@ -72,17 +81,17 @@ static class ClipWriter
         }
     }
 
-    static void SetVideoFormat(IMFMediaType type, Guid subtype, int width, int height)
+    static void SetVideoFormat(IMFMediaType type, Guid subtype, int width, int height, int fps)
     {
         Check(type.SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
         Check(type.SetGUID(MF_MT_SUBTYPE, subtype));
         Check(type.SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
         Check(type.SetUINT64(MF_MT_FRAME_SIZE, Pack((uint)width, (uint)height)));
-        Check(type.SetUINT64(MF_MT_FRAME_RATE, Pack(Fps, 1)));
+        Check(type.SetUINT64(MF_MT_FRAME_RATE, Pack((uint)fps, 1)));
         Check(type.SetUINT64(MF_MT_PIXEL_ASPECT_RATIO, Pack(1, 1)));
     }
 
-    static void WriteFrame(IMFSinkWriter writer, uint stream, SKBitmap bitmap, int index)
+    static void WriteFrame(IMFSinkWriter writer, uint stream, SKBitmap bitmap, long start, long duration)
     {
         var bytes = bitmap.Bytes;
         IMFMediaBuffer? buffer = null;
@@ -97,8 +106,8 @@ static class ClipWriter
 
             Check(MFCreateSample(out sample));
             Check(sample!.AddBuffer(buffer));
-            Check(sample.SetSampleTime(index * FrameTicks));
-            Check(sample.SetSampleDuration(FrameTicks));
+            Check(sample.SetSampleTime(start));
+            Check(sample.SetSampleDuration(duration));
             Check(writer.WriteSample(stream, sample));
         }
         finally

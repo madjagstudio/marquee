@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Draws example-showcase's clip (RadarClip) and encodes it as an MP4; Program.cs says how to run it. Not shipped; it
+       is in the solution so the drawing keeps compiling. Its messages are for whoever regenerates the clip, so they are
+       written in the code rather than in a resource file. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Marquee.MakeClip</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- For Media Foundation's interop, which ClipWriter shares with Marquee's decoder; Core lets this tool see it. -->
+    <ProjectReference Include="..\..\src\Marquee.Core\Marquee.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The writer the video tests make their clips with, compiled in, so the committed clip is encoded exactly as the
+         tests' clips are and the test helper stays out of everything that ships. -->
+    <Compile Include="..\..\tests\Marquee.Core.Tests\TestSupport\ClipWriter.cs" Link="ClipWriter.cs" />
+  </ItemGroup>
+</Project>

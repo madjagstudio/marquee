@@ -4,9 +4,10 @@ using SkiaSharp;
 
 namespace Marquee.Core.Video;
 
-/// Where a video layer's frames go on the canvas, and how a decoded frame is scaled to fit there. A frame is scaled
-/// once, as it is decoded, to exactly the canvas pixels it covers: frames waiting to be shown are never larger than the
-/// canvas, however large the clip, and drawing one is a plain copy. Thread-safe: it holds no state but its sizes.
+/// Where a video layer's frames go on the canvas, or a video widget's in its box, and how a decoded frame is scaled to
+/// fit there. A frame is scaled once, as it is decoded, to exactly the pixels it covers: frames waiting to be shown are
+/// never larger than the canvas or the box, however large the clip, and drawing one is a plain copy (unless the widget
+/// is rotated). Thread-safe: it holds no state but its sizes.
 public sealed class FrameScaler
 {
     /// Mipmaps keep a 4K clip shrunk to the canvas from shimmering, which plain linear sampling would do past 2:1.

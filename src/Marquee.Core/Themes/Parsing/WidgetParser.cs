@@ -9,20 +9,21 @@ static partial class WidgetParser
 {
     // The keys each widget accepts: Common, plus its type's own. ThemeSchema describes each, and its drift test reads
     // these lists.
-    internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth", "rotate", "hidden", "locked"];
+    internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth", "rotate", "hidden", "locked", "name"];
 
     internal static readonly (string Name, string Value)[] Types =
         [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"),
-         ("shape", "shape"), ("donut", "donut"), ("group", "group")];
+         ("video", "video"), ("shape", "shape"), ("donut", "donut"), ("group", "group")];
 
     internal static readonly IReadOnlyDictionary<string, string[]> TypeKeys = new Dictionary<string, string[]>
     {
-        ["text"] = ["text"],
-        ["value"] = ["format"],
+        ["text"] = ["text", "spans"],
+        ["value"] = ["format", "spans"],
         ["bar"] = ["min", "max", "direction", .. SegmentParser.Keys],
         ["gauge"] = ["min", "max", "start", "sweep", "thickness", .. SegmentParser.Keys, "needle", "ticks"],
         ["graph"] = GraphParser.Keys,
         ["image"] = ["src", "fit"],
+        ["video"] = ["src", "fit"],
         ["shape"] = ["shape", .. ArcKeys],
         ["group"] = ["children"],
         ["donut"] = DonutParser.Keys,
@@ -49,12 +50,17 @@ static partial class WidgetParser
         public ParseErrors Errors { get; } = errors;
         public int Widgets;
 
+        /// Videos so far, the background's included (see MaxVideos).
+        public int Videos;
+
         /// Past MaxWidgets the rest of the layout isn't checked, so an aliased one can't report millions of problems.
         public bool OverLimit => Widgets > MaxWidgets;
     }
 
-    public static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what, ParseErrors errors) =>
-        ParseList(node, what, new Context(styles, errors), groupDepth: 0);
+    /// `videoLayers` is how many video layers the background has, which count towards MaxVideos.
+    public static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, StyleTable styles, string what, ParseErrors errors,
+        int videoLayers = 0) =>
+        ParseList(node, what, new Context(styles, errors) { Videos = videoLayers }, groupDepth: 0);
 
     /// A bad widget is reported and left out, and its siblings are still checked.
     static IReadOnlyList<WidgetSpec> ParseList(YamlNode node, string what, Context context, int groupDepth)
@@ -63,7 +69,8 @@ static partial class WidgetParser
         foreach (var widgetNode in Yaml.List(node, what))
         {
             if (context.OverLimit) break;
-            if (context.Errors.Recover(() => Parse(widgetNode, context, groupDepth)) is { } widget)
+            if (context.Errors.Recover(() => Parse(widgetNode, context, groupDepth)) is { } widget
+                && WithinVideoLimit(widget, widgetNode, context))
                 widgets.Add(widget);
         }
 
@@ -101,14 +108,17 @@ static partial class WidgetParser
 
         WidgetSpec widget = type switch
         {
-            "text" => new TextWidget(Template(f.Required("text"))),
-            "value" => new ValueWidget(f.Optional("format") is { } format ? Format(format) : null),
+            "text" => f.OneOf("text", "spans") == "text"
+                ? new TextWidget(Template(f.Required("text")))
+                : SpanParser.Parse(f, context.Styles, context.Errors),
+            "value" => SpanParser.Value(f, context.Styles, context.Errors),
             "bar" => Bar(f),
             "gauge" => DialParser.Dial(Gauge(f), f),
             "graph" => GraphParser.Parse(f, context.Styles, context.Errors),
             "donut" => DonutParser.Parse(f, context.Styles, context.Errors),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
+            "video" => Video(f),
             "shape" => Shape(f),
             _ => new GroupWidget(children ?? ParseList(f.Required("children"), "children", context, groupDepth + 1)),
         };
@@ -130,6 +140,7 @@ static partial class WidgetParser
             Rotate = f.Optional("rotate") is { } rotate ? Yaml.Float(rotate, "rotate", -MaxRotate, MaxRotate) : 0,
             Hidden = f.Optional("hidden") is { } hidden && Yaml.Bool(hidden, "hidden"),
             Locked = f.Optional("locked") is { } locked && Yaml.Bool(locked, "locked"),
+            Name = f.Optional("name") is { } name ? NameParser.Parse(name) : null,
         };
 
         if (widget is ShapeWidget shape) CheckStroked(shape, f);
@@ -151,11 +162,12 @@ static partial class WidgetParser
         }
     }
 
-    static Template Template(YamlNode node)
+    /// `withValue` is for a value widget's spans, where `{0}` is its value (Template.Parse).
+    internal static Template Template(YamlNode node, bool withValue = false)
     {
         try
         {
-            return Expressions.Template.Parse(Yaml.Text(node, "text"));
+            return Expressions.Template.Parse(Yaml.Text(node, "text"), withValue);
         }
         catch (ExpressionException ex)
         {

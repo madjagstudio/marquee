@@ -69,8 +69,8 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
 {
     public bool Required { get; init; }
 
-    /// The value used when the key is left out, written as in layout.yaml (`135`, `contain`, `"#FFFFFF"` without the
-    /// quotes). Null when leaving it out means the feature is off, or when Help says what happens instead.
+    /// The value used when the key is left out, written as in layout.yaml (`135`, `contain`, `[0.5, 0.5]`, `"#FFFFFF"`
+    /// without the quotes). Null when leaving it out means the feature is off, or when Help says what happens instead.
     public string? Default { get; init; }
 
     /// A style key's default where one widget type's painter falls back to something else, by widget type, written as
@@ -82,7 +82,8 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
     /// a line's ends have one. Empty for keys outside a style. ThemeSchema.WidgetStyles is the table it comes from.
     public IReadOnlyList<string> AppliesTo { get; init; } = [];
 
-    /// The range of a number or integer, or of each number of a size, inclusive; null where it has no bound.
+    /// The range of a number or integer, or of each number of a size or a list of numbers, inclusive; null where it has
+    /// no bound.
     public double? Min { get; init; }
     public double? Max { get; init; }
 
@@ -105,6 +106,9 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
     public int? MinItems { get; init; }
     public int? MaxItems { get; init; }
 
+    /// How many characters a String may have; null where there is no limit.
+    public int? MaxLength { get; init; }
+
     /// The extensions a ThemeFile must have, lower case with the dot; empty when the parser takes any file.
     public IReadOnlyList<string> FileTypes { get; init; } = [];
 
@@ -114,4 +118,8 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
 
     /// The key also takes false, which turns its feature off, as a gauge's tick `labels` do.
     public bool TakesFalse { get; init; }
+
+    /// For a Style key that may set only some of a style's keys, such as a span's: the keys it may set, in
+    /// ThemeSchema.Style's order. Empty when it may set any.
+    public IReadOnlyList<string> StyleKeys { get; init; } = [];
 }

@@ -392,6 +392,7 @@ public class ThemeValidatorTests
     {
         // With the free shader probe: whether example-agents' aurora fits the frame budget depends on the machine (a slow
         // CI runner may skip it by design), and ShaderCostTests covers the check itself.
+        if (name == "example-showcase" && !MediaFoundation.IsAvailable) return; // Its clip can't play there.
         var report = Validate(ExampleTheme(name));
 
         Assert.Empty(report.Issues);

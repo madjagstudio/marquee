@@ -16,6 +16,11 @@
     <ProjectReference Include="..\Marquee.Providers.Fps\Marquee.Providers.Fps.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Only for Microsoft.Win32.SystemEvents, which says when the time zone or regional format changes
+         (ClockSettingsWatch). It adds nothing at run time: the tray and the CLI already load Windows Desktop for WinForms. -->
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- The public key updates must be signed with (ReleaseKey). A fixed resource name, so moving the file doesn't
          change the lookup. -->
     <EmbeddedResource Include="Updates\release-key.pub.pem" LogicalName="release-key.pub.pem" />

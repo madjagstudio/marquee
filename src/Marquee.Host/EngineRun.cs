@@ -26,6 +26,7 @@ sealed class EngineRun : IDisposable
     ISensorProvider? _fps;
     IDisposable? _statusLine;
     IDisposable? _http;
+    ClockSettingsWatch? _clockSettings; // live runs only
     volatile string? _themeName;
     volatile bool _paused; // Status reads it without the engine's lock
     bool _showing; // whether a theme has loaded; theme loads never overlap (one watcher at a time, or Apply under the lock)
@@ -153,6 +154,7 @@ sealed class EngineRun : IDisposable
     public void Dispose()
     {
         _watcher?.Dispose();
+        _clockSettings?.Dispose();
         _ring?.Dispose(); // the ring is left dark
         _loop?.Dispose();
         _device?.Dispose();
@@ -190,6 +192,7 @@ sealed class EngineRun : IDisposable
         if (Live)
         {
             StartRing(services);
+            _clockSettings = new ClockSettingsWatch();
             _watcher.Start();
             if (!Paused) _loop.Start();
         }

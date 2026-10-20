@@ -135,8 +135,8 @@ public class BackgroundParsingTests
     [InlineData("  - fill: { linear: [\"#000\"] }", 3, "fill.linear needs at least two colors")]
     [InlineData("  - fill: { radial: [\"#000\", \"#fff\"], angle: 45 }", 3, "fill: angle only applies to linear gradients")]
     [InlineData("  - fill: { linear: [\"#000\", \"#fff\"], angle: 1e39 }", 3, "fill.angle is too large")]
-    [InlineData("  - fill: { conic: [\"#000\", \"#fff\"] }", 3, "Unknown key 'conic' in fill. Expected one of: linear, radial, angle")]
-    [InlineData("  - fill: \"#000\"\n    size: 3", 4, "Unknown key 'size' in background layer. Expected one of: fill, image, shader, video, fit, uniforms, scale, opacity, blend, hidden, locked")]
+    [InlineData("  - fill: { conic: [\"#000\", \"#fff\"] }", 3, "Unknown key 'conic' in fill. Expected one of: linear, radial, angle, stops, center, radius")]
+    [InlineData("  - fill: \"#000\"\n    size: 3", 4, "Unknown key 'size' in background layer. Expected one of: fill, image, shader, video, fit, uniforms, scale, opacity, blend, hidden, locked, name")]
     public void Layer_errors(string background, int line, string reason)
     {
         var ex = LayerError(background);

@@ -4,8 +4,9 @@ using SkiaSharp;
 
 namespace Marquee.Core.Themes;
 
-/// Opens a video layer's clip and starts playing it when the theme loads, so a clip that can't play surfaces once, as a
-/// warning that says why, and the render loop never meets it. A layer that can't play is skipped.
+/// Opens a video layer's or video widget's clip and starts playing it when the theme loads, so a clip that can't play
+/// surfaces once, as a warning that says why, and the render loop never meets it. A layer or widget that can't play is
+/// skipped.
 static class VideoAssets
 {
     /// Largest clip file a theme may use. Themes are shared; a minute of 1080p H.264 is about 40 MB.
@@ -13,12 +14,17 @@ static class VideoAssets
 
     const double BytesPerMB = 1024 * 1024;
 
-    /// A player for the clip, or null when the layer is skipped: the clip is missing, too large, can't be decoded, or
-    /// `probe` says it decodes slower than it plays. `maxBytes` is MaxClipBytes except in tests.
+    /// A player for the layer's clip, fitted to the canvas, or null when the layer is skipped (see the other Load).
     public static VideoPlayer? Load(string folder, VideoLayer layer, List<ThemeWarning> warnings, SKSizeI canvas, VideoProbe probe,
-        long maxBytes = MaxClipBytes)
+        long maxBytes = MaxClipBytes) =>
+        Load(folder, layer.Path, layer.Fit, SKRect.Create(canvas.Width, canvas.Height), warnings, probe, maxBytes);
+
+    /// A player for the clip at `path`, its frames fitted to `area` as `fit` says, or null when it is skipped: the clip
+    /// is missing, too large, can't be decoded, or `probe` says it decodes slower than it plays. `maxBytes` is
+    /// MaxClipBytes except in tests.
+    public static VideoPlayer? Load(string folder, string path, ImageFit fit, SKRect area, List<ThemeWarning> warnings,
+        VideoProbe probe, long maxBytes = MaxClipBytes)
     {
-        var path = layer.Path;
         if (!ThemeAssets.TryInsideFolder(folder, path, out var full))
             return Skip(warnings, path, "It is not a valid path.");
         if (full is null)
@@ -36,7 +42,7 @@ static class VideoAssets
         try
         {
             decoder = VideoDecoders.Open(full);
-            var scaler = new FrameScaler(layer.Fit, decoder.Size, SKRect.Create(canvas.Width, canvas.Height));
+            var scaler = new FrameScaler(fit, decoder.Size, area);
             if (TooSlow(decoder, scaler, probe) is { } slow)
             {
                 decoder.Dispose();

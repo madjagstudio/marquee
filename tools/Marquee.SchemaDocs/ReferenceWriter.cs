@@ -92,6 +92,8 @@ static class ReferenceWriter
                 + (block.AtLeastOneOf.Count > 0 ? $", and at least one of {Words(block.AtLeastOneOf, "and")}.\n\n" : ".\n\n"));
         else if (block.AtLeastOneOf.Count > 0)
             md.Append($"Each needs at least one of {Words(block.AtLeastOneOf, "and")}.\n\n");
+        if (block.AtMostOneOf.Count > 0)
+            md.Append($"Each takes at most one of {Words(block.AtMostOneOf, "and")}.\n\n");
 
         // Blocks only this one uses, such as a style's stroke, come next.
         foreach (var child in ThemeSchema.Blocks.Where(b => !written.Contains(b.Id) && !IsSection(b) && keys.Any(k => k.Of == b.Id)))
@@ -122,6 +124,7 @@ static class ReferenceWriter
             SchemaKind.Number or SchemaKind.Integer when key.Unit != SchemaUnit.None => $"{name} ({Unit(key.Unit)})",
             SchemaKind.Block when key.Of is { } of => $"block: {Link(TitleOf(of), of)}",
             SchemaKind.List when key.Of is { } of => $"list of {Link(TitleOf(of), of)}",
+            SchemaKind.List when key is { ItemKind: SchemaKind.Number, Unit: not SchemaUnit.None } => $"list of numbers ({Unit(key.Unit)})",
             SchemaKind.List when key.ItemKind is { } item => $"list of {ThemeSchema.KindName(item)}s",
             SchemaKind.Map when key.Of is { } of => $"named {Link(TitleOf(of), of)}",
             _ => name,
@@ -143,8 +146,12 @@ static class ReferenceWriter
     {
         SchemaKind.Enum => Codes(key.Values),
         SchemaKind.FontWeight => $"{Range(key)}, or {Codes(key.Values)}",
+        // A list of numbers, such as a gradient's stops, also gives the range of each.
+        SchemaKind.List when key.ItemKind == SchemaKind.Number && Range(key) is { Length: > 0 } range => $"{Count(key.MinItems, key.MaxItems)}, each {range}",
         SchemaKind.List or SchemaKind.Map or SchemaKind.Uniforms => Count(key.MinItems, key.MaxItems),
         SchemaKind.ThemeFile when key.FileTypes.Count > 0 => Codes(key.FileTypes),
+        SchemaKind.String when key.MaxLength is { } length => $"up to {length} characters",
+        SchemaKind.Style when key.StyleKeys.Count > 0 => $"only {Codes(key.StyleKeys)}",
         _ => Range(key) + (key.MinFor is { } lower ? $", or {Number(lower.Min)} with `{lower.Key}: {lower.Value}`" : ""),
     };
 
@@ -158,6 +165,7 @@ static class ReferenceWriter
 
     static string Count(int? min, int? max) => (min, max) switch
     {
+        ({ } a, { } b) when a == b => $"{a}",
         ({ } a, { } b) => $"{a} to {b}",
         ({ } a, null) => $"at least {a}",
         (null, { } b) => $"up to {b}",
@@ -168,11 +176,12 @@ static class ReferenceWriter
     public static string Help(SchemaKey key) =>
         key.OnlyFor is { } only ? $"{key.Help} Only with `{only.Key}: {only.Value}`." : key.Help;
 
-    /// A number's or a size's unit and range, as the Kind and Values columns give them: "degrees, -360 to 360".
+    /// A number's, a size's or a list of numbers' unit and range, as the Kind and Values columns give them: "degrees,
+    /// -360 to 360".
     public static string UnitAndRange(SchemaKey key) => string.Join(", ", new[]
     {
         key.Unit == SchemaUnit.None ? "" : Unit(key.Unit),
-        key.Kind is SchemaKind.Number or SchemaKind.Integer or SchemaKind.Size ? Values(key) : "",
+        key.Kind is SchemaKind.Number or SchemaKind.Integer or SchemaKind.Size || key.ItemKind == SchemaKind.Number ? Values(key) : "",
     }.Where(part => part.Length > 0));
 
     /// The default, then any that differs by widget type: "`1`; `2` on a graph".

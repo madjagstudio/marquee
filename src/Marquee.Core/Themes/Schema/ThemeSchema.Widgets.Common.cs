@@ -8,7 +8,8 @@ public static partial class ThemeSchema
     static SchemaUnion WidgetUnion() => new("widget", "Widgets",
         "Each entry of `widgets:`, and of a group's `children:`, is one widget, chosen by its `type`.",
         WidgetCommon(),
-        [TextWidget(), ValueWidget(), BarWidget(), GaugeWidget(), GraphWidget(), ImageWidget(), ShapeWidget(), DonutWidget(), GroupWidget()])
+        [TextWidget(), ValueWidget(), BarWidget(), GaugeWidget(), GraphWidget(), ImageWidget(), VideoWidget(), ShapeWidget(),
+         DonutWidget(), GroupWidget()])
     {
         Discriminator = "type",
         DiscriminatorHelp = "What kind of widget this is.",
@@ -40,6 +41,7 @@ public static partial class ThemeSchema
             },
             Hidden("Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children."),
             Locked("Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it."),
+            Name("widget"),
         ]);
 
     /// A widget's or background layer's `hidden`.
@@ -47,6 +49,14 @@ public static partial class ThemeSchema
 
     /// A widget's or background layer's `locked`, which only the editor reads.
     static SchemaKey Locked(string help) => new("locked", SchemaKind.Boolean, help) { Default = "false" };
+
+    /// A widget's or background layer's `name`, which only the editor reads.
+    static SchemaKey Name(string what) => new("name", SchemaKind.String,
+        $"What the theme editor's layers list calls the {what}: up to {NameParser.MaxLength} characters (VS Code may count an "
+        + "emoji as two), not necessarily unique. The screen ignores it.")
+    {
+        MaxLength = NameParser.MaxLength,
+    };
 
     /// The common `source`, or a widget type's own, which may make it required.
     static SchemaKey Source(string help, bool required = false) =>

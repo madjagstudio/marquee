@@ -26,8 +26,7 @@ static class Paints
                 break;
             case RadialGradientPaint radial:
                 paint.Color = SKColors.White.WithAlpha(Alpha(opacity));
-                paint.Shader = SKShader.CreateRadialGradient(
-                    new SKPoint(area.MidX, area.MidY), Math.Max(area.Width, area.Height) / 2, radial.Colors, null, SKShaderTileMode.Clamp);
+                paint.Shader = Radial(radial, area);
                 break;
         }
     }
@@ -42,6 +41,15 @@ static class Paints
         var half = MathF.Abs(area.Width / 2 * dx) + MathF.Abs(area.Height / 2 * dy);
         var start = new SKPoint(area.MidX - dx * half, area.MidY - dy * half);
         var end = new SKPoint(area.MidX + dx * half, area.MidY + dy * half);
-        return SKShader.CreateLinearGradient(start, end, linear.Colors, null, SKShaderTileMode.Clamp);
+        return SKShader.CreateLinearGradient(start, end, linear.Colors, linear.Stops, SKShaderTileMode.Clamp);
+    }
+
+    static SKShader Radial(RadialGradientPaint radial, SKRect area)
+    {
+        // With the default centre and radius these are exactly the area's middle and half its longer side, as before
+        // they could move: halving and multiplying by 0.5 round the same way.
+        var center = new SKPoint(area.Left + area.Width * radial.Center.X, area.Top + area.Height * radial.Center.Y);
+        var radius = Math.Max(area.Width, area.Height) / 2 * radial.Radius;
+        return SKShader.CreateRadialGradient(center, radius, radial.Colors, radial.Stops, SKShaderTileMode.Clamp);
     }
 }

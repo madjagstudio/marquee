@@ -5,17 +5,24 @@ namespace Marquee.Providers.Hardware;
 
 /// The alternative hardware source: reads HWiNFO's shared memory while HWiNFO is running with
 /// Settings → Shared Memory Support turned on. Needs no driver of Marquee's own.
-public sealed class HwInfoProvider : ISensorProvider
+public sealed class HwInfoProvider : ISensorProvider, IRawReadings
 {
     const string MutexName = @"Global\HWiNFO_SM2_MUTEX";
 
     public string Name => "Hardware sensors (HWiNFO)";
     public TimeSpan Interval => TimeSpan.FromSeconds(1);
 
-    public void Poll(SensorStore store)
+    public IReadOnlyList<RawReading> LastReadings { get; private set; } = [];
+
+    public void Poll(SensorStore store) => Poll(store, ReadSharedMemory());
+
+    /// The poll after the read, apart so tests can feed it shared memory of their own.
+    internal void Poll(SensorStore store, ReadOnlySpan<byte> memory)
     {
-        var keys = HardwareKeyMap.Map(HwInfoSharedMemory.ToHardware(HwInfoSharedMemory.Parse(ReadSharedMemory())));
-        foreach (var (key, value) in keys)
+        var parsed = HwInfoSharedMemory.Parse(memory);
+        var readings = HwInfoSharedMemory.ToHardware(parsed);
+        LastReadings = HwInfoSharedMemory.ToRaw(parsed);
+        foreach (var (key, value) in HardwareKeyMap.Map(readings))
             store.Set(key, value, LibreHardwareMonitorProvider.Ttl);
     }
 

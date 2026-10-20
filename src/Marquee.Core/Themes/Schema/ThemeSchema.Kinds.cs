@@ -49,7 +49,9 @@ public static partial class ThemeSchema
         SchemaKind.Color => "A quoted hex color: \"#RGB\", \"#RRGGBB\" or \"#RRGGBBAA\", where AA is the alpha, or "
             + "\"transparent\". Quote it: an unquoted # starts a YAML comment.",
         SchemaKind.Paint => "A color, or a gradient: { linear: [\"#000000\", \"#1E2A44\"], angle: 90 } or "
-            + "{ radial: [\"#1E2A44\", \"#000000\"] }.",
+            + "{ radial: [\"#1E2A44\", \"#000000\"] }. Either takes stops to place its colors, as in { linear: [\"#000000\", "
+            + "\"#36D1DC\", \"#FFFFFF\"], stops: [0, 0.8, 1] }, and a radial one center and radius to move and size it: "
+            + "{ radial: [\"#FFFFFF60\", \"#00000000\"], center: [0.3, 0.4], radius: 0.8 }.",
         SchemaKind.FontFamily => "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. "
             + "A font that isn't there falls back to Inter, with a warning.",
         SchemaKind.FontWeight => "100 to 900, or light (300), normal (400), medium (500), semibold (600) or bold (700).",
@@ -57,8 +59,14 @@ public static partial class ThemeSchema
             + "\"max(cpu.load, gpu.load)\" or \"claude.five_hour.resets_at - now\".",
         SchemaKind.SensorKey => "One sensor key, such as gpu.load.",
         SchemaKind.Template => "Text with values in braces: \"{cpu.temp:0}°C\". {key:0.0} formats a number, "
-            + "{key|duration} and {key|bytes} use a helper, and {{ and }} are braces.",
-        SchemaKind.Format => "A .NET format that includes {0}, such as \"{0:0.0}°C\", or a helper: duration or bytes.",
+            + "{key|duration} and {key|bytes} use a helper, {now|time:HH:mm} writes Unix seconds as a local time (the "
+            + "PC's short time without a pattern), and {{ and }} are braces. Letters in a time pattern are pattern letters: "
+            + "quote words, as in {now|time:'Today is' dddd}, and write a letter alone as %H. The pattern runs to the "
+            + "closing brace, so spaces before it are kept.",
+        SchemaKind.Format => "A .NET format that includes {0}, such as \"{0:0.0}°C\", or a helper: duration, bytes, or "
+            + "time with an optional date and time pattern, such as \"time:HH:mm\". Letters in the pattern are pattern "
+            + "letters: quote words, as in \"time:'at' HH:mm\", and write a letter alone as \"time:%H\". Spaces in it are "
+            + "kept.",
         SchemaKind.ThemeFile => "A path relative to the theme folder, such as images/logo.png. It can't leave the folder.",
         SchemaKind.Point => "[x, y] in px, from the top-left corner.",
         SchemaKind.Size => "[width, height] in px.",

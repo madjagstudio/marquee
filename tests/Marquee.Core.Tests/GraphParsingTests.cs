@@ -207,7 +207,7 @@ public class GraphParsingTests
             "10: Unknown key 'colour' in graph series. Expected one of: source, style",
             "11: graph series is missing 'source'",
             "12: source: Expression ended unexpectedly at character 11",
-            "14: Unknown key 'nope' in text widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, text",
+            "14: Unknown key 'nope' in text widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, name, text, spans",
         ], Layouts.Lines(errors));
         Assert.Empty(spec.Widgets);
     }

@@ -6,11 +6,15 @@ public static partial class ThemeSchema
     /// style, the widget's and its rules can layer.
     static SchemaBlock StyleBlock() => new("style", "style", "Styles",
         "How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group "
-        + "passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.",
+        + "passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) and its letter effects "
+        + "(text_stroke, text_fill, italic, underline, strike, case) down to its children; the others stay with its box.",
         [
             new("extends", SchemaKind.StyleName, "Another named style to start from; keys set here override it."),
             new("font", SchemaKind.FontFamily,
-                "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.")
+                "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. "
+                + "Characters the font lacks are drawn with a Windows font that has them: the right letters, but Arabic letters "
+                + "aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet moved into place. Color "
+                + "emoji keep their own colors, and take no glow, shadow or outline.")
             {
                 Default = StyleDefaults.Font,
             },
@@ -37,7 +41,7 @@ public static partial class ThemeSchema
             {
                 Of = "style.stroke",
             },
-            new("shadow", SchemaKind.Block, "A shadow under text, a shape, a gauge's needle or a donut's slices.") { Of = "style.shadow" },
+            new("shadow", SchemaKind.Block, "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box.") { Of = "style.shadow" },
             new("glow", SchemaKind.Block, "A soft glow round text, a shape or a donut's slices.") { Of = "style.glow" },
             new("pulse", SchemaKind.Block, "Makes the opacity or the glow beat steadily.") { Of = "style.pulse" },
             new("opacity", SchemaKind.Number, "How solid the whole widget is: 0 hides it, 1 is fully solid.")
@@ -79,6 +83,24 @@ public static partial class ThemeSchema
                 + "box. A line break starts a new line either way.")
             {
                 Default = "false",
+            },
+            new("text_stroke", SchemaKind.Block, "An outline round each letter, drawn behind the letters' fill.") { Of = "style.text_stroke" },
+            new("text_fill", SchemaKind.Paint,
+                "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's "
+                + "`color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the "
+                + "widget's box, so texts whose boxes line up share one."),
+            new("italic", SchemaKind.Boolean,
+                "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.")
+            {
+                Default = "false",
+            },
+            new("underline", SchemaKind.Boolean, "A line under the text, as long as the text, in the letters' color.") { Default = "false" },
+            new("strike", SchemaKind.Boolean, "A line through the text, as long as the text, in the letters' color.") { Default = "false" },
+            new("case", SchemaKind.Enum,
+                "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: "
+                + "`title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.")
+            {
+                Default = "none", Values = ["upper", "lower", "title", "none"],
             },
         ]);
 }
