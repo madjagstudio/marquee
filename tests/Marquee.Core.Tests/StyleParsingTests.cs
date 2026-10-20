@@ -205,7 +205,7 @@ public class StyleParsingTests
     }
 
     [Theory]
-    [InlineData("base: { colour: \"#FFF\" }", 1, "Unknown key 'colour' in style 'base'. Expected one of: extends, font, size, weight, color, fill, track, stroke, shadow, glow, pulse, opacity, radius, padding, align, blend, letter_spacing, line_height, wrap")]
+    [InlineData("base: { colour: \"#FFF\" }", 1, "Unknown key 'colour' in style 'base'. Expected one of: extends, font, size, weight, color, fill, track, stroke, shadow, glow, pulse, opacity, radius, padding, align, blend, letter_spacing, line_height, wrap, text_stroke, text_fill, italic, underline, strike, case")]
     [InlineData("base:\n  wrap: yes", 2, "wrap must be true or false, not 'yes'")]
     [InlineData("base:\n  letter_spacing: -20.5", 2, "letter_spacing must be between -20 and 100")]
     [InlineData("base:\n  letter_spacing: 100.5", 2, "letter_spacing must be between -20 and 100")]

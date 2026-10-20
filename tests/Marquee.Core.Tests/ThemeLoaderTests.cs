@@ -99,7 +99,7 @@ public class ThemeLoaderTests
         using var theme = folder.Load();
 
         Assert.Null(theme.Assets.Image("a\0.png"));
-        Assert.Same(BundledFonts.Regular, theme.Assets.Typeface("b\0.ttf", 400));
+        Assert.Same(BundledFonts.Regular, theme.Assets.Typeface("b\0.ttf", 400, italic: false));
         Assert.Equal(
             [
                 "Image 'a\0.png' is not a valid path and was skipped.",
@@ -114,8 +114,8 @@ public class ThemeLoaderTests
         using var folder = new TempTheme(Canvas);
         using var theme = folder.Load();
 
-        Assert.Same(BundledFonts.Regular, theme.Assets.Typeface(null, 400));
-        Assert.Same(BundledFonts.Bold, theme.Assets.Typeface("Inter", 700));
+        Assert.Same(BundledFonts.Regular, theme.Assets.Typeface(null, 400, italic: false));
+        Assert.Same(BundledFonts.Bold, theme.Assets.Typeface("Inter", 700, italic: false));
         Assert.Equal("Inter", BundledFonts.Regular.FamilyName);
         Assert.True(BundledFonts.Bold.FontWeight >= 600);
     }
@@ -130,7 +130,7 @@ public class ThemeLoaderTests
         folder.AddFile("fonts/Mine.ttf", BundledFonts.ReadBytes("Inter-Bold.ttf"));
 
         using var theme = folder.Load();
-        var typeface = theme.Assets.Typeface("fonts/Mine.ttf", 400);
+        var typeface = theme.Assets.Typeface("fonts/Mine.ttf", 400, italic: false);
 
         Assert.NotSame(BundledFonts.Bold, typeface);
         Assert.Equal(BundledFonts.Bold.FamilyName, typeface.FamilyName);
@@ -152,8 +152,8 @@ public class ThemeLoaderTests
 
         using var theme = folder.Load();
 
-        Assert.Same(BundledFonts.Regular, theme.Assets.Typeface("fonts/Gone.ttf", 400));
-        Assert.Same(BundledFonts.Bold, theme.Assets.Typeface("NoSuchFamily123", 700));
+        Assert.Same(BundledFonts.Regular, theme.Assets.Typeface("fonts/Gone.ttf", 400, italic: false));
+        Assert.Same(BundledFonts.Bold, theme.Assets.Typeface("NoSuchFamily123", 700, italic: false));
         Assert.Equal(
             [
                 "Font file 'fonts/Gone.ttf' was not found or could not be read; using Inter instead.",
@@ -168,7 +168,7 @@ public class ThemeLoaderTests
         using var folder = new TempTheme(Canvas);
         using var theme = folder.Load();
 
-        Assert.Equal("Arial", theme.Assets.Typeface("Arial", 400).FamilyName);
+        Assert.Equal("Arial", theme.Assets.Typeface("Arial", 400, italic: false).FamilyName);
     }
 
     [Fact]
@@ -213,8 +213,8 @@ public class ThemeLoaderTests
         using var secondFolder = new TempTheme(Canvas);
         var first = firstFolder.Load();
         using var second = secondFolder.Load();
-        var kept = second.Assets.Typeface("Arial", 400);
-        first.Assets.Typeface("Arial", 400);
+        var kept = second.Assets.Typeface("Arial", 400, italic: false);
+        first.Assets.Typeface("Arial", 400, italic: false);
 
         first.Dispose();
 
@@ -228,7 +228,7 @@ public class ThemeLoaderTests
     {
         using var liveFolder = new TempTheme(Canvas);
         using var live = liveFolder.Load();
-        var typeface = live.Assets.Typeface("Arial", 400);
+        var typeface = live.Assets.Typeface("Arial", 400, italic: false);
 
         using var nextFolder = new TempTheme(Canvas + """
             widgets:

@@ -6,7 +6,8 @@ public static partial class ThemeSchema
     /// style, the widget's and its rules can layer.
     static SchemaBlock StyleBlock() => new("style", "style", "Styles",
         "How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group "
-        + "passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.",
+        + "passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) and its letter effects "
+        + "(text_stroke, text_fill, italic, underline, strike, case) down to its children; the others stay with its box.",
         [
             new("extends", SchemaKind.StyleName, "Another named style to start from; keys set here override it."),
             new("font", SchemaKind.FontFamily,
@@ -79,6 +80,23 @@ public static partial class ThemeSchema
                 + "box. A line break starts a new line either way.")
             {
                 Default = "false",
+            },
+            new("text_stroke", SchemaKind.Block, "An outline round each letter, drawn behind the letters' fill.") { Of = "style.text_stroke" },
+            new("text_fill", SchemaKind.Paint,
+                "The letters' color or gradient, in place of `color`, which keeps its other jobs. A gradient spans the widget's "
+                + "box, so texts whose boxes line up share one."),
+            new("italic", SchemaKind.Boolean,
+                "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.")
+            {
+                Default = "false",
+            },
+            new("underline", SchemaKind.Boolean, "A line under the text, as long as the text, in the letters' color.") { Default = "false" },
+            new("strike", SchemaKind.Boolean, "A line through the text, as long as the text, in the letters' color.") { Default = "false" },
+            new("case", SchemaKind.Enum,
+                "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: "
+                + "`title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.")
+            {
+                Default = "none", Values = ["upper", "lower", "title", "none"],
             },
         ]);
 }

@@ -29,6 +29,7 @@ public class ThemeSchemaDriftTests
             ["style.shadow"] = StyleTable.ShadowKeys,
             ["style.glow"] = StyleTable.GlowKeys,
             ["style.pulse"] = StyleTable.PulseKeys,
+            ["style.text_stroke"] = StyleTable.TextStrokeKeys,
             ["gradient"] = PaintParser.GradientKeys,
             ["when"] = WidgetParser.RuleKeys,
             ["ring"] = RingParser.Keys,
@@ -168,6 +169,11 @@ public class ThemeSchemaDriftTests
         (nameof(StyleDefaults.LetterSpacing), "style", "letter_spacing", s => s.LetterSpacing),
         (nameof(StyleDefaults.LineHeight), "style", "line_height", s => s.LineHeight),
         (nameof(StyleDefaults.Wrap), "style", "wrap", s => s.Wrap),
+        (nameof(StyleDefaults.TextStrokeWidth), "style.text_stroke", "width", s => s.TextStroke?.Width),
+        (nameof(StyleDefaults.Italic), "style", "italic", s => s.Italic),
+        (nameof(StyleDefaults.Underline), "style", "underline", s => s.Underline),
+        (nameof(StyleDefaults.Strike), "style", "strike", s => s.Strike),
+        (nameof(StyleDefaults.Case), "style", "case", s => s.Case),
     ];
 
     [Fact]
@@ -544,7 +550,7 @@ public class ThemeSchemaDriftTests
                 case "canvas":
                     layout["canvas"] = probe;
                     break;
-                case "style" or "style.stroke" or "style.shadow" or "style.glow" or "style.pulse":
+                case "style" or "style.stroke" or "style.shadow" or "style.glow" or "style.pulse" or "style.text_stroke":
                     // A widget uses the style, so a test can read it back.
                     layout["styles"]![ProbeStyle] = id == "style" ? probe : new JsonObject { [Block.Name] = probe };
                     layout["widgets"] = new JsonArray(Widget("text", ("text", "x"), ("style", ProbeStyle)));

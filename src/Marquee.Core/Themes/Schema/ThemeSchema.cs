@@ -21,6 +21,7 @@ public static partial class ThemeSchema
     public static SchemaBlock Shadow { get; } = WithUse(ShadowBlock());
     public static SchemaBlock Glow { get; } = WithUse(GlowBlock());
     public static SchemaBlock Pulse { get; } = WithUse(PulseBlock());
+    public static SchemaBlock TextStroke { get; } = WithUse(TextStrokeBlock());
 
     /// The mapping form of a paint: a linear or radial gradient.
     public static SchemaUnion Gradient { get; } = GradientUnion();
@@ -52,7 +53,7 @@ public static partial class ThemeSchema
 
     /// The blocks that aren't part of a union, in the order the reference describes them.
     public static IReadOnlyList<SchemaBlock> Blocks =>
-        [Layout, Canvas, Style, Stroke, Shadow, Glow, Pulse, When, Ring, RingWhen, Needle, Ticks, GraphGrid, GraphSeries, DonutSlice];
+        [Layout, Canvas, Style, Stroke, Shadow, Glow, Pulse, TextStroke, When, Ring, RingWhen, Needle, Ticks, GraphGrid, GraphSeries, DonutSlice];
 
     public static IReadOnlyList<SchemaUnion> Unions => [Gradient, Background, Widgets];
 

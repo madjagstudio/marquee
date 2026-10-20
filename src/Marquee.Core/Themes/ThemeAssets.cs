@@ -14,7 +14,7 @@ public sealed class ThemeAssets : IDisposable
 
     readonly Dictionary<string, SKImage> _images = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, SKTypeface> _fontFiles = new(StringComparer.OrdinalIgnoreCase);
-    readonly Dictionary<(string Family, int Weight), SKTypeface> _families = [];
+    readonly Dictionary<(string Family, int Weight, bool Italic), SKTypeface> _families = [];
     readonly Dictionary<ShaderLayer, SKRuntimeEffect> _shaders = new(ReferenceEqualityComparer.Instance);
     readonly Dictionary<VideoLayer, VideoPlayer> _videos = new(ReferenceEqualityComparer.Instance);
     readonly Dictionary<VideoWidget, VideoPlayer> _videoWidgets = new(ReferenceEqualityComparer.Instance);
@@ -103,17 +103,20 @@ public sealed class ThemeAssets : IDisposable
                 yield return $"Video '{path}' stopped playing and shows its last frame: {error}";
     }
 
-    /// The typeface for a style's font (a family name, or a .ttf/.otf file in the theme folder) at a weight.
-    public SKTypeface Typeface(string? font, int weight)
+    /// The typeface for a style's font (a family name, or a .ttf/.otf file in the theme folder) at a weight, and with
+    /// `italic` an installed family's italic face, when it has one. Inter and a font file are only the faces they are,
+    /// so they come back as they are; TextPainter slants a face that isn't italic.
+    public SKTypeface Typeface(string? font, int weight, bool italic)
     {
         if (font is null || IsBundled(font)) return BundledFonts.ForWeight(weight);
         if (IsFontFile(font)) return _fontFiles.GetValueOrDefault(font) ?? BundledFonts.ForWeight(weight);
 
-        if (!_families.TryGetValue((font, weight), out var typeface))
+        if (!_families.TryGetValue((font, weight, italic), out var typeface))
         {
             try
             {
-                typeface = SKFontManager.Default.MatchFamily(font, new SKFontStyle(weight, (int)SKFontStyleWidth.Normal, SKFontStyleSlant.Upright))
+                var slant = italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
+                typeface = SKFontManager.Default.MatchFamily(font, new SKFontStyle(weight, (int)SKFontStyleWidth.Normal, slant))
                     ?? BundledFonts.ForWeight(weight);
             }
             catch (Exception)
@@ -122,7 +125,7 @@ public sealed class ThemeAssets : IDisposable
                 typeface = BundledFonts.ForWeight(weight);
             }
 
-            _families[(font, weight)] = typeface;
+            _families[(font, weight, italic)] = typeface;
         }
 
         return typeface;

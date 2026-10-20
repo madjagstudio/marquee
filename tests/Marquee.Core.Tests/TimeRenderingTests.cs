@@ -62,4 +62,41 @@ public class TimeRenderingTests
 
         Snapshots.Match(frame, "time-value-widgets");
     }
+
+    static void AssertSamePixels(SKImage expected, SKImage actual)
+    {
+        using var a = SKBitmap.FromImage(expected);
+        using var b = SKBitmap.FromImage(actual);
+        Assert.True(a.Pixels.SequenceEqual(b.Pixels), "The two frames differ");
+    }
+
+    // The dial has no value, so no needle or arc: only its face and tick labels are drawn.
+    const string Dial = "  - { type: gauge, at: [40, 40], size: [400, 400], source: cpu.load, thickness: 0, style: { size: 32 }, ";
+
+    [Fact]
+    public void Dial_tick_labels_write_times_in_the_renderers_zone()
+    {
+        // 00:00, 05:00 and 10:00 UTC on 1 January 1970 are 05:30, 10:30 and 15:30 in the pinned zone.
+        using var times = Render(Landscape + "widgets:\n" + Dial
+            + "min: 0, max: 36000, ticks: { major: 2, labels: \"time:HH:mm\" } }\n", TestSensors.Of());
+        using var written = Render(Landscape + "widgets:\n" + Dial
+            + "min: 5, max: 15, ticks: { major: 2, labels: \"{0:00}:30\" } }\n", TestSensors.Of());
+
+        AssertSamePixels(written, times);
+    }
+
+    [Fact]
+    public void Donut_shares_write_times_in_the_renderers_zone()
+    {
+        // A slice alone, beside one of 0 that is left out, has a share of 100, read here as 100 seconds after midnight
+        // UTC: 05:31 in the pinned zone.
+        var sensors = TestSensors.Of(("cpu.power", 50), ("gpu.power", 0));
+        const string Donut = "  - { type: donut, at: [40, 40], size: [400, 400], hole: 0.3, labels: inside, style: { size: 32 }, ";
+        using var times = Render(Landscape + "widgets:\n" + Donut
+            + "format: \"time:HH:mm\", slices: [{ source: cpu.power, label: at, style: { fill: \"#2A8C94\" } }, { source: gpu.power }] }\n", sensors);
+        using var written = Render(Landscape + "widgets:\n" + Donut
+            + "slices: [{ source: cpu.power, label: \"at 05:31\", style: { fill: \"#2A8C94\" } }, { source: gpu.power }] }\n", sensors);
+
+        AssertSamePixels(written, times);
+    }
 }

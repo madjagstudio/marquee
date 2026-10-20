@@ -40,7 +40,7 @@ The screen the theme is made for. A theme fits both ways up of its orientation.
 
 Goes under `styles:` in [layout.yaml](#layoutyaml).
 
-How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.
+How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) and its letter effects (text_stroke, text_fill, italic, underline, strike, case) down to its children; the others stay with its box.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -63,6 +63,12 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `letter_spacing` | number (px) | -20 to 100 | `0` | Space added between the characters of text; below 0 draws them closer. |
 | `line_height` | number (times) | 0.5 to 4 | `1.2` | How far apart the lines of text are, as a multiple of the text's size. |
 | `wrap` | true or false |  | `false` | Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way. |
+| `text_stroke` | block: [Text stroke](#text-stroke) |  |  | An outline round each letter, drawn behind the letters' fill. |
+| `text_fill` | paint |  |  | The letters' color or gradient, in place of `color`, which keeps its other jobs. A gradient spans the widget's box, so texts whose boxes line up share one. |
+| `italic` | true or false |  | `false` | Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted. |
+| `underline` | true or false |  | `false` | A line under the text, as long as the text, in the letters' color. |
+| `strike` | true or false |  | `false` | A line through the text, as long as the text, in the letters' color. |
+| `case` | choice | `upper`, `lower`, `title`, `none` | `none` | Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written. |
 
 ### Stroke
 
@@ -112,6 +118,17 @@ A steady beat: the opacity or the glow eases from max down to min and back, once
 | `period` | number (ms) | at least 50 | `1000` | How long one beat takes. |
 | `min` | number (fraction) | 0 to 1 | `0.4` | The low point, as a fraction of the normal opacity or glow. |
 | `max` | number (fraction) | 0 to 1 | `1` | The high point, as a fraction of the normal opacity or glow. |
+
+### Text stroke
+
+Goes under `text_stroke:` in [Styles](#styles).
+
+An outline round each letter, and round the lines under and through them. It is drawn behind the letters' fill, so they keep their shape and the outline shows `width` px outside them, with rounded corners.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `width` | number (px) | at least 0 | `1` | How far the outline shows outside the letters; 0 draws none. |
+| `color` | paint |  |  | The outline's color or gradient, which spans the widget's box. There is no outline without it. |
 
 ## Gradients
 
@@ -393,7 +410,7 @@ One part of a donut's whole. Its style goes over the donut's, and the donut's `w
 
 ### Group
 
-A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style. Groups nest up to 16 deep.
+A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style and letter effects. Groups nest up to 16 deep.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|

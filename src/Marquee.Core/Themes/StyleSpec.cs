@@ -37,6 +37,19 @@ public sealed record StyleSpec
     /// box draws on one line as it always has; a `\n` starts a new line either way.
     public bool? Wrap { get; init; }
 
+    // Letter effects: they change how letters are drawn wherever a style draws text (LetterEffects.cs).
+
+    /// An outline round each letter, behind its fill.
+    public TextStrokeSpec? TextStroke { get; init; }
+
+    /// The letters' color or gradient, over `Color`, spread across the widget's box.
+    public PaintSpec? TextFill { get; init; }
+
+    public bool? Italic { get; init; }
+    public bool? Underline { get; init; }
+    public bool? Strike { get; init; }
+    public LetterCase? Case { get; init; }
+
     /// `over` wins wherever it sets a property. Stroke, shadow, glow and pulse merge field by field,
     /// so a rule can change a stroke's color and keep its width.
     public static StyleSpec Merge(StyleSpec under, StyleSpec over) => new()
@@ -59,13 +72,21 @@ public sealed record StyleSpec
         LetterSpacing = over.LetterSpacing ?? under.LetterSpacing,
         LineHeight = over.LineHeight ?? under.LineHeight,
         Wrap = over.Wrap ?? under.Wrap,
+        TextStroke = TextStrokeSpec.Merge(under.TextStroke, over.TextStroke),
+        TextFill = over.TextFill ?? under.TextFill,
+        Italic = over.Italic ?? under.Italic,
+        Underline = over.Underline ?? under.Underline,
+        Strike = over.Strike ?? under.Strike,
+        Case = over.Case ?? under.Case,
     };
 
-    /// What a group passes down to its children. Box properties (fill, stroke, radius, ...) stay with the group.
+    /// What a group passes down to its children: its text properties and letter effects. Box properties (fill, stroke,
+    /// radius, ...) stay with the group.
     public StyleSpec Inherited() => new()
     {
         Font = Font, Size = Size, Weight = Weight, Color = Color, Align = Align, LetterSpacing = LetterSpacing, LineHeight = LineHeight,
         Wrap = Wrap,
+        TextStroke = TextStroke, TextFill = TextFill, Italic = Italic, Underline = Underline, Strike = Strike, Case = Case,
     };
 }
 
@@ -99,6 +120,12 @@ public static class StyleDefaults
     public const float LetterSpacing = 0;
     public const float LineHeight = 1.2f;
     public const bool Wrap = false;
+
+    public const float TextStrokeWidth = 1;
+    public const bool Italic = false;
+    public const bool Underline = false;
+    public const bool Strike = false;
+    public const LetterCase Case = LetterCase.None;
 }
 
 public enum TextAlign { Left, Center, Right }

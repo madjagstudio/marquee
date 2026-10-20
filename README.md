@@ -313,6 +313,8 @@ widgets:
   `video` (a clip in a box), `shape` (a `rect`, `ellipse`, `line` or `arc`, which `when` rules can recolor), `donut`
   (a pie or donut of up to 12 slices), `group`.
 - **Styles:** named in `styles:`, layered with `extends:`, changed by `when:` rules (`above`, `below`, `equals`, `stale`), animated with `pulse:`.
+  Letter effects: an outline (`text_stroke`), a color or gradient for the letters alone (`text_fill`), `italic`,
+  `underline`, `strike` and `case` (`upper`, `lower` or `title`).
 - **Background:** `fill` (color or gradient), `image`, `shader` and `video` layers, each with `opacity` and `blend`; up
   to 16 layers, at most 4 of them shaders and 2 of them videos.
 - **Colors** are quoted CSS hex (`"#RRGGBB"` or `"#RRGGBBAA"`): an unquoted `#` starts a YAML comment.

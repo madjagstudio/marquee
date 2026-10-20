@@ -73,18 +73,22 @@ static class DonutPainter
 
         // A label that would overlap the last one drawn, or the first, which the ring comes back round to, is left out,
         // as a dial's are.
-        using var ink = new SKPaint { IsAntialias = true, Color = style.Color ?? StyleDefaults.Color };
+        using var letters = new TextInk(style, bounds, ctx.Time, effects: false);
         var spacing = style.LetterSpacing ?? StyleDefaults.LetterSpacing;
+        var outline = TextInk.OutlineWidth(style);
         var baseline = -(font.Metrics.Ascent + font.Metrics.Descent) / 2;
         SKRect? first = null, previous = null;
         foreach (var arc in arcs)
         {
-            if (Label(donut, arc, font, style, centre, outer, inner) is not (var text, var box)) continue;
-            if (previous?.IntersectsWith(box) == true || first?.IntersectsWith(box) == true) continue;
+            if (Label(donut, arc, font, style, ctx.Locale, centre, outer, inner) is not (var text, var box)) continue;
+            // Labels whose outlines would touch are too close.
+            var room = SKRect.Inflate(box, outline, outline);
+            if (previous?.IntersectsWith(room) == true || first?.IntersectsWith(room) == true) continue;
 
-            TextPainter.DrawLine(canvas, text, box.Left, box.MidY + baseline, font, spacing, ink);
-            first ??= box;
-            previous = box;
+            using (var run = new TextRun(text, font, spacing))
+                letters.Draw(canvas, run, box.Left, box.MidY + baseline);
+            first ??= room;
+            previous = room;
         }
     }
 
@@ -177,18 +181,19 @@ static class DonutPainter
         canvas.DrawPath(path, paint);
     }
 
-    /// The slice's label, then its share if the donut has a format, and the box it takes, in the font and letter spacing
-    /// a text widget with the donut's style would use; null when the slice has no label or no room for one. Inside, the
+    /// The slice's label, then its share if the donut has a format, and the box it takes, in the font, letter spacing and
+    /// case a text widget with the donut's style would use; null when the slice has no label or no room for one. Inside, the
     /// label is centred on the ring's middle and needs the slice's arc there to be as long as the label and the whole
-    /// label to lie within the ring. Outside, it sits beyond the ring, leaning away from it on the side it is on, and
-    /// needs an arc a line long at that distance; it stays inside the box across, so a box with too little room beside
-    /// the ring pulls it in over the ring rather than into whatever is next to it.
-    static (string Text, SKRect Box)? Label(DonutWidget donut, Arc arc, SKFont font, StyleSpec style, SKPoint centre, float outer,
-        float inner)
+    /// label, outline and all, to lie within the ring. Outside, it sits beyond the ring, leaning away from it on the side
+    /// it is on, and needs an arc a line long at that distance; it stays inside the box across, so a box with too little
+    /// room beside the ring pulls it in over the ring rather than into whatever is next to it.
+    static (string Text, SKRect Box)? Label(DonutWidget donut, Arc arc, SKFont font, StyleSpec style, TimeLocale locale,
+        SKPoint centre, float outer, float inner)
     {
         var slice = donut.Slices[arc.Index];
-        var share = donut.Format is { } format ? Formatting.Apply(format, SensorValue.Of(arc.Share * 100)) : null;
-        var text = string.Join(" ", new[] { slice.Label, share }.Where(t => !string.IsNullOrEmpty(t)));
+        var share = donut.Format is { } format ? Formatting.Apply(format, SensorValue.Of(arc.Share * 100), locale) : null;
+        var label = string.Join(" ", new[] { slice.Label, share }.Where(t => !string.IsNullOrEmpty(t)));
+        var text = TextCase.Apply(label, style.Case, locale.Culture);
         if (text.Length == 0) return null;
 
         var width = TextPainter.Width(font, text, style.LetterSpacing ?? StyleDefaults.LetterSpacing);
@@ -219,7 +224,8 @@ static class DonutPainter
         }
 
         var box = SKRect.Create(middle.X - width / 2, middle.Y - height / 2, width, height);
-        if (donut.Labels == DonutLabels.Inside && !InRing(box, centre, outer, inner)) return null;
+        var outline = TextInk.OutlineWidth(style);
+        if (donut.Labels == DonutLabels.Inside && !InRing(SKRect.Inflate(box, outline, outline), centre, outer, inner)) return null;
         return (text, box);
     }
 

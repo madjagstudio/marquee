@@ -50,6 +50,17 @@ public static partial class ThemeSchema
             },
         ]);
 
+    static SchemaBlock TextStrokeBlock() => new("style.text_stroke", "text_stroke", "Text stroke",
+        "An outline round each letter, and round the lines under and through them. It is drawn behind the letters' fill, "
+        + "so they keep their shape and the outline shows `width` px outside them, with rounded corners.",
+        [
+            new("width", SchemaKind.Number, "How far the outline shows outside the letters; 0 draws none.")
+            {
+                Default = Number(StyleDefaults.TextStrokeWidth), Min = 0, Unit = SchemaUnit.Px,
+            },
+            new("color", SchemaKind.Paint, "The outline's color or gradient, which spans the widget's box. There is no outline without it."),
+        ]);
+
     static SchemaBlock PulseBlock() => new("style.pulse", "pulse", "Pulse",
         "A steady beat: the opacity or the glow eases from max down to min and back, once each period.",
         [

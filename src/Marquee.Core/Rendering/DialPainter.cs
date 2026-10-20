@@ -54,21 +54,25 @@ static class DialPainter
     }
 
     /// Each major tick's value, centred on the point that puts its text just inside `inside`, whatever its angle, in
-    /// the font and letter spacing a text widget with this style would use. A label whose text would overlap the last
-    /// one drawn, or the first, is left out, so a small dial or a large font shows every other label rather than a smudge.
+    /// the font, letter spacing, case and letter effects a text widget with this style would use. A label whose text
+    /// would overlap the last one drawn, or the first, is left out, so a small dial or a large font shows every other
+    /// label rather than a smudge.
     static void Labels(RenderContext ctx, GaugeWidget gauge, TickSpec ticks, string format, StyleSpec style, SKPoint center,
         float inside, bool full)
     {
         using var font = TextPainter.Font(ctx, style);
-        using var paint = new SKPaint { IsAntialias = true, Color = style.Color ?? StyleDefaults.Color };
+        using var letters = new TextInk(style, gauge.Bounds, ctx.Time, effects: false);
         var spacing = style.LetterSpacing ?? StyleDefaults.LetterSpacing;
+        var outline = TextInk.OutlineWidth(style);
 
         SKRect? first = null, previous = null;
         var last = full ? ticks.Major - 1 : ticks.Major;
         for (var i = 0; i <= last; i++)
         {
             var fraction = (double)i / ticks.Major;
-            var text = Formatting.Apply(format, SensorValue.Of(gauge.Min + (gauge.Max - gauge.Min) * fraction));
+            var number = SensorValue.Of(gauge.Min + (gauge.Max - gauge.Min) * fraction);
+            var value = Formatting.Apply(format, number, ctx.Locale);
+            var text = TextCase.Apply(value, style.Case, ctx.Locale.Culture);
             if (text.Length == 0) continue;
 
             var ink = TextPainter.Ink(font, text, spacing);
@@ -77,10 +81,13 @@ static class DialPainter
             // How far the text's box reaches towards the tick, from its centre, along this angle.
             var half = MathF.Abs(MathF.Cos(radians)) * ink.Width / 2 + MathF.Abs(MathF.Sin(radians)) * ink.Height / 2;
             var middle = At(center, angle, inside - half);
+            // The outline reaches beyond the letters, so labels whose outlines would touch are too close.
             var box = SKRect.Create(middle.X - ink.Width / 2, middle.Y - ink.Height / 2, ink.Width, ink.Height);
+            box.Inflate(outline, outline);
             if (previous?.IntersectsWith(box) == true || first?.IntersectsWith(box) == true) continue;
 
-            TextPainter.DrawLine(ctx.Canvas, text, middle.X - ink.MidX, middle.Y - ink.MidY, font, spacing, paint);
+            using (var run = new TextRun(text, font, spacing))
+                letters.Draw(ctx.Canvas, run, middle.X - ink.MidX, middle.Y - ink.MidY);
             first ??= box;
             previous = box;
         }

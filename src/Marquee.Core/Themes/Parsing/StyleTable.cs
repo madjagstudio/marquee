@@ -12,12 +12,14 @@ sealed class StyleTable
     [
         "extends", "font", "size", "weight", "color", "fill", "track", "stroke", "shadow", "glow", "pulse", "opacity", "radius", "padding", "align",
         "blend", "letter_spacing", "line_height", "wrap",
+        "text_stroke", "text_fill", "italic", "underline", "strike", "case",
     ];
 
     internal static readonly string[] StrokeKeys = ["width", "color", "cap"];
     internal static readonly string[] ShadowKeys = ["color", "x", "y", "blur"];
     internal static readonly string[] GlowKeys = ["color", "radius"];
     internal static readonly string[] PulseKeys = ["property", "period", "min", "max"];
+    internal static readonly string[] TextStrokeKeys = ["width", "color"];
 
     sealed record Raw(StyleSpec Own, YamlNode? Extends, YamlNode Definition);
 
@@ -119,6 +121,15 @@ sealed class StyleTable
             LetterSpacing = f.Optional("letter_spacing") is { } spacing ? Yaml.Float(spacing, "letter_spacing", -20, 100) : null,
             LineHeight = f.Optional("line_height") is { } lineHeight ? Yaml.Float(lineHeight, "line_height", 0.5, 4) : null,
             Wrap = f.Optional("wrap") is { } wrap ? Yaml.Bool(wrap, "wrap") : null,
+            TextStroke = f.Optional("text_stroke") is { } textStroke ? TextStroke(textStroke) : null,
+            TextFill = f.Optional("text_fill") is { } textFill ? PaintParser.Paint(textFill, "text_fill") : null,
+            Italic = f.Optional("italic") is { } italic ? Yaml.Bool(italic, "italic") : null,
+            Underline = f.Optional("underline") is { } underline ? Yaml.Bool(underline, "underline") : null,
+            Strike = f.Optional("strike") is { } strike ? Yaml.Bool(strike, "strike") : null,
+            Case = f.Optional("case") is { } letterCase
+                ? Yaml.Choice(letterCase, "case",
+                    ("upper", LetterCase.Upper), ("lower", LetterCase.Lower), ("title", LetterCase.Title), ("none", LetterCase.None))
+                : null,
         };
         return new Raw(style, f.Optional("extends"), definition);
     }
@@ -160,6 +171,14 @@ sealed class StyleTable
         return new GlowSpec(
             f.Optional("color") is { } c ? PaintParser.Color(c, "glow.color") : null,
             f.Optional("radius") is { } r ? Yaml.Float(r, "glow.radius", 0) : null);
+    }
+
+    static TextStrokeSpec TextStroke(YamlNode node)
+    {
+        var f = Yaml.Map(node, "text_stroke", TextStrokeKeys);
+        return new TextStrokeSpec(
+            f.Optional("width") is { } w ? Yaml.Float(w, "text_stroke.width", 0) : null,
+            f.Optional("color") is { } c ? PaintParser.Paint(c, "text_stroke.color") : null);
     }
 
     static PulseSpec Pulse(YamlNode node)

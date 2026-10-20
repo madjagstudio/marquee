@@ -96,7 +96,7 @@
       "additionalProperties": false
     },
     "style": {
-      "description": "Styles: How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) down to its children; the others stay with its box.",
+      "description": "Styles: How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align, letter_spacing, line_height, wrap) and its letter effects (text_stroke, text_fill, italic, underline, strike, case) down to its children; the others stay with its box.",
       "type": "object",
       "properties": {
         "extends": {
@@ -270,6 +270,53 @@
           "description": "Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way.",
           "markdownDescription": "Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way.",
           "default": false
+        },
+        "text_stroke": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/style.text_stroke"
+            }
+          ],
+          "description": "An outline round each letter, drawn behind the letters' fill.",
+          "markdownDescription": "An outline round each letter, drawn behind the letters' fill."
+        },
+        "text_fill": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/paint"
+            }
+          ],
+          "description": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A gradient spans the widget's box, so texts whose boxes line up share one.",
+          "markdownDescription": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A gradient spans the widget's box, so texts whose boxes line up share one."
+        },
+        "italic": {
+          "type": "boolean",
+          "description": "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.",
+          "markdownDescription": "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.",
+          "default": false
+        },
+        "underline": {
+          "type": "boolean",
+          "description": "A line under the text, as long as the text, in the letters' color.",
+          "markdownDescription": "A line under the text, as long as the text, in the letters' color.",
+          "default": false
+        },
+        "strike": {
+          "type": "boolean",
+          "description": "A line through the text, as long as the text, in the letters' color.",
+          "markdownDescription": "A line through the text, as long as the text, in the letters' color.",
+          "default": false
+        },
+        "case": {
+          "enum": [
+            "upper",
+            "lower",
+            "title",
+            "none"
+          ],
+          "description": "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.",
+          "markdownDescription": "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.",
+          "default": "none"
         }
       },
       "additionalProperties": false
@@ -400,6 +447,29 @@
           "description": "The high point, as a fraction of the normal opacity or glow. (fraction, 0 to 1)",
           "markdownDescription": "The high point, as a fraction of the normal opacity or glow. (fraction, 0 to 1)",
           "default": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "style.text_stroke": {
+      "description": "Text stroke: An outline round each letter, and round the lines under and through them. It is drawn behind the letters' fill, so they keep their shape and the outline shows `width` px outside them, with rounded corners.",
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How far the outline shows outside the letters; 0 draws none. (px, at least 0)",
+          "markdownDescription": "How far the outline shows outside the letters; 0 draws none. (px, at least 0)",
+          "default": 1
+        },
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/paint"
+            }
+          ],
+          "description": "The outline's color or gradient, which spans the widget's box. There is no outline without it.",
+          "markdownDescription": "The outline's color or gradient, which spans the widget's box. There is no outline without it."
         }
       },
       "additionalProperties": false
@@ -2587,7 +2657,7 @@
       "additionalProperties": false
     },
     "widget.group": {
-      "description": "Group: A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style. Groups nest up to 16 deep.",
+      "description": "Group: A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style and letter effects. Groups nest up to 16 deep.",
       "type": "object",
       "properties": {
         "type": {
