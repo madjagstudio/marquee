@@ -113,7 +113,12 @@ public sealed class ThemeAssets : IDisposable
     /// The playing clip for a video widget, fitted to its box, or null if it was skipped (see the theme's warnings) or
     /// is hidden. Render thread only: a clip from a cache may be shared with another theme, the editor's last one, whose
     /// box it was last fitted to.
-    public VideoPlayer? Video(VideoWidget widget) => Fitted(_videoWidgets.GetValueOrDefault(widget), widget.Fit, widget.Bounds);
+    public VideoPlayer? Video(VideoWidget widget) => Video(widget, widget.Fit, widget.Bounds);
+
+    /// The playing clip for a video widget, fitted to `area` rather than the widget's own box: the theme editor's drag
+    /// preview draws a copy of the widget, moved or resized in memory, with the clip the widget was loaded with.
+    internal VideoPlayer? Video(VideoWidget widget, ImageFit fit, SKRect area) =>
+        Fitted(_videoWidgets.GetValueOrDefault(widget), fit, area);
 
     VideoPlayer? Fitted(VideoPlayer? player, ImageFit fit, SKRect area)
     {

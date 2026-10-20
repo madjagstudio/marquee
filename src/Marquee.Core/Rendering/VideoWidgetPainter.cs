@@ -15,8 +15,11 @@ static class VideoWidgetPainter
         var bounds = video.Bounds;
         BoxPainter.Shadow(ctx.Canvas, bounds, style);
         BoxPainter.Background(ctx, bounds, style);
-        // FrameAt runs once per frame for each player, which is what keeps the frame it returns valid while it is drawn.
-        if (ctx.Assets.Video(video) is { } player && player.FrameAt(ctx.Time) is { } frame)
+        // The player is the one the theme's own widget was loaded with, for a widget standing in for it in the editor's
+        // drag preview, fitted to the box being drawn. FrameAt runs once per frame for each player, which is what keeps
+        // the frame it returns valid while it is drawn.
+        var original = (VideoWidget)ctx.Original(video);
+        if (ctx.Assets.Video(original, video.Fit, bounds) is { } player && player.FrameAt(ctx.Time) is { } frame)
         {
             // The player scaled the frame to the part of the box it covers, in the coordinates the widget is drawn in,
             // so it goes on unscaled unless the widget is rotated.

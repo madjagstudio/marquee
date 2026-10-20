@@ -31,6 +31,26 @@ public sealed partial class LayoutDocument
         return new LayoutNode(path, kind, YamlSplice.IsFlow(at.Node), keys, count, line, IsEditable(path));
     }
 
+    /// The whole value at `path` as the file says it, a list or mapping with everything in it, without quoting, layout
+    /// or comments (as YamlValue.Parse reads a fragment): a gradient paint, or a style's own keys. Null when the file has
+    /// no node there. TryGetScalar is the cheaper read of a single value. A value reached through an alias reads as what
+    /// it names; one that names one of its own parts again with an alias throws LayoutEditException, as a YamlValue, a
+    /// plain tree, can't hold it.
+    public YamlValue? ValueAt(YamlPath path)
+    {
+        if (Resolve(path) is not { } at) return null;
+        try
+        {
+            return YamlValue.From(YamlTree.From(at.Node)!);
+        }
+        catch (SpliceException)
+        {
+            throw new LayoutEditException(
+                $"{Name(path)} repeats part of itself through an alias (*), which the editor can't show. Edit it in the file.",
+                at.Line);
+        }
+    }
+
     /// The keys of the mapping at `mapping` whose values can be edited (IsEditable), in the file's order: what a
     /// property panel shows as editable when the widget as a whole isn't. Empty when there is no mapping there.
     public IReadOnlyList<string> EditableKeys(YamlPath mapping) =>

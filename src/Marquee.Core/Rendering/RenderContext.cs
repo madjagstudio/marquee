@@ -20,12 +20,23 @@ sealed class RenderContext(SKCanvas canvas, SensorSnapshot sensors, TimeSpan tim
     /// The time zone and culture that `time` placeholders and formats write in.
     public TimeLocale Locale { get; init; } = TimeLocale.Pc;
 
+    /// For the theme editor's drag preview: each widget drawn in place of one of the theme's, mapped (by reference) to
+    /// the widget it stands in for. Empty for any other frame.
+    public IReadOnlyDictionary<WidgetSpec, WidgetSpec> StandIns { get; init; } = NoStandIns;
+
+    public static IReadOnlyDictionary<WidgetSpec, WidgetSpec> NoStandIns { get; } =
+        new Dictionary<WidgetSpec, WidgetSpec>(ReferenceEqualityComparer.Instance);
+
+    /// The theme's widget that `widget` stands in for, or `widget` itself: what its clip and smoothing are found by.
+    public WidgetSpec Original(WidgetSpec widget) => StandIns.GetValueOrDefault(widget, widget);
+
     /// The number to display for a widget this frame, eased if the widget has `smooth`.
     public double Smoothed(WidgetSpec widget, double target)
     {
         if (widget.SmoothMs <= 0) return target;
-        if (!smoothers.TryGetValue(widget, out var smoother))
-            smoothers[widget] = smoother = new Smoother();
+        var original = Original(widget);
+        if (!smoothers.TryGetValue(original, out var smoother))
+            smoothers[original] = smoother = new Smoother();
         return smoother.Next(target, Time, widget.SmoothMs);
     }
 
