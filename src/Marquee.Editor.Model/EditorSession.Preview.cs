@@ -21,6 +21,11 @@ public sealed partial class EditorSession
 
     public bool IsPreviewing => _preview is not null;
 
+    /// Where the drag has put the widgets it moved, as `at`, `size` and `rotate` would write them (in their groups'
+    /// coordinates), for the canvas's selection outline to follow the drag; empty when there is no drag, or it hasn't
+    /// moved anything yet.
+    public IReadOnlyList<WidgetPlacement> PreviewPlacements => _preview?.Placements ?? [];
+
     /// Starts a drag. Throws InvalidOperationException during another one, or while editing is paused.
     public void BeginPreview()
     {

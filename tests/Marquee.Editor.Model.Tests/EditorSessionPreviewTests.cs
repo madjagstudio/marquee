@@ -119,6 +119,25 @@ public class EditorSessionPreviewTests
     }
 
     [Fact]
+    public void The_drags_placements_say_where_the_moved_widgets_are_until_it_ends()
+    {
+        using var folder = TempTheme.With(Layout);
+        using var session = folder.Open();
+        Assert.Empty(session.PreviewPlacements);
+        session.BeginPreview();
+        Assert.Empty(session.PreviewPlacements);
+
+        session.PreviewMove(Child, new SKPoint(50, 0));
+        session.PreviewRotate(Square, 30);
+
+        Assert.Equal(
+            [new WidgetPlacement(Child, SKRect.Create(50, 0, 20, 20), 0), new WidgetPlacement(Square, SKRect.Create(10, 10, 40, 40), 30)],
+            session.PreviewPlacements);
+        session.CancelPreview();
+        Assert.Empty(session.PreviewPlacements);
+    }
+
+    [Fact]
     public void Several_widgets_drag_together_as_one_step()
     {
         using var folder = TempTheme.With(Layout);
