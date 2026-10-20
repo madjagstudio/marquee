@@ -37,6 +37,7 @@ public class ThemeSchemaDriftTests
             ["gauge.ticks"] = DialParser.TickKeys,
             ["graph.grid"] = GraphParser.GridKeys,
             ["graph.series"] = GraphParser.SeriesKeys,
+            ["donut.slice"] = DonutParser.SliceKeys,
         };
         foreach (var (type, _) in WidgetParser.Types)
             keys[$"widget.{type}"] = [.. WidgetParser.Common, .. WidgetParser.TypeKeys[type]];
@@ -529,6 +530,10 @@ public class ThemeSchemaDriftTests
                     break;
                 case "graph.series":
                     layout["widgets"] = new JsonArray(Widget("graph", ("series", new JsonArray(probe))));
+                    break;
+                case "donut.slice":
+                    // A donut needs two slices; the second is the probe again.
+                    layout["widgets"] = new JsonArray(Widget("donut", ("slices", new JsonArray(probe, probe.DeepClone()))));
                     break;
                 default:
                     Assert.Fail($"ThemeSchemaDriftTests doesn't know where block '{id}' goes in layout.yaml; add it to Place.Layout");

@@ -168,7 +168,17 @@ static class ReferenceWriter
     public static string Help(SchemaKey key) =>
         key.OnlyFor is { } only ? $"{key.Help} Only with `{only.Key}: {only.Value}`." : key.Help;
 
-    static string Default(SchemaKey key) => key.Required ? "required" : key.Default is { } value ? $"`{value}`" : "";
+    /// A number's or a size's unit and range, as the Kind and Values columns give them: "degrees, -360 to 360".
+    public static string UnitAndRange(SchemaKey key) => string.Join(", ", new[]
+    {
+        key.Unit == SchemaUnit.None ? "" : Unit(key.Unit),
+        key.Kind is SchemaKind.Number or SchemaKind.Integer or SchemaKind.Size ? Values(key) : "",
+    }.Where(part => part.Length > 0));
+
+    /// The default, then any that differs by widget type: "`1`; `2` on a graph".
+    static string Default(SchemaKey key) =>
+        (key.Required ? "required" : key.Default is { } value ? $"`{value}`" : "")
+        + string.Concat(key.DefaultFor.Select(type => $"; `{type.Value}` on a {type.Key}"));
 
     static string TitleOf(string id) => ThemeSchema.Block(id)?.Title ?? ThemeSchema.Union(id)?.Title ?? id;
 

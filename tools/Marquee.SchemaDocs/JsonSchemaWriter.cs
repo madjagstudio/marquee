@@ -120,16 +120,29 @@ static class JsonSchemaWriter
 
     static JsonObject Requires(string key) => new() { ["required"] = new JsonArray(key) };
 
-    /// One key's schema, with its help as the description and its default.
+    /// One key's schema, with its Description and its default.
     static JsonObject Value(SchemaKey key)
     {
         var node = Kind(key);
         if (key.TakesFalse) node = new JsonObject { ["anyOf"] = new JsonArray(node, new JsonObject { ["const"] = false }) };
         // A $ref's siblings are ignored in draft-07, so a description goes on an allOf around it.
         if (node.ContainsKey("$ref")) node = new JsonObject { ["allOf"] = new JsonArray(node) };
-        node["description"] = ReferenceWriter.Help(key);
+        // VS Code's YAML extension shows markdownDescription where it has one, with the help's `code` as code.
+        var description = Description(key);
+        node["description"] = description;
+        node["markdownDescription"] = description;
         if (key.Default is { } value) node["default"] = Default(key, value);
         return node;
+    }
+
+    /// A hover shows only the description, so after the help it gives what the reference has columns for: the unit and
+    /// range, and any default that differs by widget type.
+    static string Description(SchemaKey key)
+    {
+        var text = ReferenceWriter.Help(key);
+        if (ReferenceWriter.UnitAndRange(key) is { Length: > 0 } units) text += $" ({units})";
+        foreach (var (type, value) in key.DefaultFor) text += $" Default on a {type}: {value}.";
+        return text;
     }
 
     static JsonObject Kind(SchemaKey key) => key.Kind switch

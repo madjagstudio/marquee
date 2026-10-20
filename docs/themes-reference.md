@@ -48,12 +48,12 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `font` | font |  | `Inter` | A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. |
 | `size` | number (px) | 1 to 1000 | `24` | Text size. |
 | `weight` | font weight | 100 to 900, or `light`, `normal`, `medium`, `semibold`, `bold` | `normal` | How heavy text is: 100 to 900, or a name (light 300 to bold 700). |
-| `color` | color |  | `#FFFFFF` | The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks use it when they set no color of their own. |
-| `fill` | paint |  |  | The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it). |
-| `track` | paint |  |  | The empty part of a bar or gauge, or its unlit segments, and the background behind a graph. |
-| `stroke` | block: [Stroke](#stroke) |  |  | An outline round a box, a bar or a shape (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap). |
-| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text, a shape or a gauge's needle. |
-| `glow` | block: [Glow](#glow) |  |  | A soft glow round text or a shape. |
+| `color` | color |  | `#FFFFFF` | The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own. |
+| `fill` | paint |  |  | The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments, and on a donut, each slice (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it). |
+| `track` | paint |  |  | The empty part of a bar or gauge, or its unlit segments, the background behind a graph, and the ring behind a donut's slices. |
+| `stroke` | block: [Stroke](#stroke) |  |  | An outline round a box, a bar, a shape or a donut's slice (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap). |
+| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text, a shape, a gauge's needle or a donut's slices. |
+| `glow` | block: [Glow](#glow) |  |  | A soft glow round text, a shape or a donut's slices. |
 | `pulse` | block: [Pulse](#pulse) |  |  | Makes the opacity or the glow beat steadily. |
 | `opacity` | number (fraction) | 0 to 1 | `1` | How solid the whole widget is: 0 hides it, 1 is fully solid. |
 | `radius` | number (px) | at least 0 | `0` | Rounds the corners of a box, a bar, the segments of a bar or gauge, a rect shape, a graph's background and what a group or image clips to. |
@@ -68,19 +68,19 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 
 Goes under `stroke:` in [Styles](#styles).
 
-A line: the outline drawn just inside a box or a shape, a line shape itself, a graph's line, or the ends of a gauge's arc or an arc shape.
+A line: the outline drawn just inside a box or a shape and round a donut's slice, a line shape itself, a graph's line, or the ends of a gauge's arc or an arc shape.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `width` | number (px) | at least 0 | `1` | How thick the line is; 0 draws none. A graph's line is 2 px when this is left out. |
+| `width` | number (px) | at least 0 | `1`; `2` on a graph | How thick the line is; 0 draws none. |
 | `color` | paint |  |  | The line's color or gradient. A box has no outline without it; a graph's line uses the style's color. |
-| `cap` | choice | `butt`, `round`, `square` | `butt` | How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A graph's line is round when this is left out. It doesn't shape a segmented gauge, whose segments `radius` rounds. |
+| `cap` | choice | `butt`, `round`, `square` | `butt`; `round` on a graph | How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. It doesn't shape a segmented gauge, whose segments `radius` rounds. |
 
 ### Shadow
 
 Goes under `shadow:` in [Styles](#styles).
 
-A copy of the text, a shape or a gauge's needle, drawn under it, offset and softened.
+A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -93,7 +93,7 @@ A copy of the text, a shape or a gauge's needle, drawn under it, offset and soft
 
 Goes under `glow:` in [Styles](#styles).
 
-A blurred copy of the text, or of a shape, drawn behind it.
+A blurred copy of the text, a shape or a donut's slices, drawn behind it.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -199,7 +199,7 @@ Every widget takes these.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `shape`, `group` | required | What kind of widget this is. |
+| `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `shape`, `donut`, `group` | required | What kind of widget this is. |
 | `at` | point |  | required | Where the widget's top-left corner goes, relative to the canvas or its group. |
 | `size` | size |  | required | The widget's width and height, each at least 1. |
 | `source` | expression |  |  | The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`. |
@@ -344,6 +344,31 @@ A rectangle, ellipse, line or arc, drawn with its style's `fill`, `stroke` and `
 | `start` | number (degrees) | -360 to 360 | `135` | Where the arc starts, clockwise from 3 o'clock. Only with `shape: arc`. |
 | `sweep` | number (degrees) | -360 to 360 | `270` | How far the arc runs from its start; negative runs anticlockwise. It can't be 0. Only with `shape: arc`. |
 | `thickness` | number (px) | at least 1 | `12` | How thick the arc's band is. The style's `stroke.cap` shapes its ends. Only with `shape: arc`. |
+
+### Donut
+
+A pie or donut that splits a whole between its slices, in the largest square that fits its box. Each slice's angle is its share of the live slices' total, so a stale slice takes no room and shows only as a notch: its gap, at least 2° wide. Angles are clockwise from 3 o'clock, as a gauge's are. `track` paints the whole ring behind the slices; `fill`, `stroke`, `glow` and `shadow` style every slice, under its own style; and the text style sets the labels.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `hole` | number (fraction) | 0 to 0.9 | `0.6` | The hole in the middle, as a fraction of the radius; 0 is a pie. |
+| `start` | number (degrees) | -360 to 360 | `-90` | Where the first slice starts: -90 is 12 o'clock, 0 is 3 o'clock. |
+| `gap` | number (degrees) | 0 to 90 | `2` | The space between neighbouring slices. All the gaps together take at most half the circle. |
+| `labels` | choice | `outside`, `inside`, `none` | `none` | Where each slice's label goes: outside the ring, inside it on its middle, or nowhere. A label is left out when its slice is too thin to hold it, or, inside, when it would run past the ring. Outside labels stay inside the box across, so leave room beside the ring for them. |
+| `format` | format |  |  | How to write each slice's share of the whole, in percent, after its label, such as "{0:0}%". Left out, labels show only the slice's label. |
+| `slices` | list of [Donut slices](#donut-slices) | 2 to 12 | required | The parts of the whole, drawn clockwise from start. |
+
+#### Donut slices
+
+Goes under `slices:` in [Donut](#donut).
+
+One part of a donut's whole. Its style goes over the donut's, and the donut's `when` rules go over every slice.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `source` | expression |  | required | The slice's value: a sensor key or an expression. A value of 0 or less takes no room. |
+| `label` | text or number |  |  | The text the slice's label shows. |
+| `style` | style |  |  | The slice's `fill` (default: the style's color), `stroke`, `glow` and `shadow`: a style's name, or a style written in place. |
 
 ### Group
 

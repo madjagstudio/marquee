@@ -95,4 +95,28 @@ public class ThemeSchemaDocsTests
         var line = Assert.Single(shape["allOf"]!.AsArray(), form => form!["if"]!["properties"]!["shape"]!["const"]!.GetValue<string>() == "line");
         Assert.Equal(1, line!["else"]!["properties"]!["size"]!["items"]!["minimum"]!.GetValue<int>());
     }
+
+    /// A hover in VS Code shows only a key's description, so it gives what the reference has columns for: the unit and
+    /// range, and a default that differs by widget type.
+    [Theory]
+    [InlineData("widget.gauge", "start", "Where the arc starts. (degrees, -360 to 360)")]
+    [InlineData("widget.graph", "points", "How many recent values span the width, one per sensor update. (2 to 600)")]
+    [InlineData("widget.text", "at", "Where the widget's top-left corner goes, relative to the canvas or its group. (px)")]
+    [InlineData("style.stroke", "width", "How thick the line is; 0 draws none. (px, at least 0) Default on a graph: 2.")]
+    public void Json_schema_descriptions_give_units_ranges_and_defaults_by_widget_type(string id, string key, string description)
+    {
+        var definitions = JsonNode.Parse(JsonSchemaWriter.Write())!["definitions"]!;
+        var property = definitions[id]!["properties"]![key]!;
+        Assert.Equal(description, property["description"]!.GetValue<string>());
+        // VS Code shows this one, with the help's `code` as code.
+        Assert.Equal(description, property["markdownDescription"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Reference_gives_defaults_by_widget_type()
+    {
+        var reference = ReferenceWriter.Write();
+        Assert.Contains("| `width` | number (px) | at least 0 | `1`; `2` on a graph | How thick the line is; 0 draws none. |", reference);
+        Assert.Contains("| `butt`; `round` on a graph |", reference);
+    }
 }

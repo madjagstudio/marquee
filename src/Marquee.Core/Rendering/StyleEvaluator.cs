@@ -6,9 +6,12 @@ namespace Marquee.Core.Rendering;
 static class StyleEvaluator
 {
     /// The widget's style this frame: what its group passes down, its own style, then each matching `when` rule in order.
-    public static StyleSpec Effective(WidgetSpec widget, StyleSpec inherited, SensorValue? subject, bool stale)
+    /// `part` is the style of one part of the widget, such as a donut's slice: it goes over the widget's own style and
+    /// under the rules, so a rule changes every part.
+    public static StyleSpec Effective(WidgetSpec widget, StyleSpec inherited, SensorValue? subject, bool stale, StyleSpec? part = null)
     {
         var style = StyleSpec.Merge(inherited, widget.Style);
+        if (part is not null) style = StyleSpec.Merge(style, part);
         foreach (var rule in widget.When)
             if (rule.Matches(subject, stale))
                 style = StyleSpec.Merge(style, rule.Style);

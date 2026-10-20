@@ -17,7 +17,8 @@ static class GraphParser
 
     public const int DefaultPoints = 60;
 
-    /// Most series one graph draws.
+    /// The fewest and most series one graph draws.
+    public const int MinSeries = 1;
     public const int MaxSeries = 8;
 
     public const int MaxGridLines = 20;
@@ -28,11 +29,11 @@ static class GraphParser
 
     public const float DefaultGridWidth = 1;
 
-    public static GraphWidget Parse(Fields f, StyleTable styles)
+    public static GraphWidget Parse(Fields f, StyleTable styles, ParseErrors errors)
     {
         IReadOnlyList<GraphSeries> series = f.OneOf("source", "series") == "source"
             ? [new GraphSeries(Key(f.Required("source")), StyleSpec.Empty)]
-            : Series(f.Required("series"), styles);
+            : ListParser.Entries(f.Required("series"), "series", MinSeries, MaxSeries, errors, entry => Series(entry, styles));
         var min = f.Optional("min") is { } a ? Yaml.Number(a, "min") : (double?)null;
         var max = f.Optional("max") is { } b ? Yaml.Number(b, "max") : (double?)null;
         if (min is { } lo && max is { } hi && hi <= lo)
@@ -52,17 +53,11 @@ static class GraphParser
             ? k.Key
             : throw Yaml.Error(node, "A graph's source must be a single sensor key, such as gpu.load");
 
-    static IReadOnlyList<GraphSeries> Series(YamlNode node, StyleTable styles)
+    static GraphSeries Series(YamlNode node, StyleTable styles)
     {
-        var entries = Yaml.List(node, "series");
-        if (entries.Count is 0 or > MaxSeries)
-            throw Yaml.Error(node, $"series must have between 1 and {MaxSeries} entries, not {entries.Count}");
-        return entries.Select(entry =>
-        {
-            var f = Yaml.Map(entry, "graph series", SeriesKeys);
-            var style = f.Optional("style") is { } s ? styles.Reference(s, "style") : StyleSpec.Empty;
-            return new GraphSeries(Key(f.Required("source")), style);
-        }).ToList();
+        var f = Yaml.Map(node, "graph series", SeriesKeys);
+        var style = f.Optional("style") is { } s ? styles.Reference(s, "style") : StyleSpec.Empty;
+        return new GraphSeries(Key(f.Required("source")), style);
     }
 
     static GraphGrid Grid(YamlNode node)

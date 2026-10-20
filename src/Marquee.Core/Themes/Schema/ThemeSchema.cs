@@ -47,9 +47,12 @@ public static partial class ThemeSchema
     public static SchemaBlock GraphGrid { get; } = GraphGridBlock();
     public static SchemaBlock GraphSeries { get; } = GraphSeriesBlock();
 
+    /// An entry of a donut widget's `slices:`.
+    public static SchemaBlock DonutSlice { get; } = DonutSliceBlock();
+
     /// The blocks that aren't part of a union, in the order the reference describes them.
     public static IReadOnlyList<SchemaBlock> Blocks =>
-        [Layout, Canvas, Style, Stroke, Shadow, Glow, Pulse, When, Ring, RingWhen, Needle, Ticks, GraphGrid, GraphSeries];
+        [Layout, Canvas, Style, Stroke, Shadow, Glow, Pulse, When, Ring, RingWhen, Needle, Ticks, GraphGrid, GraphSeries, DonutSlice];
 
     public static IReadOnlyList<SchemaUnion> Unions => [Gradient, Background, Widgets];
 

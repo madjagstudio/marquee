@@ -55,6 +55,10 @@ static class WidgetPainter
                 case GraphWidget graph:
                     GraphPainter.Paint(ctx, graph, style);
                     break;
+                case DonutWidget donut:
+                    DonutPainter.Paint(ctx, donut, style,
+                        donut.Slices.Select(s => StyleEvaluator.Effective(widget, inherited, subject, stale, s.Style)).ToList());
+                    break;
                 case ImageWidget image:
                     Image(ctx, image, style);
                     break;

@@ -29,6 +29,7 @@ public static partial class ThemeSchema
         ("graph", ["color", "fill", "track", "stroke", "radius"]),
         ("image", [.. BoxStyles]),
         ("shape", ["fill", "stroke", "shadow", "glow", "radius"]),
+        ("donut", ["font", "size", "weight", "color", "letter_spacing", "fill", "track", "stroke.width", "stroke.color", "shadow", "glow"]),
         ("group", [.. TextStyles, .. BoxStyles]),
     ];
 
@@ -104,6 +105,14 @@ public static partial class ThemeSchema
             size: [120, 60]
             shape: rect
             style: { fill: "#3A7BD5", radius: 8 }
+            """,
+        "donut" => """
+            type: donut
+            at: [0, 0]
+            size: [160, 160]
+            slices:
+              - { source: cpu.load, label: CPU }
+              - { source: "100 - cpu.load", label: Idle }
             """,
         "group" => """
             type: group

@@ -186,6 +186,32 @@ public class GraphParsingTests
         Assert.Single(spec.Widgets);
     }
 
+    /// As a donut's slices are: every bad series is listed, then the graph is left out.
+    [Fact]
+    public void Validate_reports_every_bad_series()
+    {
+        var (spec, errors) = Layouts.Collect(Header + """
+            - type: graph
+              at: [0, 0]
+              size: [100, 100]
+              series:
+                - { source: a, colour: red }
+                - { style: cpu }
+                - { source: "cpu.load +" }
+                - { source: c }
+            - { type: text, at: [0, 0], size: [10, 10], text: ok, nope: 1 }
+            """);
+
+        Assert.Equal(
+        [
+            "10: Unknown key 'colour' in graph series. Expected one of: source, style",
+            "11: graph series is missing 'source'",
+            "12: source: Expression ended unexpectedly at character 11",
+            "14: Unknown key 'nope' in text widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, text",
+        ], Layouts.Lines(errors));
+        Assert.Empty(spec.Widgets);
+    }
+
     /// An expression that doesn't parse, where a series needs one sensor key, is a mistake with its line for both
     /// `marquee validate` and the parser `marquee run` uses, and the theme's other mistakes are still listed.
     [Fact]

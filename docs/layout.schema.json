@@ -10,14 +10,16 @@
           "$ref": "#/definitions/canvas"
         }
       ],
-      "description": "The screen the theme is made for: which way round, and how many frames a second."
+      "description": "The screen the theme is made for: which way round, and how many frames a second.",
+      "markdownDescription": "The screen the theme is made for: which way round, and how many frames a second."
     },
     "styles": {
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/style"
       },
-      "description": "Named styles, which widgets and `when` rules use by name."
+      "description": "Named styles, which widgets and `when` rules use by name.",
+      "markdownDescription": "Named styles, which widgets and `when` rules use by name."
     },
     "background": {
       "type": "array",
@@ -25,14 +27,16 @@
         "$ref": "#/definitions/layer"
       },
       "maxItems": 16,
-      "description": "Layers drawn behind the widgets, first at the bottom: up to 16, at most 4 of them shaders and 2 videos."
+      "description": "Layers drawn behind the widgets, first at the bottom: up to 16, at most 4 of them shaders and 2 videos.",
+      "markdownDescription": "Layers drawn behind the widgets, first at the bottom: up to 16, at most 4 of them shaders and 2 videos."
     },
     "widgets": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/widget"
       },
-      "description": "What's drawn on the screen, in order, so later widgets cover earlier ones. Up to 2000 in all, counting the ones in groups."
+      "description": "What's drawn on the screen, in order, so later widgets cover earlier ones. Up to 2000 in all, counting the ones in groups.",
+      "markdownDescription": "What's drawn on the screen, in order, so later widgets cover earlier ones. Up to 2000 in all, counting the ones in groups."
     },
     "ring": {
       "allOf": [
@@ -40,7 +44,8 @@
           "$ref": "#/definitions/ring"
         }
       ],
-      "description": "What the screen's LED ring shows. Left out, the ring is a soft warm white at 40%."
+      "description": "What the screen's LED ring shows. Left out, the ring is a soft warm white at 40%.",
+      "markdownDescription": "What the screen's LED ring shows. Left out, the ring is a soft warm white at 40%."
     }
   },
   "required": [
@@ -73,13 +78,15 @@
             "portrait",
             "landscape"
           ],
-          "description": "How the screen is mounted: landscape is 1920×480, portrait 480×1920."
+          "description": "How the screen is mounted: landscape is 1920×480, portrait 480×1920.",
+          "markdownDescription": "How the screen is mounted: landscape is 1920×480, portrait 480×1920."
         },
         "fps": {
           "type": "integer",
           "minimum": 1,
           "maximum": 60,
-          "description": "Frames drawn each second.",
+          "description": "Frames drawn each second. (1 to 60)",
+          "markdownDescription": "Frames drawn each second. (1 to 60)",
           "default": 30
         }
       },
@@ -94,18 +101,21 @@
       "properties": {
         "extends": {
           "type": "string",
-          "description": "Another named style to start from; keys set here override it."
+          "description": "Another named style to start from; keys set here override it.",
+          "markdownDescription": "Another named style to start from; keys set here override it."
         },
         "font": {
           "type": "string",
           "description": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.",
+          "markdownDescription": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.",
           "default": "Inter"
         },
         "size": {
           "type": "number",
           "minimum": 1,
           "maximum": 1000,
-          "description": "Text size.",
+          "description": "Text size. (px, 1 to 1000)",
+          "markdownDescription": "Text size. (px, 1 to 1000)",
           "default": 24
         },
         "weight": {
@@ -126,6 +136,7 @@
             }
           ],
           "description": "How heavy text is: 100 to 900, or a name (light 300 to bold 700).",
+          "markdownDescription": "How heavy text is: 100 to 900, or a name (light 300 to bold 700).",
           "default": "normal"
         },
         "color": {
@@ -134,7 +145,8 @@
               "$ref": "#/definitions/color"
             }
           ],
-          "description": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks use it when they set no color of their own.",
+          "description": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own.",
+          "markdownDescription": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own.",
           "default": "#FFFFFF"
         },
         "fill": {
@@ -143,7 +155,8 @@
               "$ref": "#/definitions/paint"
             }
           ],
-          "description": "The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it)."
+          "description": "The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments, and on a donut, each slice (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it).",
+          "markdownDescription": "The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments, and on a donut, each slice (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it)."
         },
         "track": {
           "allOf": [
@@ -151,7 +164,8 @@
               "$ref": "#/definitions/paint"
             }
           ],
-          "description": "The empty part of a bar or gauge, or its unlit segments, and the background behind a graph."
+          "description": "The empty part of a bar or gauge, or its unlit segments, the background behind a graph, and the ring behind a donut's slices.",
+          "markdownDescription": "The empty part of a bar or gauge, or its unlit segments, the background behind a graph, and the ring behind a donut's slices."
         },
         "stroke": {
           "allOf": [
@@ -159,7 +173,8 @@
               "$ref": "#/definitions/style.stroke"
             }
           ],
-          "description": "An outline round a box, a bar or a shape (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap)."
+          "description": "An outline round a box, a bar, a shape or a donut's slice (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap).",
+          "markdownDescription": "An outline round a box, a bar, a shape or a donut's slice (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap)."
         },
         "shadow": {
           "allOf": [
@@ -167,7 +182,8 @@
               "$ref": "#/definitions/style.shadow"
             }
           ],
-          "description": "A shadow under text, a shape or a gauge's needle."
+          "description": "A shadow under text, a shape, a gauge's needle or a donut's slices.",
+          "markdownDescription": "A shadow under text, a shape, a gauge's needle or a donut's slices."
         },
         "glow": {
           "allOf": [
@@ -175,7 +191,8 @@
               "$ref": "#/definitions/style.glow"
             }
           ],
-          "description": "A soft glow round text or a shape."
+          "description": "A soft glow round text, a shape or a donut's slices.",
+          "markdownDescription": "A soft glow round text, a shape or a donut's slices."
         },
         "pulse": {
           "allOf": [
@@ -183,25 +200,29 @@
               "$ref": "#/definitions/style.pulse"
             }
           ],
-          "description": "Makes the opacity or the glow beat steadily."
+          "description": "Makes the opacity or the glow beat steadily.",
+          "markdownDescription": "Makes the opacity or the glow beat steadily."
         },
         "opacity": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "How solid the whole widget is: 0 hides it, 1 is fully solid.",
+          "description": "How solid the whole widget is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
+          "markdownDescription": "How solid the whole widget is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
           "default": 1
         },
         "radius": {
           "type": "number",
           "minimum": 0,
-          "description": "Rounds the corners of a box, a bar, the segments of a bar or gauge, a rect shape, a graph's background and what a group or image clips to.",
+          "description": "Rounds the corners of a box, a bar, the segments of a bar or gauge, a rect shape, a graph's background and what a group or image clips to. (px, at least 0)",
+          "markdownDescription": "Rounds the corners of a box, a bar, the segments of a bar or gauge, a rect shape, a graph's background and what a group or image clips to. (px, at least 0)",
           "default": 0
         },
         "padding": {
           "type": "number",
           "minimum": 0,
-          "description": "Space between a text or value widget's box and its text.",
+          "description": "Space between a text or value widget's box and its text. (px, at least 0)",
+          "markdownDescription": "Space between a text or value widget's box and its text. (px, at least 0)",
           "default": 0
         },
         "align": {
@@ -211,6 +232,7 @@
             "right"
           ],
           "description": "Where each line of text sits across its box. The lines together are always centred from top to bottom.",
+          "markdownDescription": "Where each line of text sits across its box. The lines together are always centred from top to bottom.",
           "default": "left"
         },
         "blend": {
@@ -224,38 +246,43 @@
             "add"
           ],
           "description": "How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one.",
+          "markdownDescription": "How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one.",
           "default": "normal"
         },
         "letter_spacing": {
           "type": "number",
           "minimum": -20,
           "maximum": 100,
-          "description": "Space added between the characters of text; below 0 draws them closer.",
+          "description": "Space added between the characters of text; below 0 draws them closer. (px, -20 to 100)",
+          "markdownDescription": "Space added between the characters of text; below 0 draws them closer. (px, -20 to 100)",
           "default": 0
         },
         "line_height": {
           "type": "number",
           "minimum": 0.5,
           "maximum": 4,
-          "description": "How far apart the lines of text are, as a multiple of the text's size.",
+          "description": "How far apart the lines of text are, as a multiple of the text's size. (times, 0.5 to 4)",
+          "markdownDescription": "How far apart the lines of text are, as a multiple of the text's size. (times, 0.5 to 4)",
           "default": 1.2
         },
         "wrap": {
           "type": "boolean",
           "description": "Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way.",
+          "markdownDescription": "Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way.",
           "default": false
         }
       },
       "additionalProperties": false
     },
     "style.stroke": {
-      "description": "Stroke: A line: the outline drawn just inside a box or a shape, a line shape itself, a graph's line, or the ends of a gauge's arc or an arc shape.",
+      "description": "Stroke: A line: the outline drawn just inside a box or a shape and round a donut's slice, a line shape itself, a graph's line, or the ends of a gauge's arc or an arc shape.",
       "type": "object",
       "properties": {
         "width": {
           "type": "number",
           "minimum": 0,
-          "description": "How thick the line is; 0 draws none. A graph's line is 2 px when this is left out.",
+          "description": "How thick the line is; 0 draws none. (px, at least 0) Default on a graph: 2.",
+          "markdownDescription": "How thick the line is; 0 draws none. (px, at least 0) Default on a graph: 2.",
           "default": 1
         },
         "color": {
@@ -264,7 +291,8 @@
               "$ref": "#/definitions/paint"
             }
           ],
-          "description": "The line's color or gradient. A box has no outline without it; a graph's line uses the style's color."
+          "description": "The line's color or gradient. A box has no outline without it; a graph's line uses the style's color.",
+          "markdownDescription": "The line's color or gradient. A box has no outline without it; a graph's line uses the style's color."
         },
         "cap": {
           "enum": [
@@ -272,14 +300,15 @@
             "round",
             "square"
           ],
-          "description": "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A graph's line is round when this is left out. It doesn't shape a segmented gauge, whose segments `radius` rounds.",
+          "description": "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. It doesn't shape a segmented gauge, whose segments `radius` rounds. Default on a graph: round.",
+          "markdownDescription": "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. It doesn't shape a segmented gauge, whose segments `radius` rounds. Default on a graph: round.",
           "default": "butt"
         }
       },
       "additionalProperties": false
     },
     "style.shadow": {
-      "description": "Shadow: A copy of the text, a shape or a gauge's needle, drawn under it, offset and softened.",
+      "description": "Shadow: A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.",
       "type": "object",
       "properties": {
         "color": {
@@ -288,29 +317,33 @@
               "$ref": "#/definitions/color"
             }
           ],
-          "description": "The shadow's color. There is no shadow without it."
+          "description": "The shadow's color. There is no shadow without it.",
+          "markdownDescription": "The shadow's color. There is no shadow without it."
         },
         "x": {
           "type": "number",
-          "description": "How far right the shadow sits; negative moves it left.",
+          "description": "How far right the shadow sits; negative moves it left. (px)",
+          "markdownDescription": "How far right the shadow sits; negative moves it left. (px)",
           "default": 2
         },
         "y": {
           "type": "number",
-          "description": "How far down the shadow sits; negative moves it up.",
+          "description": "How far down the shadow sits; negative moves it up. (px)",
+          "markdownDescription": "How far down the shadow sits; negative moves it up. (px)",
           "default": 2
         },
         "blur": {
           "type": "number",
           "minimum": 0,
-          "description": "How soft the shadow is; 0 is sharp.",
+          "description": "How soft the shadow is; 0 is sharp. (px, at least 0)",
+          "markdownDescription": "How soft the shadow is; 0 is sharp. (px, at least 0)",
           "default": 0
         }
       },
       "additionalProperties": false
     },
     "style.glow": {
-      "description": "Glow: A blurred copy of the text, or of a shape, drawn behind it.",
+      "description": "Glow: A blurred copy of the text, a shape or a donut's slices, drawn behind it.",
       "type": "object",
       "properties": {
         "color": {
@@ -319,12 +352,14 @@
               "$ref": "#/definitions/color"
             }
           ],
-          "description": "The glow's color. There is no glow without it."
+          "description": "The glow's color. There is no glow without it.",
+          "markdownDescription": "The glow's color. There is no glow without it."
         },
         "radius": {
           "type": "number",
           "minimum": 0,
-          "description": "How far the glow spreads.",
+          "description": "How far the glow spreads. (px, at least 0)",
+          "markdownDescription": "How far the glow spreads. (px, at least 0)",
           "default": 8
         }
       },
@@ -340,26 +375,30 @@
             "glow"
           ],
           "description": "What beats: the widget's opacity, or its glow's radius.",
+          "markdownDescription": "What beats: the widget's opacity, or its glow's radius.",
           "default": "opacity"
         },
         "period": {
           "type": "number",
           "minimum": 50,
-          "description": "How long one beat takes.",
+          "description": "How long one beat takes. (ms, at least 50)",
+          "markdownDescription": "How long one beat takes. (ms, at least 50)",
           "default": 1000
         },
         "min": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "The low point, as a fraction of the normal opacity or glow.",
+          "description": "The low point, as a fraction of the normal opacity or glow. (fraction, 0 to 1)",
+          "markdownDescription": "The low point, as a fraction of the normal opacity or glow. (fraction, 0 to 1)",
           "default": 0.4
         },
         "max": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "The high point, as a fraction of the normal opacity or glow.",
+          "description": "The high point, as a fraction of the normal opacity or glow. (fraction, 0 to 1)",
+          "markdownDescription": "The high point, as a fraction of the normal opacity or glow. (fraction, 0 to 1)",
           "default": 1
         }
       },
@@ -371,11 +410,13 @@
       "properties": {
         "above": {
           "type": "number",
-          "description": "Matches while the widget's source is above this number."
+          "description": "Matches while the widget's source is above this number.",
+          "markdownDescription": "Matches while the widget's source is above this number."
         },
         "below": {
           "type": "number",
-          "description": "Matches while the widget's source is below this number."
+          "description": "Matches while the widget's source is below this number.",
+          "markdownDescription": "Matches while the widget's source is below this number."
         },
         "equals": {
           "type": [
@@ -383,11 +424,13 @@
             "number",
             "boolean"
           ],
-          "description": "Matches while the widget's source is this number or this text."
+          "description": "Matches while the widget's source is this number or this text.",
+          "markdownDescription": "Matches while the widget's source is this number or this text."
         },
         "stale": {
           "type": "boolean",
-          "description": "Matches while the widget's source has no fresh value. It only takes true."
+          "description": "Matches while the widget's source has no fresh value. It only takes true.",
+          "markdownDescription": "Matches while the widget's source has no fresh value. It only takes true."
         },
         "style": {
           "anyOf": [
@@ -398,7 +441,8 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "The style to layer on: a style's name, or a style written in place."
+          "description": "The style to layer on: a style's name, or a style written in place.",
+          "markdownDescription": "The style to layer on: a style's name, or a style written in place."
         }
       },
       "required": [
@@ -439,6 +483,7 @@
             }
           ],
           "description": "The LEDs' color. An alpha byte dims it.",
+          "markdownDescription": "The LEDs' color. An alpha byte dims it.",
           "default": "#FFFFFF"
         },
         "effect": {
@@ -449,20 +494,23 @@
             "rainbow"
           ],
           "description": "static is the color on every LED, breathe fades it in and out, spin sends a bright segment round the ring, and rainbow turns the hues round it, ignoring color.",
+          "markdownDescription": "static is the color on every LED, breathe fades it in and out, spin sends a bright segment round the ring, and rainbow turns the hues round it, ignoring color.",
           "default": "static"
         },
         "speed": {
           "type": "number",
           "minimum": 0.1,
           "maximum": 10,
-          "description": "How fast the effect runs: 2 is twice as fast.",
+          "description": "How fast the effect runs: 2 is twice as fast. (times, 0.1 to 10)",
+          "markdownDescription": "How fast the effect runs: 2 is twice as fast. (times, 0.1 to 10)",
           "default": 1
         },
         "brightness": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "How bright the LEDs are.",
+          "description": "How bright the LEDs are. (%, 0 to 100)",
+          "markdownDescription": "How bright the LEDs are. (%, 0 to 100)",
           "default": 100
         },
         "source": {
@@ -470,14 +518,16 @@
             "string",
             "number"
           ],
-          "description": "What the ring's `when` rules compare: a sensor key or an expression."
+          "description": "What the ring's `when` rules compare: a sensor key or an expression.",
+          "markdownDescription": "What the ring's `when` rules compare: a sensor key or an expression."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ring.when"
           },
-          "description": "Changes to make while a condition holds. Every matching rule applies, in order."
+          "description": "Changes to make while a condition holds. Every matching rule applies, in order.",
+          "markdownDescription": "Changes to make while a condition holds. Every matching rule applies, in order."
         }
       },
       "additionalProperties": false
@@ -488,11 +538,13 @@
       "properties": {
         "above": {
           "type": "number",
-          "description": "Matches while the ring's source is above this number."
+          "description": "Matches while the ring's source is above this number.",
+          "markdownDescription": "Matches while the ring's source is above this number."
         },
         "below": {
           "type": "number",
-          "description": "Matches while the ring's source is below this number."
+          "description": "Matches while the ring's source is below this number.",
+          "markdownDescription": "Matches while the ring's source is below this number."
         },
         "equals": {
           "type": [
@@ -500,11 +552,13 @@
             "number",
             "boolean"
           ],
-          "description": "Matches while the ring's source is this number or this text."
+          "description": "Matches while the ring's source is this number or this text.",
+          "markdownDescription": "Matches while the ring's source is this number or this text."
         },
         "stale": {
           "type": "boolean",
-          "description": "Matches while the ring's source has no fresh value. It only takes true."
+          "description": "Matches while the ring's source has no fresh value. It only takes true.",
+          "markdownDescription": "Matches while the ring's source has no fresh value. It only takes true."
         },
         "color": {
           "allOf": [
@@ -512,7 +566,8 @@
               "$ref": "#/definitions/color"
             }
           ],
-          "description": "The LEDs' color. An alpha byte dims it."
+          "description": "The LEDs' color. An alpha byte dims it.",
+          "markdownDescription": "The LEDs' color. An alpha byte dims it."
         },
         "effect": {
           "enum": [
@@ -521,19 +576,22 @@
             "spin",
             "rainbow"
           ],
-          "description": "static is the color on every LED, breathe fades it in and out, spin sends a bright segment round the ring, and rainbow turns the hues round it, ignoring color."
+          "description": "static is the color on every LED, breathe fades it in and out, spin sends a bright segment round the ring, and rainbow turns the hues round it, ignoring color.",
+          "markdownDescription": "static is the color on every LED, breathe fades it in and out, spin sends a bright segment round the ring, and rainbow turns the hues round it, ignoring color."
         },
         "speed": {
           "type": "number",
           "minimum": 0.1,
           "maximum": 10,
-          "description": "How fast the effect runs: 2 is twice as fast."
+          "description": "How fast the effect runs: 2 is twice as fast. (times, 0.1 to 10)",
+          "markdownDescription": "How fast the effect runs: 2 is twice as fast. (times, 0.1 to 10)"
         },
         "brightness": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "How bright the LEDs are."
+          "description": "How bright the LEDs are. (%, 0 to 100)",
+          "markdownDescription": "How bright the LEDs are. (%, 0 to 100)"
         }
       },
       "additionalProperties": false,
@@ -589,14 +647,16 @@
         "width": {
           "type": "number",
           "minimum": 1,
-          "description": "How wide the needle is at the centre; it narrows to a point.",
+          "description": "How wide the needle is at the centre; it narrows to a point. (px, at least 1)",
+          "markdownDescription": "How wide the needle is at the centre; it narrows to a point. (px, at least 1)",
           "default": 4
         },
         "length": {
           "type": "number",
           "minimum": 0.1,
           "maximum": 1,
-          "description": "How far the needle reaches, as a fraction of the dial's radius.",
+          "description": "How far the needle reaches, as a fraction of the dial's radius. (fraction, 0.1 to 1)",
+          "markdownDescription": "How far the needle reaches, as a fraction of the dial's radius. (fraction, 0.1 to 1)",
           "default": 0.8
         },
         "color": {
@@ -605,12 +665,14 @@
               "$ref": "#/definitions/color"
             }
           ],
-          "description": "The needle's and its hub's color. Left out, it is the style's color."
+          "description": "The needle's and its hub's color. Left out, it is the style's color.",
+          "markdownDescription": "The needle's and its hub's color. Left out, it is the style's color."
         },
         "cap": {
           "type": "number",
           "minimum": 0,
-          "description": "The radius of a hub circle over the needle's centre; 0 draws none.",
+          "description": "The radius of a hub circle over the needle's centre; 0 draws none. (px, at least 0)",
+          "markdownDescription": "The radius of a hub circle over the needle's centre; 0 draws none. (px, at least 0)",
           "default": 0
         }
       },
@@ -624,26 +686,30 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 20,
-          "description": "How many divisions the scale has: 10 puts a major tick at every tenth of the range, 11 ticks in all, or 10 on a full circle.",
+          "description": "How many divisions the scale has: 10 puts a major tick at every tenth of the range, 11 ticks in all, or 10 on a full circle. (1 to 20)",
+          "markdownDescription": "How many divisions the scale has: 10 puts a major tick at every tenth of the range, 11 ticks in all, or 10 on a full circle. (1 to 20)",
           "default": 10
         },
         "minor": {
           "type": "integer",
           "minimum": 0,
           "maximum": 10,
-          "description": "How many minor ticks, half as long, go between each pair of major ticks.",
+          "description": "How many minor ticks, half as long, go between each pair of major ticks. (0 to 10)",
+          "markdownDescription": "How many minor ticks, half as long, go between each pair of major ticks. (0 to 10)",
           "default": 0
         },
         "length": {
           "type": "number",
           "minimum": 1,
-          "description": "How long the major ticks are, inwards from the arc.",
+          "description": "How long the major ticks are, inwards from the arc. (px, at least 1)",
+          "markdownDescription": "How long the major ticks are, inwards from the arc. (px, at least 1)",
           "default": 10
         },
         "width": {
           "type": "number",
           "minimum": 1,
-          "description": "How thick every tick is.",
+          "description": "How thick every tick is. (px, at least 1)",
+          "markdownDescription": "How thick every tick is. (px, at least 1)",
           "default": 2
         },
         "color": {
@@ -652,7 +718,8 @@
               "$ref": "#/definitions/color"
             }
           ],
-          "description": "The ticks' color. Left out, it is the style's color."
+          "description": "The ticks' color. Left out, it is the style's color.",
+          "markdownDescription": "The ticks' color. Left out, it is the style's color."
         },
         "labels": {
           "anyOf": [
@@ -663,7 +730,8 @@
               "const": false
             }
           ],
-          "description": "How to write each major tick's value, as a value widget's `format` does, such as \"{0:0}\". Left out, or false, the ticks have no labels."
+          "description": "How to write each major tick's value, as a value widget's `format` does, such as \"{0:0}\". Left out, or false, the ticks have no labels.",
+          "markdownDescription": "How to write each major tick's value, as a value widget's `format` does, such as \"{0:0}\". Left out, or false, the ticks have no labels."
         }
       },
       "additionalProperties": false
@@ -676,7 +744,8 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 20,
-          "description": "How many lines; they split the height into one more band than this.",
+          "description": "How many lines; they split the height into one more band than this. (1 to 20)",
+          "markdownDescription": "How many lines; they split the height into one more band than this. (1 to 20)",
           "default": 4
         },
         "color": {
@@ -686,12 +755,14 @@
             }
           ],
           "description": "The lines' color.",
+          "markdownDescription": "The lines' color.",
           "default": "#FFFFFF26"
         },
         "width": {
           "type": "number",
           "minimum": 0,
-          "description": "How thick each line is; 0 draws none.",
+          "description": "How thick each line is; 0 draws none. (px, at least 0)",
+          "markdownDescription": "How thick each line is; 0 draws none. (px, at least 0)",
           "default": 1
         }
       },
@@ -703,7 +774,8 @@
       "properties": {
         "source": {
           "type": "string",
-          "description": "The sensor whose history this series draws: one key, not an expression."
+          "description": "The sensor whose history this series draws: one key, not an expression.",
+          "markdownDescription": "The sensor whose history this series draws: one key, not an expression."
         },
         "style": {
           "anyOf": [
@@ -714,7 +786,47 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How this series looks over the graph's own style: a style's name, or one written in place."
+          "description": "How this series looks over the graph's own style: a style's name, or one written in place.",
+          "markdownDescription": "How this series looks over the graph's own style: a style's name, or one written in place."
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "donut.slice": {
+      "description": "Donut slices: One part of a donut's whole. Its style goes over the donut's, and the donut's `when` rules go over every slice.",
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The slice's value: a sensor key or an expression. A value of 0 or less takes no room.",
+          "markdownDescription": "The slice's value: a sensor key or an expression. A value of 0 or less takes no room."
+        },
+        "label": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "description": "The text the slice's label shows.",
+          "markdownDescription": "The text the slice's label shows."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "The slice's `fill` (default: the style's color), `stroke`, `glow` and `shadow`: a style's name, or a style written in place.",
+          "markdownDescription": "The slice's `fill` (default: the style's color), `stroke`, `glow` and `shadow`: a style's name, or a style written in place."
         }
       },
       "required": [
@@ -744,11 +856,13 @@
             "$ref": "#/definitions/color"
           },
           "minItems": 2,
-          "description": "The colors, from the start of the line to its end."
+          "description": "The colors, from the start of the line to its end.",
+          "markdownDescription": "The colors, from the start of the line to its end."
         },
         "angle": {
           "type": "number",
-          "description": "The line's direction, clockwise: 0 runs left to right, 90 top to bottom.",
+          "description": "The line's direction, clockwise: 0 runs left to right, 90 top to bottom. (degrees)",
+          "markdownDescription": "The line's direction, clockwise: 0 runs left to right, 90 top to bottom. (degrees)",
           "default": 0
         }
       },
@@ -767,7 +881,8 @@
             "$ref": "#/definitions/color"
           },
           "minItems": 2,
-          "description": "The colors, from the centre out to half the area's longer side."
+          "description": "The colors, from the centre out to half the area's longer side.",
+          "markdownDescription": "The colors, from the centre out to half the area's longer side."
         }
       },
       "required": [
@@ -803,13 +918,15 @@
               "$ref": "#/definitions/paint"
             }
           ],
-          "description": "The color or gradient."
+          "description": "The color or gradient.",
+          "markdownDescription": "The color or gradient."
         },
         "opacity": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "How solid the layer is: 0 hides it, 1 is fully solid.",
+          "description": "How solid the layer is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
+          "markdownDescription": "How solid the layer is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
           "default": 1
         },
         "blend": {
@@ -823,16 +940,19 @@
             "add"
           ],
           "description": "How the layer mixes with the layers under it.",
+          "markdownDescription": "How the layer mixes with the layers under it.",
           "default": "normal"
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the layer off the screen; `marquee validate` still checks it.",
+          "markdownDescription": "Leaves the layer off the screen; `marquee validate` still checks it.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
         }
       },
@@ -847,7 +967,8 @@
       "properties": {
         "image": {
           "type": "string",
-          "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads."
+          "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads.",
+          "markdownDescription": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads."
         },
         "fit": {
           "enum": [
@@ -857,13 +978,15 @@
             "none"
           ],
           "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "markdownDescription": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
           "default": "cover"
         },
         "opacity": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "How solid the layer is: 0 hides it, 1 is fully solid.",
+          "description": "How solid the layer is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
+          "markdownDescription": "How solid the layer is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
           "default": 1
         },
         "blend": {
@@ -877,16 +1000,19 @@
             "add"
           ],
           "description": "How the layer mixes with the layers under it.",
+          "markdownDescription": "How the layer mixes with the layers under it.",
           "default": "normal"
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the layer off the screen; `marquee validate` still checks it.",
+          "markdownDescription": "Leaves the layer off the screen; `marquee validate` still checks it.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
         }
       },
@@ -901,7 +1027,8 @@
       "properties": {
         "shader": {
           "type": "string",
-          "description": "The shader file (.sksl), relative to the theme folder."
+          "description": "The shader file (.sksl), relative to the theme folder.",
+          "markdownDescription": "The shader file (.sksl), relative to the theme folder."
         },
         "uniforms": {
           "type": "object",
@@ -937,20 +1064,23 @@
             ]
           },
           "maxProperties": 32,
-          "description": "Binds the shader's other uniforms to numbers or expressions, one per component (up to 16). A missing or stale value is 0."
+          "description": "Binds the shader's other uniforms to numbers or expressions, one per component (up to 16). A missing or stale value is 0.",
+          "markdownDescription": "Binds the shader's other uniforms to numbers or expressions, one per component (up to 16). A missing or stale value is 0."
         },
         "scale": {
           "type": "number",
           "minimum": 0.1,
           "maximum": 1,
-          "description": "Renders the shader at this fraction of the canvas size and stretches it up, which costs far less.",
+          "description": "Renders the shader at this fraction of the canvas size and stretches it up, which costs far less. (fraction, 0.1 to 1)",
+          "markdownDescription": "Renders the shader at this fraction of the canvas size and stretches it up, which costs far less. (fraction, 0.1 to 1)",
           "default": 1
         },
         "opacity": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "How solid the layer is: 0 hides it, 1 is fully solid.",
+          "description": "How solid the layer is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
+          "markdownDescription": "How solid the layer is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
           "default": 1
         },
         "blend": {
@@ -964,16 +1094,19 @@
             "add"
           ],
           "description": "How the layer mixes with the layers under it.",
+          "markdownDescription": "How the layer mixes with the layers under it.",
           "default": "normal"
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the layer off the screen; `marquee validate` still checks it.",
+          "markdownDescription": "Leaves the layer off the screen; `marquee validate` still checks it.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
         }
       },
@@ -989,7 +1122,8 @@
         "video": {
           "type": "string",
           "pattern": "\\.([mM][pP]4|[mM]4[vV]|[mM][oO][vV]|[wW][mM][vV]|[gG][iI][fF]|[wW][eE][bB][pP])$",
-          "description": "The clip, relative to the theme folder."
+          "description": "The clip, relative to the theme folder.",
+          "markdownDescription": "The clip, relative to the theme folder."
         },
         "fit": {
           "enum": [
@@ -999,13 +1133,15 @@
             "none"
           ],
           "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "markdownDescription": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
           "default": "cover"
         },
         "opacity": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "How solid the layer is: 0 hides it, 1 is fully solid.",
+          "description": "How solid the layer is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
+          "markdownDescription": "How solid the layer is: 0 hides it, 1 is fully solid. (fraction, 0 to 1)",
           "default": 1
         },
         "blend": {
@@ -1019,16 +1155,19 @@
             "add"
           ],
           "description": "How the layer mixes with the layers under it.",
+          "markdownDescription": "How the layer mixes with the layers under it.",
           "default": "normal"
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the layer off the screen; `marquee validate` still checks it.",
+          "markdownDescription": "Leaves the layer off the screen; `marquee validate` still checks it.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor changing the layer. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor changing the layer. The screen ignores it.",
           "default": false
         }
       },
@@ -1053,9 +1192,11 @@
             "graph",
             "image",
             "shape",
+            "donut",
             "group"
           ],
-          "description": "What kind of widget this is."
+          "description": "What kind of widget this is.",
+          "markdownDescription": "What kind of widget this is."
         }
       },
       "oneOf": [
@@ -1081,6 +1222,9 @@
           "$ref": "#/definitions/widget.shape"
         },
         {
+          "$ref": "#/definitions/widget.donut"
+        },
+        {
           "$ref": "#/definitions/widget.group"
         }
       ]
@@ -1100,7 +1244,8 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
         },
         "size": {
           "type": "array",
@@ -1110,14 +1255,16 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "The widget's width and height, each at least 1."
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
         },
         "source": {
           "type": [
             "string",
             "number"
           ],
-          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`.",
+          "markdownDescription": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
         },
         "style": {
           "anyOf": [
@@ -1128,37 +1275,43 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/when"
           },
-          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
         },
         "smooth": {
           "type": "number",
           "minimum": 0,
           "maximum": 10000,
-          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
           "default": 0
         },
         "rotate": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
           "default": 0
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
         "text": {
@@ -1166,7 +1319,8 @@
             "string",
             "number"
           ],
-          "description": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper."
+          "description": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper.",
+          "markdownDescription": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper."
         }
       },
       "required": [
@@ -1192,7 +1346,8 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
         },
         "size": {
           "type": "array",
@@ -1202,14 +1357,16 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "The widget's width and height, each at least 1."
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
         },
         "source": {
           "type": [
             "string",
             "number"
           ],
-          "description": "The value to show: a sensor key such as cpu.temp, or an expression."
+          "description": "The value to show: a sensor key such as cpu.temp, or an expression.",
+          "markdownDescription": "The value to show: a sensor key such as cpu.temp, or an expression."
         },
         "style": {
           "anyOf": [
@@ -1220,42 +1377,49 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/when"
           },
-          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
         },
         "smooth": {
           "type": "number",
           "minimum": 0,
           "maximum": 10000,
-          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
           "default": 0
         },
         "rotate": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
           "default": 0
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
         "format": {
           "type": "string",
-          "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals."
+          "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals.",
+          "markdownDescription": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals."
         }
       },
       "required": [
@@ -1281,7 +1445,8 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
         },
         "size": {
           "type": "array",
@@ -1291,14 +1456,16 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "The widget's width and height, each at least 1."
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
         },
         "source": {
           "type": [
             "string",
             "number"
           ],
-          "description": "The value that fills the bar: a sensor key or an expression."
+          "description": "The value that fills the bar: a sensor key or an expression.",
+          "markdownDescription": "The value that fills the bar: a sensor key or an expression."
         },
         "style": {
           "anyOf": [
@@ -1309,47 +1476,55 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/when"
           },
-          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
         },
         "smooth": {
           "type": "number",
           "minimum": 0,
           "maximum": 10000,
-          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
           "default": 0
         },
         "rotate": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
           "default": 0
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
         "min": {
           "type": "number",
           "description": "The value at which the bar is empty.",
+          "markdownDescription": "The value at which the bar is empty.",
           "default": 0
         },
         "max": {
           "type": "number",
           "description": "The value at which the bar is full. It must be more than min.",
+          "markdownDescription": "The value at which the bar is full. It must be more than min.",
           "default": 100
         },
         "direction": {
@@ -1358,18 +1533,21 @@
             "vertical"
           ],
           "description": "Which way it fills: horizontal fills left to right, vertical bottom to top.",
+          "markdownDescription": "Which way it fills: horizontal fills left to right, vertical bottom to top.",
           "default": "horizontal"
         },
         "segments": {
           "type": "integer",
           "minimum": 2,
           "maximum": 120,
-          "description": "Cuts the bar into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners."
+          "description": "Cuts the bar into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners. (2 to 120)",
+          "markdownDescription": "Cuts the bar into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners. (2 to 120)"
         },
         "gap": {
           "type": "number",
           "minimum": 0,
-          "description": "The space between segments, used only with `segments`. Each segment must keep at least 1 px.",
+          "description": "The space between segments, used only with `segments`. Each segment must keep at least 1 px. (px, at least 0)",
+          "markdownDescription": "The space between segments, used only with `segments`. Each segment must keep at least 1 px. (px, at least 0)",
           "default": 4
         }
       },
@@ -1396,7 +1574,8 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
         },
         "size": {
           "type": "array",
@@ -1406,14 +1585,16 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "The widget's width and height, each at least 1."
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
         },
         "source": {
           "type": [
             "string",
             "number"
           ],
-          "description": "The value that fills the arc: a sensor key or an expression."
+          "description": "The value that fills the arc: a sensor key or an expression.",
+          "markdownDescription": "The value that fills the arc: a sensor key or an expression."
         },
         "style": {
           "anyOf": [
@@ -1424,79 +1605,92 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/when"
           },
-          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
         },
         "smooth": {
           "type": "number",
           "minimum": 0,
           "maximum": 10000,
-          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
           "default": 0
         },
         "rotate": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
           "default": 0
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
         "min": {
           "type": "number",
           "description": "The value at which the arc is empty.",
+          "markdownDescription": "The value at which the arc is empty.",
           "default": 0
         },
         "max": {
           "type": "number",
           "description": "The value at which the arc is full. It must be more than min.",
+          "markdownDescription": "The value at which the arc is full. It must be more than min.",
           "default": 100
         },
         "start": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Where the arc starts.",
+          "description": "Where the arc starts. (degrees, -360 to 360)",
+          "markdownDescription": "Where the arc starts. (degrees, -360 to 360)",
           "default": 135
         },
         "sweep": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "How far the arc runs from its start; negative runs anticlockwise. It can't be 0.",
+          "description": "How far the arc runs from its start; negative runs anticlockwise. It can't be 0. (degrees, -360 to 360)",
+          "markdownDescription": "How far the arc runs from its start; negative runs anticlockwise. It can't be 0. (degrees, -360 to 360)",
           "default": 270
         },
         "thickness": {
           "type": "number",
           "minimum": 0,
-          "description": "How thick the arc is; 0 draws no arc, for a dial with only a needle.",
+          "description": "How thick the arc is; 0 draws no arc, for a dial with only a needle. (px, at least 0)",
+          "markdownDescription": "How thick the arc is; 0 draws no arc, for a dial with only a needle. (px, at least 0)",
           "default": 12
         },
         "segments": {
           "type": "integer",
           "minimum": 2,
           "maximum": 120,
-          "description": "Cuts the arc into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners."
+          "description": "Cuts the arc into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners. (2 to 120)",
+          "markdownDescription": "Cuts the arc into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners. (2 to 120)"
         },
         "gap": {
           "type": "number",
           "minimum": 0,
-          "description": "The space between segments, used only with `segments`. Each segment must keep at least 1°, and a full ring has a gap at the join too.",
+          "description": "The space between segments, used only with `segments`. Each segment must keep at least 1°, and a full ring has a gap at the join too. (degrees, at least 0)",
+          "markdownDescription": "The space between segments, used only with `segments`. Each segment must keep at least 1°, and a full ring has a gap at the join too. (degrees, at least 0)",
           "default": 3
         },
         "needle": {
@@ -1505,7 +1699,8 @@
               "$ref": "#/definitions/gauge.needle"
             }
           ],
-          "description": "A needle pointing at the value, which makes the gauge a dial."
+          "description": "A needle pointing at the value, which makes the gauge a dial.",
+          "markdownDescription": "A needle pointing at the value, which makes the gauge a dial."
         },
         "ticks": {
           "allOf": [
@@ -1513,7 +1708,8 @@
               "$ref": "#/definitions/gauge.ticks"
             }
           ],
-          "description": "Tick marks inside the arc, and the values of the major ones."
+          "description": "Tick marks inside the arc, and the values of the major ones.",
+          "markdownDescription": "Tick marks inside the arc, and the values of the major ones."
         }
       },
       "required": [
@@ -1539,7 +1735,8 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
         },
         "size": {
           "type": "array",
@@ -1549,11 +1746,13 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "The widget's width and height, each at least 1."
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
         },
         "source": {
           "type": "string",
-          "description": "The sensor whose history is drawn: one key, such as gpu.load, not an expression. It's what the graph's `when` rules compare."
+          "description": "The sensor whose history is drawn: one key, such as gpu.load, not an expression. It's what the graph's `when` rules compare.",
+          "markdownDescription": "The sensor whose history is drawn: one key, such as gpu.load, not an expression. It's what the graph's `when` rules compare."
         },
         "style": {
           "anyOf": [
@@ -1564,37 +1763,43 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/when"
           },
-          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
         },
         "smooth": {
           "type": "number",
           "minimum": 0,
           "maximum": 10000,
-          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
           "default": 0
         },
         "rotate": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
           "default": 0
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
         "series": {
@@ -1604,7 +1809,8 @@
           },
           "minItems": 1,
           "maxItems": 8,
-          "description": "Several sensors on one chart, each with its own history and style, drawn in order so the last is in front."
+          "description": "Several sensors on one chart, each with its own history and style, drawn in order so the last is in front.",
+          "markdownDescription": "Several sensors on one chart, each with its own history and style, drawn in order so the last is in front."
         },
         "kind": {
           "enum": [
@@ -1613,21 +1819,25 @@
             "columns"
           ],
           "description": "How each series is drawn: a line (with the area under it if the style sets `fill`), an area filled under a line, or one column per value.",
+          "markdownDescription": "How each series is drawn: a line (with the area under it if the style sets `fill`), an area filled under a line, or one column per value.",
           "default": "line"
         },
         "min": {
           "type": "number",
-          "description": "The value at the bottom. Left out, the scale fits the values shown; a columns graph's also takes in 0, so its columns rise from 0."
+          "description": "The value at the bottom. Left out, the scale fits the values shown; a columns graph's also takes in 0, so its columns rise from 0.",
+          "markdownDescription": "The value at the bottom. Left out, the scale fits the values shown; a columns graph's also takes in 0, so its columns rise from 0."
         },
         "max": {
           "type": "number",
-          "description": "The value at the top; more than min if both are set. Left out, the scale fits the values shown (and 0, on a columns graph)."
+          "description": "The value at the top; more than min if both are set. Left out, the scale fits the values shown (and 0, on a columns graph).",
+          "markdownDescription": "The value at the top; more than min if both are set. Left out, the scale fits the values shown (and 0, on a columns graph)."
         },
         "points": {
           "type": "integer",
           "minimum": 2,
           "maximum": 600,
-          "description": "How many recent values span the width, one per sensor update.",
+          "description": "How many recent values span the width, one per sensor update. (2 to 600)",
+          "markdownDescription": "How many recent values span the width, one per sensor update. (2 to 600)",
           "default": 60
         },
         "grid": {
@@ -1636,7 +1846,8 @@
               "$ref": "#/definitions/graph.grid"
             }
           ],
-          "description": "Horizontal lines at even steps of the scale, behind the data."
+          "description": "Horizontal lines at even steps of the scale, behind the data.",
+          "markdownDescription": "Horizontal lines at even steps of the scale, behind the data."
         }
       },
       "required": [
@@ -1673,7 +1884,8 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
         },
         "size": {
           "type": "array",
@@ -1683,14 +1895,16 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "The widget's width and height, each at least 1."
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
         },
         "source": {
           "type": [
             "string",
             "number"
           ],
-          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`.",
+          "markdownDescription": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
         },
         "style": {
           "anyOf": [
@@ -1701,42 +1915,49 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/when"
           },
-          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
         },
         "smooth": {
           "type": "number",
           "minimum": 0,
           "maximum": 10000,
-          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
           "default": 0
         },
         "rotate": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
           "default": 0
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
         "src": {
           "type": "string",
-          "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads."
+          "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads.",
+          "markdownDescription": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads."
         },
         "fit": {
           "enum": [
@@ -1746,6 +1967,7 @@
             "none"
           ],
           "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "markdownDescription": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
           "default": "contain"
         }
       },
@@ -1772,7 +1994,8 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
         },
         "size": {
           "type": "array",
@@ -1782,14 +2005,16 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "The shape's width and height, each at least 1; a line's may be 0 one way, which makes it horizontal or vertical."
+          "description": "The shape's width and height, each at least 1; a line's may be 0 one way, which makes it horizontal or vertical. (px, at least 1, or 0 with `shape: line`)",
+          "markdownDescription": "The shape's width and height, each at least 1; a line's may be 0 one way, which makes it horizontal or vertical. (px, at least 1, or 0 with `shape: line`)"
         },
         "source": {
           "type": [
             "string",
             "number"
           ],
-          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`.",
+          "markdownDescription": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
         },
         "style": {
           "anyOf": [
@@ -1800,37 +2025,43 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/when"
           },
-          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
         },
         "smooth": {
           "type": "number",
           "minimum": 0,
           "maximum": 10000,
-          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
           "default": 0
         },
         "rotate": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
           "default": 0
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
         "shape": {
@@ -1840,26 +2071,30 @@
             "line",
             "arc"
           ],
-          "description": "Which shape: a rect has the style's `radius` corners, an ellipse fills the box, a line runs from the top-left corner to the bottom-right and is drawn by its stroke alone (which it must have), and an arc is a band like a gauge's."
+          "description": "Which shape: a rect has the style's `radius` corners, an ellipse fills the box, a line runs from the top-left corner to the bottom-right and is drawn by its stroke alone (which it must have), and an arc is a band like a gauge's.",
+          "markdownDescription": "Which shape: a rect has the style's `radius` corners, an ellipse fills the box, a line runs from the top-left corner to the bottom-right and is drawn by its stroke alone (which it must have), and an arc is a band like a gauge's."
         },
         "start": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Where the arc starts, clockwise from 3 o'clock. Only with `shape: arc`.",
+          "description": "Where the arc starts, clockwise from 3 o'clock. Only with `shape: arc`. (degrees, -360 to 360)",
+          "markdownDescription": "Where the arc starts, clockwise from 3 o'clock. Only with `shape: arc`. (degrees, -360 to 360)",
           "default": 135
         },
         "sweep": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "How far the arc runs from its start; negative runs anticlockwise. It can't be 0. Only with `shape: arc`.",
+          "description": "How far the arc runs from its start; negative runs anticlockwise. It can't be 0. Only with `shape: arc`. (degrees, -360 to 360)",
+          "markdownDescription": "How far the arc runs from its start; negative runs anticlockwise. It can't be 0. Only with `shape: arc`. (degrees, -360 to 360)",
           "default": 270
         },
         "thickness": {
           "type": "number",
           "minimum": 1,
-          "description": "How thick the arc's band is. The style's `stroke.cap` shapes its ends. Only with `shape: arc`.",
+          "description": "How thick the arc's band is. The style's `stroke.cap` shapes its ends. Only with `shape: arc`. (px, at least 1)",
+          "markdownDescription": "How thick the arc's band is. The style's `stroke.cap` shapes its ends. Only with `shape: arc`. (px, at least 1)",
           "default": 12
         }
       },
@@ -1917,6 +2152,149 @@
         }
       ]
     },
+    "widget.donut": {
+      "description": "Donut: A pie or donut that splits a whole between its slices, in the largest square that fits its box. Each slice's angle is its share of the live slices' total, so a stale slice takes no room and shows only as a notch: its gap, at least 2° wide. Angles are clockwise from 3 o'clock, as a gauge's are. `track` paints the whole ring behind the slices; `fill`, `stroke`, `glow` and `shadow` style every slice, under its own style; and the text style sets the labels.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "donut",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`.",
+          "markdownDescription": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "default": 0
+        },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
+        },
+        "hole": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.9,
+          "description": "The hole in the middle, as a fraction of the radius; 0 is a pie. (fraction, 0 to 0.9)",
+          "markdownDescription": "The hole in the middle, as a fraction of the radius; 0 is a pie. (fraction, 0 to 0.9)",
+          "default": 0.6
+        },
+        "start": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Where the first slice starts: -90 is 12 o'clock, 0 is 3 o'clock. (degrees, -360 to 360)",
+          "markdownDescription": "Where the first slice starts: -90 is 12 o'clock, 0 is 3 o'clock. (degrees, -360 to 360)",
+          "default": -90
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 90,
+          "description": "The space between neighbouring slices. All the gaps together take at most half the circle. (degrees, 0 to 90)",
+          "markdownDescription": "The space between neighbouring slices. All the gaps together take at most half the circle. (degrees, 0 to 90)",
+          "default": 2
+        },
+        "labels": {
+          "enum": [
+            "outside",
+            "inside",
+            "none"
+          ],
+          "description": "Where each slice's label goes: outside the ring, inside it on its middle, or nowhere. A label is left out when its slice is too thin to hold it, or, inside, when it would run past the ring. Outside labels stay inside the box across, so leave room beside the ring for them.",
+          "markdownDescription": "Where each slice's label goes: outside the ring, inside it on its middle, or nowhere. A label is left out when its slice is too thin to hold it, or, inside, when it would run past the ring. Outside labels stay inside the box across, so leave room beside the ring for them.",
+          "default": "none"
+        },
+        "format": {
+          "type": "string",
+          "description": "How to write each slice's share of the whole, in percent, after its label, such as \"{0:0}%\". Left out, labels show only the slice's label.",
+          "markdownDescription": "How to write each slice's share of the whole, in percent, after its label, such as \"{0:0}%\". Left out, labels show only the slice's label."
+        },
+        "slices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/donut.slice"
+          },
+          "minItems": 2,
+          "maxItems": 12,
+          "description": "The parts of the whole, drawn clockwise from start.",
+          "markdownDescription": "The parts of the whole, drawn clockwise from start."
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "slices"
+      ],
+      "additionalProperties": false
+    },
     "widget.group": {
       "description": "Group: A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style. Groups nest up to 16 deep.",
       "type": "object",
@@ -1932,7 +2310,8 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)",
+          "markdownDescription": "Where the widget's top-left corner goes, relative to the canvas or its group. (px)"
         },
         "size": {
           "type": "array",
@@ -1942,14 +2321,16 @@
           },
           "minItems": 2,
           "maxItems": 2,
-          "description": "The widget's width and height, each at least 1."
+          "description": "The widget's width and height, each at least 1. (px)",
+          "markdownDescription": "The widget's width and height, each at least 1. (px)"
         },
         "source": {
           "type": [
             "string",
             "number"
           ],
-          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`.",
+          "markdownDescription": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
         },
         "style": {
           "anyOf": [
@@ -1960,37 +2341,43 @@
               "$ref": "#/definitions/style"
             }
           ],
-          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place.",
+          "markdownDescription": "How the widget looks: a style's name from `styles:`, or a style written in place."
         },
         "when": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/when"
           },
-          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.",
+          "markdownDescription": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
         },
         "smooth": {
           "type": "number",
           "minimum": 0,
           "maximum": 10000,
-          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
+          "markdownDescription": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. (ms, 0 to 10000)",
           "default": 0
         },
         "rotate": {
           "type": "number",
           "minimum": -360,
           "maximum": 360,
-          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
+          "markdownDescription": "Turns the widget clockwise about its own centre. A group's children turn with it. (degrees, -360 to 360)",
           "default": 0
         },
         "hidden": {
           "type": "boolean",
           "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "markdownDescription": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
           "default": false
         },
         "locked": {
           "type": "boolean",
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "markdownDescription": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
         "children": {
@@ -1998,7 +2385,8 @@
           "items": {
             "$ref": "#/definitions/widget"
           },
-          "description": "The widgets inside, drawn in order."
+          "description": "The widgets inside, drawn in order.",
+          "markdownDescription": "The widgets inside, drawn in order."
         }
       },
       "required": [

@@ -13,7 +13,7 @@ static partial class WidgetParser
 
     internal static readonly (string Name, string Value)[] Types =
         [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"),
-         ("shape", "shape"), ("group", "group")];
+         ("shape", "shape"), ("donut", "donut"), ("group", "group")];
 
     internal static readonly IReadOnlyDictionary<string, string[]> TypeKeys = new Dictionary<string, string[]>
     {
@@ -25,6 +25,7 @@ static partial class WidgetParser
         ["image"] = ["src", "fit"],
         ["shape"] = ["shape", .. ArcKeys],
         ["group"] = ["children"],
+        ["donut"] = DonutParser.Keys,
     };
 
     /// A `when` rule's conditions, which the ring's rules share, and the keys a widget's rule accepts.
@@ -104,7 +105,8 @@ static partial class WidgetParser
             "value" => new ValueWidget(f.Optional("format") is { } format ? Format(format) : null),
             "bar" => Bar(f),
             "gauge" => DialParser.Dial(Gauge(f), f),
-            "graph" => GraphParser.Parse(f, context.Styles),
+            "graph" => GraphParser.Parse(f, context.Styles, context.Errors),
+            "donut" => DonutParser.Parse(f, context.Styles, context.Errors),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
             "shape" => Shape(f),

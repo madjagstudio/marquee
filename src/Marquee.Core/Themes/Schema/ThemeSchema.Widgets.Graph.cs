@@ -13,7 +13,7 @@ public static partial class ThemeSchema
             new("series", SchemaKind.List, "Several sensors on one chart, each with its own history and style, drawn in order so "
                 + "the last is in front.")
             {
-                Of = "graph.series", MinItems = 1, MaxItems = GraphParser.MaxSeries,
+                Of = "graph.series", MinItems = GraphParser.MinSeries, MaxItems = GraphParser.MaxSeries,
             },
             new("kind", SchemaKind.Enum, "How each series is drawn: a line (with the area under it if the style sets `fill`), "
                 + "an area filled under a line, or one column per value.")

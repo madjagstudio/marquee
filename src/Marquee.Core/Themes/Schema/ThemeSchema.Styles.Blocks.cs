@@ -5,24 +5,24 @@ public static partial class ThemeSchema
     // A rule's style merges these blocks key by key, so it can change a stroke's color and keep its width.
 
     static SchemaBlock StrokeBlock() => new("style.stroke", "stroke", "Stroke",
-        "A line: the outline drawn just inside a box or a shape, a line shape itself, a graph's line, or the ends of a gauge's "
-        + "arc or an arc shape.",
+        "A line: the outline drawn just inside a box or a shape and round a donut's slice, a line shape itself, a graph's line, "
+        + "or the ends of a gauge's arc or an arc shape.",
         [
-            new("width", SchemaKind.Number, "How thick the line is; 0 draws none. A graph's line is 2 px when this is left out.")
+            new("width", SchemaKind.Number, "How thick the line is; 0 draws none.")
             {
                 Default = Number(StyleDefaults.StrokeWidth), Min = 0, Unit = SchemaUnit.Px,
                 DefaultFor = new Dictionary<string, string> { ["graph"] = Number(StyleDefaults.GraphStrokeWidth) },
             },
             new("color", SchemaKind.Paint, "The line's color or gradient. A box has no outline without it; a graph's line uses the style's color."),
-            new("cap", SchemaKind.Enum, "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. A "
-                + "graph's line is round when this is left out. It doesn't shape a segmented gauge, whose segments `radius` rounds.")
+            new("cap", SchemaKind.Enum, "How the ends of a gauge's arc, a graph's line, and a line or arc shape are drawn. It "
+                + "doesn't shape a segmented gauge, whose segments `radius` rounds.")
             {
                 Default = "butt", Values = ["butt", "round", "square"], DefaultFor = new Dictionary<string, string> { ["graph"] = "round" },
             },
         ]);
 
     static SchemaBlock ShadowBlock() => new("style.shadow", "shadow", "Shadow",
-        "A copy of the text, a shape or a gauge's needle, drawn under it, offset and softened.",
+        "A copy of the text, a shape, a gauge's needle or a donut's slices, drawn under it, offset and softened.",
         [
             new("color", SchemaKind.Color, "The shadow's color. There is no shadow without it."),
             new("x", SchemaKind.Number, "How far right the shadow sits; negative moves it left.")
@@ -40,7 +40,7 @@ public static partial class ThemeSchema
         ]);
 
     static SchemaBlock GlowBlock() => new("style.glow", "glow", "Glow",
-        "A blurred copy of the text, or of a shape, drawn behind it.",
+        "A blurred copy of the text, a shape or a donut's slices, drawn behind it.",
         [
             new("color", SchemaKind.Color, "The glow's color. There is no glow without it."),
             new("radius", SchemaKind.Number, "How far the glow spreads.")
