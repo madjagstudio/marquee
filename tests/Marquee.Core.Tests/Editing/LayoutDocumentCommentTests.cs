@@ -37,4 +37,17 @@ public class LayoutDocumentCommentTests
     [InlineData("x: >-   # c\n  text\n\ny: 1\n", "a\tb", "x: \"a\\u0009b\"   # c\n\ny: 1\n")]
     public void A_block_text_set_to_a_value_it_can_not_hold_keeps_its_header_comment(string before, string value, string after) =>
         Assert.Equal(after, Edits.Set(before, "x", value));
+
+    [Theory]
+    [InlineData(
+        "w:\n  - type: text   # first\n    # about text\n    text: x\n    size: 3\n",
+        "w[0].type",
+        "w:\n  # about text\n  - text: x\n    size: 3\n")]
+    [InlineData(
+        "w:\n  # the item\n  -   style:\n        size: 3\n        # deep\n      # about\n      # text\n      text: x\n",
+        "w[0].style",
+        "w:\n  # the item\n  # about\n  # text\n  -   text: x\n")]
+    [InlineData("w:\n  - type: text\n    text: x\n", "w[0].type", "w:\n  - text: x\n")]
+    public void Removing_a_list_items_first_key_moves_the_next_keys_comments_above_the_dash(string before, string path, string after) =>
+        Assert.Equal(after, Edits.Remove(before, path));
 }

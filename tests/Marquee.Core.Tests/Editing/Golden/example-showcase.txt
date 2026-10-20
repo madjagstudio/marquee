@@ -112,3 +112,317 @@ Edits of Fixtures/example-showcase.yaml: names, comments above widgets and keys,
 === remove widgets[0].name
 @@ line 47
 -    name: Clock
+
+=== insert background 1 { name: Shade, fill: "#00000010" }
+@@ line 32
++  - name: Shade
++    fill: "#00000010"
+
+=== insert widgets 0 { type: text, at: [0, 0], size: [100, 20], text: FIRST }
+@@ line 45
++  - type: text
++    at: [0, 0]
++    size: [100, 20]
++    text: FIRST
+
+=== insert widgets 6 { type: text, at: [0, 460], size: [100, 20], text: LAST }
+@@ line 307
++  - type: text
++    at: [0, 460]
++    size: [100, 20]
++    text: LAST
+
+=== insert widgets[2].children 0 { type: text, at: [0, 0], size: [100, 20], text: GPU }
+@@ line 165
++      - { type: text, at: [0, 0], size: [100, 20], text: GPU }
+
+=== insert widgets[1].children[3].when 1 { below: 30, style: { fill: "#5B86E5" } }
+@@ line 111
++          - { below: 30, style: { fill: "#5B86E5" } }
+
+=== insert widgets[3].children[6].series 2 { source: ram.used_pct, style: { stroke: { color: "#FFFFFF" } } }
+@@ line 229
++          - { source: ram.used_pct, style: { stroke: { color: "#FFFFFF" } } }
+
+=== remove-item widgets[0].children[0]
+@@ line 52
+-      # text_fill paints the letters with a color or a gradient (stops place each color along it: the white stays at
+-      # the start), and text_stroke outlines them, width px outside each letter: a violet that none of the letters'
+-      # colors are, so the outline shows round all of them.
+-      - type: text
+-        name: Title
+-        at: [28, 18]
+-        size: [244, 54]
+-        text: MARQUEE
+-        style:
+-          size: 40
+-          weight: bold
+-          letter_spacing: 3
+-          text_fill: { linear: ["#F4F6FA", "#36D1DC", "#5B86E5"], stops: [0, 0.3, 1] }
+-          text_stroke: { width: 2, color: "#A770EF" }
+
+=== remove-item widgets[5]
+@@ line 300
+-  # rotate turns a widget about its own centre: this 432×40 strip stands upright along the right edge.
+-  - type: text
+-    at: [1660, 220]
+-    size: [432, 40]
+-    rotate: 90
+-    text: THEME FORMAT V2.1
+-    style: { size: 16, weight: semibold, color: "#FFFFFF38", align: center, letter_spacing: 8 }
+-
+
+=== remove-item background[2]
+@@ line 37
+-  # hidden: true leaves a layer (or widget) off the screen, and marquee validate still checks it. Set it to false
+-  # for a warmer tint.
+-  - name: Warm tint
+-    fill: "#FF5A3618"
+-    blend: overlay
+-    hidden: true
+
+=== remove-item background[0]
+@@ line 29
+-  # name is what the theme editor's layers list calls a layer or a widget; the screen ignores it.
+-  - name: Night
+-    fill: { linear: ["#070A12", "#141B2E"], angle: 90 }
+
+=== remove-item widgets[1].children[4].when[0]
+@@ line 131
+-        when:
+-          - { above: 85, style: { fill: "#FF5A36" } }
++        when: []
+
+=== move widgets[5] widgets[4].children 10
+@@ line 299
+-
+-  # rotate turns a widget about its own centre: this 432×40 strip stands upright along the right edge.
+-  - type: text
+-    at: [1660, 220]
+-    size: [432, 40]
+-    rotate: 90
+-    text: THEME FORMAT V2.1
+-    style: { size: 16, weight: semibold, color: "#FFFFFF38", align: center, letter_spacing: 8 }
++      # rotate turns a widget about its own centre: this 432×40 strip stands upright along the right edge.
++      - type: text
++        at: [1660, 220]
++        size: [432, 40]
++        rotate: 90
++        text: THEME FORMAT V2.1
++        style: { size: 16, weight: semibold, color: "#FFFFFF38", align: center, letter_spacing: 8 }
+
+=== move widgets[0].children[3] widgets 1
+@@ line 81
+-      # A video widget plays a clip from the theme folder in its own box, over and over: a radar drawn by
+-      # tools/Marquee.MakeClip. cover fills the box and crops what doesn't fit; radius rounds the clip's corners too.
+-      - type: video
+-        name: Radar
+-        at: [24, 250]
+-        size: [252, 158]
+-        src: video/radar.mp4
+-        fit: cover
+-        style: { radius: 18, stroke: { width: 2, color: "#FFFFFF14" } }
+-
++
++  # A video widget plays a clip from the theme folder in its own box, over and over: a radar drawn by
++  # tools/Marquee.MakeClip. cover fills the box and crops what doesn't fit; radius rounds the clip's corners too.
++  - type: video
++    name: Radar
++    at: [24, 250]
++    size: [252, 158]
++    src: video/radar.mp4
++    fit: cover
++    style: { radius: 18, stroke: { width: 2, color: "#FFFFFF14" } }
+
+=== move widgets[2].children[1] widgets[2].children 3
+@@ line 166
+-      - { type: text, at: [28, 20], size: [200, 34], text: GPU, style: heading }
+-      - { type: shape, shape: rect, at: [30, 56], size: [36, 4], style: accent }
+-      # An arc shape: a thin band round the ring, a gauge's arc with no value.
+-      - { type: shape, shape: arc, at: [18, 68], size: [264, 264], start: 135, sweep: 270, thickness: 2, style: { fill: "#FFFFFF24" } }
++      - { type: shape, shape: rect, at: [30, 56], size: [36, 4], style: accent }
++      # An arc shape: a thin band round the ring, a gauge's arc with no value.
++      - { type: shape, shape: arc, at: [18, 68], size: [264, 264], start: 135, sweep: 270, thickness: 2, style: { fill: "#FFFFFF24" } }
++      - { type: text, at: [28, 20], size: [200, 34], text: GPU, style: heading }
+
+=== wrap widgets[3].children 2,3 type: group\nname: CPU key\nat: [314, 22]\nsize: [80, 30]
+@@ line 210
+-      - { type: shape, shape: ellipse, at: [314, 31], size: [12, 12], style: { fill: "#36D1DC" } }
+-      - { type: text, at: [334, 22], size: [60, 30], text: CPU, style: { size: 18, weight: semibold, color: "#C8D0E0" } }
++      - type: group
++        name: CPU key
++        at: [314, 22]
++        size: [80, 30]
++        children:
++          - { type: shape, shape: ellipse, at: [314, 31], size: [12, 12], style: { fill: "#36D1DC" } }
++          - { type: text, at: [334, 22], size: [60, 30], text: CPU, style: { size: 18, weight: semibold, color: "#C8D0E0" } }
+
+=== wrap widgets[3].children 9,11,12 { type: group, name: Bars, at: [28, 322], size: [444, 86] }
+@@ line 232
+-      - { type: text, at: [28, 322], size: [70, 36], text: CPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
+-      - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, segments: 20, gap: 4, smooth: 400, style: meter }
+-      - { type: value, at: [380, 322], size: [92, 36], source: cpu.load, format: "{0:0}%", style: { size: 26, weight: semibold, align: right } }
+-      - { type: text, at: [28, 372], size: [70, 36], text: GPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
++      - type: group
++        name: Bars
++        at: [28, 322]
++        size: [444, 86]
++        children:
++          - { type: text, at: [28, 322], size: [70, 36], text: CPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
++          - { type: value, at: [380, 322], size: [92, 36], source: cpu.load, format: "{0:0}%", style: { size: 26, weight: semibold, align: right } }
++          - { type: text, at: [28, 372], size: [70, 36], text: GPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
++      - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, segments: 20, gap: 4, smooth: 400, style: meter }
+
+=== unwrap widgets[0]
+@@ line 46
+-  - type: group
+-    name: Clock
+-    at: [24, 24]
+-    size: [300, 432]
+-    style: panel
+-    children:
+-      # text_fill paints the letters with a color or a gradient (stops place each color along it: the white stays at
+-      # the start), and text_stroke outlines them, width px outside each letter: a violet that none of the letters'
+-      # colors are, so the outline shows round all of them.
+-      - type: text
+-        name: Title
+-        at: [28, 18]
+-        size: [244, 54]
+-        text: MARQUEE
+-        style:
+-          size: 40
+-          weight: bold
+-          letter_spacing: 3
+-          text_fill: { linear: ["#F4F6FA", "#36D1DC", "#5B86E5"], stops: [0, 0.3, 1] }
+-          text_stroke: { width: 2, color: "#A770EF" }
+-      # The time helper writes a Unix time, such as now, as the PC's local time, in a .NET date and time pattern.
+-      # ddd is the day's short name in the PC's regional format, and case: upper turns Fri into FRI.
+-      - type: text
+-        name: Weekday
+-        at: [28, 92]
+-        size: [244, 30]
+-        text: "{now|time:ddd}"
+-        style: { extends: heading, color: "#36D1DC", case: upper }
+-      - type: text
+-        name: Time
+-        at: [24, 120]
+-        size: [252, 96]
+-        text: "{now|time:HH:mm}"
+-        # 80 px leaves the widest time, 00:00, inside the box.
+-        style: { size: 80, weight: bold, color: "#F4F6FA" }
+-      # A video widget plays a clip from the theme folder in its own box, over and over: a radar drawn by
+-      # tools/Marquee.MakeClip. cover fills the box and crops what doesn't fit; radius rounds the clip's corners too.
+-      - type: video
+-        name: Radar
+-        at: [24, 250]
+-        size: [252, 158]
+-        src: video/radar.mp4
+-        fit: cover
+-        style: { radius: 18, stroke: { width: 2, color: "#FFFFFF14" } }
++  # text_fill paints the letters with a color or a gradient (stops place each color along it: the white stays at
++  # the start), and text_stroke outlines them, width px outside each letter: a violet that none of the letters'
++  # colors are, so the outline shows round all of them.
++  - type: text
++    name: Title
++    at: [28, 18]
++    size: [244, 54]
++    text: MARQUEE
++    style:
++      size: 40
++      weight: bold
++      letter_spacing: 3
++      text_fill: { linear: ["#F4F6FA", "#36D1DC", "#5B86E5"], stops: [0, 0.3, 1] }
++      text_stroke: { width: 2, color: "#A770EF" }
++  # The time helper writes a Unix time, such as now, as the PC's local time, in a .NET date and time pattern.
++  # ddd is the day's short name in the PC's regional format, and case: upper turns Fri into FRI.
++  - type: text
++    name: Weekday
++    at: [28, 92]
++    size: [244, 30]
++    text: "{now|time:ddd}"
++    style: { extends: heading, color: "#36D1DC", case: upper }
++  - type: text
++    name: Time
++    at: [24, 120]
++    size: [252, 96]
++    text: "{now|time:HH:mm}"
++    # 80 px leaves the widest time, 00:00, inside the box.
++    style: { size: 80, weight: bold, color: "#F4F6FA" }
++  # A video widget plays a clip from the theme folder in its own box, over and over: a radar drawn by
++  # tools/Marquee.MakeClip. cover fills the box and crops what doesn't fit; radius rounds the clip's corners too.
++  - type: video
++    name: Radar
++    at: [24, 250]
++    size: [252, 158]
++    src: video/radar.mp4
++    fit: cover
++    style: { radius: 18, stroke: { width: 2, color: "#FFFFFF14" } }
+
+=== unwrap widgets[3]
+@@ line 202
+-  - type: group
+-    name: Load
+-    at: [1032, 24]
+-    size: [500, 432]
+-    style: panel
+-    children:
+-      - { type: text, at: [28, 20], size: [280, 34], text: LOAD HISTORY, style: heading }
+-      - { type: shape, shape: rect, at: [30, 56], size: [36, 4], style: accent }
+-      - { type: shape, shape: ellipse, at: [314, 31], size: [12, 12], style: { fill: "#36D1DC" } }
+-      - { type: text, at: [334, 22], size: [60, 30], text: CPU, style: { size: 18, weight: semibold, color: "#C8D0E0" } }
+-      - { type: shape, shape: ellipse, at: [400, 31], size: [12, 12], style: { fill: "#5B86E5" } }
+-      - { type: text, at: [420, 22], size: [52, 30], text: GPU, style: { size: 18, weight: semibold, color: "#C8D0E0" } }
+-      - type: graph
+-        name: Load chart
+-        at: [28, 72]
+-        size: [444, 210]
+-        kind: area
+-        min: 0
+-        max: 100
+-        points: 120
+-        # 3 lines split 0 to 100 into quarters.
+-        grid: { lines: 3, color: "#FFFFFF14" }
+-        style: { stroke: { width: 2.5 } }
+-        # Drawn in order, so CPU sits in front of GPU. Each series' style goes over the graph's.
+-        series:
+-          - { source: gpu.load, style: { stroke: { color: "#5B86E5" }, fill: { linear: ["#5B86E560", "#5B86E500"], angle: 90 } } }
+-          - { source: cpu.load, style: { stroke: { color: "#36D1DC" }, fill: { linear: ["#36D1DC60", "#36D1DC00"], angle: 90 } } }
+-      # The chart's box, for lining things up while editing. Hidden, so the screen never shows it.
+-      - { type: shape, shape: rect, at: [28, 72], size: [444, 210], hidden: true, style: { stroke: { width: 1, color: "#FF00FF" } } }
+-      - { type: shape, shape: line, at: [28, 302], size: [444, 0], style: { stroke: { width: 2, color: "#FFFFFF12" } } }
+-      - { type: text, at: [28, 322], size: [70, 36], text: CPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
+-      - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, segments: 20, gap: 4, smooth: 400, style: meter }
+-      - { type: value, at: [380, 322], size: [92, 36], source: cpu.load, format: "{0:0}%", style: { size: 26, weight: semibold, align: right } }
+-      - { type: text, at: [28, 372], size: [70, 36], text: GPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
+-      - { type: bar, at: [100, 376], size: [270, 28], source: gpu.load, segments: 20, gap: 4, smooth: 400, style: meter }
+-      - { type: value, at: [380, 372], size: [92, 36], source: gpu.load, format: "{0:0}%", style: { size: 26, weight: semibold, align: right } }
++  - { type: text, at: [28, 20], size: [280, 34], text: LOAD HISTORY, style: heading }
++  - { type: shape, shape: rect, at: [30, 56], size: [36, 4], style: accent }
++  - { type: shape, shape: ellipse, at: [314, 31], size: [12, 12], style: { fill: "#36D1DC" } }
++  - { type: text, at: [334, 22], size: [60, 30], text: CPU, style: { size: 18, weight: semibold, color: "#C8D0E0" } }
++  - { type: shape, shape: ellipse, at: [400, 31], size: [12, 12], style: { fill: "#5B86E5" } }
++  - { type: text, at: [420, 22], size: [52, 30], text: GPU, style: { size: 18, weight: semibold, color: "#C8D0E0" } }
++  - type: graph
++    name: Load chart
++    at: [28, 72]
++    size: [444, 210]
++    kind: area
++    min: 0
++    max: 100
++    points: 120
++    # 3 lines split 0 to 100 into quarters.
++    grid: { lines: 3, color: "#FFFFFF14" }
++    style: { stroke: { width: 2.5 } }
++    # Drawn in order, so CPU sits in front of GPU. Each series' style goes over the graph's.
++    series:
++      - { source: gpu.load, style: { stroke: { color: "#5B86E5" }, fill: { linear: ["#5B86E560", "#5B86E500"], angle: 90 } } }
++      - { source: cpu.load, style: { stroke: { color: "#36D1DC" }, fill: { linear: ["#36D1DC60", "#36D1DC00"], angle: 90 } } }
++  # The chart's box, for lining things up while editing. Hidden, so the screen never shows it.
++  - { type: shape, shape: rect, at: [28, 72], size: [444, 210], hidden: true, style: { stroke: { width: 1, color: "#FF00FF" } } }
++  - { type: shape, shape: line, at: [28, 302], size: [444, 0], style: { stroke: { width: 2, color: "#FFFFFF12" } } }
++  - { type: text, at: [28, 322], size: [70, 36], text: CPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
++  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, segments: 20, gap: 4, smooth: 400, style: meter }
++  - { type: value, at: [380, 322], size: [92, 36], source: cpu.load, format: "{0:0}%", style: { size: 26, weight: semibold, align: right } }
++  - { type: text, at: [28, 372], size: [70, 36], text: GPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
++  - { type: bar, at: [100, 376], size: [270, 28], source: gpu.load, segments: 20, gap: 4, smooth: 400, style: meter }
++  - { type: value, at: [380, 372], size: [92, 36], source: gpu.load, format: "{0:0}%", style: { size: 26, weight: semibold, align: right } }

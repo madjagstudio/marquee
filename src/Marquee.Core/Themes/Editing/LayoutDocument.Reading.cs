@@ -36,6 +36,55 @@ public sealed partial class LayoutDocument
     public IReadOnlyList<string> EditableKeys(YamlPath mapping) =>
         Resolve(mapping)?.Node is YamlMappingNode map ? ScalarKeys(map).Where(key => IsEditable(mapping.Child(key))).ToArray() : [];
 
+    /// The YAML text of the item at `item`, as InsertItem takes it, so the editor can copy, paste and duplicate an item
+    /// with its comments and quoting: written from column 0, with `\n` line breaks. From a block list it is the item's
+    /// lines without its dash, with the comment lines above it and inside it (RemoveItem says which); from a `[ ]` list,
+    /// its own text. Throws LayoutEditException for a path that isn't a list's item, or an item whose text is
+    /// elsewhere (an alias) or written in a form the editor can't read.
+    public string ItemYaml(YamlPath item)
+    {
+        var at = LocateItem(item);
+        var list = (YamlSequenceNode)at.Parent!;
+        var index = item.Last!.Value.Index;
+        try
+        {
+            if (YamlSplice.IsFlow(list))
+            {
+                var node = YamlStyle.Item(list, index);
+                return Body[(int)node.Start.Index..YamlSplice.End(Body, node)].Replace("\r\n", "\n");
+            }
+
+            return string.Join("\n", ItemYamlLines(list, index));
+        }
+        catch (SpliceException ex)
+        {
+            throw new LayoutEditException($"The editor can't read {Name(item)}. {ex.Message} Copy it in the file.", at.Line);
+        }
+    }
+
+    /// A block list item's lines (ItemLines), moved left so that what follows its dash is at column 0: the comment lines
+    /// above the dash, at its column, stay at column 0; the dash goes, and with it its line when the item starts on the
+    /// next one (YamlStyle.Dash allows nothing else there); the later lines move left as far as the item's first does,
+    /// and a comment line short of that to column 0.
+    IEnumerable<string> ItemYamlLines(YamlSequenceNode list, int index)
+    {
+        var (from, to, dash) = ItemLines(list, index);
+        var start = (int)YamlStyle.Item(list, index).Start.Index;
+        var dashLine = YamlSplice.LineStart(Body, dash);
+        var sameLine = YamlSplice.LineStart(Body, start) == dashLine;
+        var gap = sameLine ? start - dash : Column(start) - Column(dash);
+        var lines = ShiftLines(Body[from..to], -Column(dash));
+        var above = Body.AsSpan(from, dashLine - from).Count('\n');
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i];
+            var indent = line.Length - line.TrimStart(' ').Length;
+            if (i < above) yield return line;
+            else if (i > above) yield return Shift(line, line.TrimStart(' ').StartsWith('#') ? -Math.Min(gap, indent) : -gap);
+            else if (sameLine) yield return line[gap..];
+        }
+    }
+
     static string[] ScalarKeys(YamlMappingNode map) =>
         map.Children.Keys.OfType<YamlScalarNode>().Select(key => key.Value ?? "").Where(key => key.Length > 0).ToArray();
 }

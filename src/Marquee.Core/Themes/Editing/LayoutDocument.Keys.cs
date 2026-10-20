@@ -20,7 +20,7 @@ public sealed partial class LayoutDocument
         {
             if (!mapping.IsRoot) throw new LayoutEditException($"{Name(mapping)} isn't in the file.");
             return Edit(mapping, () => (
-                [YamlSplice.AddToMapping(Text, null, Entry(LayoutScalar.Key(key, false), fragment), Eol, atEndOfFile: true)],
+                [YamlSplice.AddToMapping(Body, null, Entry(LayoutScalar.Key(key, false), fragment), Eol, atEndOfFile: true)],
                 _ => Added(null)));
         }
 
@@ -31,29 +31,35 @@ public sealed partial class LayoutDocument
             throw new LayoutEditException($"{Name(mapping)} is a {{ }} mapping, so the value of {key} must be written on one line.", at.Line);
 
         var keyText = LayoutScalar.Key(key, inFlow);
-        Splice splice;
-        switch (at.Node)
-        {
-            case YamlMappingNode map when map.Children.Any(e => e.Key is YamlScalarNode { Value: var k } && k == key):
-                throw new LayoutEditException($"{Name(mapping)} already has {key}.", at.Line);
-            case YamlMappingNode map:
-                splice = YamlSplice.AddToMapping(Text, map, Entry(keyText, fragment), Eol, atEndOfFile: false);
-                break;
-            case YamlScalarNode empty when YamlSplice.IsEmpty(empty) && inFlow:
-                splice = YamlSplice.Fill(Text, empty, $"{{ {keyText}: {fragment.Lines[0]} }}");
-                break;
-            case YamlScalarNode empty when YamlSplice.IsEmpty(empty) && at.Key is { } parentKey:
-                // `style:` with nothing after it: the key goes on a new line under it, past any comment.
-                var indent = Pad(Column((int)parentKey.Start.Index) + Step);
-                var lines = indent + Entry(keyText, fragment).Replace(Eol, Eol + indent);
-                var lineEnd = YamlSplice.LineBreakAfter(Text, (int)empty.Start.Index);
-                splice = Splice.Insert(lineEnd, Eol + lines + (lineEnd == Text.Length ? Eol : ""));
-                break;
-            default:
-                throw new LayoutEditException($"{Name(mapping)} isn't a mapping of keys to values, so it can't take {key}.", at.Line);
-        }
 
-        return Edit(mapping, () => ([splice], tree => YamlTree.Change(tree, mapping, Added)));
+        // Planned inside Edit, so a mapping the splicing can't measure (its last value an alias, its last key a
+        // complex `? key`) is refused like any other edit.
+        return Edit(mapping, () =>
+        {
+            Splice splice;
+            switch (at.Node)
+            {
+                case YamlMappingNode map when map.Children.Any(e => e.Key is YamlScalarNode { Value: var k } && k == key):
+                    throw new LayoutEditException($"{Name(mapping)} already has {key}.", at.Line);
+                case YamlMappingNode map:
+                    splice = YamlSplice.AddToMapping(Body, map, Entry(keyText, fragment), Eol, atEndOfFile: false);
+                    break;
+                case YamlScalarNode empty when YamlSplice.IsEmpty(empty) && inFlow:
+                    splice = YamlSplice.Fill(Body, empty, $"{{ {keyText}: {fragment.Lines[0]} }}");
+                    break;
+                case YamlScalarNode empty when YamlSplice.IsEmpty(empty) && at.Key is { } parentKey:
+                    // `style:` with nothing after it: the key goes on a new line under it, past any comment.
+                    var indent = Pad(Column((int)parentKey.Start.Index) + Step);
+                    var lines = indent + Entry(keyText, fragment).Replace(Eol, Eol + indent);
+                    var lineEnd = YamlSplice.LineBreakAfter(Body, (int)empty.Start.Index);
+                    splice = Splice.Insert(lineEnd, Eol + lines + (lineEnd == Body.Length ? Eol : ""));
+                    break;
+                default:
+                    throw new LayoutEditException($"{Name(mapping)} isn't a mapping of keys to values, so it can't take {key}.", at.Line);
+            }
+
+            return ([splice], tree => YamlTree.Change(tree, mapping, Added));
+        });
     }
 
     /// `key: value` for AddToMapping, which indents every line by the mapping's indentation: a block value on the
@@ -72,7 +78,9 @@ public sealed partial class LayoutDocument
     ///   (they are inside the value);
     /// - a blank line, when the key had one above and below it, so its neighbours keep one blank line between them.
     ///
-    /// Removing the only key of a block mapping leaves `{ }`, so the mapping stays a mapping (`style: { }`).
+    /// A list item's first key, on the dash's line, goes with its value's lines, and the next key moves up beside the
+    /// dash; the comment lines right above that key, which describe it, go above the dash. Removing the only key of a
+    /// block mapping leaves `{ }`, so the mapping stays a mapping (`style: { }`).
     public LayoutDocument RemoveKey(YamlPath path)
     {
         if (path.Last is not { IsKey: true } last)
@@ -85,7 +93,7 @@ public sealed partial class LayoutDocument
         var index = entries.FindIndex(e => ReferenceEquals(e.Key, at.Key));
 
         return Edit(path, () => (
-            [YamlSplice.IsFlow(map) ? RemoveFromFlow(map, entries, index) : RemoveFromBlock(at, entries, index)],
+            YamlSplice.IsFlow(map) ? [RemoveFromFlow(map, entries, index)] : RemoveFromBlock(at, entries, index),
             tree => YamlTree.Change(tree, path.Parent!, m => ((YamlTreeMap)m!).Without(last.Key!))));
     }
 
@@ -94,8 +102,8 @@ public sealed partial class LayoutDocument
         var (key, value) = entries[index];
         if (entries.Count == 1)
         {
-            var open = YamlSplice.ContentStart(Text, map) + 1;
-            var close = YamlSplice.Closing(Text, YamlSplice.EntryEnd(Text, key, value));
+            var open = YamlSplice.ContentStart(Body, map) + 1;
+            var close = YamlSplice.Closing(Body, YamlSplice.EntryEnd(Body, key, value));
             return new Splice(open, close - open, " ");
         }
 
@@ -106,38 +114,56 @@ public sealed partial class LayoutDocument
             return new Splice((int)key.Start.Index, next - (int)key.Start.Index, "");
         }
 
-        var previous = YamlSplice.EntryEnd(Text, entries[index - 1].Key, entries[index - 1].Value);
-        return new Splice(previous, YamlSplice.EntryEnd(Text, key, value) - previous, "");
+        var previous = YamlSplice.EntryEnd(Body, entries[index - 1].Key, entries[index - 1].Value);
+        return new Splice(previous, YamlSplice.EntryEnd(Body, key, value) - previous, "");
     }
 
-    Splice RemoveFromBlock(Located at, List<KeyValuePair<YamlNode, YamlNode>> entries, int index)
+    List<Splice> RemoveFromBlock(Located at, List<KeyValuePair<YamlNode, YamlNode>> entries, int index)
     {
         var (key, value) = entries[index];
-        if (entries.Count == 1 && at.Chain.Count > 2) return EmptyMapping(at.Path.Parent!);
+        if (entries.Count == 1 && at.Chain.Count > 2) return [EmptyMapping(at.Path.Parent!)];
 
         var keyStart = (int)key.Start.Index;
-        var start = YamlSplice.LineStart(Text, keyStart);
-        if (Text.AsSpan(start, keyStart - start).Trim(' ').Length > 0)
+        var start = YamlSplice.LineStart(Body, keyStart);
+        if (Body.AsSpan(start, keyStart - start).Trim(" \t") is "-")
         {
             // The first key of a list item, on the dash's line (`- type: text`): the next key moves up beside the dash.
+            // The comment lines right above the next key, at its column, describe it, so they go above the dash, at
+            // its column: where comments describing the item's first key sit.
             var next = (int)entries[index + 1].Key.Start.Index;
-            return new Splice(keyStart, next - keyStart, "");
+            var nextLine = YamlSplice.LineStart(Body, next);
+            var comments = nextLine;
+            while (comments > start && IsComment(YamlSplice.LineStart(Body, comments - 1), c => c == next - nextLine))
+                comments = YamlSplice.LineStart(Body, comments - 1);
+
+            var removal = new Splice(keyStart, next - keyStart, "");
+            if (comments == nextLine) return [removal];
+            var pad = Pad(Indentation(start));
+            var moved = Body[comments..nextLine].Split('\n').SkipLast(1).Select(line => pad + line.TrimStart(' ').TrimEnd('\r') + Eol);
+            return [Splice.Insert(start, string.Concat(moved)), removal];
         }
 
-        var column = keyStart - start;
-        var end = YamlSplice.LineStartAfter(Text, ContentEnd(keyStart, YamlSplice.EntryEnd(Text, key, value)));
+        // The key's column, or, for a complex key (`? key`), its question mark's.
+        var column = Indentation(keyStart);
+        var end = YamlSplice.LineStartAfter(Body, ContentEnd(keyStart, YamlSplice.EntryEnd(Body, key, value)));
 
         var above = start;
-        while (above > 0 && IsComment(YamlSplice.LineStart(Text, above - 1), c => c == column))
-            above = YamlSplice.LineStart(Text, above - 1);
+        while (above > 0 && IsComment(YamlSplice.LineStart(Body, above - 1), c => c == column))
+            above = YamlSplice.LineStart(Body, above - 1);
         if (above > 0) start = above;
 
-        while (end < Text.Length && IsComment(end, c => c > column)) end = YamlSplice.NextLine(Text, end);
+        while (end < Body.Length && IsComment(end, c => c > column)) end = YamlSplice.NextLine(Body, end);
+        return [RemoveLines(start, end)];
+    }
 
-        var blankAbove = start == 0 || IsBlank(YamlSplice.LineStart(Text, start - 1));
-        if (blankAbove && end < Text.Length && IsBlank(end)) end = YamlSplice.NextLine(Text, end);
-        else if (start > 0 && end == Text.Length && IsBlank(YamlSplice.LineStart(Text, start - 1)))
-            start = YamlSplice.LineStart(Text, start - 1);
+    /// Removes the lines from `start` to `end` (line starts), with a blank line when they had one above and below
+    /// them, so their neighbours keep one blank line between them.
+    Splice RemoveLines(int start, int end)
+    {
+        var blankAbove = start == 0 || IsBlank(YamlSplice.LineStart(Body, start - 1));
+        if (blankAbove && end < Body.Length && IsBlank(end)) end = YamlSplice.NextLine(Body, end);
+        else if (start > 0 && end == Body.Length && IsBlank(YamlSplice.LineStart(Body, start - 1)))
+            start = YamlSplice.LineStart(Body, start - 1);
 
         return new Splice(start, end - start, "");
     }
@@ -148,23 +174,23 @@ public sealed partial class LayoutDocument
     {
         var mapping = Locate(mappingPath);
         var map = mapping.Node;
-        var end = YamlSplice.LineBreakAfter(Text, ContentEnd((int)map.Start.Index, YamlSplice.End(Text, map)));
+        var end = YamlSplice.LineBreakAfter(Body, ContentEnd((int)map.Start.Index, YamlSplice.End(Body, map)));
         if (mapping.Key is { } key)
         {
-            var colonEnd = YamlSplice.ColonEnd(Text, key);
+            var colonEnd = YamlSplice.ColonEnd(Body, key);
             return new Splice(colonEnd, end - colonEnd, " { }" + CommentAfter(colonEnd));
         }
 
-        var start = YamlSplice.ContentStart(Text, map);
+        var start = YamlSplice.ContentStart(Body, map);
         return new Splice(start, end - start, "{ }");
     }
 
     bool IsComment(int lineStart, Func<int, bool> column)
     {
-        var line = YamlSplice.Line(Text, lineStart);
+        var line = YamlSplice.Line(Body, lineStart);
         var text = line.TrimStart(' ');
         return text.StartsWith('#') && column(line.Length - text.Length);
     }
 
-    bool IsBlank(int lineStart) => YamlSplice.Line(Text, lineStart).Trim().Length == 0;
+    bool IsBlank(int lineStart) => YamlSplice.Line(Body, lineStart).Trim().Length == 0;
 }

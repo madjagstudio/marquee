@@ -1,4 +1,5 @@
 using Marquee.Core.Config;
+using Marquee.Core.Themes.Editing;
 
 namespace Marquee.Core.Tests.Editing;
 
@@ -27,6 +28,18 @@ public class LayoutDocumentTaggedEmptyTests
     [Fact]
     public void Adding_a_key_after_it_goes_after_its_tag() =>
         Assert.Equal("m:\n  a: !t\n  k: 1\n# end\n", Edits.Add("m:\n  a: !t\n# end\n", "m", "k", "1"));
+
+    [Fact]
+    public void Removing_a_list_item_ending_with_it_keeps_the_next_items_comment() =>
+        Assert.Equal(
+            "l:\n\n  # about b\n  - b: 1\n",
+            Edits.Apply("l:\n  - a: !t\n\n  # about b\n  - b: 1\n", d => d.RemoveItem(YamlPath.Parse("l[0]"))));
+
+    [Fact]
+    public void Wrapping_items_ending_with_it_writes_each_comment_once() =>
+        Assert.Equal(
+            "l:\n  - type: group\n    children:\n      - a: !t\n      # two\n      - b: 1\n",
+            Edits.Apply("l:\n  - a: !t\n\n  # two\n  - b: 1\n", d => d.WrapInGroup(YamlPath.Parse("l"), [0, 1], "type: group")));
 
     [Fact]
     public void ConfigEditor_sets_a_tagged_empty_value_and_keeps_its_tag() =>

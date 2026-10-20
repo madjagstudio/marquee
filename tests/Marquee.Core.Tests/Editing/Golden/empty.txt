@@ -130,3 +130,60 @@ refused: empty_list isn't a mapping of keys to values, so it can't take a.
 === remove name
 @@ line 1
 -name:
+
+=== insert empty_list 0 x
+@@ line 5
+-empty_list: []
++empty_list: [x]
+
+=== insert empty_list 0 type: text\nat: [0, 0]
+@@ line 5
+-empty_list: []
++empty_list:
++  - type: text
++    at: [0, 0]
+
+=== insert spaced_list 0 x
+@@ line 6
+-spaced_list: [ ]
++spaced_list: [ x ]
+
+=== insert spaced_list 0 { a: 1 }
+@@ line 6
+-spaced_list: [ ]
++spaced_list:
++  - { a: 1 }
+
+=== insert name 0 { type: text }
+@@ line 2
++  - { type: text }
+
+=== insert comment_after 0 x
+@@ line 3
++  - x
+
+=== insert in_flow.a 0 x
+@@ line 7
+-in_flow: { a: , b: 1, c: }
++in_flow: { a: [x], b: 1, c: }
+
+=== insert block.only 0 x
+@@ line 12
++    - x
+
+=== insert nested.deeper.deepest 0 a: 1\nb: 2
+@@ line 15
++      - a: 1
++        b: 2
+
+=== insert empty_map 0 x
+refused: empty_map isn't a list, so it can't take an item.
+
+=== remove-item empty_list[0]
+refused: empty_list[0] isn't in the file.
+
+=== wrap empty_list 0 type: group
+refused: empty_list has 0 items, so there is no item 0.
+
+=== unwrap name
+refused: name isn't an item of a list.

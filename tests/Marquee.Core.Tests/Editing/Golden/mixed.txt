@@ -163,3 +163,209 @@ refused: widgets[1].style.fill is inside { } or [ ], so its new value must be wr
 === remove styles.block.stroke
 @@ line 8
 -    stroke: { width: 2, color: "#FFFFFF14" }
+
+=== insert background 1 { fill: "#000000" }
+@@ line 11
++  - fill: "#000000"
+
+=== insert background 2 { fill: "#000000" }
+@@ line 12
++  - { fill: "#000000" }
+
+=== insert widgets 0 type: text\nat: [0, 0]\nsize: [10, 10]\ntext: A
+@@ line 13
++  - { type: text, at: [0, 0], size: [10, 10], text: A }
+
+=== insert widgets 4 { type: text, at: [0, 0], size: [10, 10], text: Z }
+@@ line 33
++  - type: text
++    at: [0, 0]
++    size: [10, 10]
++    text: Z
+
+=== insert widgets[2].series 1 source: ram.used_pct
+@@ line 24
++      - source: ram.used_pct
+
+=== insert styles.meter.fill.linear 1 "#FFFFFF"
+@@ line 3
+-  meter: { fill: { linear: ["#36D1DC", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
++  meter: { fill: { linear: ["#36D1DC", "#FFFFFF", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
+
+=== insert canvas 0 x
+refused: canvas isn't a list, so it can't take an item.
+
+=== remove-item widgets[3]
+@@ line 27
+-  - {
+-      type: shape,
+-      shape: rect,
+-      at: [1, 2],
+-      size: [3, 4]
+-    }
+
+=== remove-item widgets[2].series[1]
+@@ line 24
+-      - source: cpu.load
+-        style:
+-          stroke: { color: "#36D1DC" }
+
+=== remove-item styles.meter.fill.linear[0]
+@@ line 3
+-  meter: { fill: { linear: ["#36D1DC", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
++  meter: { fill: { linear: ["#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
+
+=== move widgets[0] widgets 3
+@@ line 13
+-  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
+-  - type: text
+-    at: [28, 322]
+-    size: [70, 36]
+-    text: CPU
+-    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
+-  - type: graph
+-    at: [0, 0]
+-    size: [100, 50]
+-    series:
+-      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
+-      - source: cpu.load
+-        style:
+-          stroke: { color: "#36D1DC" }
+-  - {
+-      type: shape,
+-      shape: rect,
+-      at: [1, 2],
+-      size: [3, 4]
+-    }
++  - type: text
++    at: [28, 322]
++    size: [70, 36]
++    text: CPU
++    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
++  - type: graph
++    at: [0, 0]
++    size: [100, 50]
++    series:
++      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
++      - source: cpu.load
++        style:
++          stroke: { color: "#36D1DC" }
++  - {
++      type: shape,
++      shape: rect,
++      at: [1, 2],
++      size: [3, 4]
++    }
++  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
+
+=== move widgets[3] background 0
+@@ line 10
+-  - fill: { linear: ["#070A12", "#141B2E"], angle: 90 }
+-  - { fill: "#FF5A3618", blend: overlay, hidden: true }
+-widgets:
+-  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
+-  - type: text
+-    at: [28, 322]
+-    size: [70, 36]
+-    text: CPU
+-    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
+-  - type: graph
+-    at: [0, 0]
+-    size: [100, 50]
+-    series:
+-      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
+-      - source: cpu.load
+-        style:
+-          stroke: { color: "#36D1DC" }
+-  - {
+-      type: shape,
+-      shape: rect,
+-      at: [1, 2],
+-      size: [3, 4]
+-    }
++  - {
++      type: shape,
++      shape: rect,
++      at: [1, 2],
++      size: [3, 4]
++    }
++  - fill: { linear: ["#070A12", "#141B2E"], angle: 90 }
++  - { fill: "#FF5A3618", blend: overlay, hidden: true }
++widgets:
++  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
++  - type: text
++    at: [28, 322]
++    size: [70, 36]
++    text: CPU
++    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
++  - type: graph
++    at: [0, 0]
++    size: [100, 50]
++    series:
++      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
++      - source: cpu.load
++        style:
++          stroke: { color: "#36D1DC" }
+
+=== move widgets[1].style.fill.stops[2] widgets[1].style.fill.stops 0
+@@ line 18
+-    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
++    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [1, 0, 0.3] } }
+
+=== move widgets[2] styles.meter.fill.linear 0
+refused: widgets[2] is written over several lines, so it can't go inside [ ]. Edit it in the file.
+
+=== wrap widgets 0,3 type: group\nat: [0, 0]\nsize: [10, 10]
+@@ line 13
+-  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
+-  - type: text
+-    at: [28, 322]
+-    size: [70, 36]
+-    text: CPU
+-    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
+-  - type: graph
+-    at: [0, 0]
+-    size: [100, 50]
+-    series:
+-      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
+-      - source: cpu.load
+-        style:
+-          stroke: { color: "#36D1DC" }
+-  - {
+-      type: shape,
+-      shape: rect,
+-      at: [1, 2],
+-      size: [3, 4]
+-    }
++  - type: group
++    at: [0, 0]
++    size: [10, 10]
++    children:
++      - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
++      - {
++          type: shape,
++          shape: rect,
++          at: [1, 2],
++          size: [3, 4]
++        }
++  - type: text
++    at: [28, 322]
++    size: [70, 36]
++    text: CPU
++    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
++  - type: graph
++    at: [0, 0]
++    size: [100, 50]
++    series:
++      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
++      - source: cpu.load
++        style:
++          stroke: { color: "#36D1DC" }
+
+=== wrap styles.meter.fill.linear 0,1 type: group
+@@ line 3
+-  meter: { fill: { linear: ["#36D1DC", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
++  meter: { fill: { linear: [{ type: group, children: ["#36D1DC", "#5B86E5"] }] }, track: "#FFFFFF10", radius: 3 }
+
+=== unwrap widgets[0]
+refused: widgets[0] has no children list, so it isn't a group to unwrap.

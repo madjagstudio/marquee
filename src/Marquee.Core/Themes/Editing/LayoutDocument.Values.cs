@@ -20,7 +20,7 @@ public sealed partial class LayoutDocument
         if (scalar.Value == value) return this;
 
         return Edit(path, () => (
-            [YamlSplice.ReplaceScalar(Text, scalar, Render(at, scalar, value))],
+            [YamlSplice.ReplaceScalar(Body, scalar, Render(at, scalar, value))],
             tree => YamlTree.Change(tree, path, old => new YamlTreeScalar(value, old!.Tag, ""))));
     }
 
@@ -58,8 +58,8 @@ public sealed partial class LayoutDocument
             return LayoutScalar.Inline(value, scalar.Style, at.InFlow);
 
         // The block's header line: its indicator (`|-`, `>2`), then perhaps a comment, which stays.
-        var start = YamlSplice.ContentStart(Text, scalar);
-        var header = Text[start..YamlSplice.LineBreakAfter(Text, start)];
+        var start = YamlSplice.ContentStart(Body, scalar);
+        var header = Body[start..YamlSplice.LineBreakAfter(Body, start)];
         var rest = header.TrimStart('|', '>', '+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
         return LayoutScalar.Block(value, scalar.Style, rest, new string(' ', BlockIndent(scalar, start)), Eol)
             ?? LayoutScalar.Inline(value, ScalarStyle.DoubleQuoted, at.InFlow) + rest.TrimEnd();
@@ -69,8 +69,8 @@ public sealed partial class LayoutDocument
     int BlockIndent(YamlScalarNode scalar, int start)
     {
         var end = (int)scalar.End.Index;
-        for (var line = YamlSplice.LineStartAfter(Text, start); line < end; line = YamlSplice.NextLine(Text, line))
-            if (YamlSplice.Line(Text, line).Trim().Length > 0) return Indentation(line);
+        for (var line = YamlSplice.LineStartAfter(Body, start); line < end; line = YamlSplice.NextLine(Body, line))
+            if (YamlSplice.Line(Body, line).Trim().Length > 0) return Indentation(line);
         return Indentation(start) + Step;
     }
 
@@ -84,34 +84,34 @@ public sealed partial class LayoutDocument
         var key = at.Key;
         if (YamlSplice.IsEmpty(node))
         {
-            if (!fragment.IsMultiLine) return YamlSplice.Fill(Text, (YamlScalarNode)node, fragment.Lines[0]);
+            if (!fragment.IsMultiLine) return YamlSplice.Fill(Body, (YamlScalarNode)node, fragment.Lines[0]);
             if (key is null) throw new SpliceException("An empty list item can only take a one-line value.");
-            var colon = YamlSplice.ColonEnd(Text, key);
+            var colon = YamlSplice.ColonEnd(Body, key);
             var column = Column((int)key.Start.Index);
             return fragment.IsBlockCollection
-                ? Splice.Insert(YamlSplice.LineBreakAfter(Text, colon), Eol + fragment.Indented(column + Step, true, Eol))
+                ? Splice.Insert(YamlSplice.LineBreakAfter(Body, colon), Eol + fragment.Indented(column + Step, true, Eol))
                 : Splice.Insert(colon, " " + fragment.Indented(column, false, Eol));
         }
 
         var start = (int)node.Start.Index;
-        var end = YamlSplice.End(Text, node);
+        var end = YamlSplice.End(Body, node);
         var contentEnd = ContentEnd(start, end);
         var oldIsBlock = node is YamlMappingNode or YamlSequenceNode && !YamlSplice.IsFlow(node);
 
         if (key is null)
         {
             // A list item: everything starts on the item's line, the later lines at the item's column.
-            var first = oldIsBlock ? YamlSplice.ContentStart(Text, node) : start;
+            var first = oldIsBlock ? YamlSplice.ContentStart(Body, node) : start;
             return new Splice(first, contentEnd - first, fragment.Indented(Column(first), false, Eol));
         }
 
         var keyColumn = Column((int)key.Start.Index);
-        var colonEnd = YamlSplice.ColonEnd(Text, key);
+        var colonEnd = YamlSplice.ColonEnd(Body, key);
         if (oldIsBlock)
         {
             if (fragment.IsBlockCollection)
             {
-                var first = YamlSplice.ContentStart(Text, node);
+                var first = YamlSplice.ContentStart(Body, node);
                 return new Splice(first, contentEnd - first, fragment.Indented(Column(first), false, Eol));
             }
 
@@ -130,7 +130,7 @@ public sealed partial class LayoutDocument
         }
 
         // A one-line value becomes a block under its key; a comment after the old value moves up to the key's line.
-        var lineEnd = YamlSplice.LineBreakAfter(Text, contentEnd);
+        var lineEnd = YamlSplice.LineBreakAfter(Body, contentEnd);
         return new Splice(colonEnd, lineEnd - colonEnd,
             CommentAfter(contentEnd) + Eol + fragment.Indented(keyColumn + Step, true, Eol));
     }

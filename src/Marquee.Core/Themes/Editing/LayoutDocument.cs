@@ -19,17 +19,32 @@ namespace Marquee.Core.Themes.Editing;
 /// else it is used.
 public sealed partial class LayoutDocument
 {
-    readonly YamlNode? _root;
-    int? _step;
+    /// The UTF-8 byte order mark, as a character: what a text read without decoding it starts with.
+    const char ByteOrderMark = '\uFEFF';
 
-    LayoutDocument(string text, YamlNode? root)
+    readonly YamlNode? _root;
+    readonly bool _bom;
+
+    LayoutDocument(bool bom, string body, YamlNode? root)
     {
-        Text = text;
+        _bom = bom;
+        Body = body;
+        Text = bom ? ByteOrderMark + body : body;
         _root = root;
-        Eol = YamlSplice.LineEnding(text);
+        Eol = YamlSplice.LineEnding(body);
+
+        // Measured here, not on first use: a document is shared between the UI thread and the render and autosave
+        // threads, and an immutable one needs no locks.
+        Step = FindStep(root, new(ReferenceEqualityComparer.Instance)) ?? 2;
+        ListIndent = YamlStyle.ListIndent(body, root, Step);
     }
 
+    /// The file's text, with its byte order mark when it had one.
     public string Text { get; }
+
+    /// The text after any byte order mark: what YamlDotNet reads and what every splice and position counts in.
+    /// YamlDotNet would read a byte order mark as part of the first key (`\uFEFFcanvas`), so it is kept aside.
+    string Body { get; }
 
     /// The file's line ending, which every edit writes.
     string Eol { get; }
@@ -37,10 +52,16 @@ public sealed partial class LayoutDocument
     /// Throws LayoutEditException, with the line at fault, for text that doesn't parse, holds more than one YAML
     /// document or has a key twice in one mapping. It doesn't check that the text is a valid theme: that is
     /// LayoutParser's job, and the editor opens a theme with an error so it can be fixed.
+    ///
+    /// A byte order mark at the start stays in Text, and every edit keeps it, so the file's bytes survive. File.ReadAllText
+    /// and SafeFile drop one when they read, and SafeFile.WriteAllText writes none, so the editor only keeps one when it
+    /// reads the file without decoding it: FromBytes and ToBytes do both ends.
     public static LayoutDocument Open(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
-        return new LayoutDocument(text, Load(text));
+        var bom = text.StartsWith(ByteOrderMark);
+        var body = bom ? text[1..] : text;
+        return new LayoutDocument(bom, body, Load(body));
     }
 
     /// True when the file has a node at `path`.
@@ -174,8 +195,8 @@ public sealed partial class LayoutDocument
         try
         {
             var (splices, change) = plan();
-            var text = YamlSplice.Apply(Text, splices);
-            if (text == Text) return this;
+            var text = YamlSplice.Apply(Body, splices);
+            if (text == Body) return this;
 
             YamlNode? root;
             try
@@ -187,11 +208,11 @@ public sealed partial class LayoutDocument
                 throw new SpliceException("The result doesn't parse.");
             }
 
-            if (!YamlSplice.OnlyChanged(Text, text, splices)
+            if (!YamlSplice.OnlyChanged(Body, text, splices)
                 || !YamlTree.SameDocument(change(YamlTree.From(_root)), YamlTree.From(root)))
                 throw new SpliceException("The result isn't the file with just that change.");
 
-            return new LayoutDocument(text, root);
+            return new LayoutDocument(_bom, text, root);
         }
         catch (SpliceException ex)
         {
@@ -214,7 +235,7 @@ public sealed partial class LayoutDocument
     static string Name(YamlPath path) => path.IsRoot ? "the top of the file" : path.ToString();
 
     /// How many columns the file indents a block mapping under its key: the first such mapping's, or 2.
-    int Step => _step ??= FindStep(_root, new(ReferenceEqualityComparer.Instance)) ?? 2;
+    int Step { get; }
 
     static int? FindStep(YamlNode? node, HashSet<YamlNode> seen)
     {
@@ -241,30 +262,30 @@ public sealed partial class LayoutDocument
     /// The column a node's line starts at, counted from 0: its indentation.
     int Indentation(int index)
     {
-        var start = YamlSplice.LineStart(Text, index);
+        var start = YamlSplice.LineStart(Body, index);
         var i = start;
-        while (i < Text.Length && Text[i] == ' ') i++;
+        while (i < Body.Length && Body[i] == ' ') i++;
         return i - start;
     }
 
     /// The column of a character, counted from 0.
-    int Column(int index) => index - YamlSplice.LineStart(Text, index);
+    int Column(int index) => index - YamlSplice.LineStart(Body, index);
 
     /// Just past the last character of a node's text that isn't a space or line break: a block scalar's text, or a
     /// block collection's, ends after the line breaks that follow it.
     int ContentEnd(int start, int end)
     {
-        while (end > start && Text[end - 1] is ' ' or '\t' or '\r' or '\n') end--;
+        while (end > start && Body[end - 1] is ' ' or '\t' or '\r' or '\n') end--;
         return end;
     }
 
     /// The comment, if any, on the rest of the line from `index`, with the spaces before it: `   # the look`.
     string CommentAfter(int index)
     {
-        var rest = Text[index..YamlSplice.LineBreakAfter(Text, index)];
+        var rest = Body[index..YamlSplice.LineBreakAfter(Body, index)];
         return rest.TrimStart().StartsWith('#') ? rest.TrimEnd() : "";
     }
 
     /// Where the line holding `index` ends, before its line break.
-    int LineEnd(int index) => YamlSplice.LineBreakAfter(Text, index);
+    int LineEnd(int index) => YamlSplice.LineBreakAfter(Body, index);
 }

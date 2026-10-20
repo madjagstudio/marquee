@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Marquee.Core.Themes.Editing;
@@ -15,6 +16,11 @@ namespace Marquee.Core.Tests.Editing;
 /// - `replace PATH YAML`
 /// - `add PATH KEY YAML`, with `.` for the top of the file
 /// - `remove PATH`
+/// - `insert LIST INDEX YAML`
+/// - `remove-item ITEM`
+/// - `move ITEM LIST INDEX`
+/// - `wrap LIST INDEX,INDEX… YAML`, the YAML being the group's header
+/// - `unwrap ITEM`
 ///
 /// The value or YAML is the rest of the line, with `\n` for a line break and `\\` for a backslash. A golden file that
 /// doesn't match writes NAME.received.txt beside it (git-ignored) and fails; look at it, and if it is right, rename it
@@ -89,17 +95,27 @@ public class LayoutDocumentGoldenTests
     static Func<LayoutDocument, LayoutDocument> Parse(string operation)
     {
         var words = operation.Split(' ', 3);
-        var path = words[1] == "." ? YamlPath.Root : YamlPath.Parse(words[1]);
+        var path = PathOf(words[1]);
         var rest = words.Length > 2 ? Unescape(words[2]) : "";
+        var (first, after) = rest.Split(' ', 2) is [var a, var b] ? (a, b) : (rest, "");
         return words[0] switch
         {
             "set" => d => d.SetScalar(path, rest),
             "replace" => d => d.ReplaceValue(path, rest),
-            "add" => d => d.AddKey(path, rest.Split(' ', 2)[0], rest.Split(' ', 2)[1]),
+            "add" => d => d.AddKey(path, first, after),
             "remove" => d => d.RemoveKey(path),
+            "insert" => d => d.InsertItem(path, Number(first), after),
+            "remove-item" => d => d.RemoveItem(path),
+            "move" => d => d.MoveItem(path, PathOf(first), Number(after)),
+            "wrap" => d => d.WrapInGroup(path, first.Split(',').Select(Number).ToList(), after),
+            "unwrap" => d => d.UnwrapGroup(path),
             _ => throw new FormatException($"Unknown golden operation '{operation}'"),
         };
     }
+
+    static YamlPath PathOf(string text) => text == "." ? YamlPath.Root : YamlPath.Parse(text);
+
+    static int Number(string text) => int.Parse(text, CultureInfo.InvariantCulture);
 
     static string Unescape(string text) => text.Replace("\\\\", "\0").Replace("\\n", "\n").Replace("\0", "\\");
 

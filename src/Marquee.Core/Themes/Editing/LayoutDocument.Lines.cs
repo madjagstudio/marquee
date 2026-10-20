@@ -63,7 +63,7 @@ public sealed partial class LayoutDocument
         var start = (int)node.Start.Index;
         try
         {
-            return LineOf(Math.Max(start, ContentEnd(start, YamlSplice.End(Text, node)) - 1));
+            return LineOf(Math.Max(start, ContentEnd(start, YamlSplice.End(Body, node)) - 1));
         }
         catch (SpliceException)
         {
@@ -72,8 +72,8 @@ public sealed partial class LayoutDocument
     }
 
     /// The 1-based line holding the character at `index`.
-    int LineOf(int index) => Text.AsSpan(0, Math.Min(index, Text.Length)).Count('\n') + 1;
+    int LineOf(int index) => Body.AsSpan(0, Math.Min(index, Body.Length)).Count('\n') + 1;
 
     /// How many lines the file has; a line break at the end doesn't start another.
-    int LineCount() => Text.AsSpan().Count('\n') + (Text.Length > 0 && Text[^1] != '\n' ? 1 : 0);
+    int LineCount() => Body.AsSpan().Count('\n') + (Body.Length > 0 && Body[^1] != '\n' ? 1 : 0);
 }

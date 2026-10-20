@@ -139,3 +139,226 @@ Edits of Fixtures/comments.yaml: comments next to values, above keys, inside val
 -  - type: group   # holds the CPU readouts
 -    at: [30, 30]
 +  - at: [30, 30]
+
+=== insert widgets 0 { type: text }
+@@ line 21
++  - type: text
+
+=== insert widgets 1 { type: text }
+@@ line 38
++  - type: text
+
+=== insert widgets[0].children 1 { type: bar }
+@@ line 27
++      - type: bar
+
+=== insert widgets[0].children 2 { type: bar }
+@@ line 38
++      - type: bar
+
+=== remove-item widgets[0].children[0]
+@@ line 26
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+
+=== remove-item widgets[0].children[1]
+@@ line 27
+-      # The reading.
+-      - type: value
+-        at: [60, 165]   # centred
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"   # degrees
+-        style: {
+-          size: 84,   # big
+-          color: "#F4F6FA"
+-        }
+-        # when: hot above 85
+
+=== remove-item widgets[0]
+@@ line 20
+-widgets:
+-  # The CPU panel.
+-  - type: group   # holds the CPU readouts
+-    at: [30, 30]
+-    size: [420, 420]
+-    children:
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+-      # The reading.
+-      - type: value
+-        at: [60, 165]   # centred
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"   # degrees
+-        style: {
+-          size: 84,   # big
+-          color: "#F4F6FA"
+-        }
+-        # when: hot above 85
++widgets: []
+
+=== move widgets[0].children[1] widgets 0
+@@ line 21
+-  # The CPU panel.
+-  - type: group   # holds the CPU readouts
+-    at: [30, 30]
+-    size: [420, 420]
+-    children:
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+-      # The reading.
+-      - type: value
+-        at: [60, 165]   # centred
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"   # degrees
+-        style: {
+-          size: 84,   # big
+-          color: "#F4F6FA"
+-        }
+-        # when: hot above 85
++  # The reading.
++  - type: value
++    at: [60, 165]   # centred
++    size: [300, 110]
++    source: cpu.temp
++    format: "{0:0}°"   # degrees
++    style: {
++      size: 84,   # big
++      color: "#F4F6FA"
++    }
++    # when: hot above 85
++  # The CPU panel.
++  - type: group   # holds the CPU readouts
++    at: [30, 30]
++    size: [420, 420]
++    children:
++      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+
+=== move widgets[0].children[0] widgets[0].children 1
+@@ line 26
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+-      # The reading.
+-      - type: value
+-        at: [60, 165]   # centred
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"   # degrees
+-        style: {
+-          size: 84,   # big
+-          color: "#F4F6FA"
+-        }
+-        # when: hot above 85
++      # The reading.
++      - type: value
++        at: [60, 165]   # centred
++        size: [300, 110]
++        source: cpu.temp
++        format: "{0:0}°"   # degrees
++        style: {
++          size: 84,   # big
++          color: "#F4F6FA"
++        }
++        # when: hot above 85
++      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+
+=== wrap widgets[0].children 0,1 type: group\nat: [0, 0]\nsize: [420, 300]
+@@ line 26
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+-      # The reading.
+-      - type: value
+-        at: [60, 165]   # centred
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"   # degrees
+-        style: {
+-          size: 84,   # big
+-          color: "#F4F6FA"
+-        }
+-        # when: hot above 85
++      - type: group
++        at: [0, 0]
++        size: [420, 300]
++        children:
++          - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
++          # The reading.
++          - type: value
++            at: [60, 165]   # centred
++            size: [300, 110]
++            source: cpu.temp
++            format: "{0:0}°"   # degrees
++            style: {
++              size: 84,   # big
++              color: "#F4F6FA"
++            }
++            # when: hot above 85
+
+=== wrap widgets 0 type: group\nat: [0, 0]\nsize: [480, 480]
+@@ line 21
+-  # The CPU panel.
+-  - type: group   # holds the CPU readouts
+-    at: [30, 30]
+-    size: [420, 420]
+-    children:
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+-      # The reading.
+-      - type: value
+-        at: [60, 165]   # centred
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"   # degrees
+-        style: {
+-          size: 84,   # big
+-          color: "#F4F6FA"
+-        }
+-        # when: hot above 85
++  - type: group
++    at: [0, 0]
++    size: [480, 480]
++    children:
++      # The CPU panel.
++      - type: group   # holds the CPU readouts
++        at: [30, 30]
++        size: [420, 420]
++        children:
++          - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
++          # The reading.
++          - type: value
++            at: [60, 165]   # centred
++            size: [300, 110]
++            source: cpu.temp
++            format: "{0:0}°"   # degrees
++            style: {
++              size: 84,   # big
++              color: "#F4F6FA"
++            }
++            # when: hot above 85
+
+=== unwrap widgets[0]
+@@ line 22
+-  - type: group   # holds the CPU readouts
+-    at: [30, 30]
+-    size: [420, 420]
+-    children:
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+-      # The reading.
+-      - type: value
+-        at: [60, 165]   # centred
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"   # degrees
+-        style: {
+-          size: 84,   # big
+-          color: "#F4F6FA"
+-        }
+-        # when: hot above 85
++  - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
++  # The reading.
++  - type: value
++    at: [60, 165]   # centred
++    size: [300, 110]
++    source: cpu.temp
++    format: "{0:0}°"   # degrees
++    style: {
++      size: 84,   # big
++      color: "#F4F6FA"
++    }
++    # when: hot above 85

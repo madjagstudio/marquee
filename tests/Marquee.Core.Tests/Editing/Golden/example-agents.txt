@@ -51,3 +51,424 @@ Edits of Fixtures/example-agents.yaml: a shader layer with a comment after a val
 @@ line 47
 -        when:
 -          - { stale: true, style: { opacity: 0 } }
+
+=== insert widgets 0 { type: text, at: [30, 0], size: [400, 30], text: HELLO }
+@@ line 34
++  - type: text
++    at: [30, 0]
++    size: [400, 30]
++    text: HELLO
+
+=== insert widgets 1 type: text\nat: [600, 0]\nsize: [100, 30]\ntext: "{now|time:HH:mm}"
+@@ line 86
++  - type: text
++    at: [600, 0]
++    size: [100, 30]
++    text: "{now|time:HH:mm}"
+
+=== insert widgets 3 { type: bar, at: [30, 460], size: [1860, 10], source: cpu.load }
+@@ line 305
++  - type: bar
++    at: [30, 460]
++    size: [1860, 10]
++    source: cpu.load
+
+=== insert widgets[1].children 10 { type: text, at: [32, 240], size: [200, 10], text: NOTE }
+@@ line 148
++      - type: text
++        at: [32, 240]
++        size: [200, 10]
++        text: NOTE
+
+=== insert widgets[0].children 1 { type: text, at: [32, 60], size: [200, 30], text: SUB }
+@@ line 42
++        at: [32, 60]
++        size: [200, 30]
++        text: SUB
++      - type: text
+
+=== insert background 1 { fill: "#00000020" }
+@@ line 26
++  - fill: "#00000020"
+
+=== remove-item widgets[1].children[10]
+@@ line 148
+-      # The most used per-model weekly limit, on plans that have them (from /usage); hidden when there is none.
+-      - type: text
+-        at: [32, 252]
+-        size: [260, 36]
+-        text: "{claude.seven_day_model.name} weekly"
+-        source: claude.seven_day_model.pct
+-        style: label
+-        when:
+-          - { stale: true, style: { opacity: 0 } }
+
+=== remove-item widgets[2]
+@@ line 190
+-  # Codex: limits and sessions from ~/.codex/sessions
+-  - type: group
+-    at: [1270, 30]
+-    size: [620, 420]
+-    style: panel
+-    children:
+-      - { type: text, at: [32, 26], size: [556, 36], text: CODEX, style: title }
+-      - type: text
+-        at: [32, 26]
+-        size: [556, 36]
+-        text: "{codex.sessions.busy} working · {codex.sessions.idle} idle"
+-        style: { extends: detail, align: right }
+-      # Each window's label comes from its length, which depends on the plan: often a 5-hour primary and a weekly
+-      # secondary, or only a weekly primary. Any other length shows as a duration ("1d 0h").
+-      - type: text
+-        at: [32, 80]
+-        size: [200, 36]
+-        text: 5-hour
+-        source: codex.primary.window_min
+-        style: { extends: label, opacity: 0 }
+-        when:
+-          - { equals: 300, style: { opacity: 1 } }
+-      - type: text
+-        at: [32, 80]
+-        size: [200, 36]
+-        text: Weekly
+-        source: codex.primary.window_min
+-        style: { extends: label, opacity: 0 }
+-        when:
+-          - { equals: 10080, style: { opacity: 1 } }
+-      - type: text
+-        at: [32, 80]
+-        size: [200, 36]
+-        text: "{codex.primary.window_min * 60|duration}"
+-        source: codex.primary.window_min
+-        style: label
+-        when:
+-          - { equals: 300, style: { opacity: 0 } }
+-          - { equals: 10080, style: { opacity: 0 } }
+-          - { stale: true, style: { opacity: 0 } }
+-      - type: bar
+-        at: [32, 122]
+-        size: [430, 28]
+-        source: codex.primary.pct
+-        max: 100
+-        smooth: 600
+-        style: codex
+-        when:
+-          - { above: 80, style: hot }
+-      - type: value
+-        at: [470, 116]
+-        size: [118, 40]
+-        source: codex.primary.pct
+-        format: "{0:0}%"
+-        style: number
+-        when:
+-          - { stale: true, style: stale }
+-      - type: text
+-        at: [232, 80]
+-        size: [356, 36]
+-        text: "resets in {codex.primary.resets_at - now|duration}"
+-        style: { extends: detail, align: right }
+-        when:
+-          - { stale: true, style: { opacity: 0 } }
+-      - type: text
+-        at: [32, 166]
+-        size: [200, 36]
+-        text: 5-hour
+-        source: codex.secondary.window_min
+-        style: { extends: label, opacity: 0 }
+-        when:
+-          - { equals: 300, style: { opacity: 1 } }
+-      - type: text
+-        at: [32, 166]
+-        size: [200, 36]
+-        text: Weekly
+-        source: codex.secondary.window_min
+-        style: { extends: label, opacity: 0 }
+-        when:
+-          - { equals: 10080, style: { opacity: 1 } }
+-      - type: text
+-        at: [32, 166]
+-        size: [200, 36]
+-        text: "{codex.secondary.window_min * 60|duration}"
+-        source: codex.secondary.window_min
+-        style: label
+-        when:
+-          - { equals: 300, style: { opacity: 0 } }
+-          - { equals: 10080, style: { opacity: 0 } }
+-          - { stale: true, style: { opacity: 0 } }
+-      - type: text
+-        at: [232, 166]
+-        size: [356, 36]
+-        text: "resets in {codex.secondary.resets_at - now|duration}"
+-        style: { extends: detail, align: right }
+-        when:
+-          - { stale: true, style: { opacity: 0 } }
+-      - type: bar
+-        at: [32, 208]
+-        size: [430, 28]
+-        source: codex.secondary.pct
+-        max: 100
+-        smooth: 600
+-        style: codex
+-        when:
+-          - { above: 80, style: hot }
+-          - { stale: true, style: { opacity: 0 } }
+-      - type: value
+-        at: [470, 202]
+-        size: [118, 40]
+-        source: codex.secondary.pct
+-        format: "{0:0}%"
+-        style: number
+-        when:
+-          - { stale: true, style: { opacity: 0 } }
+-
+
+=== remove-item widgets[0].children[1].when[0]
+@@ line 47
+-        when:
+-          - { stale: true, style: { opacity: 0 } }
++        when: []
+
+=== remove-item background[1]
+@@ line 26
+-  - shader: shaders/aurora.sksl
+-    uniforms:
+-      heat: "clamp(max(cpu.load, gpu.load) / 100, 0, 1)"
+-    scale: 0.25 # smooth bands lose nothing, and a quarter of the size keeps it well inside the 30 fps frame budget
+-    opacity: 0.9
+-    blend: screen
+
+=== move widgets[0].children[11] widgets[1].children 0
+@@ line 77
+-      - type: graph
+-        at: [32, 320]
+-        size: [496, 76]
+-        source: gpu.load
+-        min: 0
+-        max: 100
+-        points: 120
+-        style: { stroke: { width: 2, color: "#36D1DC" }, fill: { linear: ["#36D1DC40", "#36D1DC00"], angle: 90 } }
+-
+-  # Claude Code: limits from the status line, sessions from ~/.claude/sessions
+-  - type: group
+-    at: [620, 30]
+-    size: [620, 420]
+-    style: panel
+-    children:
++
++  # Claude Code: limits from the status line, sessions from ~/.claude/sessions
++  - type: group
++    at: [620, 30]
++    size: [620, 420]
++    style: panel
++    children:
++      - type: graph
++        at: [32, 320]
++        size: [496, 76]
++        source: gpu.load
++        min: 0
++        max: 100
++        points: 120
++        style: { stroke: { width: 2, color: "#36D1DC" }, fill: { linear: ["#36D1DC40", "#36D1DC00"], angle: 90 } }
+
+=== move widgets[2].children[13] widgets 3
+@@ line 297
+-      - type: value
+-        at: [470, 202]
+-        size: [118, 40]
+-        source: codex.secondary.pct
+-        format: "{0:0}%"
+-        style: number
+-        when:
+-          - { stale: true, style: { opacity: 0 } }
++  - type: value
++    at: [470, 202]
++    size: [118, 40]
++    source: codex.secondary.pct
++    format: "{0:0}%"
++    style: number
++    when:
++      - { stale: true, style: { opacity: 0 } }
+
+=== move widgets[2].children[2] widgets[2].children 0
+@@ line 196
+-      - { type: text, at: [32, 26], size: [556, 36], text: CODEX, style: title }
+-      - type: text
+-        at: [32, 26]
+-        size: [556, 36]
+-        text: "{codex.sessions.busy} working · {codex.sessions.idle} idle"
+-        style: { extends: detail, align: right }
+-      # Each window's label comes from its length, which depends on the plan: often a 5-hour primary and a weekly
+-      # secondary, or only a weekly primary. Any other length shows as a duration ("1d 0h").
+-      - type: text
+-        at: [32, 80]
+-        size: [200, 36]
+-        text: 5-hour
+-        source: codex.primary.window_min
+-        style: { extends: label, opacity: 0 }
+-        when:
+-          - { equals: 300, style: { opacity: 1 } }
++      # Each window's label comes from its length, which depends on the plan: often a 5-hour primary and a weekly
++      # secondary, or only a weekly primary. Any other length shows as a duration ("1d 0h").
++      - type: text
++        at: [32, 80]
++        size: [200, 36]
++        text: 5-hour
++        source: codex.primary.window_min
++        style: { extends: label, opacity: 0 }
++        when:
++          - { equals: 300, style: { opacity: 1 } }
++      - { type: text, at: [32, 26], size: [556, 36], text: CODEX, style: title }
++      - type: text
++        at: [32, 26]
++        size: [556, 36]
++        text: "{codex.sessions.busy} working · {codex.sessions.idle} idle"
++        style: { extends: detail, align: right }
+
+=== wrap widgets[0].children 2,3,4 type: group\nname: CPU row\nat: [32, 96]\nsize: [496, 44]
+@@ line 49
+-      - { type: text, at: [32, 96], size: [90, 36], text: CPU, style: label }
+-      - { type: bar, at: [130, 100], size: [260, 28], source: cpu.load, smooth: 400, style: bar }
+-      - type: text
+-        at: [400, 94]
+-        size: [128, 40]
+-        text: "{cpu.temp:0}°"
+-        style: number
+-        when:
+-          - { stale: true, style: stale }
++      - type: group
++        name: CPU row
++        at: [32, 96]
++        size: [496, 44]
++        children:
++          - { type: text, at: [32, 96], size: [90, 36], text: CPU, style: label }
++          - { type: bar, at: [130, 100], size: [260, 28], source: cpu.load, smooth: 400, style: bar }
++          - type: text
++            at: [400, 94]
++            size: [128, 40]
++            text: "{cpu.temp:0}°"
++            style: number
++            when:
++              - { stale: true, style: stale }
+
+=== wrap widgets[0].children 5,7 type: group\nat: [32, 176]\nsize: [496, 44]
+@@ line 58
+-      - { type: text, at: [32, 176], size: [90, 36], text: GPU, style: label }
+-      - { type: bar, at: [130, 180], size: [260, 28], source: gpu.load, smooth: 400, style: bar }
+-      - type: text
+-        at: [400, 174]
+-        size: [128, 40]
+-        text: "{gpu.temp:0}°"
+-        style: number
+-        when:
+-          - { stale: true, style: stale }
++      - type: group
++        at: [32, 176]
++        size: [496, 44]
++        children:
++          - { type: text, at: [32, 176], size: [90, 36], text: GPU, style: label }
++          - type: text
++            at: [400, 174]
++            size: [128, 40]
++            text: "{gpu.temp:0}°"
++            style: number
++            when:
++              - { stale: true, style: stale }
++      - { type: bar, at: [130, 180], size: [260, 28], source: gpu.load, smooth: 400, style: bar }
+
+=== unwrap widgets[0]
+@@ line 35
+-  - type: group
+-    at: [30, 30]
+-    size: [560, 420]
+-    style: panel
+-    children:
+-      - { type: text, at: [32, 26], size: [496, 36], text: SYSTEM, style: title }
+-      - type: text
+-        at: [160, 26]
+-        size: [368, 36]
+-        text: "{custom.status}"
+-        source: custom.status
+-        style: { extends: detail, color: "#F4F6FA", align: right }
+-        when:
+-          - { stale: true, style: { opacity: 0 } }
+-      - { type: text, at: [32, 96], size: [90, 36], text: CPU, style: label }
+-      - { type: bar, at: [130, 100], size: [260, 28], source: cpu.load, smooth: 400, style: bar }
+-      - type: text
+-        at: [400, 94]
+-        size: [128, 40]
+-        text: "{cpu.temp:0}°"
+-        style: number
+-        when:
+-          - { stale: true, style: stale }
+-      - { type: text, at: [32, 176], size: [90, 36], text: GPU, style: label }
+-      - { type: bar, at: [130, 180], size: [260, 28], source: gpu.load, smooth: 400, style: bar }
+-      - type: text
+-        at: [400, 174]
+-        size: [128, 40]
+-        text: "{gpu.temp:0}°"
+-        style: number
+-        when:
+-          - { stale: true, style: stale }
+-      - { type: text, at: [32, 256], size: [90, 36], text: RAM, style: label }
+-      - type: bar
+-        at: [130, 260]
+-        size: [260, 28]
+-        source: ram.used_pct
+-        smooth: 400
+-        style: bar
+-        when:
+-          - { above: 90, style: hot }
+-      - { type: value, at: [400, 254], size: [128, 40], source: ram.used_pct, format: "{0:0}%", style: number }
+-      - type: graph
+-        at: [32, 320]
+-        size: [496, 76]
+-        source: gpu.load
+-        min: 0
+-        max: 100
+-        points: 120
+-        style: { stroke: { width: 2, color: "#36D1DC" }, fill: { linear: ["#36D1DC40", "#36D1DC00"], angle: 90 } }
++  - { type: text, at: [32, 26], size: [496, 36], text: SYSTEM, style: title }
++  - type: text
++    at: [160, 26]
++    size: [368, 36]
++    text: "{custom.status}"
++    source: custom.status
++    style: { extends: detail, color: "#F4F6FA", align: right }
++    when:
++      - { stale: true, style: { opacity: 0 } }
++  - { type: text, at: [32, 96], size: [90, 36], text: CPU, style: label }
++  - { type: bar, at: [130, 100], size: [260, 28], source: cpu.load, smooth: 400, style: bar }
++  - type: text
++    at: [400, 94]
++    size: [128, 40]
++    text: "{cpu.temp:0}°"
++    style: number
++    when:
++      - { stale: true, style: stale }
++  - { type: text, at: [32, 176], size: [90, 36], text: GPU, style: label }
++  - { type: bar, at: [130, 180], size: [260, 28], source: gpu.load, smooth: 400, style: bar }
++  - type: text
++    at: [400, 174]
++    size: [128, 40]
++    text: "{gpu.temp:0}°"
++    style: number
++    when:
++      - { stale: true, style: stale }
++  - { type: text, at: [32, 256], size: [90, 36], text: RAM, style: label }
++  - type: bar
++    at: [130, 260]
++    size: [260, 28]
++    source: ram.used_pct
++    smooth: 400
++    style: bar
++    when:
++      - { above: 90, style: hot }
++  - { type: value, at: [400, 254], size: [128, 40], source: ram.used_pct, format: "{0:0}%", style: number }
++  - type: graph
++    at: [32, 320]
++    size: [496, 76]
++    source: gpu.load
++    min: 0
++    max: 100
++    points: 120
++    style: { stroke: { width: 2, color: "#36D1DC" }, fill: { linear: ["#36D1DC40", "#36D1DC00"], angle: 90 } }
