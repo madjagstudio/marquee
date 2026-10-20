@@ -323,6 +323,8 @@ widgets:
 Every key, with its values and default, is in [docs/themes-reference.md](docs/themes-reference.md). VS Code completes
 and checks theme files once the YAML extension (Red Hat) is installed: the examples' first line,
 `# yaml-language-server: $schema=../../docs/layout.schema.json`, points it at [the schema](docs/layout.schema.json).
+That path works only inside this repo: a copied theme needs its first line pointed at the schema, until the public
+repo gives it a URL.
 
 See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents` and `themes/example-showcase`, a
 tour that uses every part of the format once: shapes, dials, segmented meters, charts, a donut, wrapped text, rotation,
