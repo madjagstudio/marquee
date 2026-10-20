@@ -44,7 +44,7 @@ static class WidgetNames
     static string? Text(LayoutDocument document, YamlPath path) => document.TryGetScalar(path, out var value) ? value : null;
 
     /// On one line, with runs of spaces as one, and cut at a word boundary with "…" when it runs long.
-    static string Shortened(string detail)
+    internal static string Shortened(string detail)
     {
         var line = string.Join(' ', detail.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
         if (line.Length <= MaxDetail) return line;

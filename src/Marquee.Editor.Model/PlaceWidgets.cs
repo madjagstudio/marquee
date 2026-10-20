@@ -10,7 +10,8 @@ public readonly record struct WidgetPlacement(YamlPath Widget, SKRect Bounds, fl
 
 /// Moves, resizes and turns widgets, writing only the numbers that change: a drag let go (CommitPreview), a nudge, or
 /// align and distribute. `at` and `size` keep their style, number by number, and `rotate` is added when the widget
-/// hadn't one. Numbers are written as given, as short as they read back (`110.5`): snapping is the caller's.
+/// hadn't one and removed when it turns back upright. Numbers are written as given, as short as they read back
+/// (`110.5`): snapping is the caller's.
 public sealed record PlaceWidgets(IReadOnlyList<WidgetPlacement> Placements) : EditorCommand
 {
     /// "Move", "Resize" or "Rotate", or whatever the caller names it ("Align left").
@@ -24,20 +25,27 @@ public sealed record PlaceWidgets(IReadOnlyList<WidgetPlacement> Placements) : E
         foreach (var placement in Placements)
         {
             var widget = context.RequireWidget(placement.Widget);
-            var (from, to) = (widget.LocalBounds, placement.Bounds);
-            document = Pair(document, widget.Path, "at", from.Location, to.Location);
-            document = Pair(document, widget.Path, "size", new SKPoint(from.Width, from.Height),
-                new SKPoint(to.Width, to.Height));
-            if (placement.Rotate != widget.Rotate)
-            {
-                var rotate = widget.Path.Child("rotate");
-                document = document.Exists(rotate)
-                    ? document.SetScalar(rotate, Number(placement.Rotate))
-                    : document.AddKey(widget.Path, "rotate", Number(placement.Rotate));
-            }
+            document = Place(document, widget.Path, widget.LocalBounds, widget.Rotate, placement.Bounds, placement.Rotate);
         }
 
         return document;
+    }
+
+    /// Writes the widget at `path`, whose file has it at `from` turned `fromRotate`, at `to` turned `toRotate`: only
+    /// the numbers that change. Commands that move widgets to another list first (MoveLayer, GroupWidgets) name the
+    /// widget by its new path, where the file still has its old numbers.
+    internal static LayoutDocument Place(LayoutDocument document, YamlPath path, SKRect from, float fromRotate, SKRect to,
+        float toRotate)
+    {
+        document = Pair(document, path, "at", from.Location, to.Location);
+        document = Pair(document, path, "size", new SKPoint(from.Width, from.Height), new SKPoint(to.Width, to.Height));
+        if (toRotate == fromRotate) return document;
+        var rotate = path.Child("rotate");
+        // Upright is the default, so a widget turned back upright loses its `rotate`, rather than gaining `rotate: 0`.
+        if (toRotate == 0) return document.Exists(rotate) ? document.RemoveKey(rotate) : document;
+        return document.Exists(rotate)
+            ? document.SetScalar(rotate, Number(toRotate))
+            : document.AddKey(path, "rotate", Number(toRotate));
     }
 
     /// Writes `to` as the pair at `key`, written `from` now: each number that changed in its place in a `[x, y]`, and

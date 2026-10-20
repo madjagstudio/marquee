@@ -122,6 +122,14 @@ public class EditorCommandTests
             Layout.Replace("text: B }", "text: B, rotate: -45 }"));
 
     [Fact]
+    public void A_widget_turned_back_upright_loses_its_rotate()
+    {
+        var turned = Layout.Replace("text: B }", "text: B, rotate: 327 }");
+        AssertStep(new PlaceWidgets([new WidgetPlacement(P("widgets[2].children[1]"), SKRect.Create(0, 30, 100, 20), 0)]) { Description = "Rotate" },
+            Layout, turned);
+    }
+
+    [Fact]
     public void Nudges_with_one_merge_key_are_one_step()
     {
         using var folder = TempTheme.With(Layout);
