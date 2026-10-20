@@ -1,0 +1,52 @@
+Edits of Fixtures/example-portrait.yaml.
+
+=== set canvas.orientation landscape
+@@ line 5
+-  orientation: portrait
++  orientation: landscape
+
+=== set widgets[1].at[1] 600
+@@ line 48
+-    at: [30, 580]
++    at: [30, 600]
+
+=== set widgets[0].children[3].text {cpu.load:0}%
+@@ line 44
+-        text: "{cpu.load:0}% · {cpu.clock / 1000:0.0} GHz"
++        text: "{cpu.load:0}%"
+
+=== set styles.panel.radius 24
+@@ line 11
+-  panel: { fill: "#FFFFFF08", radius: 32, stroke: { width: 2, color: "#FFFFFF18" } }
++  panel: { fill: "#FFFFFF08", radius: 24, stroke: { width: 2, color: "#FFFFFF18" } }
+
+=== replace styles.label { size: 30, weight: bold, color: "#8B95AA", align: center }
+@@ line 9
+-  label: { size: 28, weight: semibold, color: "#8B95AA", align: center }
++  label: { size: 30, weight: bold, color: "#8B95AA", align: center }
+
+=== replace background[0].fill { radial: ["#5B86E522", "#00000000"] }
+@@ line 21
+-  - fill: { linear: ["#070A12", "#141B2E"], angle: 90 }
++  - fill: { radial: ["#5B86E522", "#00000000"] }
+
+=== add background[0] blend screen
+@@ line 22
++    blend: screen
+
+=== add widgets[1] hidden true
+@@ line 69
++    hidden: true
+
+=== remove widgets[1].style
+@@ line 50
+-    style: panel
+
+=== remove styles.bar.radius
+@@ line 13
+-  bar: { radius: 18, track: "#FFFFFF14", fill: { linear: ["#36D1DC", "#5B86E5"] } }
++  bar: { track: "#FFFFFF14", fill: { linear: ["#36D1DC", "#5B86E5"] } }
+
+=== remove widgets[0].children[2].smooth
+@@ line 36
+-        smooth: 400

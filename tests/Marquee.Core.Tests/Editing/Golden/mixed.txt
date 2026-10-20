@@ -1,0 +1,165 @@
+Edits of Fixtures/mixed.yaml: { } and block side by side, tight and trailing-comma { }, nested flow and multi-line { }.
+
+=== set canvas.fps 60
+@@ line 1
+-canvas: { orientation: portrait, fps: 30 }
++canvas: { orientation: portrait, fps: 60 }
+
+=== set styles.meter.fill.linear[0] #000000
+@@ line 3
+-  meter: { fill: { linear: ["#36D1DC", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
++  meter: { fill: { linear: ["#000000", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
+
+=== set styles.tight.size 13
+@@ line 4
+-  tight: {size: 12,weight: bold}
++  tight: {size: 13,weight: bold}
+
+=== set styles.trailing.size 15
+@@ line 5
+-  trailing: { size: 14, }
++  trailing: { size: 15, }
+
+=== set widgets[0].at[0] 120
+@@ line 13
+-  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
++  - { type: bar, at: [120, 326], size: [270, 28], source: cpu.load, style: meter }
+
+=== set widgets[1].style.fill.stops[1] 0.5
+@@ line 18
+-    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
++    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.5, 1] } }
+
+=== set widgets[2].series[1].style.stroke.color #FFFFFF
+@@ line 26
+-          stroke: { color: "#36D1DC" }
++          stroke: { color: "#FFFFFF" }
+
+=== set widgets[3].at[1] 20
+@@ line 30
+-      at: [1, 2],
++      at: [1, 20],
+
+=== replace styles.block { size: 20 }
+@@ line 6
+-  block:
+-    size: 20
+-    stroke: { width: 2, color: "#FFFFFF14" }
++  block: { size: 20 }
+
+=== replace styles.tight { size: 10 }
+@@ line 4
+-  tight: {size: 12,weight: bold}
++  tight: { size: 10 }
+
+=== replace widgets[1].style.fill linear: ["#000000", "#FFFFFF"]\nangle: 45
+refused: widgets[1].style.fill is inside { } or [ ], so its new value must be written on one line.
+
+=== replace widgets[2].series[0] source: gpu.temp\nstyle: { stroke: { color: "#FF0000" } }
+@@ line 23
+-      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
++      - source: gpu.temp
++        style: { stroke: { color: "#FF0000" } }
+
+=== replace widgets[2].series [{ source: fps }]
+@@ line 22
+-    series:
+-      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
+-      - source: cpu.load
+-        style:
+-          stroke: { color: "#36D1DC" }
++    series: [{ source: fps }]
+
+=== add canvas name Tall
+@@ line 1
+-canvas: { orientation: portrait, fps: 30 }
++canvas: { orientation: portrait, fps: 30, name: Tall }
+
+=== add styles.tight color "#FFF"
+@@ line 4
+-  tight: {size: 12,weight: bold}
++  tight: {size: 12,weight: bold,color: "#FFF"}
+
+=== add styles.trailing weight bold
+@@ line 5
+-  trailing: { size: 14, }
++  trailing: { size: 14, weight: bold, }
+
+=== add widgets[0] hidden true
+@@ line 13
+-  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
++  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter, hidden: true }
+
+=== add widgets[3] name Box
+@@ line 31
+-      size: [3, 4]
++      size: [3, 4],
++      name: Box
+
+=== add widgets[2].series[1] name CPU
+@@ line 27
++        name: CPU
+
+=== add styles.block.stroke cap round
+@@ line 8
+-    stroke: { width: 2, color: "#FFFFFF14" }
++    stroke: { width: 2, color: "#FFFFFF14", cap: round }
+
+=== remove canvas.orientation
+@@ line 1
+-canvas: { orientation: portrait, fps: 30 }
++canvas: { fps: 30 }
+
+=== remove styles.tight.size
+@@ line 4
+-  tight: {size: 12,weight: bold}
++  tight: {weight: bold}
+
+=== remove styles.tight.weight
+@@ line 4
+-  tight: {size: 12,weight: bold}
++  tight: {size: 12}
+
+=== remove styles.trailing.size
+@@ line 5
+-  trailing: { size: 14, }
++  trailing: { }
+
+=== remove styles.meter.fill
+@@ line 3
+-  meter: { fill: { linear: ["#36D1DC", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
++  meter: { track: "#FFFFFF10", radius: 3 }
+
+=== remove widgets[0].type
+@@ line 13
+-  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
++  - { at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
+
+=== remove widgets[0].style
+@@ line 13
+-  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
++  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load }
+
+=== remove widgets[3].shape
+@@ line 29
+-      shape: rect,
+
+=== remove widgets[3].size
+@@ line 30
+-      at: [1, 2],
+-      size: [3, 4]
++      at: [1, 2]
+
+=== remove widgets[2].series[1].style
+@@ line 25
+-        style:
+-          stroke: { color: "#36D1DC" }
+
+=== remove widgets[1].style.fill.stops
+@@ line 18
+-    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
++    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"] } }
+
+=== remove styles.block.stroke
+@@ line 8
+-    stroke: { width: 2, color: "#FFFFFF14" }

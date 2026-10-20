@@ -1,0 +1,53 @@
+Edits of Fixtures/example-agents.yaml: a shader layer with a comment after a value, and groups.
+
+=== set background[1].scale 0.5
+@@ line 29
+-    scale: 0.25 # smooth bands lose nothing, and a quarter of the size keeps it well inside the 30 fps frame budget
++    scale: 0.5 # smooth bands lose nothing, and a quarter of the size keeps it well inside the 30 fps frame budget
+
+=== set background[1].uniforms.heat clamp(cpu.load / 100, 0, 1)
+@@ line 28
+-      heat: "clamp(max(cpu.load, gpu.load) / 100, 0, 1)"
++      heat: "clamp(cpu.load / 100, 0, 1)"
+
+=== set widgets[0].children[1].text {custom.status} now
+@@ line 44
+-        text: "{custom.status}"
++        text: "{custom.status} now"
+
+=== set widgets[0].children[1].when[0].style.opacity 0.2
+@@ line 48
+-          - { stale: true, style: { opacity: 0 } }
++          - { stale: true, style: { opacity: 0.2 } }
+
+=== replace background[1].uniforms { heat: "0.5" }
+@@ line 27
+-    uniforms:
+-      heat: "clamp(max(cpu.load, gpu.load) / 100, 0, 1)"
++    uniforms: { heat: "0.5" }
+
+=== add background[1] hidden true
+@@ line 32
++    hidden: true
+
+=== add background[1].uniforms speed "1"
+@@ line 29
++      speed: "1"
+
+=== remove background[1].scale
+@@ line 29
+-    scale: 0.25 # smooth bands lose nothing, and a quarter of the size keeps it well inside the 30 fps frame budget
+
+=== remove background[1].uniforms
+@@ line 27
+-    uniforms:
+-      heat: "clamp(max(cpu.load, gpu.load) / 100, 0, 1)"
+
+=== remove widgets[0].children[1].source
+@@ line 45
+-        source: custom.status
+
+=== remove widgets[0].children[1].when
+@@ line 47
+-        when:
+-          - { stale: true, style: { opacity: 0 } }

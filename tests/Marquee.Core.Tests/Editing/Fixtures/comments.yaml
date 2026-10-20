@@ -1,0 +1,38 @@
+# A theme with comments everywhere the editor must keep them.
+# Two lines of header.
+
+canvas:   # the screen
+  orientation: landscape   # the way it is mounted
+  # fps: 60 would be smoother
+  fps: 30
+
+styles:
+  # Labels over each panel.
+  label: { size: 26, color: "#8B95AA" }   # grey
+  hot:
+    # Red for alarms.
+    color: "#FF5A36"
+    glow: { color: "#FF5A36", radius: 18 }   # soft
+    # pulse: { period: 1200 }
+
+  stale: { color: "#5A6275" }
+
+widgets:
+  # The CPU panel.
+  - type: group   # holds the CPU readouts
+    at: [30, 30]
+    size: [420, 420]
+    children:
+      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }   # the title
+      # The reading.
+      - type: value
+        at: [60, 165]   # centred
+        size: [300, 110]
+        source: cpu.temp
+        format: "{0:0}°"   # degrees
+        style: {
+          size: 84,   # big
+          color: "#F4F6FA"
+        }
+        # when: hot above 85
+  # The end.

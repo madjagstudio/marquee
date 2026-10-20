@@ -1,0 +1,14 @@
+name:
+comment_after:   # nothing yet
+empty_map: {}
+spaced_map: { }
+empty_list: []
+spaced_list: [ ]
+in_flow: { a: , b: 1, c: }
+null_word: null
+tilde: ~
+block:
+  only:
+nested:
+  deeper:
+    deepest:
