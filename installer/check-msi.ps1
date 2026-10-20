@@ -120,7 +120,8 @@ foreach ($row in Get-Rows 'SELECT `File`, `Component_`, `FileName` FROM `File`')
 }
 foreach ($file in 'marquee.exe', 'MarqueeTray.exe', 'marquee.dll', 'MarqueeTray.dll', 'coreclr.dll', 'libSkiaSharp.dll',
     "PresentMon\PresentMon-$presentMon-x64.exe", 'themes\example-agents\layout.yaml', 'themes\example-landscape\layout.yaml',
-    'themes\example-portrait\layout.yaml', 'themes\example-showcase\layout.yaml', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
+    'themes\example-portrait\layout.yaml', 'themes\example-showcase\layout.yaml', 'themes\example-showcase\video\radar.mp4',
+    'LICENSE', 'THIRD-PARTY-NOTICES.md',
     'licenses\Microsoft.NETCore.App.Runtime.win-x64\THIRD-PARTY-NOTICES.TXT', 'licenses\SkiaSharp.NativeAssets.Win32\THIRD-PARTY-NOTICES.txt',
     'licenses\HidSharp\LICENSE.txt', 'licenses\Inter\OFL.txt') {
     Check "installs $file" ($installed.ContainsKey($file.ToLowerInvariant())) 'not in the File table'

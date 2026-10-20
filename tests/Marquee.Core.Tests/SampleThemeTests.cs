@@ -1,13 +1,19 @@
 using System.Runtime.CompilerServices;
+using Marquee.Core.Rendering;
 using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
 using Marquee.Core.Tests.TestSupport;
+using Marquee.Core.Video;
+using SkiaSharp;
 
 namespace Marquee.Core.Tests;
 
 /// The themes shipped in themes/ render as approved, with fixed sensor values and animation time 0.
 public class SampleThemeTests
 {
+    /// The showcase's clip, drawn by tools/Marquee.MakeClip.
+    const string ShowcaseClip = "video/radar.mp4";
+
     static string ThemeFolder(string name, [CallerFilePath] string file = "") =>
         Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, "..", "..", "themes", name));
 
@@ -60,6 +66,7 @@ public class SampleThemeTests
     [InlineData("example-showcase")]
     public void Sample_themes_load_without_warnings(string name)
     {
+        if (name == "example-showcase" && !MediaFoundation.IsAvailable) return; // Its clip can't play there.
         using var theme = Load(name);
 
         Assert.Empty(theme.Warnings);
@@ -112,11 +119,21 @@ public class SampleThemeTests
         return store.Snapshot();
     }
 
+    /// The showcase at the test sensors' fixed time in the pinned zone and culture (Friday, 17:30), with its clip on its
+    /// first frame, which the player has decoded by the time the theme has loaded.
+    static SKImage RenderShowcase(SensorSnapshot sensors)
+    {
+        using var theme = Load("example-showcase");
+        using var renderer = new ThemeRenderer(theme) { Locale = TestClock.Locale() };
+        using var frame = renderer.Render(sensors, TimeSpan.Zero);
+        return Frames.ThroughSink(frame);
+    }
+
     [Fact]
     public void Showcase_theme_with_typical_values()
     {
-        using var theme = Load("example-showcase");
-        using var frame = Frames.Render(theme, Showcase());
+        if (!MediaFoundation.IsAvailable) return; // Its clip can't play there; the video tests check the warning.
+        using var frame = RenderShowcase(Showcase());
 
         Snapshots.Match(frame, "example-showcase");
     }
@@ -124,10 +141,25 @@ public class SampleThemeTests
     [Fact]
     public void Showcase_theme_running_hot_in_a_game_with_a_stale_gpu()
     {
-        using var theme = Load("example-showcase");
-        using var frame = Frames.Render(theme, ShowcaseHot());
+        if (!MediaFoundation.IsAvailable) return;
+        using var frame = RenderShowcase(ShowcaseHot());
 
         Snapshots.Match(frame, "example-showcase-hot");
+    }
+
+    /// The clip is committed beside the theme, so it stays small enough for the repository and the installer, and is a
+    /// loop of a few seconds.
+    [Fact]
+    public void Showcase_clip_is_under_a_megabyte_and_a_few_seconds_long()
+    {
+        var clip = Path.Combine(ThemeFolder("example-showcase"), ShowcaseClip);
+
+        Assert.InRange(new FileInfo(clip).Length, 1, 1024 * 1024 - 1);
+        if (!MediaFoundation.IsAvailable) return;
+        using var decoder = VideoDecoders.Open(clip);
+        var end = TimeSpan.Zero;
+        while (decoder.Next() is { } frame) end = frame.Start + frame.Duration;
+        Assert.InRange(end, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(10));
     }
 
     [Fact]

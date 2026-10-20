@@ -2,6 +2,7 @@ using System.IO.Compression;
 using Marquee.Cli.Tests.TestSupport;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Validation;
+using Marquee.Core.Video;
 using Marquee.Host;
 
 namespace Marquee.Cli.Tests;
@@ -187,6 +188,7 @@ public class ValidateCommandTests
     public void The_example_themes_are_clean(string name)
     {
         // With the free cost probes: whether example-agents' aurora fits the frame budget depends on the machine.
+        if (name == "example-showcase" && !MediaFoundation.IsAvailable) return; // Its clip can't play there.
         var (exit, lines) = Run(Free, SourceTree.Path("themes", name));
 
         Assert.Equal(0, exit);
