@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../docs/layout.schema.json
 # Example theme: Claude Code and Codex status next to the PC's vitals, on a horizontally mounted 8.8" Universal Screen.
 # Run it with:  marquee run themes/example-agents --preview
 # Claude Code's limits need `marquee setup-claude` once; push your own line with:  marquee push status "deploy ok" --ttl 10m

@@ -17,8 +17,8 @@ static class StyleEvaluator
 
     public static float Opacity(StyleSpec style, TimeSpan time)
     {
-        var opacity = style.Opacity ?? 1f;
-        if (style.Pulse is { } pulse && (pulse.Target ?? PulseTarget.Opacity) == PulseTarget.Opacity)
+        var opacity = style.Opacity ?? StyleDefaults.Opacity;
+        if (style.Pulse is { } pulse && (pulse.Target ?? StyleDefaults.PulseProperty) == PulseTarget.Opacity)
             opacity *= PulseFactor(pulse, time);
         return Math.Clamp(opacity, 0, 1);
     }

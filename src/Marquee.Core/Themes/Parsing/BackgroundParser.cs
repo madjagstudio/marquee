@@ -22,10 +22,20 @@ static partial class BackgroundParser
     /// Media Foundation decodes the first four; Skia decodes animated GIF and WebP.
     public static readonly IReadOnlyList<string> VideoExtensions = [".mp4", ".m4v", ".mov", ".wmv", ".gif", ".webp"];
 
-    const int MaxUniforms = 32;
+    internal const int MaxUniforms = 32;
 
     /// A float4x4 has 16 components, the most any SkSL uniform type has.
-    const int MaxComponents = 16;
+    internal const int MaxComponents = 16;
+
+    internal const string UniformNamePattern = "^[A-Za-z_][A-Za-z0-9_]*$";
+
+    // The keys a layer accepts: one of Kinds, which says what the layer is, and the others, some of which only apply to
+    // some kinds. ThemeSchema describes each, and its drift test reads these lists.
+    internal static readonly string[] Kinds = ["fill", "image", "shader", "video"];
+    internal static readonly string[] LayerKeys = [.. Kinds, "fit", "uniforms", "scale", "opacity", "blend"];
+
+    internal static readonly (string Key, string[] Kinds)[] KindOnly =
+        [("fit", ["image", "video"]), ("uniforms", ["shader"]), ("scale", ["shader"])];
 
     /// A bad layer is reported and left out, and the next one is still checked.
     public static IReadOnlyList<BackgroundLayer> Parse(YamlNode node, ParseErrors errors)
@@ -66,10 +76,10 @@ static partial class BackgroundParser
     static BackgroundLayer Layer(YamlNode node)
     {
         const string what = "background layer";
-        var fields = Yaml.Map(node, what, "fill", "image", "shader", "video", "fit", "uniforms", "scale", "opacity", "blend");
-        var kind = fields.OneOf("fill", "image", "shader", "video");
+        var fields = Yaml.Map(node, what, LayerKeys);
+        var kind = fields.OneOf(Kinds);
 
-        foreach (var (key, kinds) in new[] { ("fit", new[] { "image", "video" }), ("uniforms", ["shader"]), ("scale", ["shader"]) })
+        foreach (var (key, kinds) in KindOnly)
             if (!kinds.Contains(kind) && fields.Optional(key) is { } misplaced)
                 throw Yaml.Error(misplaced, $"{key} only applies to {string.Join(" and ", kinds)} layers");
 
@@ -143,6 +153,6 @@ static partial class BackgroundParser
         ("overlay", SKBlendMode.Overlay), ("darken", SKBlendMode.Darken), ("lighten", SKBlendMode.Lighten),
         ("add", SKBlendMode.Plus));
 
-    [GeneratedRegex("^[A-Za-z_][A-Za-z0-9_]*$")]
+    [GeneratedRegex(UniformNamePattern)]
     private static partial Regex Identifier();
 }

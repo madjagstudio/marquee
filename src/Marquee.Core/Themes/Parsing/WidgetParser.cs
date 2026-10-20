@@ -8,10 +8,27 @@ namespace Marquee.Core.Themes.Parsing;
 
 static class WidgetParser
 {
-    static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth"];
+    // The keys each widget accepts: Common, plus its type's own. ThemeSchema describes each, and its drift test reads
+    // these lists.
+    internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth"];
 
-    static readonly (string Name, string Value)[] Types =
+    internal static readonly (string Name, string Value)[] Types =
         [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"), ("group", "group")];
+
+    internal static readonly IReadOnlyDictionary<string, string[]> TypeKeys = new Dictionary<string, string[]>
+    {
+        ["text"] = ["text"],
+        ["value"] = ["format"],
+        ["bar"] = ["min", "max", "direction"],
+        ["gauge"] = ["min", "max", "start", "sweep", "thickness"],
+        ["graph"] = ["min", "max", "points"],
+        ["image"] = ["src", "fit"],
+        ["group"] = ["children"],
+    };
+
+    /// A `when` rule's conditions, which the ring's rules share, and the keys a widget's rule accepts.
+    internal static readonly string[] Conditions = ["above", "below", "equals", "stale"];
+    internal static readonly string[] RuleKeys = [.. Conditions, "style"];
 
     /// Most widgets a layout may have, counting every level. Themes are shared, and YAML aliases can repeat a group
     /// cheaply: a few hundred bytes of aliased groups would otherwise expand into over a million widgets.
@@ -68,19 +85,8 @@ static class WidgetParser
             ? ParseList(c, "children", context, groupDepth + 1)
             : null;
 
-        string[] extra = type switch
-        {
-            "text" => ["text"],
-            "value" => ["format"],
-            "bar" => ["min", "max", "direction"],
-            "gauge" => ["min", "max", "start", "sweep", "thickness"],
-            "graph" => ["min", "max", "points"],
-            "image" => ["src", "fit"],
-            _ => ["children"],
-        };
-
         var what = $"{type} widget";
-        var f = Yaml.Map(node, what, [.. Common, .. extra]);
+        var f = Yaml.Map(node, what, [.. Common, .. TypeKeys[type]]);
         var at = Yaml.Pair(f.Required("at"), "at");
         var size = Yaml.Pair(f.Required("size"), "size", min: 1);
 
@@ -194,8 +200,8 @@ static class WidgetParser
 
     static WhenRule Rule(YamlNode node, StyleTable styles, bool hasSource)
     {
-        var f = Yaml.Map(node, "when rule", "above", "below", "equals", "stale", "style");
-        var kind = f.OneOf("above", "below", "equals", "stale");
+        var f = Yaml.Map(node, "when rule", RuleKeys);
+        var kind = f.OneOf(Conditions);
         var value = f.Required(kind);
         var style = styles.Reference(f.Required("style"), "when style");
 

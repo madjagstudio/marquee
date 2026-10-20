@@ -16,7 +16,7 @@ static class BoxPainter
     {
         if (style.Fill is not { } fill) return;
         using var paint = Paints.Create(fill, bounds);
-        Rect(ctx.Canvas, bounds, style.Radius ?? 0, paint);
+        Rect(ctx.Canvas, bounds, style.Radius ?? StyleDefaults.Radius, paint);
     }
 
     public static void Outline(RenderContext ctx, SKRect bounds, StyleSpec style)
@@ -28,7 +28,7 @@ static class BoxPainter
         using var paint = Paints.Create(strokePaint, bounds, style: SKPaintStyle.Stroke);
         paint.StrokeWidth = width;
         var inset = SKRect.Inflate(bounds, -width / 2, -width / 2);
-        Rect(ctx.Canvas, inset, Math.Max(0, (style.Radius ?? 0) - width / 2), paint);
+        Rect(ctx.Canvas, inset, Math.Max(0, (style.Radius ?? StyleDefaults.Radius) - width / 2), paint);
     }
 
     public static void Rect(SKCanvas canvas, SKRect rect, float radius, SKPaint paint)
@@ -41,7 +41,7 @@ static class BoxPainter
     public static void Clip(SKCanvas canvas, SKRect bounds, StyleSpec style)
     {
         canvas.Save();
-        var radius = style.Radius ?? 0;
+        var radius = style.Radius ?? StyleDefaults.Radius;
         if (radius > 0)
         {
             using var round = new SKRoundRect(bounds, radius);

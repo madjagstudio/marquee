@@ -1,0 +1,1441 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Marquee theme (layout.yaml)",
+  "description": "layout.yaml: The theme's main file. It needs a `canvas`; everything else is optional.",
+  "type": "object",
+  "properties": {
+    "canvas": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/canvas"
+        }
+      ],
+      "description": "The screen the theme is made for: which way round, and how many frames a second."
+    },
+    "styles": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/style"
+      },
+      "description": "Named styles, which widgets and `when` rules use by name."
+    },
+    "background": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/layer"
+      },
+      "maxItems": 16,
+      "description": "Layers drawn behind the widgets, first at the bottom: up to 16, at most 4 of them shaders and 2 videos."
+    },
+    "widgets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/widget"
+      },
+      "description": "What's drawn on the screen, in order, so later widgets cover earlier ones. Up to 2000 in all, counting the ones in groups."
+    },
+    "ring": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ring"
+        }
+      ],
+      "description": "What the screen's LED ring shows. Left out, the ring is a soft warm white at 40%."
+    }
+  },
+  "required": [
+    "canvas"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "color": {
+      "type": "string",
+      "pattern": "^(#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})|transparent)$",
+      "description": "A quoted hex color: \"#RGB\", \"#RRGGBB\" or \"#RRGGBBAA\", where AA is the alpha, or \"transparent\". Quote it: an unquoted # starts a YAML comment."
+    },
+    "paint": {
+      "description": "A color, or a gradient: { linear: [\"#000000\", \"#1E2A44\"], angle: 90 } or { radial: [\"#1E2A44\", \"#000000\"] }.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/color"
+        },
+        {
+          "$ref": "#/definitions/gradient"
+        }
+      ]
+    },
+    "canvas": {
+      "description": "Canvas: The screen the theme is made for. A theme fits both ways up of its orientation.",
+      "type": "object",
+      "properties": {
+        "orientation": {
+          "enum": [
+            "portrait",
+            "landscape"
+          ],
+          "description": "How the screen is mounted: landscape is 1920×480, portrait 480×1920."
+        },
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "description": "Frames drawn each second.",
+          "default": 30
+        }
+      },
+      "required": [
+        "orientation"
+      ],
+      "additionalProperties": false
+    },
+    "style": {
+      "description": "Styles: How a widget looks. A style is named in `styles:`, or written in place as a widget's or rule's `style:`. A group passes its text keys (font, size, weight, color, align) down to its children; the others stay with its box.",
+      "type": "object",
+      "properties": {
+        "extends": {
+          "type": "string",
+          "description": "Another named style to start from; keys set here override it."
+        },
+        "font": {
+          "type": "string",
+          "description": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.",
+          "default": "Inter"
+        },
+        "size": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Text size.",
+          "default": 24
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 900
+            },
+            {
+              "enum": [
+                "light",
+                "normal",
+                "medium",
+                "semibold",
+                "bold"
+              ]
+            }
+          ],
+          "description": "How heavy text is: 100 to 900, or a name (light 300 to bold 700).",
+          "default": "normal"
+        },
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/color"
+            }
+          ],
+          "description": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one.",
+          "default": "#FFFFFF"
+        },
+        "fill": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/paint"
+            }
+          ],
+          "description": "The background of a text, value, image or group box. On a bar or gauge, the filled part (the style's color when left out); on a graph, the area under the line."
+        },
+        "track": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/paint"
+            }
+          ],
+          "description": "The empty part of a bar or gauge, and the background behind a graph."
+        },
+        "stroke": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/style.stroke"
+            }
+          ],
+          "description": "An outline round a box or bar, a graph's line, and the ends of a gauge's arc (its cap)."
+        },
+        "shadow": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/style.shadow"
+            }
+          ],
+          "description": "A shadow under text."
+        },
+        "glow": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/style.glow"
+            }
+          ],
+          "description": "A soft glow round text."
+        },
+        "pulse": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/style.pulse"
+            }
+          ],
+          "description": "Makes the opacity or the glow beat steadily."
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How solid the whole widget is: 0 hides it, 1 is fully solid.",
+          "default": 1
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Rounds the corners of a box, a bar, a graph's background and what a group or image clips to.",
+          "default": 0
+        },
+        "padding": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Space between a text or value widget's box and its text.",
+          "default": 0
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "description": "Where text sits across its box. It is always centred from top to bottom.",
+          "default": "left"
+        }
+      },
+      "additionalProperties": false
+    },
+    "style.stroke": {
+      "description": "Stroke: A line: the outline drawn just inside a box, a graph's line, or the ends of a gauge's arc.",
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How thick the line is; 0 draws none. A graph's line is 2 px when this is left out.",
+          "default": 1
+        },
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/paint"
+            }
+          ],
+          "description": "The line's color or gradient. A box has no outline without it; a graph's line uses the style's color."
+        },
+        "cap": {
+          "enum": [
+            "butt",
+            "round",
+            "square"
+          ],
+          "description": "How the ends of a gauge's arc and a graph's line are drawn. A graph's line is round when this is left out.",
+          "default": "butt"
+        }
+      },
+      "additionalProperties": false
+    },
+    "style.shadow": {
+      "description": "Shadow: A copy of the text drawn under it, offset and softened.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/color"
+            }
+          ],
+          "description": "The shadow's color. There is no shadow without it."
+        },
+        "x": {
+          "type": "number",
+          "description": "How far right the shadow sits; negative moves it left.",
+          "default": 2
+        },
+        "y": {
+          "type": "number",
+          "description": "How far down the shadow sits; negative moves it up.",
+          "default": 2
+        },
+        "blur": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How soft the shadow is; 0 is sharp.",
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "style.glow": {
+      "description": "Glow: A blurred copy of the text drawn behind it.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/color"
+            }
+          ],
+          "description": "The glow's color. There is no glow without it."
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How far the glow spreads.",
+          "default": 8
+        }
+      },
+      "additionalProperties": false
+    },
+    "style.pulse": {
+      "description": "Pulse: A steady beat: the opacity or the glow eases from max down to min and back, once each period.",
+      "type": "object",
+      "properties": {
+        "property": {
+          "enum": [
+            "opacity",
+            "glow"
+          ],
+          "description": "What beats: the widget's opacity, or its glow's radius.",
+          "default": "opacity"
+        },
+        "period": {
+          "type": "number",
+          "minimum": 50,
+          "description": "How long one beat takes.",
+          "default": 1000
+        },
+        "min": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "The low point, as a fraction of the normal opacity or glow.",
+          "default": 0.4
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "The high point, as a fraction of the normal opacity or glow.",
+          "default": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "when": {
+      "description": "When rules: Each rule has one condition and a style to layer on while it holds. Every matching rule applies, in order. Above, below and equals compare the widget's `source`; a text widget's stale also matches while any value in its text is missing.",
+      "type": "object",
+      "properties": {
+        "above": {
+          "type": "number",
+          "description": "Matches while the widget's source is above this number."
+        },
+        "below": {
+          "type": "number",
+          "description": "Matches while the widget's source is below this number."
+        },
+        "equals": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "description": "Matches while the widget's source is this number or this text."
+        },
+        "stale": {
+          "type": "boolean",
+          "description": "Matches while the widget's source has no fresh value. It only takes true."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "The style to layer on: a style's name, or a style written in place."
+        }
+      },
+      "required": [
+        "style"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "above"
+          ]
+        },
+        {
+          "required": [
+            "below"
+          ]
+        },
+        {
+          "required": [
+            "equals"
+          ]
+        },
+        {
+          "required": [
+            "stale"
+          ]
+        }
+      ]
+    },
+    "ring": {
+      "description": "LED ring: What the screen's ring of 60 LEDs shows. A key left out takes the default below, so `ring: { color: \"#3A7BFF\" }` shows that blue, static, at full brightness. `ring:` in config.yaml overrides it.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/color"
+            }
+          ],
+          "description": "The LEDs' color. An alpha byte dims it.",
+          "default": "#FFFFFF"
+        },
+        "effect": {
+          "enum": [
+            "static",
+            "breathe",
+            "spin",
+            "rainbow"
+          ],
+          "description": "static is the color on every LED, breathe fades it in and out, spin sends a bright segment round the ring, and rainbow turns the hues round it, ignoring color.",
+          "default": "static"
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 10,
+          "description": "How fast the effect runs: 2 is twice as fast.",
+          "default": 1
+        },
+        "brightness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "How bright the LEDs are.",
+          "default": 100
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "What the ring's `when` rules compare: a sensor key or an expression."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ring.when"
+          },
+          "description": "Changes to make while a condition holds. Every matching rule applies, in order."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ring.when": {
+      "description": "Ring when rules: Each rule has one condition, which compares the ring's `source`, and changes at least one of color, effect, speed and brightness while it holds. A later rule wins for each key it sets.",
+      "type": "object",
+      "properties": {
+        "above": {
+          "type": "number",
+          "description": "Matches while the ring's source is above this number."
+        },
+        "below": {
+          "type": "number",
+          "description": "Matches while the ring's source is below this number."
+        },
+        "equals": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
+          "description": "Matches while the ring's source is this number or this text."
+        },
+        "stale": {
+          "type": "boolean",
+          "description": "Matches while the ring's source has no fresh value. It only takes true."
+        },
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/color"
+            }
+          ],
+          "description": "The LEDs' color. An alpha byte dims it."
+        },
+        "effect": {
+          "enum": [
+            "static",
+            "breathe",
+            "spin",
+            "rainbow"
+          ],
+          "description": "static is the color on every LED, breathe fades it in and out, spin sends a bright segment round the ring, and rainbow turns the hues round it, ignoring color."
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 10,
+          "description": "How fast the effect runs: 2 is twice as fast."
+        },
+        "brightness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "How bright the LEDs are."
+        }
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "above"
+          ]
+        },
+        {
+          "required": [
+            "below"
+          ]
+        },
+        {
+          "required": [
+            "equals"
+          ]
+        },
+        {
+          "required": [
+            "stale"
+          ]
+        }
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "color"
+          ]
+        },
+        {
+          "required": [
+            "effect"
+          ]
+        },
+        {
+          "required": [
+            "speed"
+          ]
+        },
+        {
+          "required": [
+            "brightness"
+          ]
+        }
+      ]
+    },
+    "gradient": {
+      "description": "A paint is a color or a gradient. A gradient is a mapping with `linear:` or `radial:` and two or more colors, and goes wherever a key takes a paint: `fill`, `track`, a stroke's `color` or a fill layer.",
+      "type": "object",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/gradient.linear"
+        },
+        {
+          "$ref": "#/definitions/gradient.radial"
+        }
+      ]
+    },
+    "gradient.linear": {
+      "description": "Linear gradient: Colors spread evenly in a straight line across the area.",
+      "type": "object",
+      "properties": {
+        "linear": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/color"
+          },
+          "minItems": 2,
+          "description": "The colors, from the start of the line to its end."
+        },
+        "angle": {
+          "type": "number",
+          "description": "The line's direction, clockwise: 0 runs left to right, 90 top to bottom.",
+          "default": 0
+        }
+      },
+      "required": [
+        "linear"
+      ],
+      "additionalProperties": false
+    },
+    "gradient.radial": {
+      "description": "Radial gradient: Colors spread evenly from the centre of the area outwards.",
+      "type": "object",
+      "properties": {
+        "radial": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/color"
+          },
+          "minItems": 2,
+          "description": "The colors, from the centre out to half the area's longer side."
+        }
+      },
+      "required": [
+        "radial"
+      ],
+      "additionalProperties": false
+    },
+    "layer": {
+      "description": "Each entry of `background:` is one layer, chosen by which of `fill`, `image`, `shader` or `video` it has. Layers cover the whole canvas and are drawn in order, the first at the bottom.",
+      "type": "object",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/layer.fill"
+        },
+        {
+          "$ref": "#/definitions/layer.image"
+        },
+        {
+          "$ref": "#/definitions/layer.shader"
+        },
+        {
+          "$ref": "#/definitions/layer.video"
+        }
+      ]
+    },
+    "layer.fill": {
+      "description": "Fill layer: A color or gradient.",
+      "type": "object",
+      "properties": {
+        "fill": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/paint"
+            }
+          ],
+          "description": "The color or gradient."
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How solid the layer is: 0 hides it, 1 is fully solid.",
+          "default": 1
+        },
+        "blend": {
+          "enum": [
+            "normal",
+            "multiply",
+            "screen",
+            "overlay",
+            "darken",
+            "lighten",
+            "add"
+          ],
+          "description": "How the layer mixes with the layers under it.",
+          "default": "normal"
+        }
+      },
+      "required": [
+        "fill"
+      ],
+      "additionalProperties": false
+    },
+    "layer.image": {
+      "description": "Image layer: A picture from the theme folder.",
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads."
+        },
+        "fit": {
+          "enum": [
+            "cover",
+            "contain",
+            "stretch",
+            "none"
+          ],
+          "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "default": "cover"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How solid the layer is: 0 hides it, 1 is fully solid.",
+          "default": 1
+        },
+        "blend": {
+          "enum": [
+            "normal",
+            "multiply",
+            "screen",
+            "overlay",
+            "darken",
+            "lighten",
+            "add"
+          ],
+          "description": "How the layer mixes with the layers under it.",
+          "default": "normal"
+        }
+      },
+      "required": [
+        "image"
+      ],
+      "additionalProperties": false
+    },
+    "layer.shader": {
+      "description": "Shader layer: An SkSL shader that paints the canvas each frame. Marquee sets its `time`, `day` and `resolution` uniforms.",
+      "type": "object",
+      "properties": {
+        "shader": {
+          "type": "string",
+          "description": "The shader file (.sksl), relative to the theme folder."
+        },
+        "uniforms": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "not": {
+              "enum": [
+                "time",
+                "day",
+                "resolution"
+              ]
+            }
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "minItems": 1,
+                "maxItems": 16
+              }
+            ]
+          },
+          "maxProperties": 32,
+          "description": "Binds the shader's other uniforms to numbers or expressions, one per component (up to 16). A missing or stale value is 0."
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1,
+          "description": "Renders the shader at this fraction of the canvas size and stretches it up, which costs far less.",
+          "default": 1
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How solid the layer is: 0 hides it, 1 is fully solid.",
+          "default": 1
+        },
+        "blend": {
+          "enum": [
+            "normal",
+            "multiply",
+            "screen",
+            "overlay",
+            "darken",
+            "lighten",
+            "add"
+          ],
+          "description": "How the layer mixes with the layers under it.",
+          "default": "normal"
+        }
+      },
+      "required": [
+        "shader"
+      ],
+      "additionalProperties": false
+    },
+    "layer.video": {
+      "description": "Video layer: A clip from the theme folder, played over and over.",
+      "type": "object",
+      "properties": {
+        "video": {
+          "type": "string",
+          "pattern": "\\.([mM][pP]4|[mM]4[vV]|[mM][oO][vV]|[wW][mM][vV]|[gG][iI][fF]|[wW][eE][bB][pP])$",
+          "description": "The clip, relative to the theme folder."
+        },
+        "fit": {
+          "enum": [
+            "cover",
+            "contain",
+            "stretch",
+            "none"
+          ],
+          "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "default": "cover"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How solid the layer is: 0 hides it, 1 is fully solid.",
+          "default": 1
+        },
+        "blend": {
+          "enum": [
+            "normal",
+            "multiply",
+            "screen",
+            "overlay",
+            "darken",
+            "lighten",
+            "add"
+          ],
+          "description": "How the layer mixes with the layers under it.",
+          "default": "normal"
+        }
+      },
+      "required": [
+        "video"
+      ],
+      "additionalProperties": false
+    },
+    "widget": {
+      "description": "Each entry of `widgets:`, and of a group's `children:`, is one widget, chosen by its `type`.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "text",
+            "value",
+            "bar",
+            "gauge",
+            "graph",
+            "image",
+            "group"
+          ],
+          "description": "What kind of widget this is."
+        }
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/widget.text"
+        },
+        {
+          "$ref": "#/definitions/widget.value"
+        },
+        {
+          "$ref": "#/definitions/widget.bar"
+        },
+        {
+          "$ref": "#/definitions/widget.gauge"
+        },
+        {
+          "$ref": "#/definitions/widget.graph"
+        },
+        {
+          "$ref": "#/definitions/widget.image"
+        },
+        {
+          "$ref": "#/definitions/widget.group"
+        }
+      ]
+    },
+    "widget.text": {
+      "description": "Text: Text on one line, which can show values. Without a `source`, its `when` rules can only use `stale`, which matches while any value in the text is missing.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "text",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1."
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "default": 0
+        },
+        "text": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it and {gpu.vram_used|bytes} uses a helper."
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "widget.value": {
+      "description": "Value: One value as text. A missing or stale value shows as —.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "value",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1."
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value to show: a sensor key such as cpu.temp, or an expression."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "default": 0
+        },
+        "format": {
+          "type": "string",
+          "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals."
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "widget.bar": {
+      "description": "Bar: A bar filled in proportion to a value: `track` paints the empty part, `fill` (or the style's color) the full part.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "bar",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1."
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value that fills the bar: a sensor key or an expression."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "default": 0
+        },
+        "min": {
+          "type": "number",
+          "description": "The value at which the bar is empty.",
+          "default": 0
+        },
+        "max": {
+          "type": "number",
+          "description": "The value at which the bar is full. It must be more than min.",
+          "default": 100
+        },
+        "direction": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "description": "Which way it fills: horizontal fills left to right, vertical bottom to top.",
+          "default": "horizontal"
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "widget.gauge": {
+      "description": "Gauge: An arc filled in proportion to a value, in the largest square that fits its box. Angles are clockwise from 3 o'clock; the default arc opens at the bottom.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "gauge",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1."
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value that fills the arc: a sensor key or an expression."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "default": 0
+        },
+        "min": {
+          "type": "number",
+          "description": "The value at which the arc is empty.",
+          "default": 0
+        },
+        "max": {
+          "type": "number",
+          "description": "The value at which the arc is full. It must be more than min.",
+          "default": 100
+        },
+        "start": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Where the arc starts.",
+          "default": 135
+        },
+        "sweep": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "How far the arc runs from its start; negative runs anticlockwise. It can't be 0.",
+          "default": 270
+        },
+        "thickness": {
+          "type": "number",
+          "minimum": 1,
+          "description": "How thick the arc is.",
+          "default": 12
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "widget.graph": {
+      "description": "Graph: A line of a sensor's recent values, newest at the right. The stroke draws the line, `fill` the area under it and `track` the background.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "graph",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1."
+        },
+        "source": {
+          "type": "string",
+          "description": "The sensor whose history is drawn: one key, such as gpu.load, not an expression."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "default": 0
+        },
+        "min": {
+          "type": "number",
+          "description": "The value at the bottom. Left out, the scale fits the values shown."
+        },
+        "max": {
+          "type": "number",
+          "description": "The value at the top; more than min if both are set. Left out, the scale fits the values shown."
+        },
+        "points": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 300,
+          "description": "How many recent values span the width, one per sensor update.",
+          "default": 60
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "widget.image": {
+      "description": "Image: A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "image",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1."
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "default": 0
+        },
+        "src": {
+          "type": "string",
+          "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads."
+        },
+        "fit": {
+          "enum": [
+            "cover",
+            "contain",
+            "stretch",
+            "none"
+          ],
+          "description": "How the picture fills its box: cover crops to fill it, contain fits inside it, stretch distorts to fill it, and none keeps its own size, centred.",
+          "default": "contain"
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "src"
+      ],
+      "additionalProperties": false
+    },
+    "widget.group": {
+      "description": "Group: A box that holds other widgets. Its children are placed from its top-left corner, clipped to it, and take on its text style. Groups nest up to 16 deep.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "group",
+          "description": "What kind of widget this is."
+        },
+        "at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Where the widget's top-left corner goes, relative to the canvas or its group."
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The widget's width and height, each at least 1."
+        },
+        "source": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How the widget looks: a style's name from `styles:`, or a style written in place."
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/when"
+          },
+          "description": "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins."
+        },
+        "smooth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
+          "default": 0
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/widget"
+          },
+          "description": "The widgets inside, drawn in order."
+        }
+      },
+      "required": [
+        "type",
+        "at",
+        "size",
+        "children"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

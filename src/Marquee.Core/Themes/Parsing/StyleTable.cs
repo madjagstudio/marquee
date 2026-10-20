@@ -7,8 +7,14 @@ namespace Marquee.Core.Themes.Parsing;
 /// which are either a style name or an inline style mapping (which may itself use `extends`).
 sealed class StyleTable
 {
-    static readonly string[] Keys =
+    // The keys a style and its nested blocks accept. ThemeSchema describes each, and its drift test reads these lists.
+    internal static readonly string[] Keys =
         ["extends", "font", "size", "weight", "color", "fill", "track", "stroke", "shadow", "glow", "pulse", "opacity", "radius", "padding", "align"];
+
+    internal static readonly string[] StrokeKeys = ["width", "color", "cap"];
+    internal static readonly string[] ShadowKeys = ["color", "x", "y", "blur"];
+    internal static readonly string[] GlowKeys = ["color", "radius"];
+    internal static readonly string[] PulseKeys = ["property", "period", "min", "max"];
 
     sealed record Raw(StyleSpec Own, YamlNode? Extends, YamlNode Definition);
 
@@ -122,7 +128,7 @@ sealed class StyleTable
 
     static StrokeSpec Stroke(YamlNode node)
     {
-        var f = Yaml.Map(node, "stroke", "width", "color", "cap");
+        var f = Yaml.Map(node, "stroke", StrokeKeys);
         return new StrokeSpec(
             f.Optional("width") is { } w ? Yaml.Float(w, "stroke.width", 0) : null,
             f.Optional("color") is { } c ? PaintParser.Paint(c, "stroke.color") : null,
@@ -133,7 +139,7 @@ sealed class StyleTable
 
     static ShadowSpec Shadow(YamlNode node)
     {
-        var f = Yaml.Map(node, "shadow", "color", "x", "y", "blur");
+        var f = Yaml.Map(node, "shadow", ShadowKeys);
         return new ShadowSpec(
             f.Optional("color") is { } c ? PaintParser.Color(c, "shadow.color") : null,
             f.Optional("x") is { } x ? Yaml.Float(x, "shadow.x") : null,
@@ -143,7 +149,7 @@ sealed class StyleTable
 
     static GlowSpec Glow(YamlNode node)
     {
-        var f = Yaml.Map(node, "glow", "color", "radius");
+        var f = Yaml.Map(node, "glow", GlowKeys);
         return new GlowSpec(
             f.Optional("color") is { } c ? PaintParser.Color(c, "glow.color") : null,
             f.Optional("radius") is { } r ? Yaml.Float(r, "glow.radius", 0) : null);
@@ -151,7 +157,7 @@ sealed class StyleTable
 
     static PulseSpec Pulse(YamlNode node)
     {
-        var f = Yaml.Map(node, "pulse", "property", "period", "min", "max");
+        var f = Yaml.Map(node, "pulse", PulseKeys);
         return new PulseSpec(
             f.Optional("property") is { } p ? Yaml.Choice(p, "pulse.property", ("opacity", PulseTarget.Opacity), ("glow", PulseTarget.Glow)) : null,
             f.Optional("period") is { } period ? Yaml.Float(period, "pulse.period", 50) : null,

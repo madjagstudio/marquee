@@ -54,6 +54,20 @@ public static class StyleDefaults
     public const float Size = 24;
     public const int Weight = 400;
     public static readonly SKColor Color = SKColors.White;
+    public const float Opacity = 1;
+    public const float Radius = 0;
+    public const float Padding = 0;
+    public const TextAlign Align = TextAlign.Left;
+    public const SKStrokeCap StrokeCap = SKStrokeCap.Butt;
+    public const float ShadowX = 2;
+    public const float ShadowY = 2;
+    public const float ShadowBlur = 0;
+    public const PulseTarget PulseProperty = PulseTarget.Opacity;
+
+    /// A graph's line, which is thicker than an outline and round at its ends (ThemeSchema's DefaultFor).
+    public const float GraphStrokeWidth = 2;
+    public const SKStrokeCap GraphStrokeCap = SKStrokeCap.Round;
+
     public const float StrokeWidth = 1;
     public const float GlowRadius = 8;
     public const float PulsePeriodMs = 1000;

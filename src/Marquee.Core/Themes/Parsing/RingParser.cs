@@ -10,7 +10,11 @@ static class RingParser
     static readonly (string Name, RingEffect Value)[] Effects =
         [("static", RingEffect.Static), ("breathe", RingEffect.Breathe), ("spin", RingEffect.Spin), ("rainbow", RingEffect.Rainbow)];
 
-    static readonly string[] Overrides = ["color", "effect", "speed", "brightness"];
+    // The keys the ring and its rules accept: a rule takes one of the widgets' conditions and changes any of Overrides.
+    // ThemeSchema describes each, and its drift test reads these lists.
+    internal static readonly string[] Overrides = ["color", "effect", "speed", "brightness"];
+    internal static readonly string[] Keys = ["color", "effect", "speed", "brightness", "source", "when"];
+    internal static readonly string[] RuleKeys = [.. WidgetParser.Conditions, .. Overrides];
 
     /// Not RingSpec.Default: that dim warm glow suits a theme that says nothing about the ring, but a theme author who
     /// writes `ring: { color: "#3A7BFF" }` expects to see that color, so a block starts from plain white at full
@@ -20,7 +24,7 @@ static class RingParser
     /// Each field and each rule is checked on its own when errors are collected, so one mistake doesn't hide the others.
     public static RingSpec Parse(YamlNode node, ParseErrors errors)
     {
-        var f = Yaml.Map(node, "ring", errors, "color", "effect", "speed", "brightness", "source", "when");
+        var f = Yaml.Map(node, "ring", errors, Keys);
         var hasSource = f.Has("source");
 
         return new RingSpec(
@@ -57,8 +61,8 @@ static class RingParser
 
     static RingRule Rule(YamlNode node, bool hasSource)
     {
-        var f = Yaml.Map(node, "ring when rule", ["above", "below", "equals", "stale", .. Overrides]);
-        var kind = f.OneOf("above", "below", "equals", "stale");
+        var f = Yaml.Map(node, "ring when rule", RuleKeys);
+        var kind = f.OneOf(WidgetParser.Conditions);
         var value = f.Required(kind);
 
         // A widget's stale rule can watch its text's keys, but the ring has only its source to go stale.

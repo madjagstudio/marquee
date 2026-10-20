@@ -14,7 +14,7 @@ static class ShapePainters
         if (style.Track is { } track)
         {
             using var paint = Paints.Create(track, bounds);
-            BoxPainter.Rect(canvas, bounds, style.Radius ?? 0, paint);
+            BoxPainter.Rect(canvas, bounds, style.Radius ?? StyleDefaults.Radius, paint);
         }
 
         if (value is { } v && Fraction(v, bar.Min, bar.Max) is var fraction and > 0)
@@ -37,7 +37,7 @@ static class ShapePainters
         var size = Math.Min(bounds.Width, bounds.Height);
         var square = SKRect.Create(bounds.MidX - size / 2, bounds.MidY - size / 2, size, size);
         var oval = SKRect.Inflate(square, -gauge.Thickness / 2, -gauge.Thickness / 2);
-        var cap = style.Stroke?.Cap ?? SKStrokeCap.Butt;
+        var cap = style.Stroke?.Cap ?? StyleDefaults.StrokeCap;
 
         if (style.Track is { } track)
             Arc(ctx.Canvas, oval, gauge.StartAngle, gauge.SweepAngle, track, square, gauge.Thickness, cap);
