@@ -73,6 +73,29 @@ public class GaugeDialRenderingTests
     }
 
     [Fact]
+    public void A_segmented_ring_takes_a_needle_and_ticks()
+    {
+        using var frame = Render(Gauge("""
+            start: -90
+                sweep: 360
+                thickness: 20
+                segments: 20
+                gap: 4
+                needle: { width: 20, length: 1, color: "#FF0000" }
+                ticks: { major: 4, length: 30, width: 6, color: "#0000FF" }
+                style: { fill: "#00FF00", track: "#404040" }
+            """), ("gpu.temp", 50));
+
+        // Half of a ring from 12 o'clock: the segments of the right half are lit, and the needle points at 6 o'clock.
+        Pixels.AssertNear(SKColors.Lime, At(frame, Polar(9, 90)));
+        Pixels.AssertNear(new SKColor(0x40, 0x40, 0x40), At(frame, Polar(189, 90)));
+        Pixels.AssertNear(SKColors.Black, At(frame, Polar(18, 90)), 0);
+        Pixels.AssertNear(SKColors.Red, At(frame, Polar(90, 88)));
+        // The major tick at 3 o'clock, inside the band.
+        Pixels.AssertNear(SKColors.Blue, At(frame, Polar(0, 68)));
+    }
+
+    [Fact]
     public void Stale_needle_is_hidden_and_its_hub_stays()
     {
         using var frame = Render(Gauge(Ring + "\n    needle: { width: 12, cap: 10, color: \"#FF0000\" }"));
