@@ -48,9 +48,9 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `font` | font |  | `Inter` | A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. |
 | `size` | number (px) | 1 to 1000 | `24` | Text size. |
 | `weight` | font weight | 100 to 900, or `light`, `normal`, `medium`, `semibold`, `bold` | `normal` | How heavy text is: 100 to 900, or a name (light 300 to bold 700). |
-| `color` | color |  | `#FFFFFF` | The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. |
-| `fill` | paint |  |  | The background of a text, value, image or group box. On a bar or gauge, the filled part (the style's color when left out); on a graph, the area under the line. |
-| `track` | paint |  |  | The empty part of a bar or gauge, and the background behind a graph. |
+| `color` | color |  | `#FFFFFF` | The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks use it when they set no color of their own. |
+| `fill` | paint |  |  | The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it). |
+| `track` | paint |  |  | The empty part of a bar or gauge, or its unlit segments, and the background behind a graph. |
 | `stroke` | block: [Stroke](#stroke) |  |  | An outline round a box, a bar or a shape (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap). |
 | `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text, a shape or a gauge's needle. |
 | `glow` | block: [Glow](#glow) |  |  | A soft glow round text or a shape. |
@@ -202,7 +202,7 @@ Every widget takes these.
 | `type` | choice | `text`, `value`, `bar`, `gauge`, `graph`, `image`, `shape`, `group` | required | What kind of widget this is. |
 | `at` | point |  | required | Where the widget's top-left corner goes, relative to the canvas or its group. |
 | `size` | size |  | required | The widget's width and height, each at least 1. |
-| `source` | expression |  |  | The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one. |
+| `source` | expression |  |  | The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`. |
 | `style` | style |  |  | How the widget looks: a style's name from `styles:`, or a style written in place. |
 | `when` | list of [When rules](#when-rules) |  |  | Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins. |
 | `smooth` | number (ms) | 0 to 10000 | `0` | Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. |
@@ -287,14 +287,42 @@ Tick marks round the inside of the arc, from min to max, with the major ticks' v
 
 ### Graph
 
-A line of a sensor's recent values, newest at the right. The stroke draws the line, `fill` the area under it and `track` the background.
+A chart of sensors' recent values, newest at the right: one `source`, or up to 8 in `series`, on one scale. The stroke draws a line, `fill` the area under it or the columns, and `track` the background.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `source` | sensor key |  | required | The sensor whose history is drawn: one key, such as gpu.load, not an expression. |
-| `min` | number |  |  | The value at the bottom. Left out, the scale fits the values shown. |
-| `max` | number |  |  | The value at the top; more than min if both are set. Left out, the scale fits the values shown. |
-| `points` | whole number | 2 to 300 | `60` | How many recent values span the width, one per sensor update. |
+| `source` | sensor key |  |  | The sensor whose history is drawn: one key, such as gpu.load, not an expression. It's what the graph's `when` rules compare. |
+| `series` | list of [Graph series](#graph-series) | 1 to 8 |  | Several sensors on one chart, each with its own history and style, drawn in order so the last is in front. |
+| `kind` | choice | `line`, `area`, `columns` | `line` | How each series is drawn: a line (with the area under it if the style sets `fill`), an area filled under a line, or one column per value. |
+| `min` | number |  |  | The value at the bottom. Left out, the scale fits the values shown; a columns graph's also takes in 0, so its columns rise from 0. |
+| `max` | number |  |  | The value at the top; more than min if both are set. Left out, the scale fits the values shown (and 0, on a columns graph). |
+| `points` | whole number | 2 to 600 | `60` | How many recent values span the width, one per sensor update. |
+| `grid` | block: [Graph grid](#graph-grid) |  |  | Horizontal lines at even steps of the scale, behind the data. |
+
+Each needs exactly one of `source` and `series`.
+
+#### Graph grid
+
+Goes under `grid:` in [Graph](#graph).
+
+Horizontal lines across a graph at even steps of its scale, over the track and under the data.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `lines` | whole number | 1 to 20 | `4` | How many lines; they split the height into one more band than this. |
+| `color` | color |  | `#FFFFFF26` | The lines' color. |
+| `width` | number (px) | at least 0 | `1` | How thick each line is; 0 draws none. |
+
+#### Graph series
+
+Goes under `series:` in [Graph](#graph).
+
+One sensor on a graph with several. Its style is layered over the graph's, so the graph can set the line width once and each series its color; box keys such as `track`, `radius` and `opacity` stay the graph's.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `source` | sensor key |  | required | The sensor whose history this series draws: one key, not an expression. |
+| `style` | style |  |  | How this series looks over the graph's own style: a style's name, or one written in place. |
 
 ### Image
 

@@ -4,7 +4,8 @@ namespace Marquee.Core.Sensors;
 /// Numeric values also keep a fixed-length history, oldest first, for graph widgets. A string write clears that history.
 public sealed class SensorStore(Func<DateTimeOffset>? now = null, int historyLength = SensorStore.DefaultHistoryLength)
 {
-    public const int DefaultHistoryLength = 300;
+    /// Enough for the longest graph a theme may draw (GraphParser.MaxPoints), one sample per write.
+    public const int DefaultHistoryLength = 600;
 
     readonly Func<DateTimeOffset> _now = now ?? (() => DateTimeOffset.UtcNow);
     readonly object _gate = new();

@@ -35,6 +35,8 @@ public class ThemeSchemaDriftTests
             ["ring.when"] = RingParser.RuleKeys,
             ["gauge.needle"] = DialParser.NeedleKeys,
             ["gauge.ticks"] = DialParser.TickKeys,
+            ["graph.grid"] = GraphParser.GridKeys,
+            ["graph.series"] = GraphParser.SeriesKeys,
         };
         foreach (var (type, _) in WidgetParser.Types)
             keys[$"widget.{type}"] = [.. WidgetParser.Common, .. WidgetParser.TypeKeys[type]];
@@ -522,6 +524,12 @@ public class ThemeSchemaDriftTests
                 case "gauge.needle" or "gauge.ticks":
                     layout["widgets"] = new JsonArray(Widget("gauge", ("source", "cpu.load"), (Block.Name, probe)));
                     break;
+                case "graph.grid":
+                    layout["widgets"] = new JsonArray(Widget("graph", ("source", "cpu.load"), ("grid", probe)));
+                    break;
+                case "graph.series":
+                    layout["widgets"] = new JsonArray(Widget("graph", ("series", new JsonArray(probe))));
+                    break;
                 default:
                     Assert.Fail($"ThemeSchemaDriftTests doesn't know where block '{id}' goes in layout.yaml; add it to Place.Layout");
                     break;
@@ -562,6 +570,9 @@ public class ThemeSchemaDriftTests
         SchemaKind.Block => new Place(ThemeSchema.Block(key.Of!)!, null).Base(),
         SchemaKind.List when key.ItemKind is { } item =>
             new JsonArray(Enumerable.Range(0, key.MinItems ?? 1).Select(_ => (JsonNode?)Sample(item)).ToArray()),
+        // A list of blocks that must have entries, such as a graph's series, gets as many of the least each needs.
+        SchemaKind.List when key is { Of: { } of, MinItems: > 0 } && ThemeSchema.Block(of) is { } entry =>
+            new JsonArray(Enumerable.Range(0, key.MinItems.Value).Select(_ => (JsonNode?)new Place(entry, null).Base()).ToArray()),
         SchemaKind.List => new JsonArray(),
         SchemaKind.Map => new JsonObject(),
         SchemaKind.Uniforms => new JsonObject { ["u"] = "cpu.load" },

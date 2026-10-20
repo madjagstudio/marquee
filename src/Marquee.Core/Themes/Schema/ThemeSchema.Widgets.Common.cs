@@ -22,7 +22,7 @@ public static partial class ThemeSchema
             },
             new("size", SchemaKind.Size, "The widget's width and height, each at least 1.") { Required = true, Unit = SchemaUnit.Px },
             Source("The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an "
-                + "expression. Value, bar, gauge and graph widgets need one."),
+                + "expression. Value, bar and gauge widgets need one; a graph needs one or `series`."),
             new("style", SchemaKind.Style, "How the widget looks: a style's name from `styles:`, or a style written in place."),
             new("when", SchemaKind.List,
                 "Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins.")

@@ -93,7 +93,7 @@ static class DialPainter
         var (center, radius) = Geometry(gauge);
         using var shape = new SKPath();
         if (value is { } v)
-            Pointer(shape, center, Angle(gauge, Fraction(v, gauge.Min, gauge.Max)), radius * needle.Length, needle.Width);
+            Pointer(shape, center, Angle(gauge, ShapePainters.Fraction(v, gauge.Min, gauge.Max)), radius * needle.Length, needle.Width);
         // Clockwise, as the pointer is, so where they overlap the shape stays filled.
         if (needle.Cap > 0)
             shape.AddCircle(center.X, center.Y, needle.Cap, SKPathDirection.Clockwise);
@@ -140,6 +140,4 @@ static class DialPainter
         var radians = degrees * MathF.PI / 180;
         return new SKPoint(center.X + MathF.Cos(radians) * distance, center.Y + MathF.Sin(radians) * distance);
     }
-
-    static float Fraction(double value, double min, double max) => (float)Math.Clamp((value - min) / (max - min), 0, 1);
 }

@@ -1,6 +1,5 @@
 using System.Globalization;
 using Marquee.Core.Expressions;
-using Marquee.Core.Sensors;
 using SkiaSharp;
 using YamlDotNet.RepresentationModel;
 
@@ -22,7 +21,7 @@ static partial class WidgetParser
         ["value"] = ["format"],
         ["bar"] = ["min", "max", "direction", .. SegmentParser.Keys],
         ["gauge"] = ["min", "max", "start", "sweep", "thickness", .. SegmentParser.Keys, "needle", "ticks"],
-        ["graph"] = ["min", "max", "points"],
+        ["graph"] = GraphParser.Keys,
         ["image"] = ["src", "fit"],
         ["shape"] = ["shape", .. ArcKeys],
         ["group"] = ["children"],
@@ -96,7 +95,7 @@ static partial class WidgetParser
         var size = type == "shape" ? ShapeSize(f) : Yaml.Pair(f.Required("size"), "size", min: 1);
 
         var source = f.Optional("source") is { } s ? Source(s) : null;
-        if (source is null && type is "value" or "bar" or "gauge" or "graph")
+        if (source is null && type is "value" or "bar" or "gauge")
             throw Yaml.Error(f.Node, $"{what} is missing 'source'");
 
         WidgetSpec widget = type switch
@@ -105,7 +104,7 @@ static partial class WidgetParser
             "value" => new ValueWidget(f.Optional("format") is { } format ? Format(format) : null),
             "bar" => Bar(f),
             "gauge" => DialParser.Dial(Gauge(f), f),
-            "graph" => Graph(f, f.Required("source")),
+            "graph" => GraphParser.Parse(f, context.Styles),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
             "shape" => Shape(f),
@@ -190,19 +189,6 @@ static partial class WidgetParser
         // As thin as 0, which draws no arc, for a dial with only a needle.
         var (start, sweep, thickness) = Arc(f, minThickness: 0);
         return new GaugeWidget(min, max, start, sweep, thickness);
-    }
-
-    static GraphWidget Graph(Fields f, YamlNode sourceNode)
-    {
-        var key = Expression.Parse(Yaml.Text(sourceNode, "source")) is KeyExpr k
-            ? k.Key
-            : throw Yaml.Error(sourceNode, "A graph's source must be a single sensor key, such as gpu.load");
-        var min = f.Optional("min") is { } a ? Yaml.Number(a, "min") : (double?)null;
-        var max = f.Optional("max") is { } b ? Yaml.Number(b, "max") : (double?)null;
-        if (min is { } lo && max is { } hi && hi <= lo)
-            throw Yaml.Error(f.Optional("max")!, "graph widget max must be greater than min");
-        var points = f.Optional("points") is { } p ? Yaml.Integer(p, "points", 2, SensorStore.DefaultHistoryLength) : 60;
-        return new GraphWidget(key, min, max, points);
     }
 
     static IReadOnlyList<WhenRule> Rules(YamlNode node, StyleTable styles, bool hasSource) =>

@@ -94,7 +94,7 @@ public class WidgetParsingTests
             - { type: graph, at: [0, 0], size: [400, 100], source: gpu.load, max: 100, points: 120 }
             """));
 
-        Assert.Equal(("gpu.load", (double?)null, (double?)100, 120), (graph.Key, graph.Min, graph.Max, graph.Points));
+        Assert.Equal(("gpu.load", (double?)null, (double?)100, 120), (graph.Series.Single().Key, graph.Min, graph.Max, graph.Points));
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class WidgetParsingTests
     [InlineData("- { type: bar, at: [0, 0], size: [10, 10], source: x, direction: up }", 6, "direction must be one of: horizontal, vertical; not 'up'")]
     [InlineData("- { type: gauge, at: [0, 0], size: [10, 10], source: x, sweep: 0 }", 6, "sweep must not be 0")]
     [InlineData("- { type: graph, at: [0, 0], size: [10, 10], source: gpu.load / 100 }", 6, "A graph's source must be a single sensor key, such as gpu.load")]
-    [InlineData("- { type: graph, at: [0, 0], size: [10, 10], source: x, points: 1 }", 6, "points must be between 2 and 300")]
+    [InlineData("- { type: graph, at: [0, 0], size: [10, 10], source: x, points: 1 }", 6, "points must be between 2 and 600")]
     [InlineData("- { type: image, at: [0, 0], size: [10, 10] }", 6, "image widget is missing 'src'")]
     [InlineData("- { type: group, at: [0, 0], size: [10, 10], children: {} }", 6, "children must be a list")]
     public void Widget_errors(string widgets, int line, string reason)

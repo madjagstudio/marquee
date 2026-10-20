@@ -53,7 +53,7 @@ static class WidgetPainter
                     DialPainter.Paint(ctx, gauge, style, Number(ctx, gauge, subject, stale));
                     break;
                 case GraphWidget graph:
-                    ShapePainters.Graph(ctx, graph, style);
+                    GraphPainter.Paint(ctx, graph, style);
                     break;
                 case ImageWidget image:
                     Image(ctx, image, style);

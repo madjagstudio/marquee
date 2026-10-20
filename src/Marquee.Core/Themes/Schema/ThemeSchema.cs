@@ -43,8 +43,13 @@ public static partial class ThemeSchema
     public static SchemaBlock Needle { get; } = NeedleBlock();
     public static SchemaBlock Ticks { get; } = TicksBlock();
 
+    /// A graph's gridlines, and each entry of its `series:`.
+    public static SchemaBlock GraphGrid { get; } = GraphGridBlock();
+    public static SchemaBlock GraphSeries { get; } = GraphSeriesBlock();
+
     /// The blocks that aren't part of a union, in the order the reference describes them.
-    public static IReadOnlyList<SchemaBlock> Blocks => [Layout, Canvas, Style, Stroke, Shadow, Glow, Pulse, When, Ring, RingWhen, Needle, Ticks];
+    public static IReadOnlyList<SchemaBlock> Blocks =>
+        [Layout, Canvas, Style, Stroke, Shadow, Glow, Pulse, When, Ring, RingWhen, Needle, Ticks, GraphGrid, GraphSeries];
 
     public static IReadOnlyList<SchemaUnion> Unions => [Gradient, Background, Widgets];
 

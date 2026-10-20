@@ -134,7 +134,7 @@
               "$ref": "#/definitions/color"
             }
           ],
-          "description": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one.",
+          "description": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks use it when they set no color of their own.",
           "default": "#FFFFFF"
         },
         "fill": {
@@ -143,7 +143,7 @@
               "$ref": "#/definitions/paint"
             }
           ],
-          "description": "The background of a text, value, image or group box. On a bar or gauge, the filled part (the style's color when left out); on a graph, the area under the line."
+          "description": "The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled part or the lit segments (the style's color when left out); on a graph, the area under the line or the columns (an area or columns graph uses the color without it)."
         },
         "track": {
           "allOf": [
@@ -151,7 +151,7 @@
               "$ref": "#/definitions/paint"
             }
           ],
-          "description": "The empty part of a bar or gauge, and the background behind a graph."
+          "description": "The empty part of a bar or gauge, or its unlit segments, and the background behind a graph."
         },
         "stroke": {
           "allOf": [
@@ -668,6 +668,60 @@
       },
       "additionalProperties": false
     },
+    "graph.grid": {
+      "description": "Graph grid: Horizontal lines across a graph at even steps of its scale, over the track and under the data.",
+      "type": "object",
+      "properties": {
+        "lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "How many lines; they split the height into one more band than this.",
+          "default": 4
+        },
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/color"
+            }
+          ],
+          "description": "The lines' color.",
+          "default": "#FFFFFF26"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How thick each line is; 0 draws none.",
+          "default": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "graph.series": {
+      "description": "Graph series: One sensor on a graph with several. Its style is layered over the graph's, so the graph can set the line width once and each series its color; box keys such as `track`, `radius` and `opacity` stay the graph's.",
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "The sensor whose history this series draws: one key, not an expression."
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/style"
+            }
+          ],
+          "description": "How this series looks over the graph's own style: a style's name, or one written in place."
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false
+    },
     "gradient": {
       "description": "A paint is a color or a gradient. A gradient is a mapping with `linear:` or `radial:` and two or more colors, and goes wherever a key takes a paint: `fill`, `track`, a stroke's `color` or a fill layer.",
       "type": "object",
@@ -1063,7 +1117,7 @@
             "string",
             "number"
           ],
-          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one."
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
         },
         "style": {
           "anyOf": [
@@ -1471,7 +1525,7 @@
       "additionalProperties": false
     },
     "widget.graph": {
-      "description": "Graph: A line of a sensor's recent values, newest at the right. The stroke draws the line, `fill` the area under it and `track` the background.",
+      "description": "Graph: A chart of sensors' recent values, newest at the right: one `source`, or up to 8 in `series`, on one scale. The stroke draws a line, `fill` the area under it or the columns, and `track` the background.",
       "type": "object",
       "properties": {
         "type": {
@@ -1499,7 +1553,7 @@
         },
         "source": {
           "type": "string",
-          "description": "The sensor whose history is drawn: one key, such as gpu.load, not an expression."
+          "description": "The sensor whose history is drawn: one key, such as gpu.load, not an expression. It's what the graph's `when` rules compare."
         },
         "style": {
           "anyOf": [
@@ -1543,29 +1597,66 @@
           "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
           "default": false
         },
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/graph.series"
+          },
+          "minItems": 1,
+          "maxItems": 8,
+          "description": "Several sensors on one chart, each with its own history and style, drawn in order so the last is in front."
+        },
+        "kind": {
+          "enum": [
+            "line",
+            "area",
+            "columns"
+          ],
+          "description": "How each series is drawn: a line (with the area under it if the style sets `fill`), an area filled under a line, or one column per value.",
+          "default": "line"
+        },
         "min": {
           "type": "number",
-          "description": "The value at the bottom. Left out, the scale fits the values shown."
+          "description": "The value at the bottom. Left out, the scale fits the values shown; a columns graph's also takes in 0, so its columns rise from 0."
         },
         "max": {
           "type": "number",
-          "description": "The value at the top; more than min if both are set. Left out, the scale fits the values shown."
+          "description": "The value at the top; more than min if both are set. Left out, the scale fits the values shown (and 0, on a columns graph)."
         },
         "points": {
           "type": "integer",
           "minimum": 2,
-          "maximum": 300,
+          "maximum": 600,
           "description": "How many recent values span the width, one per sensor update.",
           "default": 60
+        },
+        "grid": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/graph.grid"
+            }
+          ],
+          "description": "Horizontal lines at even steps of the scale, behind the data."
         }
       },
       "required": [
         "type",
         "at",
-        "size",
-        "source"
+        "size"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "source"
+          ]
+        },
+        {
+          "required": [
+            "series"
+          ]
+        }
+      ]
     },
     "widget.image": {
       "description": "Image: A picture from the theme folder, over the style's `fill` and under its stroke, clipped to the box.",
@@ -1599,7 +1690,7 @@
             "string",
             "number"
           ],
-          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one."
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
         },
         "style": {
           "anyOf": [
@@ -1698,7 +1789,7 @@
             "string",
             "number"
           ],
-          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one."
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
         },
         "style": {
           "anyOf": [
@@ -1858,7 +1949,7 @@
             "string",
             "number"
           ],
-          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar, gauge and graph widgets need one."
+          "description": "The value the widget shows, and what its `when` rules compare: a sensor key such as cpu.temp, or an expression. Value, bar and gauge widgets need one; a graph needs one or `series`."
         },
         "style": {
           "anyOf": [

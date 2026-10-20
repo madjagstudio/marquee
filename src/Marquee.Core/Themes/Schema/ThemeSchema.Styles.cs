@@ -20,14 +20,16 @@ public static partial class ThemeSchema
                 Default = "normal", Min = 100, Max = 900, Values = ["light", "normal", "medium", "semibold", "bold"],
             },
             new("color", SchemaKind.Color,
-                "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one.")
+                "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A "
+                + "dial's needle and ticks use it when they set no color of their own.")
             {
                 Default = "#FFFFFF",
             },
             new("fill", SchemaKind.Paint,
-                "The background of a text, value, image or group box. On a bar or gauge, the filled part (the style's color "
-                + "when left out); on a graph, the area under the line."),
-            new("track", SchemaKind.Paint, "The empty part of a bar or gauge, and the background behind a graph."),
+                "The background of a text, value, image or group box, and the inside of a shape. On a bar or gauge, the filled "
+                + "part or the lit segments (the style's color when left out); on a graph, the area under the line or the "
+                + "columns (an area or columns graph uses the color without it)."),
+            new("track", SchemaKind.Paint, "The empty part of a bar or gauge, or its unlit segments, and the background behind a graph."),
             new("stroke", SchemaKind.Block, "An outline round a box, a bar or a shape (a line shape is the stroke alone), a graph's "
                 + "line, and the ends of a gauge's arc, an arc shape or a line (its cap).")
             {

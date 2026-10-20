@@ -47,8 +47,13 @@ public sealed partial record GaugeWidget(double Min, double Max, float StartAngl
     public SegmentSpec? Segments { get; init; }
 }
 
-/// A sparkline over the last Points samples of one sensor key. Min/Max fix the vertical scale; null scales to the data.
-public sealed record GraphWidget(string Key, double? Min, double? Max, int Points) : WidgetSpec;
+/// A chart of the last Points samples of each series, drawn back to front (GraphSpec.cs). Min/Max fix the vertical
+/// scale of every series; null fits it to all of their data. A graph with a single `source` has one series.
+public sealed record GraphWidget(IReadOnlyList<GraphSeries> Series, double? Min, double? Max, int Points) : WidgetSpec
+{
+    public GraphKind Kind { get; init; }
+    public GraphGrid? Grid { get; init; }
+}
 
 /// Path is relative to the theme folder.
 public sealed record ImageWidget(string Path, ImageFit Fit) : WidgetSpec;
