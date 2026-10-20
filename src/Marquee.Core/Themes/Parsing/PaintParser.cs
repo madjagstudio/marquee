@@ -10,6 +10,9 @@ static class PaintParser
 {
     const string ColorHint = "Use \"#RRGGBB\", \"#RRGGBBAA\" or \"transparent\"";
 
+    /// The keys a gradient accepts. ThemeSchema describes each, and its drift test reads this list.
+    internal static readonly string[] GradientKeys = ["linear", "radial", "angle"];
+
     public static bool TryParseColor(string text, out SKColor color)
     {
         color = default;
@@ -42,7 +45,7 @@ static class PaintParser
         if (node is YamlScalarNode)
             return new SolidPaint(Color(node, what));
 
-        var fields = Yaml.Map(node, what, "linear", "radial", "angle");
+        var fields = Yaml.Map(node, what, GradientKeys);
         var kind = fields.OneOf("linear", "radial");
         var colors = Yaml.List(fields.Required(kind), $"{what}.{kind}")
             .Select(c => Color(c, $"{what}.{kind}"))

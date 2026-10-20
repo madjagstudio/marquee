@@ -336,7 +336,7 @@ function Test-Product([string] $version) {
 
 function Test-Files([string] $version) {
     foreach ($file in 'marquee.exe', 'MarqueeTray.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'themes\example-landscape\layout.yaml',
-        'themes\example-portrait\layout.yaml', 'themes\example-agents\layout.yaml') {
+        'themes\example-portrait\layout.yaml', 'themes\example-agents\layout.yaml', 'themes\example-showcase\layout.yaml') {
         Check "installs $file" (Test-Path -LiteralPath (Join-Path $installDir $file) -PathType Leaf) 'missing'
     }
     $presentMon = @(Get-ChildItem (Join-Path $installDir 'PresentMon') -Filter 'PresentMon-*-x64.exe' -ErrorAction SilentlyContinue)

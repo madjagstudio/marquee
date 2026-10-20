@@ -45,6 +45,8 @@ internal static class Strings
 
     public static string TrayHoldsScreen => Get(nameof(TrayHoldsScreen));
 
+    public static string SinkNeedsTheme => Get(nameof(SinkNeedsTheme));
+
     public static string SettingsUnchanged(string error) => Format(nameof(SettingsUnchanged), error);
 
     public static string FramesNotDelivered(long delivered, int requested, string screen) =>

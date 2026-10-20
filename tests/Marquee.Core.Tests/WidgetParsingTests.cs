@@ -94,7 +94,7 @@ public class WidgetParsingTests
             - { type: graph, at: [0, 0], size: [400, 100], source: gpu.load, max: 100, points: 120 }
             """));
 
-        Assert.Equal(("gpu.load", (double?)null, (double?)100, 120), (graph.Key, graph.Min, graph.Max, graph.Points));
+        Assert.Equal(("gpu.load", (double?)null, (double?)100, 120), (graph.Series.Single().Key, graph.Min, graph.Max, graph.Points));
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public class WidgetParsingTests
 
     [Theory]
     [InlineData("- at: [0, 0]", 6, "widget is missing 'type'")]
-    [InlineData("- type: dial", 6, "widget type must be one of: text, value, bar, gauge, graph, image, group; not 'dial'")]
+    [InlineData("- type: dial", 6, "widget type must be one of: text, value, bar, gauge, graph, image, shape, donut, group; not 'dial'")]
     [InlineData("- text", 6, "Each widget must be a mapping with a type, e.g. - type: value")]
     [InlineData("- { type: value, size: [10, 10], source: x }", 6, "value widget is missing 'at'")]
     [InlineData("- { type: value, at: [0, 0], size: [0, 10], source: x }", 6, "size must be at least 1")]
@@ -216,13 +216,13 @@ public class WidgetParsingTests
     [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"°C\"", 10, "format \"°C\" never shows the value; include {0}, e.g. \"{0:0.0}°C\"")]
     [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"{0:F99}\"", 10, "number format 'F99' asks for too many digits (the limit is 15)")]
     [InlineData("- type: value\n  at: [0, 0]\n  size: [10, 10]\n  source: x\n  format: \"{0,1000}\"", 10, "format \"{0,1000}\" pads the value to 1000 characters (the limit is 100)")]
-    [InlineData("- { type: text, at: [0, 0], size: [10, 10], text: hi, format: x }", 6, "Unknown key 'format' in text widget. Expected one of: type, at, size, source, style, when, smooth, text")]
+    [InlineData("- { type: text, at: [0, 0], size: [10, 10], text: hi, format: x }", 6, "Unknown key 'format' in text widget. Expected one of: type, at, size, source, style, when, smooth, rotate, hidden, locked, text")]
     [InlineData("- { type: value, at: [0, 0], size: [10, 10], source: x, style: hott }", 6, "Unknown style 'hott'. Defined styles: base, hot")]
     [InlineData("- { type: bar, at: [0, 0], size: [10, 10], source: x, min: 50, max: 50 }", 6, "bar widget max must be greater than min")]
     [InlineData("- { type: bar, at: [0, 0], size: [10, 10], source: x, direction: up }", 6, "direction must be one of: horizontal, vertical; not 'up'")]
     [InlineData("- { type: gauge, at: [0, 0], size: [10, 10], source: x, sweep: 0 }", 6, "sweep must not be 0")]
     [InlineData("- { type: graph, at: [0, 0], size: [10, 10], source: gpu.load / 100 }", 6, "A graph's source must be a single sensor key, such as gpu.load")]
-    [InlineData("- { type: graph, at: [0, 0], size: [10, 10], source: x, points: 1 }", 6, "points must be between 2 and 300")]
+    [InlineData("- { type: graph, at: [0, 0], size: [10, 10], source: x, points: 1 }", 6, "points must be between 2 and 600")]
     [InlineData("- { type: image, at: [0, 0], size: [10, 10] }", 6, "image widget is missing 'src'")]
     [InlineData("- { type: group, at: [0, 0], size: [10, 10], children: {} }", 6, "children must be a list")]
     public void Widget_errors(string widgets, int line, string reason)

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../docs/layout.schema.json
 # Example theme for a vertically mounted 8.8" Universal Screen (480×1920).
 # Run it with:  marquee run themes/example-portrait --orientation portrait --preview
 canvas:

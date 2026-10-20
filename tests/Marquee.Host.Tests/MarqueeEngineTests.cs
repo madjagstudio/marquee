@@ -715,6 +715,29 @@ public class MarqueeEngineTests : IDisposable
         Assert.True(Wait.Until(() => SavedLimits().Contains("\"pct\": 17")), "The limits were not saved.");
     }
 
+    [Fact]
+    public void A_sink_run_neither_restores_nor_saves_the_Claude_limits()
+    {
+        var resetsAt = DateTimeOffset.UtcNow.AddHours(2).ToUnixTimeSeconds();
+        var updatedAt = DateTimeOffset.UtcNow.AddMinutes(-1).ToUnixTimeSeconds();
+        var saved = string.Create(CultureInfo.InvariantCulture,
+            $"{{ \"five_hour\": {{ \"pct\": 42.5, \"resets_at\": {resetsAt} }}, \"updated_at\": {updatedAt} }}");
+        _dir.Write("claude-limits.json", saved);
+        using var engine = Engine(_settings with { Sink = _dir.Folder("frames") });
+
+        Assert.True(engine.Start());
+        Assert.False(engine.Sensors.Snapshot().TryGet("claude.five_hour.pct", out _));
+
+        engine.Sensors.Set("claude.five_hour.pct", 61);
+        engine.Sensors.Set("claude.five_hour.resets_at", resetsAt);
+        engine.Sensors.Set("claude.updated_at", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        Thread.Sleep(MarqueeEngine.SaveLimitsEvery * 2); // past the save timer, were there one
+        engine.Stop();
+
+        Assert.Equal(saved, File.ReadAllText(_dir.File("claude-limits.json")));
+        Assert.DoesNotContain(_log.Entries, entry => entry.Contains("Claude Code limits", StringComparison.Ordinal));
+    }
+
     /// The saved limits file, or "" while it doesn't exist or is being replaced.
     string SavedLimits()
     {

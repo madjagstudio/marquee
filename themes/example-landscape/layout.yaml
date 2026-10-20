@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../docs/layout.schema.json
 # Example theme for a horizontally mounted 8.8" Universal Screen (1920×480).
 # Run it with:  marquee run themes/example-landscape --preview
 canvas:

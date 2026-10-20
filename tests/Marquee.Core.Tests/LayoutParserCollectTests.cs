@@ -7,7 +7,7 @@ namespace Marquee.Core.Tests;
 /// The collecting parse behind `marquee validate`: every independent problem in one run, by line, without repeats.
 public class LayoutParserCollectTests
 {
-    const string WidgetTypes = "widget type must be one of: text, value, bar, gauge, graph, image, group";
+    const string WidgetTypes = "widget type must be one of: text, value, bar, gauge, graph, image, shape, donut, group";
 
     static string SampleLayout(string name, [CallerFilePath] string file = "") =>
         File.ReadAllText(Path.Combine(Path.GetDirectoryName(file)!, "..", "..", "themes", name, "layout.yaml"));

@@ -17,10 +17,11 @@ public static class SettingsResolver
     /// `configFile` is where `config` was read from. A relative `theme:` in it, or a name found in none of the theme
     /// folders, is looked for from that file's folder rather than the current one: the tray, which Task Scheduler
     /// starts in System32, and `marquee run` in a terminal then read the same config.yaml the same way. A theme on the
-    /// command line stays relative to the current folder, as anything typed in a terminal is.
-    public static SettingsResult Resolve(RunOptions options, MarqueeConfig config, ThemeLocator locator, string configFile)
+    /// command line stays relative to the current folder, as anything typed in a terminal is. `configFile` is null when
+    /// no config.yaml was read (a `--sink` run with no `--config`), and `config` is then MarqueeConfig.Default.
+    public static SettingsResult Resolve(RunOptions options, MarqueeConfig config, ThemeLocator locator, string? configFile)
     {
-        if (options.Theme is null && config.Theme is not null)
+        if (options.Theme is null && config.Theme is not null && configFile is not null)
             locator = locator.RelativeTo(Path.GetDirectoryName(Path.GetFullPath(configFile))!);
         if ((options.Theme ?? config.Theme) is not { } theme)
             return SettingsResult.Failure(Strings.NoTheme);

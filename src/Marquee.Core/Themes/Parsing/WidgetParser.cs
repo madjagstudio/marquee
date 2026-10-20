@@ -1,17 +1,36 @@
 using System.Globalization;
 using Marquee.Core.Expressions;
-using Marquee.Core.Sensors;
 using SkiaSharp;
 using YamlDotNet.RepresentationModel;
 
 namespace Marquee.Core.Themes.Parsing;
 
-static class WidgetParser
+static partial class WidgetParser
 {
-    static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth"];
+    // The keys each widget accepts: Common, plus its type's own. ThemeSchema describes each, and its drift test reads
+    // these lists.
+    internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth", "rotate", "hidden", "locked"];
 
-    static readonly (string Name, string Value)[] Types =
-        [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"), ("group", "group")];
+    internal static readonly (string Name, string Value)[] Types =
+        [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"),
+         ("shape", "shape"), ("donut", "donut"), ("group", "group")];
+
+    internal static readonly IReadOnlyDictionary<string, string[]> TypeKeys = new Dictionary<string, string[]>
+    {
+        ["text"] = ["text"],
+        ["value"] = ["format"],
+        ["bar"] = ["min", "max", "direction", .. SegmentParser.Keys],
+        ["gauge"] = ["min", "max", "start", "sweep", "thickness", .. SegmentParser.Keys, "needle", "ticks"],
+        ["graph"] = GraphParser.Keys,
+        ["image"] = ["src", "fit"],
+        ["shape"] = ["shape", .. ArcKeys],
+        ["group"] = ["children"],
+        ["donut"] = DonutParser.Keys,
+    };
+
+    /// A `when` rule's conditions, which the ring's rules share, and the keys a widget's rule accepts.
+    internal static readonly string[] Conditions = ["above", "below", "equals", "stale"];
+    internal static readonly string[] RuleKeys = [.. Conditions, "style"];
 
     /// Most widgets a layout may have, counting every level. Themes are shared, and YAML aliases can repeat a group
     /// cheaply: a few hundred bytes of aliased groups would otherwise expand into over a million widgets.
@@ -19,6 +38,9 @@ static class WidgetParser
 
     /// Deepest nesting of groups.
     public const int MaxGroupDepth = 16;
+
+    /// Most degrees a widget turns either way: a whole turn.
+    public const float MaxRotate = 360;
 
     /// What every widget in one layout shares, including how many widgets it has so far, across all levels.
     sealed class Context(StyleTable styles, ParseErrors errors)
@@ -68,24 +90,13 @@ static class WidgetParser
             ? ParseList(c, "children", context, groupDepth + 1)
             : null;
 
-        string[] extra = type switch
-        {
-            "text" => ["text"],
-            "value" => ["format"],
-            "bar" => ["min", "max", "direction"],
-            "gauge" => ["min", "max", "start", "sweep", "thickness"],
-            "graph" => ["min", "max", "points"],
-            "image" => ["src", "fit"],
-            _ => ["children"],
-        };
-
         var what = $"{type} widget";
-        var f = Yaml.Map(node, what, [.. Common, .. extra]);
+        var f = Yaml.Map(node, what, [.. Common, .. TypeKeys[type]]);
         var at = Yaml.Pair(f.Required("at"), "at");
-        var size = Yaml.Pair(f.Required("size"), "size", min: 1);
+        var size = type == "shape" ? ShapeSize(f) : Yaml.Pair(f.Required("size"), "size", min: 1);
 
         var source = f.Optional("source") is { } s ? Source(s) : null;
-        if (source is null && type is "value" or "bar" or "gauge" or "graph")
+        if (source is null && type is "value" or "bar" or "gauge")
             throw Yaml.Error(f.Node, $"{what} is missing 'source'");
 
         WidgetSpec widget = type switch
@@ -93,21 +104,36 @@ static class WidgetParser
             "text" => new TextWidget(Template(f.Required("text"))),
             "value" => new ValueWidget(f.Optional("format") is { } format ? Format(format) : null),
             "bar" => Bar(f),
-            "gauge" => Gauge(f),
-            "graph" => Graph(f, f.Required("source")),
+            "gauge" => DialParser.Dial(Gauge(f), f),
+            "graph" => GraphParser.Parse(f, context.Styles, context.Errors),
+            "donut" => DonutParser.Parse(f, context.Styles, context.Errors),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
+            "shape" => Shape(f),
             _ => new GroupWidget(children ?? ParseList(f.Required("children"), "children", context, groupDepth + 1)),
         };
 
-        return widget with
+        if (type is "bar" or "gauge")
+            widget = SegmentParser.Apply(f, widget, size.X, size.Y);
+
+        // A graph with series has no source of its own: a stale rule on it could never match, and nothing would say so.
+        if (type == "graph" && source is null && f.Optional("when") is { } rules)
+            throw Yaml.Error(rules, "when rules need a source, and a graph with series has none; give each series its own style instead");
+
+        widget = widget with
         {
             Bounds = SKRect.Create(at.X, at.Y, size.X, size.Y),
             Source = source,
             Style = f.Optional("style") is { } style ? context.Styles.Reference(style, "style") : StyleSpec.Empty,
             When = f.Optional("when") is { } when ? Rules(when, context.Styles, source is not null) : [],
             SmoothMs = f.Optional("smooth") is { } smooth ? Yaml.Float(smooth, "smooth", 0, 10_000) : 0,
+            Rotate = f.Optional("rotate") is { } rotate ? Yaml.Float(rotate, "rotate", -MaxRotate, MaxRotate) : 0,
+            Hidden = f.Optional("hidden") is { } hidden && Yaml.Bool(hidden, "hidden"),
+            Locked = f.Optional("locked") is { } locked && Yaml.Bool(locked, "locked"),
         };
+
+        if (widget is ShapeWidget shape) CheckStroked(shape, f);
+        return widget;
     }
 
     static YamlNode? Find(YamlMappingNode map, string key) =>
@@ -137,10 +163,12 @@ static class WidgetParser
         }
     }
 
-    static string Format(YamlNode node)
+    /// A value widget's `format`, or another key that takes one, named `what`. FormatError's reasons start with the word
+    /// format, so only another key's name goes before them.
+    internal static string Format(YamlNode node, string what = "format")
     {
-        var format = Yaml.Text(node, "format");
-        return Formatting.FormatError(format) is { } error ? throw Yaml.Error(node, error) : format;
+        var format = Yaml.Text(node, what);
+        return Formatting.FormatError(format) is { } error ? throw Yaml.Error(node, what == "format" ? error : $"{what}: {error}") : format;
     }
 
     static (double Min, double Max) Range(Fields f, double defaultMin, double defaultMax)
@@ -164,29 +192,9 @@ static class WidgetParser
     static GaugeWidget Gauge(Fields f)
     {
         var (min, max) = Range(f, 0, 100);
-        var start = f.Optional("start") is { } a ? Yaml.Float(a, "start", -360, 360) : 135f;
-        var sweep = 270f;
-        if (f.Optional("sweep") is { } s)
-        {
-            sweep = Yaml.Float(s, "sweep", -360, 360);
-            if (sweep == 0) throw Yaml.Error(s, "sweep must not be 0");
-        }
-
-        var thickness = f.Optional("thickness") is { } t ? Yaml.Float(t, "thickness", 1) : 12f;
+        // As thin as 0, which draws no arc, for a dial with only a needle.
+        var (start, sweep, thickness) = Arc(f, minThickness: 0);
         return new GaugeWidget(min, max, start, sweep, thickness);
-    }
-
-    static GraphWidget Graph(Fields f, YamlNode sourceNode)
-    {
-        var key = Expression.Parse(Yaml.Text(sourceNode, "source")) is KeyExpr k
-            ? k.Key
-            : throw Yaml.Error(sourceNode, "A graph's source must be a single sensor key, such as gpu.load");
-        var min = f.Optional("min") is { } a ? Yaml.Number(a, "min") : (double?)null;
-        var max = f.Optional("max") is { } b ? Yaml.Number(b, "max") : (double?)null;
-        if (min is { } lo && max is { } hi && hi <= lo)
-            throw Yaml.Error(f.Optional("max")!, "graph widget max must be greater than min");
-        var points = f.Optional("points") is { } p ? Yaml.Integer(p, "points", 2, SensorStore.DefaultHistoryLength) : 60;
-        return new GraphWidget(key, min, max, points);
     }
 
     static IReadOnlyList<WhenRule> Rules(YamlNode node, StyleTable styles, bool hasSource) =>
@@ -194,8 +202,8 @@ static class WidgetParser
 
     static WhenRule Rule(YamlNode node, StyleTable styles, bool hasSource)
     {
-        var f = Yaml.Map(node, "when rule", "above", "below", "equals", "stale", "style");
-        var kind = f.OneOf("above", "below", "equals", "stale");
+        var f = Yaml.Map(node, "when rule", RuleKeys);
+        var kind = f.OneOf(Conditions);
         var value = f.Required(kind);
         var style = styles.Reference(f.Required("style"), "when style");
 

@@ -57,6 +57,7 @@ public class SampleThemeTests
     [InlineData("example-landscape")]
     [InlineData("example-portrait")]
     [InlineData("example-agents")]
+    [InlineData("example-showcase")]
     public void Sample_themes_load_without_warnings(string name)
     {
         using var theme = Load(name);
@@ -84,6 +85,49 @@ public class SampleThemeTests
         using var frame = Frames.Render(theme, Hot());
 
         Snapshots.Match(frame, $"{name}-hot");
+    }
+
+    /// Typical vitals with a CPU load history for the showcase's chart, and RAM in bytes. No game is in front, so the
+    /// FPS keys are missing.
+    static SensorSnapshot Showcase()
+    {
+        var store = TypicalStore();
+        for (var i = 0; i < 120; i++)
+            store.Set("cpu.load", Math.Round(30 + 14 * Math.Sin(i / 13.0 + 1) + 6 * Math.Sin(i / 3.1)));
+        store.Set("cpu.load", 23);
+        store.Set("ram.used", 22.7 * 1024 * 1024 * 1024);
+        return store.Snapshot();
+    }
+
+    /// A game in front: the CPU over its hot threshold under heavy load, RAM nearly full, and the GPU provider gone
+    /// quiet.
+    static SensorSnapshot ShowcaseHot()
+    {
+        var store = TestSensors.Store(
+            ("cpu.temp", 92), ("cpu.clock", 5700), ("ram.used_pct", 95), ("ram.used", 30.4 * 1024 * 1024 * 1024),
+            ("fps", 141), ("fps.1pct_low", 97));
+        for (var i = 0; i < 120; i++)
+            store.Set("cpu.load", Math.Round(80 + 12 * Math.Sin(i / 7.0) + 4 * Math.Sin(i / 2.2)));
+        store.Set("cpu.load", 96);
+        return store.Snapshot();
+    }
+
+    [Fact]
+    public void Showcase_theme_with_typical_values()
+    {
+        using var theme = Load("example-showcase");
+        using var frame = Frames.Render(theme, Showcase());
+
+        Snapshots.Match(frame, "example-showcase");
+    }
+
+    [Fact]
+    public void Showcase_theme_running_hot_in_a_game_with_a_stale_gpu()
+    {
+        using var theme = Load("example-showcase");
+        using var frame = Frames.Render(theme, ShowcaseHot());
+
+        Snapshots.Match(frame, "example-showcase-hot");
     }
 
     [Fact]

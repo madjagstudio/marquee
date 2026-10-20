@@ -1,5 +1,6 @@
 using System.Globalization;
 using Marquee.Core;
+using Marquee.Core.Config;
 using Marquee.Core.Devices;
 using Marquee.Core.Logging;
 using Marquee.Core.Sensors;
@@ -9,7 +10,8 @@ using Marquee.Preview;
 
 /// `marquee run [<theme-folder>]`: live sensors → theme → screen (or --sink), with hot reload and an optional preview.
 /// MarqueeEngine does the work; this is its console host. Settings come from the flags, then config.yaml, then the
-/// defaults, and an edit to config.yaml while running is applied at once (the flags still win).
+/// defaults, and an edit to config.yaml while running is applied at once (the flags still win). A sink run reads a
+/// config.yaml only when --config names one (ConfigToRead), and keeps no Claude limits (MarqueeEngine).
 static class RunCommand
 {
     static readonly TimeSpan StatusEvery = TimeSpan.FromSeconds(1);
@@ -45,9 +47,9 @@ static class RunCommand
 
         using var fileLog = new FileLog(logs);
         var log = new TeeLog(new ConsoleLog(), fileLog);
-        var configPath = ConfigOption.Path(options.ConfigFile);
+        var configPath = ConfigToRead(options, MarqueePaths.ConfigFile);
         var locator = ThemeLocator.Default;
-        var resolved = SettingsResolver.Resolve(options, ConfigOption.Load(options.ConfigFile, log), locator, configPath);
+        var resolved = Resolve(options, configPath, locator, log);
         if (!resolved.Succeeded)
         {
             log.Error(resolved.Error);
@@ -71,18 +73,7 @@ static class RunCommand
         if (options.Frames is { } count) return RenderFrames(engine, count, log);
         if (!engine.Start()) return 1;
 
-        // The default folder is %LOCALAPPDATA%\Marquee, which an unelevated log has made by now anyway. Making sure of it
-        // here means a config.yaml written there later, while this runs, is seen. A --config file's folder is left alone.
-        if (options.ConfigFile is null) Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-        using var configWatcher = new ConfigWatcher(configPath,
-            config =>
-            {
-                var changed = SettingsResolver.Resolve(options, config, locator, configPath);
-                if (changed.Succeeded) engine.Apply(changed.Settings);
-                else log.Error(Strings.SettingsUnchanged(changed.Error));
-            },
-            error => log.Error(Strings.SettingsUnchanged(error.Message)));
-        configWatcher.Start();
+        using var configWatcher = configPath is null ? null : WatchConfig(options, configPath, locator, engine, log);
 
         using var stop = new ManualResetEventSlim();
         var stopping = 0;
@@ -115,10 +106,50 @@ static class RunCommand
         }
 
         Interlocked.Exchange(ref stopping, 1); // stopping now (the preview may have closed), so Ctrl+C won't touch `stop`
-        configWatcher.Dispose(); // no settings change may start the engine again while it stops
+        configWatcher?.Dispose(); // no settings change may start the engine again while it stops
         engine.Stop();
         previewHost?.Dispose();
         return 0;
+    }
+
+    /// The config.yaml this run reads, as a full path: the file --config names, else `userConfig`
+    /// (MarqueePaths.ConfigFile; tests pass their own). A sink run with no --config reads none: it renders to files, for
+    /// a test or to look at a theme, often beside the tray, and the user's settings (a portrait mount, say) would make
+    /// its frames depend on whose PC it ran on.
+    internal static string? ConfigToRead(RunOptions options, string userConfig) =>
+        options.ConfigFile is not null ? ConfigOption.Path(options.ConfigFile)
+        : options.Sink is null ? userConfig
+        : null;
+
+    /// The settings to start with: the flags, then `configFile` (ConfigToRead; null for none), then the defaults.
+    internal static SettingsResult Resolve(RunOptions options, string? configFile, ThemeLocator locator, ILog log)
+    {
+        if (configFile is null)
+        {
+            return options.Theme is null
+                ? SettingsResult.Failure(Strings.SinkNeedsTheme)
+                : SettingsResolver.Resolve(options, MarqueeConfig.Default, locator, configFile: null);
+        }
+
+        return SettingsResolver.Resolve(options, ConfigOption.Read(configFile, options.ConfigFile is not null, log), locator, configFile);
+    }
+
+    /// Applies each edit to `configPath` while the run lasts. The usual folder is %LOCALAPPDATA%\Marquee, which an
+    /// unelevated log has made by now anyway; making sure of it here means a config.yaml written there later is seen.
+    /// A --config file's folder is left alone.
+    static ConfigWatcher WatchConfig(RunOptions options, string configPath, ThemeLocator locator, MarqueeEngine engine, ILog log)
+    {
+        if (options.ConfigFile is null) Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+        var watcher = new ConfigWatcher(configPath,
+            config =>
+            {
+                var changed = SettingsResolver.Resolve(options, config, locator, configPath);
+                if (changed.Succeeded) engine.Apply(changed.Settings);
+                else log.Error(Strings.SettingsUnchanged(changed.Error));
+            },
+            error => log.Error(Strings.SettingsUnchanged(error.Message)));
+        watcher.Start();
+        return watcher;
     }
 
     /// The command line after `run`: an optional theme folder, then flags. Null if a flag or its value is wrong.

@@ -6,9 +6,12 @@ namespace Marquee.Core.Rendering;
 static class StyleEvaluator
 {
     /// The widget's style this frame: what its group passes down, its own style, then each matching `when` rule in order.
-    public static StyleSpec Effective(WidgetSpec widget, StyleSpec inherited, SensorValue? subject, bool stale)
+    /// `part` is the style of one part of the widget, such as a donut's slice: it goes over the widget's own style and
+    /// under the rules, so a rule changes every part.
+    public static StyleSpec Effective(WidgetSpec widget, StyleSpec inherited, SensorValue? subject, bool stale, StyleSpec? part = null)
     {
         var style = StyleSpec.Merge(inherited, widget.Style);
+        if (part is not null) style = StyleSpec.Merge(style, part);
         foreach (var rule in widget.When)
             if (rule.Matches(subject, stale))
                 style = StyleSpec.Merge(style, rule.Style);
@@ -17,8 +20,8 @@ static class StyleEvaluator
 
     public static float Opacity(StyleSpec style, TimeSpan time)
     {
-        var opacity = style.Opacity ?? 1f;
-        if (style.Pulse is { } pulse && (pulse.Target ?? PulseTarget.Opacity) == PulseTarget.Opacity)
+        var opacity = style.Opacity ?? StyleDefaults.Opacity;
+        if (style.Pulse is { } pulse && (pulse.Target ?? StyleDefaults.PulseProperty) == PulseTarget.Opacity)
             opacity *= PulseFactor(pulse, time);
         return Math.Clamp(opacity, 0, 1);
     }

@@ -9,6 +9,10 @@ public static class LayoutParser
     /// can still be checked. Nothing draws that spec: it comes with the canvas error.
     static readonly CanvasSpec FallbackCanvas = new(ThemeOrientation.Landscape, CanvasSpec.DefaultFps);
 
+    /// The keys layout.yaml and its canvas section accept. ThemeSchema describes each, and its drift test reads these.
+    internal static readonly string[] Sections = ["canvas", "styles", "background", "widgets", "ring"];
+    internal static readonly string[] CanvasKeys = ["orientation", "fps"];
+
     /// Throws the first error, as `marquee run` and hot reload want.
     public static ThemeSpec Parse(string yaml) => Parse(yaml, ParseErrors.Throwing);
 
@@ -31,7 +35,7 @@ public static class LayoutParser
         var fields = errors.Recover(() =>
         {
             var root = Yaml.Load(yaml) ?? throw new ThemeException("layout.yaml is empty. It needs at least a canvas section.");
-            return Yaml.Map(root, "layout.yaml", errors, "canvas", "styles", "background", "widgets", "ring");
+            return Yaml.Map(root, "layout.yaml", errors, Sections);
         });
         if (fields is null) return empty; // no tree, or a root that isn't a mapping: there is nothing more to check
 
@@ -49,7 +53,7 @@ public static class LayoutParser
 
     static CanvasSpec Canvas(YamlNode node)
     {
-        var fields = Yaml.Map(node, "canvas", "orientation", "fps");
+        var fields = Yaml.Map(node, "canvas", CanvasKeys);
         var orientation = Yaml.Choice(fields.Required("orientation"), "canvas.orientation",
             ("portrait", ThemeOrientation.Portrait), ("landscape", ThemeOrientation.Landscape));
         var fps = fields.Optional("fps") is { } f ? Yaml.Integer(f, "canvas.fps", 1, CanvasSpec.MaxFps) : CanvasSpec.DefaultFps;

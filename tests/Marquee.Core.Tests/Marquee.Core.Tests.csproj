@@ -9,6 +9,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Marquee.Core\Marquee.Core.csproj" />
+    <!-- The writers of the docs the theme schema catalog generates, so a test can fail while a committed one is stale. -->
+    <ProjectReference Include="..\..\tools\Marquee.SchemaDocs\Marquee.SchemaDocs.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

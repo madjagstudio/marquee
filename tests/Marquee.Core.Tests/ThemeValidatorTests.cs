@@ -387,6 +387,7 @@ public class ThemeValidatorTests
     [InlineData("example-landscape", ThemeOrientation.Landscape)]
     [InlineData("example-portrait", ThemeOrientation.Portrait)]
     [InlineData("example-agents", ThemeOrientation.Landscape)]
+    [InlineData("example-showcase", ThemeOrientation.Landscape)]
     public void The_example_themes_are_clean(string name, ThemeOrientation orientation)
     {
         // With the free shader probe: whether example-agents' aurora fits the frame budget depends on the machine (a slow

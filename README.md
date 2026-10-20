@@ -128,13 +128,18 @@ it pauses or quits, and the others wait for it.
     MarqueeTray.exe           (the tray; see The tray)
 
 Settings not given on the command line come from `%LOCALAPPDATA%\Marquee\config.yaml`, or the file `--config` names
-(see [Settings](#settings)).
+(see [Settings](#settings)); a `--sink` run reads only the file `--config` names.
 
 `marquee run themes/example-landscape --preview` shows a theme on the screen and in a preview window (press `1` for 1:1).
 Edit `layout.yaml` and save: the screen updates within a second. If the file has a mistake, the last good layout stays
 on screen and the error, with its line number, shows in the console and the preview. `--sink <folder>` writes PNG
 frames instead of using the screen, and keeps writing them until stopped (Ctrl+C) unless `--frames N` is given;
 `--frames N` renders N frames and exits. `marquee run` without a folder shows the theme set in `config.yaml`.
+
+A `--sink` run is for tests and for looking at a theme, and often runs beside the tray, so it keeps out of your setup:
+it reads no `config.yaml` unless `--config` names one (so it needs a theme folder, and its frames are landscape unless
+`--orientation` says otherwise), and it neither shows nor saves the last Claude Code limits. It still logs, like any
+`marquee run`.
 
 The command line's, the tray's and the preview's messages are in resource files that can be translated;
 [docs/localization.md](docs/localization.md) says how to add a language.
@@ -304,7 +309,9 @@ widgets:
       - { stale: true, style: { color: "#5A6275" } }
 ```
 
-- **Widgets:** `text` (templates like `"{gpu.load:0}% · {gpu.vram_used|bytes}"`), `value`, `bar`, `gauge`, `graph`, `image`, `group`.
+- **Widgets:** `text` (templates like `"{gpu.load:0}% · {gpu.vram_used|bytes}"`), `value`, `bar`, `gauge`, `graph`, `image`,
+  `shape` (a `rect`, `ellipse`, `line` or `arc`, which `when` rules can recolor), `donut` (a pie or donut of up to 12
+  slices), `group`.
 - **Styles:** named in `styles:`, layered with `extends:`, changed by `when:` rules (`above`, `below`, `equals`, `stale`), animated with `pulse:`.
 - **Background:** `fill` (color or gradient), `image`, `shader` and `video` layers, each with `opacity` and `blend`; up
   to 16 layers, at most 4 of them shaders and 2 of them videos.
@@ -313,8 +320,15 @@ widgets:
 - **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so
   `"{claude.five_hour.resets_at - now|duration}"` reads "2h 14m".
 
-See `themes/example-landscape`, `themes/example-portrait` and `themes/example-agents`. A full theme authoring guide
-comes with the public release.
+Every key, with its values and default, is in [docs/themes-reference.md](docs/themes-reference.md). VS Code completes
+and checks theme files once the YAML extension (Red Hat) is installed: the examples' first line,
+`# yaml-language-server: $schema=../../docs/layout.schema.json`, points it at [the schema](docs/layout.schema.json).
+That path works only inside this repo: a copied theme needs its first line pointed at the schema, until the public
+repo gives it a URL.
+
+See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents` and `themes/example-showcase`, a
+tour of the format's newer parts: shapes, dials, segmented meters, charts, a donut, wrapped text, rotation,
+blending and hidden widgets. A full theme authoring guide comes with the public release.
 
 ### Shader backgrounds
 
@@ -508,7 +522,7 @@ they change and when it stops, and loads them at start, so the bars show at once
 how old they are. A window that reset while Marquee was stopped stays stale (`—`), and a window without a reset time
 isn't saved, nor is the per-model weekly limit (it shows after the first `/usage` poll). Fresh values from `/usage` or
 the status line replace the loaded ones as they arrive. A missing or
-unreadable file is skipped with one log line; deleting it is safe.
+unreadable file is skipped with one log line; deleting it is safe. A `--sink` run neither loads nor saves them.
 
 The session files and Codex logs are undocumented formats that may change. If Marquee can't read them any more, it
 logs a warning and those keys go stale; everything else keeps working.

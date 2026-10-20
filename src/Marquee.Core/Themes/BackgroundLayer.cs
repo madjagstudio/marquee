@@ -4,7 +4,14 @@ using SkiaSharp;
 namespace Marquee.Core.Themes;
 
 /// One layer of the background, composited bottom-up: a fill, an image, a shader or a video clip.
-public abstract record BackgroundLayer(float Opacity, SKBlendMode Blend);
+public abstract record BackgroundLayer(float Opacity, SKBlendMode Blend)
+{
+    /// Not drawn, and its file not loaded; `marquee validate` still checks it.
+    public bool Hidden { get; init; }
+
+    /// For the editor, which won't change a locked layer. The renderer ignores it.
+    public bool Locked { get; init; }
+}
 
 public sealed record FillLayer(PaintSpec Paint, float Opacity, SKBlendMode Blend) : BackgroundLayer(Opacity, Blend);
 

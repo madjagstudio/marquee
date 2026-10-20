@@ -183,6 +183,7 @@ public class ValidateCommandTests
     [InlineData("example-landscape")]
     [InlineData("example-portrait")]
     [InlineData("example-agents")]
+    [InlineData("example-showcase")]
     public void The_example_themes_are_clean(string name)
     {
         // With the free cost probes: whether example-agents' aurora fits the frame budget depends on the machine.

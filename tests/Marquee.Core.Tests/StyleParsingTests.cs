@@ -31,6 +31,9 @@ public class StyleParsingTests
             radius: 8
             padding: 6
             align: center
+            letter_spacing: 1.5
+            line_height: 1.4
+            wrap: true
             """);
 
         Assert.Equal("fonts/Orbitron.ttf", style.Font);
@@ -47,6 +50,9 @@ public class StyleParsingTests
         Assert.Equal(8f, style.Radius);
         Assert.Equal(6f, style.Padding);
         Assert.Equal(TextAlign.Center, style.Align);
+        Assert.Equal(1.5f, style.LetterSpacing);
+        Assert.Equal(1.4f, style.LineHeight);
+        Assert.Equal(true, style.Wrap);
     }
 
     [Theory]
@@ -56,6 +62,19 @@ public class StyleParsingTests
     [InlineData("800", 800)]
     public void Weight_takes_names_or_numbers(string weight, int expected) =>
         Assert.Equal(expected, Reference(Table("{}"), $"weight: {weight}").Weight);
+
+    [Theory]
+    [InlineData("letter_spacing: -20", -20f, null)]
+    [InlineData("letter_spacing: 100", 100f, null)]
+    [InlineData("line_height: 0.5", null, 0.5f)]
+    [InlineData("line_height: 4", null, 4f)]
+    public void Spacing_takes_the_ends_of_its_ranges(string yaml, float? letterSpacing, float? lineHeight)
+    {
+        var style = Reference(Table("{}"), yaml);
+
+        Assert.Equal(letterSpacing, style.LetterSpacing);
+        Assert.Equal(lineHeight, style.LineHeight);
+    }
 
     [Fact]
     public void Extends_layers_a_style_over_its_parent()
@@ -123,12 +142,16 @@ public class StyleParsingTests
     {
         var group = new StyleSpec
         {
-            Font = "Inter", Size = 30, Weight = 700, Color = SKColors.Red, Align = TextAlign.Center,
-            Fill = new SolidPaint(SKColors.Blue), Radius = 8, Opacity = 0.5f, Padding = 4,
+            Font = "Inter", Size = 30, Weight = 700, Color = SKColors.Red, Align = TextAlign.Center, LetterSpacing = 2, LineHeight = 1.5f,
+            Wrap = true, Fill = new SolidPaint(SKColors.Blue), Radius = 8, Opacity = 0.5f, Padding = 4,
         };
 
         Assert.Equal(
-            new StyleSpec { Font = "Inter", Size = 30, Weight = 700, Color = SKColors.Red, Align = TextAlign.Center },
+            new StyleSpec
+            {
+                Font = "Inter", Size = 30, Weight = 700, Color = SKColors.Red, Align = TextAlign.Center,
+                LetterSpacing = 2, LineHeight = 1.5f, Wrap = true,
+            },
             group.Inherited());
     }
 
@@ -182,7 +205,13 @@ public class StyleParsingTests
     }
 
     [Theory]
-    [InlineData("base: { colour: \"#FFF\" }", 1, "Unknown key 'colour' in style 'base'. Expected one of: extends, font, size, weight, color, fill, track, stroke, shadow, glow, pulse, opacity, radius, padding, align")]
+    [InlineData("base: { colour: \"#FFF\" }", 1, "Unknown key 'colour' in style 'base'. Expected one of: extends, font, size, weight, color, fill, track, stroke, shadow, glow, pulse, opacity, radius, padding, align, blend, letter_spacing, line_height, wrap")]
+    [InlineData("base:\n  wrap: yes", 2, "wrap must be true or false, not 'yes'")]
+    [InlineData("base:\n  letter_spacing: -20.5", 2, "letter_spacing must be between -20 and 100")]
+    [InlineData("base:\n  letter_spacing: 100.5", 2, "letter_spacing must be between -20 and 100")]
+    [InlineData("base:\n  line_height: 0.49", 2, "line_height must be between 0.5 and 4")]
+    [InlineData("base:\n  line_height: 4.01", 2, "line_height must be between 0.5 and 4")]
+    [InlineData("base:\n  line_height: tall", 2, "line_height must be a number, not 'tall'")]
     [InlineData("base: { opacity: 1.5 }", 1, "opacity must be between 0 and 1")]
     [InlineData("base: { weight: heavy }", 1, "weight must be a number, not 'heavy'")]
     [InlineData("base: { weight: 950 }", 1, "weight must be between 100 and 900")]

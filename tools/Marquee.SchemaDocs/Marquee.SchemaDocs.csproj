@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Writes docs/themes-reference.md and docs/layout.schema.json from the theme schema catalog (ThemeSchema in
+       Marquee.Core); Program.cs says how to run it. Not shipped. Marquee.Core.Tests runs the same writers and fails
+       while a committed file differs from what they write. Its messages are for whoever regenerates the docs, so they
+       are written in the code rather than in a resource file. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Marquee.SchemaDocs</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Marquee.Core\Marquee.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marquee.Core.Tests" />
+  </ItemGroup>
+</Project>
