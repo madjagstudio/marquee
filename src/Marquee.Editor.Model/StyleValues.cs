@@ -149,6 +149,20 @@ static class StyleValues
         return name is not null ? EditDocument.Set(document, style, name) : EditDocument.Remove(document, style);
     }
 
+    /// The `style` a key is in and the key's steps inside it (`stroke`, `color` for `widgets[0].style.stroke.color`), so
+    /// it can be written with Set; null for a key outside a style, such as a fill layer's fill.
+    public static (YamlPath Style, IReadOnlyList<string> Key)? InStyle(YamlPath path)
+    {
+        var key = new List<string>();
+        for (var at = path; at.Last is { IsKey: true } last; at = at.Parent!)
+        {
+            if (last.Key == "style" && key.Count > 0) return (at, key);
+            key.Insert(0, last.Key!);
+        }
+
+        return null;
+    }
+
     /// The path of a key's steps inside the style at `style`.
     public static YamlPath At(YamlPath style, IReadOnlyList<string> key) => key.Aggregate(style, (path, step) => path.Child(step));
 

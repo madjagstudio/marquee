@@ -17,7 +17,7 @@ namespace Marquee.Core.Files;
 /// Every reparse point is refused, not only links. OneDrive's placeholders are reparse points too, but %LOCALAPPDATA%
 /// is never synced, an elevated write has no business in a synced folder, and other kinds belong to file system
 /// filters that may redirect too.
-public static class SafeFile
+public static partial class SafeFile
 {
     static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
@@ -227,8 +227,8 @@ public static class SafeFile
     }
 
     /// Throws for the first part of the path, from the root down, that is a reparse point. Parts that don't exist yet
-    /// are fine: HoldFolder makes them.
-    static void ThrowIfLinked(string full)
+    /// are fine: HoldFolder makes them. `action` is what is refused, for the message: "write" or "delete".
+    static void ThrowIfLinked(string full, string action = "write")
     {
         var root = Path.GetPathRoot(full)!;
         var path = root;
@@ -246,7 +246,7 @@ public static class SafeFile
                 return;
             }
 
-            if (attributes.HasFlag(FileAttributes.ReparsePoint)) throw Linked(full, path);
+            if (attributes.HasFlag(FileAttributes.ReparsePoint)) throw Linked(full, path, action);
         }
     }
 
@@ -282,8 +282,8 @@ public static class SafeFile
         }
     }
 
-    static UnsafePathException Linked(string target, string link) =>
-        new($"Marquee won't write {target}: {link} is a junction, a symbolic link or another reparse point, which could send the write somewhere else.");
+    static UnsafePathException Linked(string target, string link, string action = "write") =>
+        new($"Marquee won't {action} {target}: {link} is a junction, a symbolic link or another reparse point, which could send the {action} somewhere else.");
 
     /// Where the handle really is, as C:\… or \\server\share\….
     static string FinalPath(SafeFileHandle handle, string folder)

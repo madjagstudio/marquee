@@ -108,6 +108,72 @@ internal static class AtomicFile
         }
     }
 
+    /// Copies `source` to `destination`, a name nothing has yet, in a folder that must exist (it isn't made:
+    /// DirectoryNotFoundException): a temporary file beside it, flushed, then renamed to its name without replacing
+    /// anything (MoveFileEx, writing through), so a reader never sees part of it. False, leaving nothing behind, when
+    /// something (a file, a folder or a link) already has the name: the caller tries another. Throws the IOException or
+    /// UnauthorizedAccessException of a failed read or write. The source is read wherever it is: the user chose it.
+    public static bool TryCopyNew(string source, string destination)
+    {
+        // Checked first so a large file isn't copied for a name already in use; the rename checks again.
+        if (Taken(destination)) return false;
+        var temporary = Path.Combine(Path.GetDirectoryName(destination)!, $".{Path.GetFileName(destination)}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            using (var output = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920))
+            {
+                using (var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, 81920,
+                           FileOptions.SequentialScan))
+                {
+                    input.CopyTo(output);
+                }
+
+                output.Flush(flushToDisk: true);
+            }
+
+            if (MoveFileEx(temporary, destination, MOVEFILE_WRITE_THROUGH)) return true;
+            var error = Marshal.GetLastPInvokeError();
+            if (error is ERROR_ALREADY_EXISTS or ERROR_FILE_EXISTS) return false;
+            var message = $"Can't name the copy {destination}: {Marshal.GetPInvokeErrorMessage(error)}";
+            throw error == ERROR_ACCESS_DENIED ? new UnauthorizedAccessException(message) : new IOException(message);
+        }
+        finally
+        {
+            DeleteQuietly(temporary);
+        }
+    }
+
+    /// Makes the folder `path` if it is missing, but never the folder it is in: a theme folder moved or deleted while
+    /// open isn't made again around a new images folder (DirectoryNotFoundException). Throws IOException when a file
+    /// has the name, or the IOException or UnauthorizedAccessException of a failure.
+    public static void MakeFolder(string path)
+    {
+        if (CreateDirectory(path, IntPtr.Zero)) return;
+        var error = Marshal.GetLastPInvokeError();
+        if (error == ERROR_ALREADY_EXISTS && Directory.Exists(path)) return;
+        var message = $"Can't make the folder {path}: {Marshal.GetPInvokeErrorMessage(error)}";
+        throw error switch
+        {
+            ERROR_PATH_NOT_FOUND => new DirectoryNotFoundException(message),
+            ERROR_ACCESS_DENIED => new UnauthorizedAccessException(message),
+            _ => new IOException(message),
+        };
+    }
+
+    /// Whether anything, a dangling link included, has the name.
+    static bool Taken(string path)
+    {
+        try
+        {
+            File.GetAttributes(path); // the entry's own attributes, so a link to nothing still counts
+            return true;
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return false;
+        }
+    }
+
     /// Deletes a temporary file; nothing to do when it was renamed into place or never made.
     public static void DeleteQuietly(string path)
     {

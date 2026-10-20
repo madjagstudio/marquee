@@ -21,4 +21,8 @@ sealed class FakeReparseTags : ReparseTags
 
     public override uint? Tag(string path) =>
         _tags.TryGetValue(Path.TrimEndingDirectorySeparator(path), out var tag) ? tag : base.Tag(path);
+
+    /// A faked entry has its tag whatever its real attributes say.
+    public override uint? Tag(string path, FileAttributes attributes) =>
+        _tags.TryGetValue(Path.TrimEndingDirectorySeparator(path), out var tag) ? tag : base.Tag(path, attributes);
 }

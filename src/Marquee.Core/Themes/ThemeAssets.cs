@@ -12,7 +12,7 @@ namespace Marquee.Core.Themes;
 public sealed class ThemeAssets : IDisposable
 {
     /// Widest or tallest image a theme may use. Themes are shared, and a small file can decode to gigabytes of pixels.
-    const int MaxImageSize = 8192;
+    internal const int MaxImageSize = 8192;
 
     readonly Dictionary<string, SKImage> _images = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, SKTypeface> _fontFiles = new(StringComparer.OrdinalIgnoreCase);
@@ -205,7 +205,7 @@ public sealed class ThemeAssets : IDisposable
     static bool IsBundled(string font) => string.Equals(font, BundledFonts.Family, StringComparison.OrdinalIgnoreCase);
 
     static bool IsFontFile(string font) =>
-        Path.GetExtension(font).ToLowerInvariant() is ".ttf" or ".otf" or ".ttc";
+        AssetChecks.FontExtensions.Contains(Path.GetExtension(font), StringComparer.OrdinalIgnoreCase);
 
     static bool IsInstalled(string font)
     {
@@ -245,13 +245,27 @@ public sealed class ThemeAssets : IDisposable
 
     static SKImage? DecodeImage(string path, string full, List<ThemeWarning> warnings)
     {
+        if (Decode(full, out var tooLarge) is { } image) return image;
+
+        warnings.Add(tooLarge
+            ? new($"Image '{path}' is larger than {MaxImageSize}×{MaxImageSize} and was skipped.", path, Skipped: true)
+            : new($"Image '{path}' could not be read and was skipped.", path, Skipped: true));
+        return null;
+    }
+
+    /// The image at `full`, decoded, or null: `tooLarge` says whether that is because it is wider or taller than
+    /// MaxImageSize rather than unreadable. AssetChecks decodes an image the editor imports here too, so an import
+    /// takes exactly what a theme loads.
+    internal static SKImage? Decode(string full, out bool tooLarge)
+    {
+        tooLarge = false;
         try
         {
             // Read the size from the header before decoding anything.
             using var codec = SKCodec.Create(full);
             if (codec is not null && (codec.Info.Width > MaxImageSize || codec.Info.Height > MaxImageSize))
             {
-                warnings.Add(new($"Image '{path}' is larger than {MaxImageSize}×{MaxImageSize} and was skipped.", path, Skipped: true));
+                tooLarge = true;
                 return null;
             }
 
@@ -261,10 +275,9 @@ public sealed class ThemeAssets : IDisposable
         }
         catch (Exception)
         {
-            // Reported below like any other unreadable image.
+            // Read as any other unreadable image.
         }
 
-        warnings.Add(new($"Image '{path}' could not be read and was skipped.", path, Skipped: true));
         return null;
     }
 
@@ -304,12 +317,12 @@ public sealed class ThemeAssets : IDisposable
     }
 
     /// The largest font file read into memory (FontFromMemory): the limit `marquee validate` sets for any file in a theme.
-    static readonly long MaxFontBytes = ThemeLimits.Default.MaxFileBytes;
+    internal static readonly long MaxFontBytes = ThemeLimits.Default.MaxFileBytes;
 
     /// A font file's typeface from a copy in memory. SKTypeface.FromFile keeps the file open for as long as the typeface
     /// lives, and a cached one lives as long as the editor uses it, which would stop the user replacing the file. The
     /// file is read straight into Skia's memory, the one copy the typeface keeps.
-    static SKTypeface? FontFromMemory(string full)
+    internal static SKTypeface? FontFromMemory(string full)
     {
         using var file = File.OpenRead(full);
         using var data = SKData.Create(file, file.Length);

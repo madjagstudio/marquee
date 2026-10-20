@@ -135,7 +135,7 @@ public sealed partial record GradientModel
     {
         if (Read(document.ValueAt(paint)) is not { } old || old.Kind != Kind)
         {
-            return InStyle(paint) is (var style, var key)
+            return StyleValues.InStyle(paint) is (var style, var key)
                 ? StyleValues.Set(document, style, [(key, ToYaml())])
                 : EditDocument.Set(document, paint, ToYaml());
         }
@@ -146,20 +146,6 @@ public sealed partial record GradientModel
         document = Key(document, paint.Child("angle"), old.Angle == Angle, Angle is { } a ? YamlValue.Number(a) : null);
         document = Key(document, paint.Child("center"), old.Center == Center, Center is { } c ? Numbers([c.X, c.Y]) : null);
         return Key(document, paint.Child("radius"), old.Radius == Radius, Radius is { } r ? YamlValue.Number(r) : null);
-    }
-
-    /// The `style` a paint is in and the paint's steps inside it (`stroke`, `color` for `widgets[0].style.stroke.color`),
-    /// or null for a paint outside a style, such as a fill layer's fill.
-    static (YamlPath Style, IReadOnlyList<string> Key)? InStyle(YamlPath paint)
-    {
-        var key = new List<string>();
-        for (var at = paint; at.Last is { IsKey: true } last; at = at.Parent!)
-        {
-            if (last.Key == "style" && key.Count > 0) return (at, key);
-            key.Insert(0, last.Key!);
-        }
-
-        return null;
     }
 
     /// Sets the key, or removes it when it is now left out, unless it is unchanged.

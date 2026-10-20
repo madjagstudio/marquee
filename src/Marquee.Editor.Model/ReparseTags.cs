@@ -4,9 +4,9 @@ using static Marquee.Editor.Model.EditorNative;
 
 namespace Marquee.Editor.Model;
 
-/// Which reparse points on a theme's path the editor saves through. SafeFile refuses every one, for the elevated tray,
-/// where a link the user planted is a way round UAC; the editor runs unelevated, so that reason doesn't apply. What
-/// still matters is that a save lands where the path says:
+/// Which reparse points on a theme's path the editor saves, imports and deletes through (ThemeFileDelete, for the
+/// clean-up). SafeFile refuses every one, for the elevated tray, where a link the user planted is a way round UAC; the
+/// editor runs unelevated, so that reason doesn't apply. What still matters is that a save lands where the path says:
 /// - a cloud files placeholder (IO_REPARSE_TAG_CLOUD and its variants, which OneDrive puts on every synced file and
 ///   folder) keeps the file where its path says, so it is allowed: themes kept in Documents or on the Desktop, which
 ///   are OneDrive folders on many PCs, are edited in place;
@@ -42,6 +42,15 @@ internal class ReparseTags
         return ((FileAttributes)info.FileAttributes).HasFlag(FileAttributes.ReparsePoint) ? info.ReparseTag : null;
     }
 
+    /// The reparse tag of an entry already listed, whose own attributes are `attributes`, as Tag gives it; read only when
+    /// they say it is a reparse point, so listing a folder costs nothing more.
+    public virtual uint? Tag(string path, FileAttributes attributes) =>
+        attributes.HasFlag(FileAttributes.ReparsePoint) ? Tag(path) : null;
+
+    /// Whether the entry at `path`, whose own attributes are `attributes`, is one the editor won't go through: a
+    /// reparse point other than a cloud placeholder.
+    public bool IsLink(string path, FileAttributes attributes) => Tag(path, attributes) is { } tag && !IsCloud(tag);
+
     /// The first part of `path`, from the root down and the last part included, that is a reparse point other than a
     /// cloud placeholder; null when none is. A part that doesn't exist, or can't be looked at, ends the search: a write
     /// there fails on its own.
@@ -69,7 +78,7 @@ internal class ReparseTags
         return null;
     }
 
-    /// The refusal for a save, an import or a delete through `link`.
-    public static UnsafePathException Refusal(string target, string link) =>
-        new($"The editor won't write {target}: {link} is a junction, a symbolic link or a mount point, which could send the write somewhere else.");
+    /// The refusal for a save, an import or a delete (`action`, "write" or "delete") through `link`.
+    public static UnsafePathException Refusal(string target, string link, string action = "write") =>
+        new($"The editor won't {action} {target}: {link} is a junction, a symbolic link or a mount point, which could send the {action} somewhere else.");
 }

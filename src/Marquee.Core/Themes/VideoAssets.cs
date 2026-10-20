@@ -75,7 +75,7 @@ static class VideoAssets
 
     /// Why the clip can't keep up with itself, or null. A slow measurement is taken again, and the faster of the two
     /// counts, so a hiccup elsewhere on the PC doesn't cost a theme its background.
-    static string? TooSlow(IVideoDecoder decoder, FrameScaler scaler, VideoProbe probe)
+    internal static string? TooSlow(IVideoDecoder decoder, FrameScaler scaler, VideoProbe probe)
     {
         var cost = probe(decoder, scaler);
         if (cost.PerFrame > cost.FrameDuration)
