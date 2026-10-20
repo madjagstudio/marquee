@@ -6,9 +6,14 @@ namespace Marquee.Editor.Model;
 /// Applying commands as undo steps, and undoing and redoing them as whole texts.
 public sealed partial class EditorSession
 {
-    public bool CanUndo => History.CanUndo;
+    /// False while editing is paused, whatever paused it (the owner's decision): undoing loads a text that does load,
+    /// and autosave would then write it over the user's hand edit, half done or not, without them asking. A file that
+    /// isn't YAML has no step of its own at all. Text from outside that loads (the file fixed, or "Revert to opened
+    /// version") ends the pause. False during a drag in a panel too (IsInteracting): its step isn't finished.
+    public bool CanUndo => History.CanUndo && !IsPaused && !IsInteracting;
 
-    public bool CanRedo => History.CanRedo;
+    /// False while editing is paused or a panel drag is under way, as CanUndo is.
+    public bool CanRedo => History.CanRedo && !IsPaused && !IsInteracting;
 
     /// Makes the command's edits as one undo step (or merges it into the last, by its MergeKey), loads the new text and
     /// swaps its theme in. A command that changes nothing is no step. Throws, changing nothing:
@@ -24,7 +29,12 @@ public sealed partial class EditorSession
 
         var result = command.Run(new CommandContext(_document, _tree, _selection, CanvasSize));
         var document = result.Document;
-        if (document.Text == _document.Text) return;
+        if (document.Text == _document.Text)
+        {
+            // No step, but text from outside that is the session's own ends a pause on a file that wasn't YAML.
+            if (command.TakesBrokenTheme && IsFileUnreadable) Raise(EndUnreadable());
+            return;
+        }
 
         LoadError? error = null;
         var loaded = command.TakesBrokenTheme ? TryLoad(document, out error) : Load(document);
@@ -34,12 +44,13 @@ public sealed partial class EditorSession
         Raise(changes);
     }
 
-    /// Takes the last step back: its text before, loaded, and its selection before. False when there is none to undo.
+    /// Takes the last step back: its text before, loaded, and its selection before. False when there is none to undo,
+    /// or while CanUndo is false (paused, or a panel drag under way); nothing changes then.
     public bool Undo()
     {
         ThrowIfDisposed();
         ThrowIfPreviewing();
-        if (History.Undo() is not { } step) return false;
+        if (IsPaused || IsInteracting || History.Undo() is not { } step) return false;
         try
         {
             Restore(step.Before, step.SelectionBefore);
@@ -54,12 +65,13 @@ public sealed partial class EditorSession
         return true;
     }
 
-    /// Makes the last undone step again. False when there is nothing to redo.
+    /// Makes the last undone step again. False when there is nothing to redo, or while CanRedo is false because
+    /// editing is paused or a panel drag is under way.
     public bool Redo()
     {
         ThrowIfDisposed();
         ThrowIfPreviewing();
-        if (History.Redo() is not { } step) return false;
+        if (IsPaused || IsInteracting || History.Redo() is not { } step) return false;
         try
         {
             Restore(step.After, step.SelectionAfter);

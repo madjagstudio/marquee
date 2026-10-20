@@ -5,7 +5,7 @@ using SkiaSharp;
 namespace Marquee.Editor.Model.Tests;
 
 /// Text from outside the editor (a hand edit, a revert) that doesn't load as a theme: the canvas stays on the last good
-/// theme, the error is shown with its line, and editing pauses until the text loads again or the change is undone.
+/// theme, the error is shown with its line, and editing, undo and redo pause until text from outside loads again.
 public class EditorSessionLoadErrorTests
 {
     const string Good =
@@ -39,23 +39,37 @@ public class EditorSessionLoadErrorTests
     }
 
     [Fact]
-    public void While_paused_only_text_from_outside_and_undo_are_taken()
+    public void While_paused_only_text_from_outside_is_taken()
     {
+        // The owner's decision: undo and redo are off while editing is paused, whatever paused it, so the hand edit is
+        // never written over without an explicit click. Text from outside that loads (the file fixed, or "Revert to
+        // opened version") is the way out.
         using var folder = TempTheme.With(Good);
         using var session = folder.Open();
         session.Apply(HandEdit(Broken));
 
         Assert.Throws<InvalidOperationException>(() => session.Apply(new SetValue(YamlPath.Parse("widgets[0].at[0]"), "20")));
         Assert.Throws<InvalidOperationException>(() => session.BeginPreview());
+        Assert.True(session.History.CanUndo);
+        Assert.False(session.CanUndo);
+        Assert.False(session.Undo());
+        Assert.Equal(Broken, session.Document.Text);
+        Assert.True(session.IsPaused);
+
+        session.Apply(HandEdit(Good));
+        Assert.False(session.IsPaused);
+        Assert.True(session.Undo());
+        Assert.True(session.IsPaused);
+        Assert.Equal(Broken, session.Document.Text);
+        Assert.True(session.History.CanRedo);
+        Assert.False(session.CanRedo);
+        Assert.False(session.Redo());
         Assert.Equal(Broken, session.Document.Text);
 
-        Assert.True(session.Undo());
+        session.Apply(HandEdit(Good));
         Assert.False(session.IsPaused);
         Assert.Null(session.LoadError);
         Assert.Equal(Good, session.Document.Text);
-
-        Assert.True(session.Redo());
-        Assert.True(session.IsPaused);
     }
 
     [Fact]

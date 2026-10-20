@@ -16,4 +16,7 @@ public enum SessionChanges
 
     /// A drag's preview moved on, began or ended: the canvas redraws, and nothing else changed.
     Preview = 8,
+
+    /// A drag in a panel began or ended (EditorSession.IsInteracting): autosave and recovery wait for its end.
+    Interaction = 16,
 }

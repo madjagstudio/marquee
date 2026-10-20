@@ -103,6 +103,48 @@ public class UndoStackTests
     }
 
     [Fact]
+    public void Steps_in_a_run_with_the_same_key_become_one_however_long_apart_and_its_end_seals_it()
+    {
+        var time = new ManualTime();
+        var stack = new UndoStack(time);
+        stack.Push(Step("a", "b", "size"));
+
+        stack.BeginRun();
+        Assert.True(stack.InRun);
+        stack.Push(Step("b", "c", "size"));
+        time.Advance(TimeSpan.FromSeconds(5));
+        stack.Push(Step("c", "d", "size"));
+        time.Advance(TimeSpan.FromSeconds(5));
+        stack.Push(Step("d", "e", "size"));
+        stack.EndRun();
+        Assert.False(stack.InRun);
+        stack.Push(Step("e", "f", "size"));
+
+        Assert.Equal(3, stack.Count);
+        Assert.Equal(("e", "f"), (stack.NextUndo!.Before, stack.NextUndo.After));
+        stack.Undo();
+        Assert.Equal(("b", "e"), (stack.NextUndo!.Before, stack.NextUndo.After));
+    }
+
+    [Fact]
+    public void A_run_back_where_it_started_is_dropped_and_its_next_step_starts_afresh()
+    {
+        var stack = new UndoStack(new ManualTime());
+        stack.Push(Step("a", "b", "size"));
+        stack.Seal();
+
+        stack.BeginRun();
+        stack.Push(Step("b", "c", "size"));
+        stack.Push(Step("c", "b", "size"));
+        Assert.Equal(1, stack.Count);
+        stack.Push(Step("b", "x", "size"));
+        stack.EndRun();
+
+        Assert.Equal(2, stack.Count);
+        Assert.Equal(("b", "x"), (stack.NextUndo!.Before, stack.NextUndo.After));
+    }
+
+    [Fact]
     public void A_merged_step_back_where_it_started_is_dropped()
     {
         var stack = new UndoStack(new ManualTime());

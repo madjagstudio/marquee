@@ -2,7 +2,12 @@ namespace Marquee.Editor.Model;
 
 /// The session's undo and redo steps. A new step ends whatever could be redone. A step whose merge key equals the last
 /// one's, pushed within the merge window of it, joins it, so the many changes of a slider or of nudges undo at once:
-/// the window slides, counting from the latest change merged in. A merged step that ends where it began is dropped.
+/// the window slides, counting from the latest change merged in. A merged step that ends where it began is dropped, and
+/// the next step starts afresh rather than joining the one before it.
+///
+/// A run (BeginRun to EndRun) is a drag in a panel: its steps with the same key join however long apart they come, so
+/// a slider held still for a while is still one step, and EndRun seals it, so the next drag starts its own.
+///
 /// Only the latest `capacity` steps are kept, the oldest going first.
 ///
 /// Not thread-safe: the session uses it from the UI thread.
@@ -52,11 +57,16 @@ public sealed class UndoStack
         _redo.Clear();
 
         if (!_sealed && _undo.Last?.Value is { } last && step.MergeKey is not null && Equals(step.MergeKey, last.MergeKey)
-            && now - last.At <= _mergeWindow)
+            && (InRun || now - last.At <= _mergeWindow))
         {
             _undo.RemoveLast();
             step = last with { After = step.After, SelectionAfter = step.SelectionAfter, At = now };
-            if (step.Before == step.After) return;
+            if (step.Before == step.After)
+            {
+                // The step now on top was made before this one began, so nothing joins it.
+                _sealed = true;
+                return;
+            }
         }
 
         _sealed = false;
@@ -87,6 +97,25 @@ public sealed class UndoStack
 
     /// Keeps the next step from merging into the last one, whatever its key: a slider let go, then grabbed again.
     public void Seal() => _sealed = true;
+
+    /// True between BeginRun and EndRun.
+    public bool InRun { get; private set; }
+
+    /// Starts a run: the drag's first step starts afresh, and the steps after it with its key join it, without the
+    /// merge window, until EndRun.
+    public void BeginRun()
+    {
+        InRun = true;
+        _sealed = true;
+    }
+
+    /// Ends a run and seals its step. Does nothing when there is no run.
+    public void EndRun()
+    {
+        if (!InRun) return;
+        InRun = false;
+        _sealed = true;
+    }
 
     public void Clear()
     {

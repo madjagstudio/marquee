@@ -26,6 +26,7 @@ public sealed partial class EditorSession
     {
         ThrowIfDisposed();
         if (IsPreviewing) throw new InvalidOperationException("A drag is already being previewed.");
+        ThrowIfInteracting();
         if (IsPaused || Theme is null)
             throw new InvalidOperationException($"Editing is paused until layout.yaml loads as a theme again: {LoadError}");
         _preview = new DragPreview();

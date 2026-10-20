@@ -88,7 +88,7 @@ public class EditorSessionProblemsTests
         session.Apply(new ReplaceDocument(TwoErrors, "Changed outside the editor"));
         Assert.Equal(2, session.Problems.Count);
 
-        Assert.True(session.Undo());
+        session.Apply(new ReplaceDocument(Good, "Changed outside the editor"));
         Assert.Empty(session.Problems);
         Assert.Equal(2, changes);
     }

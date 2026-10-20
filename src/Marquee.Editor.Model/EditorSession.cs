@@ -14,7 +14,7 @@ namespace Marquee.Editor.Model;
 /// Each change loads the new text through the session's asset cache, swaps the new theme in, then disposes the old
 /// one, so files both use stay loaded and a clip plays on. Text that doesn't load as a theme leaves the last good
 /// theme on screen, with LoadError saying why: a command is refused then, but text from outside the editor
-/// (ReplaceDocument) is taken, and editing pauses until the text loads again or the change is undone.
+/// (ReplaceDocument) is taken, and editing, undo and redo pause until text from outside loads again (CanUndo).
 ///
 /// Not thread-safe: the editor uses it from its UI thread, and draws frames there too.
 public sealed partial class EditorSession : IDisposable
@@ -86,8 +86,9 @@ public sealed partial class EditorSession : IDisposable
     /// Why Document's text doesn't load as a theme; null when it does.
     public LoadError? LoadError { get; private set; }
 
-    /// True while Document's text doesn't load: only text from outside the editor, undo and redo are taken.
-    public bool IsPaused => LoadError is not null;
+    /// True while Document's text doesn't load (Pause says why): only text from outside the editor is taken; commands,
+    /// undo and redo wait (CanUndo).
+    public bool IsPaused => Pause != PauseReason.None;
 
     /// The canvas in theme pixels; empty when no theme has loaded.
     public SKSizeI CanvasSize => Theme?.Spec.Canvas.Size ?? SKSizeI.Empty;
@@ -209,10 +210,13 @@ public sealed partial class EditorSession : IDisposable
     SessionChanges Show(LayoutDocument document, Loaded? loaded, LoadError? error)
     {
         _document = document;
+        // The text is the session's own now, so a pause on an unreadable file ends, whatever it paused over.
+        _beforeUnreadable = null;
         Problems = ProblemsOf(document, loaded, error);
         if (loaded is null)
         {
             LoadError = error;
+            Pause = PauseReason.Theme;
         }
         else
         {
@@ -222,6 +226,7 @@ public sealed partial class EditorSession : IDisposable
             Renderer = new ThemeRenderer(loaded.Theme) { Locale = _locale };
             _tree = loaded.Tree;
             LoadError = null;
+            Pause = PauseReason.None;
             renderer?.Dispose();
             theme?.Dispose();
         }
