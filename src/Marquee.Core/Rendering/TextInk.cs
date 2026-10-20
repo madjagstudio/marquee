@@ -84,7 +84,7 @@ sealed class TextInk : IDisposable
         if (paint is null || run.Text.Length == 0) return;
         if (layer == TextLayer.Shadow) (x, y) = (x + _shadowDx, y + _shadowDy);
 
-        run.Draw(canvas, x, y, paint);
+        run.Draw(canvas, x, y, paint, effect: layer != TextLayer.Letters);
         if (_underline) canvas.DrawRect(Underline(run, x, y), paint);
         if (_strike) canvas.DrawRect(Strike(run, x, y), paint);
     }

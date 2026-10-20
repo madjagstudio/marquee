@@ -85,7 +85,7 @@ static class DonutPainter
             var room = SKRect.Inflate(box, outline, outline);
             if (previous?.IntersectsWith(room) == true || first?.IntersectsWith(room) == true) continue;
 
-            using (var run = new TextRun(text, font, spacing))
+            using (var run = new TextRun(text, font, spacing, ctx.Locale.Culture))
                 letters.Draw(canvas, run, box.Left, box.MidY + baseline);
             first ??= room;
             previous = room;
@@ -196,7 +196,7 @@ static class DonutPainter
         var text = TextCase.Apply(label, style.Case, locale.Culture);
         if (text.Length == 0) return null;
 
-        var width = TextPainter.Width(font, text, style.LetterSpacing ?? StyleDefaults.LetterSpacing);
+        var width = TextPainter.Width(font, text, style.LetterSpacing ?? StyleDefaults.LetterSpacing, locale.Culture);
         var height = LineHeight(font);
         var radians = (arc.Start + arc.Sweep / 2) * MathF.PI / 180;
         var (dx, dy) = (MathF.Cos(radians), MathF.Sin(radians));

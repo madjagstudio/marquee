@@ -12,7 +12,7 @@ public static partial class Formatting
     public const string DefaultTimePattern = "t";
 
     // Newer ICU (CLDR 42 and later) puts a narrow no-break space before AM or PM, as in "5:30 PM", which a theme's
-    // font may not have, and nothing falls back to another font for it: it would draw as a box. The time is written
+    // font may not have, and the font Windows offers for it (Mongolian Baiti) wouldn't match. The time is written
     // with a no-break space instead: text fonts have it (it is in Latin-1), it keeps "5:30" and "PM" on one line when
     // text wraps, as the narrow one would, and it is as wide as the plain space older ICU writes there.
     const char NarrowNoBreakSpace = '\u202F';

@@ -323,6 +323,9 @@ widgets:
   `{ radial: ["#FFFFFF60", "#00000000"], center: [0.3, 0.4], radius: 0.8 }`. `stops` place the colors, and a radial
   gradient's `center` and `radius` move and size it.
 - **Fonts:** the bundled Inter by default, an installed font by name, or a `.ttf`/`.otf` file in the theme folder.
+  Characters the font lacks, such as Japanese with Inter, are drawn with a Windows font that has them. Those are the
+  right letters, but Arabic letters aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet
+  moved into place. Color emoji keep their own colors, and take no glow, shadow or outline.
 - **Names:** `name` (up to 64 characters) on a widget or a background layer is what the theme editor's layers list
   calls it; the screen ignores it.
 - **Times:** `resets_at` and `updated_at` keys are Unix seconds and `now` is the current time, so

@@ -11,7 +11,10 @@ public static partial class ThemeSchema
         [
             new("extends", SchemaKind.StyleName, "Another named style to start from; keys set here override it."),
             new("font", SchemaKind.FontFamily,
-                "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.")
+                "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. "
+                + "Characters the font lacks are drawn with a Windows font that has them: the right letters, but Arabic letters "
+                + "aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet moved into place. Color "
+                + "emoji keep their own colors, and take no glow, shadow or outline.")
             {
                 Default = StyleDefaults.Font,
             },

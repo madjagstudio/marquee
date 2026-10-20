@@ -172,7 +172,7 @@ public class LetterEffectsRenderingTests
 
         using var font = new SKFont(BundledFonts.Regular, 60);
         var baseline = 100 - (font.Metrics.Ascent + font.Metrics.Descent) / 2;
-        return (new SKRectI(left, top, right, bottom), baseline, TextPainter.Width(font, text, spacing));
+        return (new SKRectI(left, top, right, bottom), baseline, TextPainter.Width(font, text, spacing, TestClock.Locale().Culture));
     }
 
     [Fact]

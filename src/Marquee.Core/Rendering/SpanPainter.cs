@@ -56,7 +56,7 @@ static class SpanPainter
         var texts = spans.Select((span, i) => TextCase.Apply(span.Text, span.Style.Case, culture,
             string.Concat(spans.Take(i).Select(s => s.Text)))).ToList();
         var lines = SpanLayout.Lines(texts, content.Width, style.Wrap ?? StyleDefaults.Wrap,
-            (span, text) => TextPainter.Width(fonts[span], text, Spacing(span)), Spacing);
+            (span, text) => TextPainter.Width(fonts[span], text, Spacing(span), culture), Spacing);
 
         var boxes = lines.Select(line => new SpanLayout.LineBox(
             line.Max(p => fonts[p.Span].Size) * lineHeight,
@@ -73,7 +73,7 @@ static class SpanPainter
             var pieces = lines[i].Where(p => p.Text.Length > 0).ToList();
             var first = placed.Count;
             foreach (var piece in pieces)
-                placed.Add(new Placed(new TextRun(piece.Text, fonts[piece.Span], Spacing(piece.Span)), inks[piece.Span], 0, baselines[i]));
+                placed.Add(new Placed(new TextRun(piece.Text, fonts[piece.Span], Spacing(piece.Span), culture), inks[piece.Span], 0, baselines[i]));
 
             var width = 0f;
             for (var j = 0; j < pieces.Count; j++)

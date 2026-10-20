@@ -75,7 +75,7 @@ static class DialPainter
             var text = TextCase.Apply(value, style.Case, ctx.Locale.Culture);
             if (text.Length == 0) continue;
 
-            var ink = TextPainter.Ink(font, text, spacing);
+            var ink = TextPainter.Ink(font, text, spacing, ctx.Locale.Culture);
             var angle = Angle(gauge, (float)fraction);
             var radians = angle * MathF.PI / 180;
             // How far the text's box reaches towards the tick, from its centre, along this angle.
@@ -86,7 +86,7 @@ static class DialPainter
             box.Inflate(outline, outline);
             if (previous?.IntersectsWith(box) == true || first?.IntersectsWith(box) == true) continue;
 
-            using (var run = new TextRun(text, font, spacing))
+            using (var run = new TextRun(text, font, spacing, ctx.Locale.Culture))
                 letters.Draw(ctx.Canvas, run, middle.X - ink.MidX, middle.Y - ink.MidY);
             first ??= box;
             previous = box;

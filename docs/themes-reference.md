@@ -45,7 +45,7 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `extends` | style name |  |  | Another named style to start from; keys set here override it. |
-| `font` | font |  | `Inter` | A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. |
+| `font` | font |  | `Inter` | A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in. Characters the font lacks are drawn with a Windows font that has them: the right letters, but Arabic letters aren't joined yet, Arabic and Hebrew run left to right, and Indic marks aren't yet moved into place. Color emoji keep their own colors, and take no glow, shadow or outline. |
 | `size` | number (px) | 1 to 1000 | `24` | Text size. |
 | `weight` | font weight | 100 to 900, or `light`, `normal`, `medium`, `semibold`, `bold` | `normal` | How heavy text is: 100 to 900, or a name (light 300 to bold 700). |
 | `color` | color |  | `#FFFFFF` | The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own. |
