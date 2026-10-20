@@ -1,3 +1,4 @@
+using Marquee.Core.Themes;
 using SkiaSharp;
 
 namespace Marquee.Core.Video;
@@ -18,6 +19,9 @@ namespace Marquee.Core.Video;
 /// - FrameAt runs on the render thread. The image it returns is valid until its next call (or Dispose): that next call
 ///   is where the image it replaces is disposed, once the render thread has finished drawing it. Queued images it
 ///   skips were never handed out, and it disposes them there too.
+/// - FitTo runs on the render thread too. The queued images it drops were never handed out; one the decode thread
+///   makes for the old box meanwhile is disposed by that thread, never queued. The image on screen is replaced only
+///   by FrameAt, or, for a still, by FitTo itself, both on the thread that draws it.
 /// - Dispose stops the decode thread first, then disposes every image. The owner (the theme's assets) disposes the
 ///   player only when nothing renders the theme any more, so no FrameAt runs alongside it.
 /// - Images wrap reused buffers (see FrameBuffers), and a buffer is reused only once its image is freed, so these rules
@@ -42,8 +46,11 @@ public sealed class VideoPlayer : IDisposable
     readonly record struct Decoded(SKPixmap Pixels, TimeSpan Start, TimeSpan End);
 
     readonly IVideoDecoder _decoder;
-    readonly FrameScaler _scaler;
-    readonly FrameBuffers _buffers;
+    // What frames are scaled with and into: replaced together, by FitTo on the render thread, under _gate. The decode
+    // thread takes them under _gate for each frame, and drops a frame made for a box FitTo has since replaced.
+    FrameScaler _scaler;
+    FrameBuffers _buffers;
+    int _fits; // how many times FitTo has replaced them
     readonly Thread _thread;
 
     // Shared between the threads, under _gate.
@@ -54,10 +61,14 @@ public sealed class VideoPlayer : IDisposable
     TimeSpan? _clipNow; // the clip time of the render thread's latest FrameAt, for the decode thread's dropping
     bool _decodeEnded; // the decode thread is past its last use of the decoder
     bool _decoderLeftToThread; // Dispose stopped waiting, so the decode thread disposes the decoder when it ends
+    bool _still; // the clip has a single frame: the decode thread ended, leaving it on screen
+    bool _failed; // decoding failed partway: the decode thread ended, leaving the last good frame on screen
 
     // The render thread's (and Dispose's, once the decode thread has stopped).
     Frame _showing;
-    TimeSpan? _clockAtStart; // the render clock's reading when the clip started
+    TimeSpan? _clockAtStart; // the render clock's reading when the clip started, or as if it had, after the clock went back
+    TimeSpan? _lastTime; // the render clock's reading at the latest FrameAt
+    SKPointI _moved; // how far, in whole pixels, the box has moved since the scaler was made for it
 
     // The decode thread's (and the constructor's, before the thread starts).
     TimeSpan _passStart; // clip time at which the current pass of the loop started
@@ -78,7 +89,7 @@ public sealed class VideoPlayer : IDisposable
         try
         {
             var first = Decode() ?? throw new VideoDecodeException("The clip has no frames.");
-            _showing = Prepare(first);
+            _showing = Prepare(first, _buffers);
         }
         catch
         {
@@ -90,9 +101,89 @@ public sealed class VideoPlayer : IDisposable
         _thread.Start();
     }
 
-    /// Where the frames go, on the canvas for a layer and in its parent's coordinates for a widget; each image FrameAt
-    /// returns is exactly this size.
-    public SKRectI Destination => _scaler.Destination;
+    /// Where the frames go, on the canvas for a layer and in its parent's coordinates for a widget. Each image FrameAt
+    /// returns is this size, except for the few frames after FitTo has changed it, which were made for the old size and
+    /// are drawn stretched to this one. Render thread only.
+    public SKRectI Destination
+    {
+        get
+        {
+            var destination = _scaler.Destination;
+            destination.Offset(_moved);
+            return destination;
+        }
+    }
+
+    /// Fits the frames to `area`, as `fit` says, from now on: the theme editor moves and resizes a widget while its
+    /// clip plays on in the same player. A box moved by whole pixels only moves where the frames go. Otherwise the
+    /// frames are scaled for the new box from the next one decoded: those already made for the old box are dropped, and
+    /// the one on screen is drawn stretched until then. The clip goes on from where it was, and isn't measured again
+    /// (VideoCost): a clip quick enough at one size is taken to be at another, scaling being the small part of the work.
+    /// Does nothing once the player is disposed. Render thread only.
+    public void FitTo(ImageFit fit, SKRect area)
+    {
+        var made = _scaler;
+        if (fit == made.Fit && area.Size == made.Area.Size)
+        {
+            var (x, y) = (area.Left - made.Area.Left, area.Top - made.Area.Top);
+            if (x == MathF.Round(x) && y == MathF.Round(y))
+            {
+                _moved = new SKPointI((int)x, (int)y);
+                return;
+            }
+        }
+
+        var scaler = new FrameScaler(fit, made.Clip, area);
+        var buffers = new FrameBuffers(scaler);
+        FrameBuffers old;
+        bool still;
+        lock (_gate)
+        {
+            if (_released)
+            {
+                buffers.Dispose();
+                return;
+            }
+
+            (old, _scaler, _buffers, still) = (_buffers, scaler, buffers, _still);
+            _fits++;
+            foreach (var frame in _ready) frame.Image.Dispose(); // never handed out
+            _ready.Clear();
+            Monitor.PulseAll(_gate); // room in the queue for the decode thread
+        }
+
+        _moved = default;
+        // The decode thread of a still has ended, so nothing else would make its one frame at the new size; the decoder
+        // is free for this thread to use.
+        if (still) RedrawStill(buffers);
+        old.Dispose(); // a buffer an image still wraps is freed with the image
+    }
+
+    /// Draws `frame`, the latest from FrameAt, at Destination: pixel for pixel, or stretched to it when the frame was
+    /// made before FitTo changed the size. Render thread only.
+    public void Draw(SKCanvas canvas, SKImage frame, SKSamplingOptions sampling, SKPaint paint)
+    {
+        var to = Destination;
+        if (frame.Width == to.Width && frame.Height == to.Height) canvas.DrawImage(frame, to.Left, to.Top, sampling, paint);
+        else canvas.DrawImage(frame, SKRect.Create(to.Left, to.Top, to.Width, to.Height), sampling, paint);
+    }
+
+    /// The still's frame decoded again into `buffers`, in place of the one on screen; left as it is if that fails.
+    void RedrawStill(FrameBuffers buffers)
+    {
+        try
+        {
+            _decoder.Rewind();
+            if (_decoder.Next() is not { } decoded) return;
+            var frame = new Frame(buffers.Scale(decoded.Pixels), _showing.Start, _showing.End);
+            _showing.Image.Dispose();
+            _showing = frame;
+        }
+        catch (Exception)
+        {
+            // The old frame, stretched, is still the right picture.
+        }
+    }
 
     /// How long Dispose waits for the decode thread to finish the frame it is on. Decoding a frame takes milliseconds;
     /// one that takes longer is stuck (see Dispose). A setting only for tests.
@@ -110,15 +201,40 @@ public sealed class VideoPlayer : IDisposable
     /// Frame buffers allocated so far, for tests.
     internal int BuffersCreated => _buffers.Created;
 
+    /// Whether decoding failed partway, so the player shows its last good frame for good. The theme editor's cache
+    /// opens such a clip again on the next load rather than sharing this player (ThemeAssetCache).
+    internal bool Failed
+    {
+        get
+        {
+            lock (_gate) return _failed;
+        }
+    }
+
+    /// Whether the clip turned out to be a single still frame, for tests.
+    internal bool IsStill
+    {
+        get
+        {
+            lock (_gate) return _still;
+        }
+    }
+
     /// The frame to draw at `time` on the render clock, or null once disposed. The clip starts at the first call,
     /// whatever the clock reads then: the render loop's clock runs from when the loop started, not from when this
-    /// theme arrived. Never blocks on decoding. Render thread only; see the class comment for how long the image lives.
+    /// theme arrived; and a clock that goes back (another renderer's) carries on from where the clip is. Never blocks on
+    /// decoding. Render thread only; see the class comment for how long the image lives.
     public SKImage? FrameAt(TimeSpan time)
     {
         lock (_gate)
         {
             if (_disposed) return null;
             _clockAtStart ??= time;
+            // A clock that goes back belongs to another renderer, one the theme editor made for its next load of the
+            // theme, sharing this player through its cache. The clip carries on from where it is rather than waiting
+            // for the new clock to catch up with the old one. (A clock that jumps ahead is caught up below.)
+            if (time < _lastTime && _clipNow is { } now) _clockAtStart = time - now;
+            _lastTime = time;
             var clipTime = time - _clockAtStart.Value;
 
             var advanced = false;
@@ -197,14 +313,22 @@ public sealed class VideoPlayer : IDisposable
         {
             while (true)
             {
+                FrameBuffers buffers;
+                int fits;
                 lock (_gate)
                 {
                     while (!_disposed && _ready.Count >= FramesAhead) Monitor.Wait(_gate);
                     if (_disposed) return;
+                    (buffers, fits) = (_buffers, _fits);
                 }
 
                 // Outside the lock: decoding and scaling take milliseconds, and FrameAt must not wait for them.
-                if (Decode() is not { } decoded) return; // a still: the frame on screen stays
+                if (Decode() is not { } decoded)
+                {
+                    lock (_gate) _still = true; // the frame on screen stays
+                    return;
+                }
+
                 lock (_gate)
                 {
                     if (_disposed) return;
@@ -214,13 +338,19 @@ public sealed class VideoPlayer : IDisposable
                     if (_ready.Count > 0 && decoded.End <= _clipNow) continue;
                 }
 
-                var frame = Prepare(decoded);
+                var frame = Prepare(decoded, buffers);
                 lock (_gate)
                 {
                     if (_disposed)
                     {
                         frame.Image.Dispose(); // never queued, so never seen by the render thread
                         return;
+                    }
+
+                    if (fits != _fits)
+                    {
+                        frame.Image.Dispose(); // scaled for a box the clip has left; never queued
+                        continue;
                     }
 
                     _ready.Enqueue(frame);
@@ -231,6 +361,7 @@ public sealed class VideoPlayer : IDisposable
         {
             // An unhandled exception on this thread would end the process. Playback stops on the last good frame,
             // which is the right thing to show for a clip damaged partway, and the reason is reported once.
+            lock (_gate) _failed = true;
             Interlocked.Exchange(ref _error, ex.Message);
         }
         finally
@@ -274,5 +405,5 @@ public sealed class VideoPlayer : IDisposable
         return new Decoded(pixels, frameStart, frameEnd);
     }
 
-    Frame Prepare(Decoded decoded) => new(_buffers.Scale(decoded.Pixels), decoded.Start, decoded.End);
+    static Frame Prepare(Decoded decoded, FrameBuffers buffers) => new(buffers.Scale(decoded.Pixels), decoded.Start, decoded.End);
 }

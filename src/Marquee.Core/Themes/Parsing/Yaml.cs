@@ -33,6 +33,13 @@ static class Yaml
             // followed by another line.
             throw new ThemeException($"YAML syntax error in {fileName}: {ex.Message} Check for an unclosed [ or {{.");
         }
+        catch (ArgumentException ex)
+        {
+            // And this one, also without a position, for a key with nothing before its colon, such as "- :". The
+            // "(Parameter 'parser')" it adds is about YamlDotNet's code, not the file, so it's left out.
+            var reason = ex.ParamName is null ? ex.Message : ex.Message.Replace($" (Parameter '{ex.ParamName}')", "");
+            throw new ThemeException($"YAML syntax error in {fileName}: {reason} Check for a key with no name, such as \"- :\".");
+        }
 
         return stream.Documents.Count == 0 ? null : stream.Documents[0].RootNode;
     }

@@ -1,3 +1,4 @@
+using Marquee.Core.Rendering;
 using SkiaSharp;
 
 namespace Marquee.Core.Themes;
@@ -10,8 +11,10 @@ static class ShaderAssets
     public const int MaxShaderBytes = 64 * 1024;
 
     /// The compiled shader, or null when the layer is skipped: it can't be read or compiled, Marquee can't feed it, or
-    /// `probe` says a frame of it would take longer than a frame at `fps` allows on `canvas`.
-    public static SKRuntimeEffect? Load(string folder, ShaderLayer layer, List<ThemeWarning> warnings, SKSizeI canvas, int fps, ShaderProbe probe)
+    /// `probe` says a frame of it would take longer than a frame at `fps` allows on `canvas`. With `assets` loading through
+    /// a cache, the compiled shader and its cost come from there, and the cache owns the effect.
+    public static SKRuntimeEffect? Load(string folder, ShaderLayer layer, List<ThemeWarning> warnings, SKSizeI canvas, int fps, ShaderProbe probe,
+        ThemeAssets? assets = null)
     {
         var path = layer.Path;
         if (!ThemeAssets.TryInsideFolder(folder, path, out var full))
@@ -21,47 +24,67 @@ static class ShaderAssets
         if (!File.Exists(full))
             return Skip(warnings, path, $"Shader '{path}' was not found");
 
-        // One open, so a file replaced after the Exists check can't throw out of the load.
-        string source;
-        try
-        {
-            using var stream = File.OpenRead(full);
-            if (stream.Length > MaxShaderBytes)
-                return Skip(warnings, path, $"Shader '{path}' is larger than {MaxShaderBytes / 1024} KB");
-            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-            source = reader.ReadToEnd();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
+        var cache = assets?.Cache;
+        var compiled = cache is null ? Compile(full) : cache.Shader(assets!, full, () => Compile(full));
+        if (compiled is null)
             return Skip(warnings, path, $"Shader '{path}' could not be read");
-        }
+        if (compiled.Effect is not { } effect)
+            return Skip(warnings, path, $"Shader '{path}' {compiled.Problem}");
 
-        var effect = SKRuntimeEffect.CreateShader(source, out var errors);
-        if (effect is null)
-            return Skip(warnings, path, $"Shader '{path}' doesn't compile: {CompileErrors(errors)}");
-
+        // A cached effect may be drawn by other loads, and the cache disposes it; one of this load's own is disposed here.
         if (Problem(effect, layer, warnings) is { } problem)
         {
-            effect.Dispose();
+            if (cache is null) effect.Dispose();
             return Skip(warnings, path, $"Shader '{path}' {problem}");
         }
 
-        if (TooSlow(effect, layer, canvas, fps, probe) is { } slow)
+        var cost = cache is null
+            ? Cost(effect, layer, canvas, fps, probe)
+            : compiled.Cost(ShaderPainter.RenderSize(layer, canvas), fps, () => Cost(effect, layer, canvas, fps, probe));
+        if (TooSlow(cost, fps) is { } slow)
         {
-            effect.Dispose();
+            if (cache is null) effect.Dispose();
             return Skip(warnings, path, $"Shader '{path}' {slow}");
         }
 
         return effect;
     }
 
-    /// Why the layer is too slow for the frame rate, or null. A slow test frame is measured again, and the faster of the
-    /// two counts, so a hiccup elsewhere on the PC doesn't cost a theme its background.
-    static string? TooSlow(SKRuntimeEffect effect, ShaderLayer layer, SKSizeI canvas, int fps, ShaderProbe probe)
+    /// The file's shader compiled, or why it can't be; null when it can't be read. One open, so a file replaced after
+    /// the Exists check can't throw out of the load.
+    static CompiledShader? Compile(string full)
+    {
+        string source;
+        try
+        {
+            using var stream = File.OpenRead(full);
+            if (stream.Length > MaxShaderBytes)
+                return new CompiledShader(null, $"is larger than {MaxShaderBytes / 1024} KB");
+            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+            source = reader.ReadToEnd();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        var effect = SKRuntimeEffect.CreateShader(source, out var errors);
+        return effect is null ? new CompiledShader(null, $"doesn't compile: {CompileErrors(errors)}") : new CompiledShader(effect, null);
+    }
+
+    /// What a frame of the layer costs. A slow test frame is measured again, and the faster of the two counts, so a
+    /// hiccup elsewhere on the PC doesn't cost a theme its background.
+    static TimeSpan Cost(SKRuntimeEffect effect, ShaderLayer layer, SKSizeI canvas, int fps, ShaderProbe probe)
     {
         var budget = TimeSpan.FromSeconds(1.0 / fps);
         var cost = probe(effect, layer, canvas);
-        if (cost > budget) cost = Min(cost, probe(effect, layer, canvas));
+        return cost > budget ? Min(cost, probe(effect, layer, canvas)) : cost;
+    }
+
+    /// Why a layer that costs `cost` a frame is too slow for the frame rate, or null.
+    static string? TooSlow(TimeSpan cost, int fps)
+    {
+        var budget = TimeSpan.FromSeconds(1.0 / fps);
         if (cost <= budget) return null;
 
         var invariant = System.Globalization.CultureInfo.InvariantCulture;

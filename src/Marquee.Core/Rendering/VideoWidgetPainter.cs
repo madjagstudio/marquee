@@ -22,7 +22,7 @@ static class VideoWidgetPainter
             // so it goes on unscaled unless the widget is rotated.
             BoxPainter.Clip(ctx.Canvas, bounds, style);
             using var paint = new SKPaint { IsAntialias = true };
-            ctx.Canvas.DrawImage(frame, player.Destination.Left, player.Destination.Top, Sampling, paint);
+            player.Draw(ctx.Canvas, frame, Sampling, paint);
             ctx.Canvas.Restore();
         }
 
