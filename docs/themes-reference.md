@@ -52,7 +52,7 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `fill` | paint |  |  | The background of a text, value, image or group box. On a bar or gauge, the filled part (the style's color when left out); on a graph, the area under the line. |
 | `track` | paint |  |  | The empty part of a bar or gauge, and the background behind a graph. |
 | `stroke` | block: [Stroke](#stroke) |  |  | An outline round a box, a bar or a shape (a line shape is the stroke alone), a graph's line, and the ends of a gauge's arc, an arc shape or a line (its cap). |
-| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text or a shape. |
+| `shadow` | block: [Shadow](#shadow) |  |  | A shadow under text, a shape or a gauge's needle. |
 | `glow` | block: [Glow](#glow) |  |  | A soft glow round text or a shape. |
 | `pulse` | block: [Pulse](#pulse) |  |  | Makes the opacity or the glow beat steadily. |
 | `opacity` | number (fraction) | 0 to 1 | `1` | How solid the whole widget is: 0 hides it, 1 is fully solid. |
@@ -80,7 +80,7 @@ A line: the outline drawn just inside a box or a shape, a line shape itself, a g
 
 Goes under `shadow:` in [Styles](#styles).
 
-A copy of the text drawn under it, offset and softened.
+A copy of the text, a shape or a gauge's needle, drawn under it, offset and softened.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
@@ -251,9 +251,39 @@ An arc filled in proportion to a value, in the largest square that fits its box.
 | `max` | number |  | `100` | The value at which the arc is full. It must be more than min. |
 | `start` | number (degrees) | -360 to 360 | `135` | Where the arc starts. |
 | `sweep` | number (degrees) | -360 to 360 | `270` | How far the arc runs from its start; negative runs anticlockwise. It can't be 0. |
-| `thickness` | number (px) | at least 1 | `12` | How thick the arc is. |
+| `thickness` | number (px) | at least 0 | `12` | How thick the arc is; 0 draws no arc, for a dial with only a needle. |
 | `segments` | whole number | 2 to 120 |  | Cuts the arc into this many equal segments, like a VU meter. A segment lights once the value reaches its middle; `fill` paints the lit ones and `track` the rest, and `radius` rounds their corners. |
 | `gap` | number (degrees) | at least 0 | `3` | The space between segments, used only with `segments`. Each segment must keep at least 1°, and a full ring has a gap at the join too. |
+| `needle` | block: [Gauge needle](#gauge-needle) |  |  | A needle pointing at the value, which makes the gauge a dial. |
+| `ticks` | block: [Gauge ticks](#gauge-ticks) |  |  | Tick marks inside the arc, and the values of the major ones. |
+
+#### Gauge needle
+
+Goes under `needle:` in [Gauge](#gauge).
+
+A needle from the dial's centre to the value, drawn over the arc and the ticks. It eases with the gauge's `smooth`, takes the style's shadow, and isn't drawn while the value is missing or stale.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `width` | number (px) | at least 1 | `4` | How wide the needle is at the centre; it narrows to a point. |
+| `length` | number (fraction) | 0.1 to 1 | `0.8` | How far the needle reaches, as a fraction of the dial's radius. |
+| `color` | color |  |  | The needle's and its hub's color. Left out, it is the style's color. |
+| `cap` | number (px) | at least 0 | `0` | The radius of a hub circle over the needle's centre; 0 draws none. |
+
+#### Gauge ticks
+
+Goes under `ticks:` in [Gauge](#gauge).
+
+Tick marks round the inside of the arc, from min to max, with the major ticks' values inside them if `labels` is set. Labels use the style's font, size, weight, color and letter spacing; a label that would overlap the one before it is left out.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `major` | whole number | 1 to 20 | `10` | How many divisions the scale has: 10 puts a major tick at every tenth of the range, 11 ticks in all, or 10 on a full circle. |
+| `minor` | whole number | 0 to 10 | `0` | How many minor ticks, half as long, go between each pair of major ticks. |
+| `length` | number (px) | at least 1 | `10` | How long the major ticks are, inwards from the arc. |
+| `width` | number (px) | at least 1 | `2` | How thick every tick is. |
+| `color` | color |  |  | The ticks' color. Left out, it is the style's color. |
+| `labels` | format or `false` |  |  | How to write each major tick's value, as a value widget's `format` does, such as "{0:0}". Left out, or false, the ticks have no labels. |
 
 ### Graph
 

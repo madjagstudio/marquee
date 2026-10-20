@@ -124,6 +124,7 @@ static class JsonSchemaWriter
     static JsonObject Value(SchemaKey key)
     {
         var node = Kind(key);
+        if (key.TakesFalse) node = new JsonObject { ["anyOf"] = new JsonArray(node, new JsonObject { ["const"] = false }) };
         // A $ref's siblings are ignored in draft-07, so a description goes on an allOf around it.
         if (node.ContainsKey("$ref")) node = new JsonObject { ["allOf"] = new JsonArray(node) };
         node["description"] = ReferenceWriter.Help(key);

@@ -33,6 +33,8 @@ public class ThemeSchemaDriftTests
             ["when"] = WidgetParser.RuleKeys,
             ["ring"] = RingParser.Keys,
             ["ring.when"] = RingParser.RuleKeys,
+            ["gauge.needle"] = DialParser.NeedleKeys,
+            ["gauge.ticks"] = DialParser.TickKeys,
         };
         foreach (var (type, _) in WidgetParser.Types)
             keys[$"widget.{type}"] = [.. WidgetParser.Common, .. WidgetParser.TypeKeys[type]];
@@ -113,6 +115,11 @@ public class ThemeSchemaDriftTests
     [Fact]
     public void Every_key_parses_with_a_value_of_its_kind() =>
         Check(Probes(), (place, key) => Parses(place, place.With(key.Name, place.Names(key) ? place.Block.Name : Sample(key)), key.Name));
+
+    /// A key the catalog says also takes false, such as a gauge's tick labels, parses with it.
+    [Fact]
+    public void Keys_that_take_false_parse_it() =>
+        Check(Probes().Where(p => p.Key.TakesFalse), (place, key) => Parses(place, place.With(key.Name, JsonValue.Create(false)), $"{key.Name}: false"));
 
     [Fact]
     public void Every_default_parses() =>
@@ -511,6 +518,9 @@ public class ThemeSchemaDriftTests
                     break;
                 case "ring.when":
                     layout["ring"] = new JsonObject { ["source"] = "cpu.load", ["when"] = new JsonArray(probe) };
+                    break;
+                case "gauge.needle" or "gauge.ticks":
+                    layout["widgets"] = new JsonArray(Widget("gauge", ("source", "cpu.load"), (Block.Name, probe)));
                     break;
                 default:
                     Assert.Fail($"ThemeSchemaDriftTests doesn't know where block '{id}' goes in layout.yaml; add it to Place.Layout");

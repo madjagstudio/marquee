@@ -39,8 +39,12 @@ public static partial class ThemeSchema
     /// A `when` rule of the ring.
     public static SchemaBlock RingWhen { get; } = RingWhenBlock();
 
+    /// A gauge's `needle:` and `ticks:`, which make it a dial.
+    public static SchemaBlock Needle { get; } = NeedleBlock();
+    public static SchemaBlock Ticks { get; } = TicksBlock();
+
     /// The blocks that aren't part of a union, in the order the reference describes them.
-    public static IReadOnlyList<SchemaBlock> Blocks => [Layout, Canvas, Style, Stroke, Shadow, Glow, Pulse, When, Ring, RingWhen];
+    public static IReadOnlyList<SchemaBlock> Blocks => [Layout, Canvas, Style, Stroke, Shadow, Glow, Pulse, When, Ring, RingWhen, Needle, Ticks];
 
     public static IReadOnlyList<SchemaUnion> Unions => [Gradient, Background, Widgets];
 

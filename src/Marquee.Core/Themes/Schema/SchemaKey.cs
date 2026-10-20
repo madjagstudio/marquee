@@ -111,4 +111,7 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
     /// Set when the key belongs to one form of its block, such as `start` to `shape: arc`: the key that chooses the form
     /// and the value it must have. The parser refuses the key with any other value.
     public (string Key, string Value)? OnlyFor { get; init; }
+
+    /// The key also takes false, which turns its feature off, as a gauge's tick `labels` do.
+    public bool TakesFalse { get; init; }
 }

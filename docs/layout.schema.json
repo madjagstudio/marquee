@@ -167,7 +167,7 @@
               "$ref": "#/definitions/style.shadow"
             }
           ],
-          "description": "A shadow under text or a shape."
+          "description": "A shadow under text, a shape or a gauge's needle."
         },
         "glow": {
           "allOf": [
@@ -279,7 +279,7 @@
       "additionalProperties": false
     },
     "style.shadow": {
-      "description": "Shadow: A copy of the text drawn under it, offset and softened.",
+      "description": "Shadow: A copy of the text, a shape or a gauge's needle, drawn under it, offset and softened.",
       "type": "object",
       "properties": {
         "color": {
@@ -581,6 +581,92 @@
           ]
         }
       ]
+    },
+    "gauge.needle": {
+      "description": "Gauge needle: A needle from the dial's centre to the value, drawn over the arc and the ticks. It eases with the gauge's `smooth`, takes the style's shadow, and isn't drawn while the value is missing or stale.",
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "description": "How wide the needle is at the centre; it narrows to a point.",
+          "default": 4
+        },
+        "length": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1,
+          "description": "How far the needle reaches, as a fraction of the dial's radius.",
+          "default": 0.8
+        },
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/color"
+            }
+          ],
+          "description": "The needle's and its hub's color. Left out, it is the style's color."
+        },
+        "cap": {
+          "type": "number",
+          "minimum": 0,
+          "description": "The radius of a hub circle over the needle's centre; 0 draws none.",
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "gauge.ticks": {
+      "description": "Gauge ticks: Tick marks round the inside of the arc, from min to max, with the major ticks' values inside them if `labels` is set. Labels use the style's font, size, weight, color and letter spacing; a label that would overlap the one before it is left out.",
+      "type": "object",
+      "properties": {
+        "major": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "How many divisions the scale has: 10 puts a major tick at every tenth of the range, 11 ticks in all, or 10 on a full circle.",
+          "default": 10
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "How many minor ticks, half as long, go between each pair of major ticks.",
+          "default": 0
+        },
+        "length": {
+          "type": "number",
+          "minimum": 1,
+          "description": "How long the major ticks are, inwards from the arc.",
+          "default": 10
+        },
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "description": "How thick every tick is.",
+          "default": 2
+        },
+        "color": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/color"
+            }
+          ],
+          "description": "The ticks' color. Left out, it is the style's color."
+        },
+        "labels": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "const": false
+            }
+          ],
+          "description": "How to write each major tick's value, as a value widget's `format` does, such as \"{0:0}\". Left out, or false, the ticks have no labels."
+        }
+      },
+      "additionalProperties": false
     },
     "gradient": {
       "description": "A paint is a color or a gradient. A gradient is a mapping with `linear:` or `radial:` and two or more colors, and goes wherever a key takes a paint: `fill`, `track`, a stroke's `color` or a fill layer.",
@@ -1343,8 +1429,8 @@
         },
         "thickness": {
           "type": "number",
-          "minimum": 1,
-          "description": "How thick the arc is.",
+          "minimum": 0,
+          "description": "How thick the arc is; 0 draws no arc, for a dial with only a needle.",
           "default": 12
         },
         "segments": {
@@ -1358,6 +1444,22 @@
           "minimum": 0,
           "description": "The space between segments, used only with `segments`. Each segment must keep at least 1°, and a full ring has a gap at the join too.",
           "default": 3
+        },
+        "needle": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/gauge.needle"
+            }
+          ],
+          "description": "A needle pointing at the value, which makes the gauge a dial."
+        },
+        "ticks": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/gauge.ticks"
+            }
+          ],
+          "description": "Tick marks inside the arc, and the values of the major ones."
         }
       },
       "required": [

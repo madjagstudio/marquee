@@ -84,7 +84,7 @@ static class ReferenceWriter
         md.Append("| Key | Kind | Values | Default | What it does |\n");
         md.Append("|---|---|---|---|---|\n");
         foreach (var key in keys)
-            md.Append($"| `{key.Name}` | {Cell(Kind(key))} | {Cell(Values(key))} | {Cell(Default(key))} | {Cell(Help(key))} |\n");
+            md.Append($"| `{key.Name}` | {Cell(Kind(key) + (key.TakesFalse ? " or `false`" : ""))} | {Cell(Values(key))} | {Cell(Default(key))} | {Cell(Help(key))} |\n");
         md.Append('\n');
 
         if (block.ExactlyOneOf.Count > 0)

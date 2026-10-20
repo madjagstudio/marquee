@@ -39,8 +39,9 @@ public sealed record BarWidget(double Min, double Max, BarDirection Direction) :
     public SegmentSpec? Segments { get; init; }
 }
 
-/// A ring or arc. Angles are degrees clockwise from 3 o'clock; the default arc opens at the bottom.
-public sealed record GaugeWidget(double Min, double Max, float StartAngle, float SweepAngle, float Thickness) : WidgetSpec
+/// A ring or arc. Angles are degrees clockwise from 3 o'clock; the default arc opens at the bottom. GaugeDial.cs adds
+/// its needle and ticks.
+public sealed partial record GaugeWidget(double Min, double Max, float StartAngle, float SweepAngle, float Thickness) : WidgetSpec
 {
     /// Null draws one continuous arc.
     public SegmentSpec? Segments { get; init; }

@@ -50,7 +50,7 @@ static class WidgetPainter
                     ShapePainters.Bar(ctx, bar, style, Number(ctx, bar, subject, stale));
                     break;
                 case GaugeWidget gauge:
-                    ShapePainters.Gauge(ctx, gauge, style, Number(ctx, gauge, subject, stale));
+                    DialPainter.Paint(ctx, gauge, style, Number(ctx, gauge, subject, stale));
                     break;
                 case GraphWidget graph:
                     ShapePainters.Graph(ctx, graph, style);

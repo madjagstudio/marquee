@@ -16,8 +16,13 @@ public static partial class ThemeSchema
             {
                 Default = Number(Arcs.DefaultSweep), Min = -Arcs.MaxAngle, Max = Arcs.MaxAngle, Unit = SchemaUnit.Degrees,
             },
-            new("thickness", SchemaKind.Number, "How thick the arc is.") { Default = "12", Min = 1, Unit = SchemaUnit.Px },
+            new("thickness", SchemaKind.Number, "How thick the arc is; 0 draws no arc, for a dial with only a needle.")
+            {
+                Default = Number(Arcs.DefaultThickness), Min = 0, Unit = SchemaUnit.Px,
+            },
             .. Segments("arc", SchemaUnit.Degrees, SegmentSpec.DefaultGaugeGap,
                 "Each segment must keep at least 1°, and a full ring has a gap at the join too."),
+            new("needle", SchemaKind.Block, "A needle pointing at the value, which makes the gauge a dial.") { Of = "gauge.needle" },
+            new("ticks", SchemaKind.Block, "Tick marks inside the arc, and the values of the major ones.") { Of = "gauge.ticks" },
         ]);
 }

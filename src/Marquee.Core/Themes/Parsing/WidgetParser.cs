@@ -21,7 +21,7 @@ static partial class WidgetParser
         ["text"] = ["text"],
         ["value"] = ["format"],
         ["bar"] = ["min", "max", "direction", .. SegmentParser.Keys],
-        ["gauge"] = ["min", "max", "start", "sweep", "thickness", .. SegmentParser.Keys],
+        ["gauge"] = ["min", "max", "start", "sweep", "thickness", .. SegmentParser.Keys, "needle", "ticks"],
         ["graph"] = ["min", "max", "points"],
         ["image"] = ["src", "fit"],
         ["shape"] = ["shape", .. ArcKeys],
@@ -104,7 +104,7 @@ static partial class WidgetParser
             "text" => new TextWidget(Template(f.Required("text"))),
             "value" => new ValueWidget(f.Optional("format") is { } format ? Format(format) : null),
             "bar" => Bar(f),
-            "gauge" => Gauge(f),
+            "gauge" => DialParser.Dial(Gauge(f), f),
             "graph" => Graph(f, f.Required("source")),
             "image" => new ImageWidget(Yaml.Text(f.Required("src"), "src"),
                 f.Optional("fit") is { } fit ? BackgroundParser.Fit(fit, "fit") : ImageFit.Contain),
@@ -158,10 +158,12 @@ static partial class WidgetParser
         }
     }
 
-    static string Format(YamlNode node)
+    /// A value widget's `format`, or another key that takes one, named `what`. FormatError's reasons start with the word
+    /// format, so only another key's name goes before them.
+    internal static string Format(YamlNode node, string what = "format")
     {
-        var format = Yaml.Text(node, "format");
-        return Formatting.FormatError(format) is { } error ? throw Yaml.Error(node, error) : format;
+        var format = Yaml.Text(node, what);
+        return Formatting.FormatError(format) is { } error ? throw Yaml.Error(node, what == "format" ? error : $"{what}: {error}") : format;
     }
 
     static (double Min, double Max) Range(Fields f, double defaultMin, double defaultMax)
@@ -185,15 +187,8 @@ static partial class WidgetParser
     static GaugeWidget Gauge(Fields f)
     {
         var (min, max) = Range(f, 0, 100);
-        var start = f.Optional("start") is { } a ? Yaml.Float(a, "start", -360, 360) : 135f;
-        var sweep = 270f;
-        if (f.Optional("sweep") is { } s)
-        {
-            sweep = Yaml.Float(s, "sweep", -360, 360);
-            if (sweep == 0) throw Yaml.Error(s, "sweep must not be 0");
-        }
-
-        var thickness = f.Optional("thickness") is { } t ? Yaml.Float(t, "thickness", 1) : 12f;
+        // As thin as 0, which draws no arc, for a dial with only a needle.
+        var (start, sweep, thickness) = Arc(f, minThickness: 0);
         return new GaugeWidget(min, max, start, sweep, thickness);
     }
 
