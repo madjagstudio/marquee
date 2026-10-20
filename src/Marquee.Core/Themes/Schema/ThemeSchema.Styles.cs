@@ -61,7 +61,8 @@ public static partial class ThemeSchema
             },
             new("blend", SchemaKind.Enum,
                 "How the whole widget mixes with what's under it, as a background layer's blend does. A group's children "
-                + "blend with it, as one.")
+                + "blend with it, as one. Inside a group with an opacity below 1 or a blend of its own, a widget's blend "
+                + "mixes with the group's layer, not with what's behind the group.")
             {
                 Default = "normal", Values = BlendModes,
             },

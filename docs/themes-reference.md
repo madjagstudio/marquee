@@ -59,7 +59,7 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `radius` | number (px) | at least 0 | `0` | Rounds the corners of a box, a bar, the segments of a bar or gauge, a rect shape, a graph's background and what a group or image clips to. |
 | `padding` | number (px) | at least 0 | `0` | Space between a text or value widget's box and its text. |
 | `align` | choice | `left`, `center`, `right` | `left` | Where each line of text sits across its box. The lines together are always centred from top to bottom. |
-| `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one. |
+| `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one. Inside a group with an opacity below 1 or a blend of its own, a widget's blend mixes with the group's layer, not with what's behind the group. |
 | `letter_spacing` | number (px) | -20 to 100 | `0` | Space added between the characters of text; below 0 draws them closer. |
 | `line_height` | number (times) | 0.5 to 4 | `1.2` | How far apart the lines of text are, as a multiple of the text's size. |
 | `wrap` | true or false |  | `false` | Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way. |
