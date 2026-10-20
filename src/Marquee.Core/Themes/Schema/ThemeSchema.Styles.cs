@@ -51,5 +51,11 @@ public static partial class ThemeSchema
             {
                 Default = "left", Values = ["left", "center", "right"],
             },
+            new("blend", SchemaKind.Enum,
+                "How the whole widget mixes with what's under it, as a background layer's blend does. A group's children "
+                + "blend with it, as one.")
+            {
+                Default = "normal", Values = BlendModes,
+            },
         ]);
 }

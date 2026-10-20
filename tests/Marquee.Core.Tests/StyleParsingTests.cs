@@ -182,7 +182,7 @@ public class StyleParsingTests
     }
 
     [Theory]
-    [InlineData("base: { colour: \"#FFF\" }", 1, "Unknown key 'colour' in style 'base'. Expected one of: extends, font, size, weight, color, fill, track, stroke, shadow, glow, pulse, opacity, radius, padding, align")]
+    [InlineData("base: { colour: \"#FFF\" }", 1, "Unknown key 'colour' in style 'base'. Expected one of: extends, font, size, weight, color, fill, track, stroke, shadow, glow, pulse, opacity, radius, padding, align, blend")]
     [InlineData("base: { opacity: 1.5 }", 1, "opacity must be between 0 and 1")]
     [InlineData("base: { weight: heavy }", 1, "weight must be a number, not 'heavy'")]
     [InlineData("base: { weight: 950 }", 1, "weight must be between 100 and 900")]

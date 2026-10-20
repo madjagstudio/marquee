@@ -59,6 +59,7 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `radius` | number (px) | at least 0 | `0` | Rounds the corners of a box, a bar, a graph's background and what a group or image clips to. |
 | `padding` | number (px) | at least 0 | `0` | Space between a text or value widget's box and its text. |
 | `align` | choice | `left`, `center`, `right` | `left` | Where text sits across its box. It is always centred from top to bottom. |
+| `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one. |
 
 ### Stroke
 
@@ -144,6 +145,8 @@ Every layer takes these.
 |---|---|---|---|---|
 | `opacity` | number (fraction) | 0 to 1 | `1` | How solid the layer is: 0 hides it, 1 is fully solid. |
 | `blend` | choice | `normal`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add` | `normal` | How the layer mixes with the layers under it. |
+| `hidden` | true or false |  | `false` | Leaves the layer off the screen; `marquee validate` still checks it. |
+| `locked` | true or false |  | `false` | Stops the theme editor changing the layer. The screen ignores it. |
 
 ### Fill layer
 
@@ -200,6 +203,9 @@ Every widget takes these.
 | `style` | style |  |  | How the widget looks: a style's name from `styles:`, or a style written in place. |
 | `when` | list of [When rules](#when-rules) |  |  | Styles to layer on while a condition holds, in order: every rule that matches applies, so a later one wins. |
 | `smooth` | number (ms) | 0 to 10000 | `0` | Eases a value, bar or gauge to a new number over this long; 0 jumps straight there. |
+| `rotate` | number (degrees) | -360 to 360 | `0` | Turns the widget clockwise about its own centre. A group's children turn with it. |
+| `hidden` | true or false |  | `false` | Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children. |
+| `locked` | true or false |  | `false` | Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it. |
 
 ### Text
 

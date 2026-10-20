@@ -8,9 +8,9 @@ public static partial class ThemeSchema
     // that the table names real keys and every type, and that every style key is used; ThemeSchemaExampleTests checks
     // that each example validates and renders.
 
-    /// The style keys every widget draws with: the opacity of the whole widget and its pulse, and `extends`, which
-    /// builds the style.
-    internal static string[] EveryWidgetStyles => ["extends", "opacity", "pulse"];
+    /// The style keys every widget draws with: the opacity of the whole widget, its pulse and its blend, and `extends`,
+    /// which builds the style.
+    internal static string[] EveryWidgetStyles => ["extends", "opacity", "pulse", "blend"];
 
     /// The text keys a text or value widget draws with, which a group passes down to its children (StyleSpec.Inherited).
     static string[] TextStyles => ["font", "size", "weight", "color", "align"];

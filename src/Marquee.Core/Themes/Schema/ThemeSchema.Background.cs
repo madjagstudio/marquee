@@ -13,6 +13,10 @@ public static partial class ThemeSchema
     /// The uniforms Marquee sets itself, which a theme can't bind.
     public static IReadOnlyList<string> ReservedUniforms => BackgroundParser.BuiltInUniforms;
 
+    /// A background layer's and a style's `blend`, in the parser's order. A property, so it doesn't depend on the order
+    /// the partial files' static fields are initialised in.
+    static string[] BlendModes => ["normal", "multiply", "screen", "overlay", "darken", "lighten", "add"];
+
     static SchemaUnion BackgroundUnion() => new("layer", "Background layers",
         "Each entry of `background:` is one layer, chosen by which of `fill`, `image`, `shader` or `video` it has. Layers "
         + "cover the whole canvas and are drawn in order, the first at the bottom.",
@@ -24,8 +28,10 @@ public static partial class ThemeSchema
             },
             new("blend", SchemaKind.Enum, "How the layer mixes with the layers under it.")
             {
-                Default = "normal", Values = ["normal", "multiply", "screen", "overlay", "darken", "lighten", "add"],
+                Default = "normal", Values = BlendModes,
             },
+            Hidden("Leaves the layer off the screen; `marquee validate` still checks it."),
+            Locked("Stops the theme editor changing the layer. The screen ignores it."),
         ]),
         [
             new("layer.fill", "fill", "Fill layer", "A color or gradient.",

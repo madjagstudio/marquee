@@ -12,6 +12,8 @@ static class WidgetPainter
 
     public static void Paint(RenderContext ctx, WidgetSpec widget, StyleSpec inherited)
     {
+        if (widget.Hidden) return;
+
         var subject = widget.Source?.Evaluate(ctx.Sensors);
         var text = widget is TextWidget t ? t.Text.Render(ctx.Sensors) : (TemplateResult?)null;
         var stale = (widget.Source is not null && subject is null) || text is { Stale: true };
@@ -21,15 +23,17 @@ static class WidgetPainter
         if (opacity <= 0) return;
 
         var canvas = ctx.Canvas;
-        int saved;
-        if (opacity < 1)
+        var saved = canvas.Save();
+        if (widget.Rotate != 0)
+            canvas.RotateDegrees(widget.Rotate, widget.Bounds.MidX, widget.Bounds.MidY);
+
+        // A partly transparent or blended widget is drawn on a layer of its own, then composited onto what's under it
+        // with its opacity and blend mode; any other widget draws straight onto the canvas.
+        var blend = style.Blend ?? SKBlendMode.SrcOver;
+        if (opacity < 1 || blend != SKBlendMode.SrcOver)
         {
-            using var layer = new SKPaint { Color = SKColors.White.WithAlpha(Paints.Alpha(opacity)) };
-            saved = canvas.SaveLayer(layer);
-        }
-        else
-        {
-            saved = canvas.Save();
+            using var layer = new SKPaint { Color = SKColors.White.WithAlpha(Paints.Alpha(opacity)), BlendMode = blend };
+            canvas.SaveLayer(layer);
         }
 
         try

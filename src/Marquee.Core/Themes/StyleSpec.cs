@@ -23,6 +23,10 @@ public sealed record StyleSpec
     public float? Padding { get; init; }
     public TextAlign? Align { get; init; }
 
+    /// How the widget mixes with what's under it, as a background layer does. Anything but SrcOver draws the widget on
+    /// a layer of its own.
+    public SKBlendMode? Blend { get; init; }
+
     /// `over` wins wherever it sets a property. Stroke, shadow, glow and pulse merge field by field,
     /// so a rule can change a stroke's color and keep its width.
     public static StyleSpec Merge(StyleSpec under, StyleSpec over) => new()
@@ -41,6 +45,7 @@ public sealed record StyleSpec
         Radius = over.Radius ?? under.Radius,
         Padding = over.Padding ?? under.Padding,
         Align = over.Align ?? under.Align,
+        Blend = over.Blend ?? under.Blend,
     };
 
     /// What a group passes down to its children. Box properties (fill, stroke, radius, ...) stay with the group.

@@ -13,6 +13,15 @@ public abstract record WidgetSpec
 
     /// Eases numeric changes over this many milliseconds; 0 snaps.
     public float SmoothMs { get; init; }
+
+    /// Degrees clockwise about the widget's own centre. A group's children turn with it.
+    public float Rotate { get; init; }
+
+    /// Not drawn, and its assets not loaded; `marquee validate` still checks it. A hidden group hides its children.
+    public bool Hidden { get; init; }
+
+    /// For the editor, which won't move or resize a locked widget with the mouse. The renderer ignores it.
+    public bool Locked { get; init; }
 }
 
 /// Static text or a template such as "{claude.sessions.busy}/{claude.sessions.total} working".

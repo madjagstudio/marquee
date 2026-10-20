@@ -11,6 +11,8 @@ static class BackgroundPainter
     {
         foreach (var layer in layers)
         {
+            if (layer.Hidden) continue;
+
             using var paint = new SKPaint { IsAntialias = true, BlendMode = layer.Blend };
             switch (layer)
             {

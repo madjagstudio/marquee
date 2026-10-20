@@ -32,7 +32,7 @@ static partial class BackgroundParser
     // The keys a layer accepts: one of Kinds, which says what the layer is, and the others, some of which only apply to
     // some kinds. ThemeSchema describes each, and its drift test reads these lists.
     internal static readonly string[] Kinds = ["fill", "image", "shader", "video"];
-    internal static readonly string[] LayerKeys = [.. Kinds, "fit", "uniforms", "scale", "opacity", "blend"];
+    internal static readonly string[] LayerKeys = [.. Kinds, "fit", "uniforms", "scale", "opacity", "blend", "hidden", "locked"];
 
     internal static readonly (string Key, string[] Kinds)[] KindOnly =
         [("fit", ["image", "video"]), ("uniforms", ["shader"]), ("scale", ["shader"])];
@@ -75,8 +75,18 @@ static partial class BackgroundParser
 
     static BackgroundLayer Layer(YamlNode node)
     {
-        const string what = "background layer";
-        var fields = Yaml.Map(node, what, LayerKeys);
+        var fields = Yaml.Map(node, "background layer", LayerKeys);
+        return Content(fields) with
+        {
+            Hidden = fields.Optional("hidden") is { } hidden && Yaml.Bool(hidden, "hidden"),
+            Locked = fields.Optional("locked") is { } locked && Yaml.Bool(locked, "locked"),
+        };
+    }
+
+    /// The layer's kind and how it draws: every key but hidden and locked.
+    static BackgroundLayer Content(Fields fields)
+    {
+        var what = fields.What;
         var kind = fields.OneOf(Kinds);
 
         foreach (var (key, kinds) in KindOnly)
@@ -148,7 +158,8 @@ static partial class BackgroundParser
         }
     }
 
-    static SKBlendMode Blend(YamlNode node) => Yaml.Choice(node, "blend",
+    /// A layer's blend mode, which a style's `blend` shares.
+    internal static SKBlendMode Blend(YamlNode node) => Yaml.Choice(node, "blend",
         ("normal", SKBlendMode.SrcOver), ("multiply", SKBlendMode.Multiply), ("screen", SKBlendMode.Screen),
         ("overlay", SKBlendMode.Overlay), ("darken", SKBlendMode.Darken), ("lighten", SKBlendMode.Lighten),
         ("add", SKBlendMode.Plus));

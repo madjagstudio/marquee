@@ -1,3 +1,5 @@
+using Marquee.Core.Themes.Parsing;
+
 namespace Marquee.Core.Themes.Schema;
 
 public static partial class ThemeSchema
@@ -31,7 +33,20 @@ public static partial class ThemeSchema
             {
                 Default = "0", Min = 0, Max = 10_000, Unit = SchemaUnit.Ms,
             },
+            new("rotate", SchemaKind.Number,
+                "Turns the widget clockwise about its own centre. A group's children turn with it.")
+            {
+                Default = "0", Min = -WidgetParser.MaxRotate, Max = WidgetParser.MaxRotate, Unit = SchemaUnit.Degrees,
+            },
+            Hidden("Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children."),
+            Locked("Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it."),
         ]);
+
+    /// A widget's or background layer's `hidden`.
+    static SchemaKey Hidden(string help) => new("hidden", SchemaKind.Boolean, help) { Default = "false" };
+
+    /// A widget's or background layer's `locked`, which only the editor reads.
+    static SchemaKey Locked(string help) => new("locked", SchemaKind.Boolean, help) { Default = "false" };
 
     /// The common `source`, or a widget type's own, which may make it required.
     static SchemaKey Source(string help, bool required = false) =>

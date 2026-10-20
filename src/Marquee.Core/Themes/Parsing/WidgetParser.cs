@@ -10,7 +10,7 @@ static class WidgetParser
 {
     // The keys each widget accepts: Common, plus its type's own. ThemeSchema describes each, and its drift test reads
     // these lists.
-    internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth"];
+    internal static readonly string[] Common = ["type", "at", "size", "source", "style", "when", "smooth", "rotate", "hidden", "locked"];
 
     internal static readonly (string Name, string Value)[] Types =
         [("text", "text"), ("value", "value"), ("bar", "bar"), ("gauge", "gauge"), ("graph", "graph"), ("image", "image"), ("group", "group")];
@@ -36,6 +36,9 @@ static class WidgetParser
 
     /// Deepest nesting of groups.
     public const int MaxGroupDepth = 16;
+
+    /// Most degrees a widget turns either way: a whole turn.
+    public const float MaxRotate = 360;
 
     /// What every widget in one layout shares, including how many widgets it has so far, across all levels.
     sealed class Context(StyleTable styles, ParseErrors errors)
@@ -113,6 +116,9 @@ static class WidgetParser
             Style = f.Optional("style") is { } style ? context.Styles.Reference(style, "style") : StyleSpec.Empty,
             When = f.Optional("when") is { } when ? Rules(when, context.Styles, source is not null) : [],
             SmoothMs = f.Optional("smooth") is { } smooth ? Yaml.Float(smooth, "smooth", 0, 10_000) : 0,
+            Rotate = f.Optional("rotate") is { } rotate ? Yaml.Float(rotate, "rotate", -MaxRotate, MaxRotate) : 0,
+            Hidden = f.Optional("hidden") is { } hidden && Yaml.Bool(hidden, "hidden"),
+            Locked = f.Optional("locked") is { } locked && Yaml.Bool(locked, "locked"),
         };
     }
 

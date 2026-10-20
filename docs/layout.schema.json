@@ -212,6 +212,19 @@
           ],
           "description": "Where text sits across its box. It is always centred from top to bottom.",
           "default": "left"
+        },
+        "blend": {
+          "enum": [
+            "normal",
+            "multiply",
+            "screen",
+            "overlay",
+            "darken",
+            "lighten",
+            "add"
+          ],
+          "description": "How the whole widget mixes with what's under it, as a background layer's blend does. A group's children blend with it, as one.",
+          "default": "normal"
         }
       },
       "additionalProperties": false
@@ -652,6 +665,16 @@
           ],
           "description": "How the layer mixes with the layers under it.",
           "default": "normal"
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the layer off the screen; `marquee validate` still checks it.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor changing the layer. The screen ignores it.",
+          "default": false
         }
       },
       "required": [
@@ -696,6 +719,16 @@
           ],
           "description": "How the layer mixes with the layers under it.",
           "default": "normal"
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the layer off the screen; `marquee validate` still checks it.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor changing the layer. The screen ignores it.",
+          "default": false
         }
       },
       "required": [
@@ -773,6 +806,16 @@
           ],
           "description": "How the layer mixes with the layers under it.",
           "default": "normal"
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the layer off the screen; `marquee validate` still checks it.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor changing the layer. The screen ignores it.",
+          "default": false
         }
       },
       "required": [
@@ -818,6 +861,16 @@
           ],
           "description": "How the layer mixes with the layers under it.",
           "default": "normal"
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the layer off the screen; `marquee validate` still checks it.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor changing the layer. The screen ignores it.",
+          "default": false
         }
       },
       "required": [
@@ -928,6 +981,23 @@
           "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
           "default": 0
         },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
+        },
         "text": {
           "type": [
             "string",
@@ -1003,6 +1073,23 @@
           "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
           "default": 0
         },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
+        },
         "format": {
           "type": "string",
           "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", or duration or bytes. Left out, a number shows up to two decimals."
@@ -1074,6 +1161,23 @@
           "maximum": 10000,
           "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
           "default": 0
+        },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
         },
         "min": {
           "type": "number",
@@ -1160,6 +1264,23 @@
           "maximum": 10000,
           "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
           "default": 0
+        },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
         },
         "min": {
           "type": "number",
@@ -1256,6 +1377,23 @@
           "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
           "default": 0
         },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
+        },
         "min": {
           "type": "number",
           "description": "The value at the bottom. Left out, the scale fits the values shown."
@@ -1339,6 +1477,23 @@
           "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
           "default": 0
         },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
+        },
         "src": {
           "type": "string",
           "description": "The image file, relative to the theme folder: PNG, JPEG, WebP or another format Skia reads."
@@ -1420,6 +1575,23 @@
           "maximum": 10000,
           "description": "Eases a value, bar or gauge to a new number over this long; 0 jumps straight there.",
           "default": 0
+        },
+        "rotate": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "description": "Turns the widget clockwise about its own centre. A group's children turn with it.",
+          "default": 0
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Leaves the widget off the screen; `marquee validate` still checks it. A hidden group hides its children.",
+          "default": false
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Stops the theme editor moving or resizing the widget with the mouse. The screen ignores it.",
+          "default": false
         },
         "children": {
           "type": "array",
