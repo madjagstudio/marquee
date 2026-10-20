@@ -69,9 +69,23 @@ static class DonutPainter
             foreach (var path in paths) path.Dispose();
         }
 
-        if (font is not null)
-            foreach (var arc in arcs)
-                Label(canvas, donut, arc, font, style, centre, outer, inner);
+        if (font is null) return;
+
+        // A label that would overlap the last one drawn, or the first, which the ring comes back round to, is left out,
+        // as a dial's are.
+        using var ink = new SKPaint { IsAntialias = true, Color = style.Color ?? StyleDefaults.Color };
+        var spacing = style.LetterSpacing ?? StyleDefaults.LetterSpacing;
+        var baseline = -(font.Metrics.Ascent + font.Metrics.Descent) / 2;
+        SKRect? first = null, previous = null;
+        foreach (var arc in arcs)
+        {
+            if (Label(donut, arc, font, style, centre, outer, inner) is not (var text, var box)) continue;
+            if (previous?.IntersectsWith(box) == true || first?.IntersectsWith(box) == true) continue;
+
+            TextPainter.DrawLine(canvas, text, box.Left, box.MidY + baseline, font, spacing, ink);
+            first ??= box;
+            previous = box;
+        }
     }
 
     /// Each live slice's angle is its share of the live slices' total, after the gaps. A stale slice takes no share but
@@ -163,20 +177,21 @@ static class DonutPainter
         canvas.DrawPath(path, paint);
     }
 
-    /// The slice's label, then its share if the donut has a format, in the font and letter spacing a text widget with
-    /// the donut's style would use. Inside, the label is centred on the ring's middle and needs the slice's arc there to
-    /// be as long as the label and the whole label to lie within the ring. Outside, it sits beyond the ring, leaning
-    /// away from it on the side it is on, and needs an arc a line long at that distance; it stays inside the box across,
-    /// so a box with too little room beside the ring pulls it in over the ring rather than into whatever is next to it.
-    static void Label(SKCanvas canvas, DonutWidget donut, Arc arc, SKFont font, StyleSpec style, SKPoint centre, float outer, float inner)
+    /// The slice's label, then its share if the donut has a format, and the box it takes, in the font and letter spacing
+    /// a text widget with the donut's style would use; null when the slice has no label or no room for one. Inside, the
+    /// label is centred on the ring's middle and needs the slice's arc there to be as long as the label and the whole
+    /// label to lie within the ring. Outside, it sits beyond the ring, leaning away from it on the side it is on, and
+    /// needs an arc a line long at that distance; it stays inside the box across, so a box with too little room beside
+    /// the ring pulls it in over the ring rather than into whatever is next to it.
+    static (string Text, SKRect Box)? Label(DonutWidget donut, Arc arc, SKFont font, StyleSpec style, SKPoint centre, float outer,
+        float inner)
     {
         var slice = donut.Slices[arc.Index];
         var share = donut.Format is { } format ? Formatting.Apply(format, SensorValue.Of(arc.Share * 100)) : null;
         var text = string.Join(" ", new[] { slice.Label, share }.Where(t => !string.IsNullOrEmpty(t)));
-        if (text.Length == 0) return;
+        if (text.Length == 0) return null;
 
-        var spacing = style.LetterSpacing ?? StyleDefaults.LetterSpacing;
-        var width = TextPainter.Width(font, text, spacing);
+        var width = TextPainter.Width(font, text, style.LetterSpacing ?? StyleDefaults.LetterSpacing);
         var height = LineHeight(font);
         var radians = (arc.Start + arc.Sweep / 2) * MathF.PI / 180;
         var (dx, dy) = (MathF.Cos(radians), MathF.Sin(radians));
@@ -186,14 +201,13 @@ static class DonutPainter
         if (donut.Labels == DonutLabels.Inside)
         {
             var radius = (outer + inner) / 2;
-            if (sweep * radius < width) return;
+            if (sweep * radius < width) return null;
             middle = new SKPoint(centre.X + dx * radius, centre.Y + dy * radius);
-            if (!InRing(SKRect.Create(middle.X - width / 2, middle.Y - height / 2, width, height), centre, outer, inner)) return;
         }
         else
         {
             var radius = outer + font.Size * LabelOffset;
-            if (sweep * radius < height) return;
+            if (sweep * radius < height) return null;
             // Labels on the right start at their point and those on the left end there; near 12 and 6 o'clock they
             // are centred on it. All of them sit above or below it by how far up or down the ring they are.
             var x = centre.X + dx * radius;
@@ -204,9 +218,9 @@ static class DonutPainter
                 centre.Y + dy * radius + dy * height / 2);
         }
 
-        var metrics = font.Metrics;
-        using var paint = new SKPaint { IsAntialias = true, Color = style.Color ?? StyleDefaults.Color };
-        TextPainter.DrawLine(canvas, text, middle.X - width / 2, middle.Y - (metrics.Ascent + metrics.Descent) / 2, font, spacing, paint);
+        var box = SKRect.Create(middle.X - width / 2, middle.Y - height / 2, width, height);
+        if (donut.Labels == DonutLabels.Inside && !InRing(box, centre, outer, inner)) return null;
+        return (text, box);
     }
 
     /// Whether all of `box` lies on the ring: its farthest corner within the outer edge, and its nearest point outside

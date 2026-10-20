@@ -354,7 +354,7 @@ A pie or donut that splits a whole between its slices, in the largest square tha
 | `hole` | number (fraction) | 0 to 0.9 | `0.6` | The hole in the middle, as a fraction of the radius; 0 is a pie. |
 | `start` | number (degrees) | -360 to 360 | `-90` | Where the first slice starts: -90 is 12 o'clock, 0 is 3 o'clock. |
 | `gap` | number (degrees) | 0 to 90 | `2` | The space between neighbouring slices. All the gaps together take at most half the circle. |
-| `labels` | choice | `outside`, `inside`, `none` | `none` | Where each slice's label goes: outside the ring, inside it on its middle, or nowhere. A label is left out when its slice is too thin to hold it, or, inside, when it would run past the ring. Outside labels stay inside the box across, so leave room beside the ring for them. |
+| `labels` | choice | `outside`, `inside`, `none` | `none` | Where each slice's label goes: outside the ring, inside it on its middle, or nowhere. A label is left out when its slice is too thin to hold it, when it would overlap the label before it, or, inside, when it would run past the ring. Outside labels stay inside the box across, so leave room beside the ring for them. |
 | `format` | format |  |  | How to write each slice's share of the whole, in percent, after its label, such as "{0:0}%". Left out, labels show only the slice's label. |
 | `slices` | list of [Donut slices](#donut-slices) | 2 to 12 | required | The parts of the whole, drawn clockwise from start. |
 

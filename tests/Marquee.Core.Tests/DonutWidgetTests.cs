@@ -213,6 +213,30 @@ public class DonutWidgetTests
         Assert.Equal(0, Pixels.Count(frame, new SKRectI(300, 0, 400, 200), Pixels.IsBright));
     }
 
+    /// Two thin slices either side of 12 o'clock: each is long enough for its label, but the labels, both centred near
+    /// the top, would overlap, so the second is left out, as a dial's labels are.
+    [Fact]
+    public void An_outside_label_that_would_overlap_the_one_before_is_left_out()
+    {
+        using var frame = Render("""
+              - type: donut
+                at: [0, 0]
+                size: [400, 400]
+                start: -100
+                gap: 0
+                labels: outside
+                style: { size: 16, color: "#FFFFFF" }
+                slices:
+                  - { source: a, label: AAAA, style: { fill: "#800000" } }
+                  - { source: b, label: BBBB, style: { fill: "#000080" } }
+                  - { source: c, style: { fill: "#008000" } }
+            """, ("a", 1), ("b", 1), ("c", 34));
+
+        // AAAA is centred about 16 px left of the top's middle (200), and BBBB would be centred as far right.
+        Assert.True(Pixels.Count(frame, new SKRectI(160, 0, 200, 24), Pixels.IsBright) > 20);
+        Assert.Equal(0, Pixels.Count(frame, new SKRectI(212, 0, 260, 24), Pixels.IsBright));
+    }
+
     [Fact]
     public void Labels_take_the_styles_letter_spacing()
     {

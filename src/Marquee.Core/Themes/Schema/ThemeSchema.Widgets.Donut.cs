@@ -25,8 +25,8 @@ public static partial class ThemeSchema
             },
             new("labels", SchemaKind.Enum,
                 "Where each slice's label goes: outside the ring, inside it on its middle, or nowhere. A label is left "
-                + "out when its slice is too thin to hold it, or, inside, when it would run past the ring. Outside labels "
-                + "stay inside the box across, so leave room beside the ring for them.")
+                + "out when its slice is too thin to hold it, when it would overlap the label before it, or, inside, when it "
+                + "would run past the ring. Outside labels stay inside the box across, so leave room beside the ring for them.")
             {
                 Default = "none", Values = DonutParser.LabelModes.Select(m => m.Name).ToList(),
             },
