@@ -39,6 +39,10 @@ internal static class Strings
 
     public static string NoReadings => Get(nameof(NoReadings));
 
+    public static string RawReadings(string source) => Format(nameof(RawReadings), source);
+
+    public static string NoRawReadings => Get(nameof(NoRawReadings));
+
     public static string ConfigFileMissing(string path) => Format(nameof(ConfigFileMissing), path);
 
     public static string DataFolderUnusable(string reason) => Format(nameof(DataFolderUnusable), reason);

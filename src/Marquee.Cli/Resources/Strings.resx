@@ -19,7 +19,7 @@
     <value>Usage:
   marquee devices
   marquee show-image &lt;file&gt; [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink &lt;folder&gt;]
-  marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage] [--config &lt;file&gt;]
+  marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage] [--raw] [--config &lt;file&gt;]
   marquee run [&lt;theme-folder&gt;] [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink &lt;folder&gt;] [--frames N]
               [--http-port 1024-65535 | --no-http] [--no-claude-usage] [--no-fps] [--config &lt;file&gt;]
   marquee validate &lt;theme-folder|zip&gt; [--fps 1-60]
@@ -77,6 +77,14 @@ A --sink run reads only the file --config names, and leaves the saved Claude Cod
   </data>
   <data name="NoReadings" xml:space="preserve">
     <value>No provider returned any readings.</value>
+  </data>
+  <data name="RawReadings" xml:space="preserve">
+    <value>Raw readings from {0}:</value>
+    <comment>marquee sensors --raw, above the list of the hardware source's own readings. {0} is the source, such as "Hardware sensors (HWiNFO)".</comment>
+  </data>
+  <data name="NoRawReadings" xml:space="preserve">
+    <value>There is no hardware source (sensors: none), so --raw has no readings to list.</value>
+    <comment>marquee sensors --raw with no hardware source. --raw and "sensors: none" stay as they are.</comment>
   </data>
   <data name="ConfigFileMissing" xml:space="preserve">
     <value>There is no {0}; using the default settings.</value>

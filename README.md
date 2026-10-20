@@ -116,7 +116,7 @@ it pauses or quits, and the others wait for it.
 
     marquee devices
     marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
-    marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage] [--config <file>]
+    marquee sensors [--sensors lhm|hwinfo|none] [--no-claude-usage] [--raw] [--config <file>]
     marquee run [<theme-folder>] [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
                 [--http-port 1024-65535 | --no-http] [--no-claude-usage] [--no-fps] [--config <file>]
     marquee validate <theme-folder|zip> [--fps 1-60]
@@ -582,8 +582,23 @@ give them a ttl. `custom: { max_keys: N }` in `config.yaml` sets the limit, from
 ## Hardware sensors
 
 `marquee sensors` lists every key and its current value. Keys include `cpu.temp`, `cpu.load`, `cpu.clock`,
-`cpu.power`, `gpu.temp`, `gpu.load`, `gpu.clock`, `gpu.power`, `gpu.vram_used`, `ram.used_pct`, `ram.used` and
-`fan.<name>`. A key whose source stops updating goes stale after 5 seconds and shows `—`.
+`cpu.power`, `cpu.voltage`, `gpu.temp`, `gpu.load`, `gpu.clock`, `gpu.power`, `gpu.voltage`, `gpu.fan`,
+`gpu.vram_used`, `ram.used_pct`, `ram.used` and `fan.<name>`. A key whose source stops updating goes stale after
+5 seconds and shows `—`.
+
+`cpu.voltage` and `gpu.voltage` are the CPU's and the GPU's core voltage, in volts. With LibreHardwareMonitor, the CPU
+voltage needs the elevated tray (or an elevated terminal), as CPU temperatures do, and is missing unelevated; the GPU
+voltage usually doesn't, as the card's driver reports it. With HWiNFO, HWiNFO reads both. `gpu.fan` is the GPU's
+fan speed in RPM: the first fan, on a card with several. The card's fans are still listed as `fan.<name>` too. On a
+PC with two GPUs, such as a CPU's integrated graphics beside a card, `gpu.voltage` and `gpu.fan` come from the one with
+the most dedicated memory, the card.
+
+`marquee sensors --raw` then lists every reading the hardware source reported, sorted, as the source gives them: the
+hardware (`Cpu`, `Gpu`, `Memory`, or `Other` for the motherboard and everything else), the source's type for the
+reading, its label, its value in the source's own unit (HWiNFO names it; LibreHardwareMonitor's `Data` is GB and
+`SmallData` MB), and the device. Readings no key uses are listed too, and so are the zeros an unelevated
+LibreHardwareMonitor reports for sensors it can't read. Keys are picked by label, so when one is missing on your PC,
+`--raw` shows what the source calls that sensor. Like the rest of `marquee sensors`, it only reads.
 
 The source is `--sensors`, or `sensors:` in `config.yaml`.
 
