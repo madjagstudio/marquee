@@ -187,8 +187,8 @@ widgets:
         style: { track: "#FFFFFF0C" }
         # A slice's source can be an expression: what isn't used is free.
         slices:
-          - { source: ram.used_pct, label: used, style: { fill: { linear: ["#36D1DC", "#5B86E5"] }, glow: { color: "#36D1DC70", radius: 12 } } }
-          - { source: 100 - ram.used_pct, label: free, style: { fill: "#FFFFFF1C" } }
+          - { source: ram.used_pct, style: { fill: { linear: ["#36D1DC", "#5B86E5"] }, glow: { color: "#36D1DC70", radius: 12 } } }
+          - { source: 100 - ram.used_pct, style: { fill: "#FFFFFF1C" } }
       - type: value
         at: [95, 128]
         size: [140, 52]

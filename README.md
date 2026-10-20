@@ -327,7 +327,7 @@ That path works only inside this repo: a copied theme needs its first line point
 repo gives it a URL.
 
 See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents` and `themes/example-showcase`, a
-tour that uses every part of the format once: shapes, dials, segmented meters, charts, a donut, wrapped text, rotation,
+tour of the format's newer parts: shapes, dials, segmented meters, charts, a donut, wrapped text, rotation,
 blending and hidden widgets. A full theme authoring guide comes with the public release.
 
 ### Shader backgrounds
