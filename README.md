@@ -128,13 +128,18 @@ it pauses or quits, and the others wait for it.
     MarqueeTray.exe           (the tray; see The tray)
 
 Settings not given on the command line come from `%LOCALAPPDATA%\Marquee\config.yaml`, or the file `--config` names
-(see [Settings](#settings)).
+(see [Settings](#settings)); a `--sink` run reads only the file `--config` names.
 
 `marquee run themes/example-landscape --preview` shows a theme on the screen and in a preview window (press `1` for 1:1).
 Edit `layout.yaml` and save: the screen updates within a second. If the file has a mistake, the last good layout stays
 on screen and the error, with its line number, shows in the console and the preview. `--sink <folder>` writes PNG
 frames instead of using the screen, and keeps writing them until stopped (Ctrl+C) unless `--frames N` is given;
 `--frames N` renders N frames and exits. `marquee run` without a folder shows the theme set in `config.yaml`.
+
+A `--sink` run is for tests and for looking at a theme, and often runs beside the tray, so it keeps out of your setup:
+it reads no `config.yaml` unless `--config` names one (so it needs a theme folder, and its frames are landscape unless
+`--orientation` says otherwise), and it neither shows nor saves the last Claude Code limits. It still logs, like any
+`marquee run`.
 
 The command line's, the tray's and the preview's messages are in resource files that can be translated;
 [docs/localization.md](docs/localization.md) says how to add a language.
@@ -515,7 +520,7 @@ they change and when it stops, and loads them at start, so the bars show at once
 how old they are. A window that reset while Marquee was stopped stays stale (`—`), and a window without a reset time
 isn't saved, nor is the per-model weekly limit (it shows after the first `/usage` poll). Fresh values from `/usage` or
 the status line replace the loaded ones as they arrive. A missing or
-unreadable file is skipped with one log line; deleting it is safe.
+unreadable file is skipped with one log line; deleting it is safe. A `--sink` run neither loads nor saves them.
 
 The session files and Codex logs are undocumented formats that may change. If Marquee can't read them any more, it
 logs a warning and those keys go stale; everything else keeps working.

@@ -28,8 +28,9 @@
   marquee task install [--tray &lt;file&gt;] | remove [--updates] | status | start [--user &lt;SID&gt;] | stop
   marquee claim-screen      (in an administrator terminal: stops L-Connect until a running Marquee has the screen)
   marquee statusline        (Claude Code runs this; see setup-claude)
-Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.yaml, or the file --config names.</value>
-    <comment>Printed when the arguments are wrong. Commands, options and paths stay as they are; names such as &lt;file&gt;, the note in parentheses and the last sentence may be translated.</comment>
+Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.yaml, or the file --config names.
+A --sink run reads only the file --config names, and leaves the saved Claude Code limits alone.</value>
+    <comment>Printed when the arguments are wrong. Commands, options and paths stay as they are; names such as &lt;file&gt;, the note in parentheses and the last two sentences may be translated.</comment>
   </data>
   <data name="LogWarning" xml:space="preserve">
     <value>Warning: {0}</value>
@@ -88,6 +89,10 @@ Settings not given on the command line come from %LOCALAPPDATA%\Marquee\config.y
   <data name="TrayHoldsScreen" xml:space="preserve">
     <value>Marquee's tray app is showing the screen; pause it from the tray (or quit it) to use marquee run.</value>
     <comment>Printed when marquee run is started while the tray app (MarqueeTray.exe) is showing the screen, and run stops. "marquee run" stays as it is.</comment>
+  </data>
+  <data name="SinkNeedsTheme" xml:space="preserve">
+    <value>A --sink run reads no config.yaml unless --config names one, so pass a theme folder to marquee run.</value>
+    <comment>Printed when marquee run --sink is given no theme folder and no --config, and run stops. "--sink", "config.yaml", "--config" and "marquee run" stay as they are.</comment>
   </data>
   <data name="SettingsUnchanged" xml:space="preserve">
     <value>{0} (the current settings stay until the file is fixed)</value>

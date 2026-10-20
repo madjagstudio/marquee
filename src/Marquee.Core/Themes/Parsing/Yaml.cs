@@ -10,13 +10,18 @@ namespace Marquee.Core.Themes.Parsing;
 /// ThemeException's reason and line into its own exception.
 static class Yaml
 {
+    /// Deepest nesting of lists and mappings in a file, counting the top-level mapping. The deepest valid theme needs
+    /// about 40 (groups nested WidgetParser.MaxGroupDepth deep, then a widget's style, its fill and the gradient's
+    /// stops); the limit is there because themes are shared (DepthLimitedParser says why).
+    public const int MaxDepth = 64;
+
     /// `fileName` is only for the one syntax error YamlDotNet reports without a line, which has no "file line N:" prefix.
     public static YamlNode? Load(string text, string fileName = ThemeLoader.LayoutFileName)
     {
         var stream = new YamlStream();
         try
         {
-            stream.Load(new StringReader(text));
+            stream.Load(new DepthLimitedParser(new Parser(new StringReader(text)), MaxDepth));
         }
         catch (YamlException ex)
         {

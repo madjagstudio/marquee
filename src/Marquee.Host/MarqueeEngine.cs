@@ -30,7 +30,7 @@ public sealed class MarqueeEngine : IDisposable
 
     readonly ILog _log;
     readonly IEngineServices _services;
-    readonly ClaudeLimitsFile _claudeLimits;
+    readonly ClaudeLimitsFile? _claudeLimits; // none for a sink folder
     readonly EngineEvents _events;
     readonly EngineHandover _handover;
     readonly object _gate = new();
@@ -51,7 +51,9 @@ public sealed class MarqueeEngine : IDisposable
         _log = log;
         _services = services;
         _events = new EngineEvents(log);
-        _claudeLimits = services.CreateClaudeLimits(log);
+        // A sink run renders to files, often beside the tray or in a test: restoring would put what another run saw
+        // into its frames, and saving would race the tray for the file. So an engine made for a sink keeps no limits.
+        _claudeLimits = settings.Sink is null ? services.CreateClaudeLimits(log) : null;
         _handover = new EngineHandover(log, services, mode: () => _settings.Handover, retryScreen: () => _run?.RetryScreen(),
             busy: info => Post(() => ScreenBusy?.Invoke(info)),
             finished: result => Post(() => HandoverFinished?.Invoke(result)));
@@ -124,9 +126,9 @@ public sealed class MarqueeEngine : IDisposable
     /// already, or Marquee isn't elevated (those two are logged). Any thread; takes no engine lock.
     public bool TakeOverScreen() => _handover.TakeOver();
 
-    /// Restores the saved Claude Code limits (the first time only, before any provider, so live readings win), then
-    /// starts everything for Settings. False, with the reason logged, when there is no screen or the theme doesn't
-    /// load: with no last good layout yet, there is nothing to show. The engine still counts as started, so the next
+    /// Restores the saved Claude Code limits (the first time only, before any provider, so live readings win; never for
+    /// a sink folder), then starts everything for Settings. False, with the reason logged, when there is no screen or
+    /// the theme doesn't load: with no last good layout yet, there is nothing to show. The engine still counts as started, so the next
     /// Apply (or another Start) tries again. `liveRendering` false leaves the render thread and theme watching off, for
     /// RenderFrames. After Pause, it starts with the screen closed.
     public bool Start(bool liveRendering = true)
@@ -139,7 +141,7 @@ public sealed class MarqueeEngine : IDisposable
 
             if (!_restored)
             {
-                _claudeLimits.Restore(Sensors, DateTimeOffset.UtcNow);
+                _claudeLimits?.Restore(Sensors, DateTimeOffset.UtcNow);
                 _restored = true;
             }
 
@@ -404,7 +406,7 @@ public sealed class MarqueeEngine : IDisposable
             return false;
         }
 
-        _saveTimer ??= new Timer(_ => SaveLimits(), null, SaveLimitsEvery, SaveLimitsEvery);
+        if (_claudeLimits is not null) _saveTimer ??= new Timer(_ => SaveLimits(), null, SaveLimitsEvery, SaveLimitsEvery);
         return true;
     }
 
@@ -445,7 +447,7 @@ public sealed class MarqueeEngine : IDisposable
     {
         try
         {
-            lock (_saveGate) _claudeLimits.Save(Sensors.Snapshot());
+            lock (_saveGate) _claudeLimits?.Save(Sensors.Snapshot());
         }
         catch (Exception ex)
         {
