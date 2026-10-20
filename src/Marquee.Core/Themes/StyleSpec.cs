@@ -80,6 +80,7 @@ public static class StyleDefaults
     public const float Radius = 0;
     public const float Padding = 0;
     public const TextAlign Align = TextAlign.Left;
+    public const SKBlendMode Blend = SKBlendMode.SrcOver;
     public const SKStrokeCap StrokeCap = SKStrokeCap.Butt;
     public const float ShadowX = 2;
     public const float ShadowY = 2;

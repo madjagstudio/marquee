@@ -29,8 +29,8 @@ static class WidgetPainter
 
         // A partly transparent or blended widget is drawn on a layer of its own, then composited onto what's under it
         // with its opacity and blend mode; any other widget draws straight onto the canvas.
-        var blend = style.Blend ?? SKBlendMode.SrcOver;
-        if (opacity < 1 || blend != SKBlendMode.SrcOver)
+        var blend = style.Blend ?? StyleDefaults.Blend;
+        if (opacity < 1 || blend != StyleDefaults.Blend)
         {
             using var layer = new SKPaint { Color = SKColors.White.WithAlpha(Paints.Alpha(opacity)), BlendMode = blend };
             canvas.SaveLayer(layer);

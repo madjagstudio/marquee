@@ -154,6 +154,7 @@ public class ThemeSchemaDriftTests
         (nameof(StyleDefaults.Radius), "style", "radius", s => s.Radius),
         (nameof(StyleDefaults.Padding), "style", "padding", s => s.Padding),
         (nameof(StyleDefaults.Align), "style", "align", s => s.Align),
+        (nameof(StyleDefaults.Blend), "style", "blend", s => s.Blend),
         (nameof(StyleDefaults.StrokeWidth), "style.stroke", "width", s => s.Stroke?.Width),
         (nameof(StyleDefaults.StrokeCap), "style.stroke", "cap", s => s.Stroke?.Cap),
         (nameof(StyleDefaults.ShadowX), "style.shadow", "x", s => s.Shadow?.X),
@@ -186,6 +187,15 @@ public class ThemeSchemaDriftTests
             var expected = fields.Single(f => f.Name == field).GetValue(null);
             Assert.True(Equals(expected, read(style)), $"{blockId}.{keyName}: the catalog's default {key.Default} reads as {read(style)}, but StyleDefaults.{field} is {expected}");
         }
+    }
+
+    /// Every style key the catalog gives a default has a StyleDefaults constant, so a painter's fallback can't drift
+    /// from the catalog unnoticed.
+    [Fact]
+    public void Every_style_default_has_a_StyleDefaults_constant()
+    {
+        var described = StyleBlocks.SelectMany(b => b.Keys.Where(k => k.Default is not null).Select(k => $"{b.Id}.{k.Name}"));
+        Assert.Equal(described.Order(), StyleConstants.Select(c => $"{c.Block}.{c.Key}").Order());
     }
 
     /// The renderer's fallbacks that differ for one widget type, by StyleDefaults field. A new one needs an entry.
