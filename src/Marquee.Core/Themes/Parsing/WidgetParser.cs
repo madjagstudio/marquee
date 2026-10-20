@@ -17,8 +17,8 @@ static partial class WidgetParser
 
     internal static readonly IReadOnlyDictionary<string, string[]> TypeKeys = new Dictionary<string, string[]>
     {
-        ["text"] = ["text"],
-        ["value"] = ["format"],
+        ["text"] = ["text", "spans"],
+        ["value"] = ["format", "spans"],
         ["bar"] = ["min", "max", "direction", .. SegmentParser.Keys],
         ["gauge"] = ["min", "max", "start", "sweep", "thickness", .. SegmentParser.Keys, "needle", "ticks"],
         ["graph"] = GraphParser.Keys,
@@ -108,8 +108,10 @@ static partial class WidgetParser
 
         WidgetSpec widget = type switch
         {
-            "text" => new TextWidget(Template(f.Required("text"))),
-            "value" => new ValueWidget(f.Optional("format") is { } format ? Format(format) : null),
+            "text" => f.OneOf("text", "spans") == "text"
+                ? new TextWidget(Template(f.Required("text")))
+                : SpanParser.Parse(f, context.Styles, context.Errors),
+            "value" => SpanParser.Value(f, context.Styles, context.Errors),
             "bar" => Bar(f),
             "gauge" => DialParser.Dial(Gauge(f), f),
             "graph" => GraphParser.Parse(f, context.Styles, context.Errors),
@@ -160,11 +162,12 @@ static partial class WidgetParser
         }
     }
 
-    static Template Template(YamlNode node)
+    /// `withValue` is for a value widget's spans, where `{0}` is its value (Template.Parse).
+    internal static Template Template(YamlNode node, bool withValue = false)
     {
         try
         {
-            return Expressions.Template.Parse(Yaml.Text(node, "text"));
+            return Expressions.Template.Parse(Yaml.Text(node, "text"), withValue);
         }
         catch (ExpressionException ex)
         {

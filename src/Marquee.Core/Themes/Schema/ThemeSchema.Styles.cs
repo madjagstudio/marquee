@@ -83,8 +83,9 @@ public static partial class ThemeSchema
             },
             new("text_stroke", SchemaKind.Block, "An outline round each letter, drawn behind the letters' fill.") { Of = "style.text_stroke" },
             new("text_fill", SchemaKind.Paint,
-                "The letters' color or gradient, in place of `color`, which keeps its other jobs. A gradient spans the widget's "
-                + "box, so texts whose boxes line up share one."),
+                "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's "
+                + "`color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the "
+                + "widget's box, so texts whose boxes line up share one."),
             new("italic", SchemaKind.Boolean,
                 "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.")
             {

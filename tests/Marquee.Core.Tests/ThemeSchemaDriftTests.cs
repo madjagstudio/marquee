@@ -34,6 +34,7 @@ public class ThemeSchemaDriftTests
             ["when"] = WidgetParser.RuleKeys,
             ["ring"] = RingParser.Keys,
             ["ring.when"] = RingParser.RuleKeys,
+            ["text.span"] = SpanParser.Keys,
             ["gauge.needle"] = DialParser.NeedleKeys,
             ["gauge.ticks"] = DialParser.TickKeys,
             ["graph.grid"] = GraphParser.GridKeys,
@@ -342,11 +343,22 @@ public class ThemeSchemaDriftTests
         });
 
     /// A block that needs exactly one, or at least one, of a group of keys refuses none of them, and one that needs
-    /// exactly one refuses two.
+    /// exactly one, or takes at most one, refuses two.
     [Fact]
     public void Groups_of_keys_are_needed_as_the_catalog_says() =>
-        Check(Probes().Select(p => p.Place).DistinctBy(p => p.Block.Id).Where(p => p.Block.ExactlyOneOf.Count > 0 || p.Block.AtLeastOneOf.Count > 0), place =>
+        Check(Probes().Select(p => p.Place).DistinctBy(p => p.Block.Id)
+            .Where(p => p.Block.ExactlyOneOf.Count > 0 || p.Block.AtLeastOneOf.Count > 0 || p.Block.AtMostOneOf.Count > 0), place =>
         {
+            foreach (var (first, second) in place.Block.AtMostOneOf.SelectMany((a, i) => place.Block.AtMostOneOf.Skip(i + 1).Select(b => (a, b))))
+            {
+                var both = place.Base();
+                both[first] = Sample(place.Keys.First(k => k.Name == first));
+                both[second] = Sample(place.Keys.First(k => k.Name == second));
+                Fails(place, both, $"both {first} and {second}");
+                Parses(place, place.With(first, Sample(place.Keys.First(k => k.Name == first))), $"{first} alone");
+                Parses(place, place.With(second, Sample(place.Keys.First(k => k.Name == second))), $"{second} alone");
+            }
+
             foreach (var group in new[] { place.Block.ExactlyOneOf, place.Block.AtLeastOneOf }.Where(g => g.Count > 0))
             {
                 var none = place.Base();
@@ -359,6 +371,30 @@ public class ThemeSchemaDriftTests
                 var two = place.Base();
                 foreach (var key in one.Take(2)) two[key] = Sample(place.Block.Key(key)!);
                 Fails(place, two, $"both {one[0]} and {one[1]}");
+            }
+        });
+
+    /// A span's style may set the parser's text keys and `extends`, and the catalog says so; every other style key is
+    /// the widget's.
+    [Fact]
+    public void A_spans_style_keys_are_the_parsers()
+    {
+        var keys = ThemeSchema.TextSpan.Key("style")!.StyleKeys;
+        Assert.Equal(SpanParser.TextKeys.Append("extends").Order(), keys.Order());
+        Assert.Equal(SpanParser.BoxKeys.Order(), ThemeSchema.Style.Keys.Select(k => k.Name).Except(keys).Order());
+    }
+
+    /// A style written in place where only some style keys may go, such as a span's, takes each of them and refuses
+    /// every other.
+    [Fact]
+    public void Styles_take_only_the_keys_the_catalog_allows() =>
+        Check(Probes().Where(p => p.Key is { Kind: SchemaKind.Style, StyleKeys.Count: > 0 }), (place, key) =>
+        {
+            foreach (var styleKey in ThemeSchema.Style.Keys)
+            {
+                var style = new JsonObject { [styleKey.Name] = styleKey.Kind == SchemaKind.StyleName ? StyleName : Sample(styleKey) };
+                if (key.StyleKeys.Contains(styleKey.Name)) Parses(place, place.With(key.Name, style), $"{key.Name}: {{ {styleKey.Name} }}");
+                else Fails(place, place.With(key.Name, style), $"{key.Name}: {{ {styleKey.Name} }}");
             }
         });
 
@@ -573,6 +609,9 @@ public class ThemeSchemaDriftTests
                 case "ring.when":
                     layout["ring"] = new JsonObject { ["source"] = "cpu.load", ["when"] = new JsonArray(probe) };
                     break;
+                case "text.span":
+                    layout["widgets"] = new JsonArray(Widget("text", ("spans", new JsonArray(probe))));
+                    break;
                 case "gauge.needle" or "gauge.ticks":
                     layout["widgets"] = new JsonArray(Widget("gauge", ("source", "cpu.load"), (Block.Name, probe)));
                     break;
@@ -615,9 +654,13 @@ public class ThemeSchemaDriftTests
 
     static bool IsStyle(SchemaBlock block) => block.Id == "style" || block.Id.StartsWith("style.", StringComparison.Ordinal);
 
+    /// A value widget's spans must show its value, with {0}, which a text widget's mustn't.
+    static readonly SchemaKey ValueSpans = ThemeSchema.Widget("value")!.Key("spans")!;
+
     /// A valid value for the key, wherever it goes.
     static JsonNode Sample(SchemaKey key) => key.Kind switch
     {
+        SchemaKind.List when key == ValueSpans => Items(key, key.MinItems ?? 1),
         SchemaKind.Number or SchemaKind.Integer => JsonValue.Create(key.Default is { } d
             ? double.Parse(d, CultureInfo.InvariantCulture)
             : key.Min ?? Math.Min(1, key.Max ?? 1)),
@@ -676,7 +719,8 @@ public class ThemeSchemaDriftTests
     /// One entry of a list or map: a value of its item kind, or the least its block, or its union's first variant, needs.
     /// A list of numbers holds its lowest, which keeps one that must rise, such as a gradient's stops, in order.
     static JsonNode Entry(SchemaKey key) =>
-        key.ItemKind is SchemaKind.Number ? JsonValue.Create(key.Min ?? 0)
+        key == ValueSpans ? new JsonObject { ["text"] = "{0}" }
+        : key.ItemKind is SchemaKind.Number ? JsonValue.Create(key.Min ?? 0)
         : key.ItemKind is { } item ? Sample(item)
         : ThemeSchema.Union(key.Of!) is { } union ? new Place(union.Variants[0], union).Base()
         : new Place(ThemeSchema.Block(key.Of!)!, null).Base();

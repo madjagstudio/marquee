@@ -286,8 +286,8 @@
               "$ref": "#/definitions/paint"
             }
           ],
-          "description": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A gradient spans the widget's box, so texts whose boxes line up share one.",
-          "markdownDescription": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A gradient spans the widget's box, so texts whose boxes line up share one."
+          "description": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one.",
+          "markdownDescription": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one."
         },
         "italic": {
           "type": "boolean",
@@ -707,6 +707,169 @@
           "required": [
             "brightness"
           ]
+        }
+      ]
+    },
+    "text.span": {
+      "description": "Text spans: One run of a text or value widget's `spans`. Its style goes over the widget's, and the widget's `when` rules go over every span, so a rule that turns the text red turns every span red. A line is as tall as its largest span, and its spans share the baseline of the tallest.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The span's text, a template as a text widget's is, where a value widget's {0} is its value. A line break in it starts a new line.",
+          "markdownDescription": "The span's text, a template as a text widget's is, where a value widget's {0} is its value. A line break in it starts a new line."
+        },
+        "style": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/text.span.style"
+            }
+          ],
+          "description": "The span's letters: a style's name, or a style written in place, with the text keys only. The box keys, such as `fill`, `padding`, `align` and `wrap`, are the widget's: written in place they are an error, and a named style's are left out without a warning.",
+          "markdownDescription": "The span's letters: a style's name, or a style written in place, with the text keys only. The box keys, such as `fill`, `padding`, `align` and `wrap`, are the widget's: written in place they are an error, and a named style's are left out without a warning."
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "text.span.style": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "extends": {
+              "type": "string",
+              "description": "Another named style to start from; keys set here override it.",
+              "markdownDescription": "Another named style to start from; keys set here override it."
+            },
+            "font": {
+              "type": "string",
+              "description": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.",
+              "markdownDescription": "A font installed on this PC, by name, or a .ttf, .otf or .ttc file in the theme folder. Inter is built in.",
+              "default": "Inter"
+            },
+            "size": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Text size. (px, 1 to 1000)",
+              "markdownDescription": "Text size. (px, 1 to 1000)",
+              "default": 24
+            },
+            "weight": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 900
+                },
+                {
+                  "enum": [
+                    "light",
+                    "normal",
+                    "medium",
+                    "semibold",
+                    "bold"
+                  ]
+                }
+              ],
+              "description": "How heavy text is: 100 to 900, or a name (light 300 to bold 700).",
+              "markdownDescription": "How heavy text is: 100 to 900, or a name (light 300 to bold 700).",
+              "default": "normal"
+            },
+            "color": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/color"
+                }
+              ],
+              "description": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own.",
+              "markdownDescription": "The text's color, and the filled part of a bar, gauge or graph line when `fill` or `stroke` doesn't set one. A dial's needle and ticks, and a donut's slices, use it when they set no color of their own.",
+              "default": "#FFFFFF"
+            },
+            "shadow": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/style.shadow"
+                }
+              ],
+              "description": "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box.",
+              "markdownDescription": "A shadow under text, a shape, a gauge's needle, a donut's slices, or an image or video widget's box."
+            },
+            "glow": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/style.glow"
+                }
+              ],
+              "description": "A soft glow round text, a shape or a donut's slices.",
+              "markdownDescription": "A soft glow round text, a shape or a donut's slices."
+            },
+            "letter_spacing": {
+              "type": "number",
+              "minimum": -20,
+              "maximum": 100,
+              "description": "Space added between the characters of text; below 0 draws them closer. (px, -20 to 100)",
+              "markdownDescription": "Space added between the characters of text; below 0 draws them closer. (px, -20 to 100)",
+              "default": 0
+            },
+            "text_stroke": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/style.text_stroke"
+                }
+              ],
+              "description": "An outline round each letter, drawn behind the letters' fill.",
+              "markdownDescription": "An outline round each letter, drawn behind the letters' fill."
+            },
+            "text_fill": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/paint"
+                }
+              ],
+              "description": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one.",
+              "markdownDescription": "The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one."
+            },
+            "italic": {
+              "type": "boolean",
+              "description": "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.",
+              "markdownDescription": "Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted.",
+              "default": false
+            },
+            "underline": {
+              "type": "boolean",
+              "description": "A line under the text, as long as the text, in the letters' color.",
+              "markdownDescription": "A line under the text, as long as the text, in the letters' color.",
+              "default": false
+            },
+            "strike": {
+              "type": "boolean",
+              "description": "A line through the text, as long as the text, in the letters' color.",
+              "markdownDescription": "A line through the text, as long as the text, in the letters' color.",
+              "default": false
+            },
+            "case": {
+              "enum": [
+                "upper",
+                "lower",
+                "title",
+                "none"
+              ],
+              "description": "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.",
+              "markdownDescription": "Changes the text's case once its placeholders are filled in, by the rules of the PC's regional format: `title` capitalises the first letter of every word, am and pm included, and leaves the rest as written.",
+              "default": "none"
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -1491,18 +1654,39 @@
           ],
           "description": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used|bytes} uses a helper and {now|time:ddd HH:mm} shows the day and time.",
           "markdownDescription": "The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used|bytes} uses a helper and {now|time:ddd HH:mm} shows the day and time."
+        },
+        "spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/text.span"
+          },
+          "minItems": 1,
+          "maxItems": 32,
+          "description": "Instead of `text`: runs of text, each in its own style, side by side on one baseline, such as a big number with a small unit. The widget's style places them as it places text.",
+          "markdownDescription": "Instead of `text`: runs of text, each in its own style, side by side on one baseline, such as a big number with a small unit. The widget's style places them as it places text."
         }
       },
       "required": [
         "type",
         "at",
-        "size",
-        "text"
+        "size"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "text"
+          ]
+        },
+        {
+          "required": [
+            "spans"
+          ]
+        }
+      ]
     },
     "widget.value": {
-      "description": "Value: One value as text, laid out as a text widget's is. A missing or stale value shows as —.",
+      "description": "Value: One value as text, laid out as a text widget's is. A missing or stale value shows as —. A value with a smaller unit, such as a big 52 with a small °C, takes `spans` instead of `format`.",
       "type": "object",
       "properties": {
         "type": {
@@ -1600,6 +1784,16 @@
           "type": "string",
           "description": "How to write the value: a .NET format such as \"{0:0.0}°C\", duration, bytes, or time for Unix seconds as a local time (\"time:HH:mm\" gives a pattern). Left out, a number shows up to two decimals.",
           "markdownDescription": "How to write the value: a .NET format such as \"{0:0.0}°C\", duration, bytes, or time for Unix seconds as a local time (\"time:HH:mm\" gives a pattern). Left out, a number shows up to two decimals."
+        },
+        "spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/text.span"
+          },
+          "minItems": 1,
+          "maxItems": 32,
+          "description": "Instead of `format`: runs of text, each in its own style, side by side on one baseline, as a text widget's spans are. {0} in them is the value after `smooth`, and {0:0.0} formats it. A missing or stale value shows a single — in the first span's style.",
+          "markdownDescription": "Instead of `format`: runs of text, each in its own style, side by side on one baseline, as a text widget's spans are. {0} in them is the value after `smooth`, and {0:0.0} formats it. A missing or stale value shows a single — in the first span's style."
         }
       },
       "required": [
@@ -1608,7 +1802,17 @@
         "size",
         "source"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "format",
+              "spans"
+            ]
+          }
+        ]
+      }
     },
     "widget.bar": {
       "description": "Bar: A bar filled in proportion to a value: `track` paints the empty part, `fill` (or the style's color) the full part.",

@@ -25,11 +25,21 @@ static class TextLayout
         return lines;
     }
 
-    /// Greedy: each word goes on the current line if the line, with the spaces before the word, still fits. The
-    /// spaces at a break are dropped, so they don't push a centred or right-aligned line off its mark.
     static void Wrap(string paragraph, float width, Func<string, float> measure, List<string> lines)
     {
-        string? line = null;
+        foreach (var (start, end) in Breaks(paragraph, width, (start, end) => measure(paragraph[start..end])))
+            lines.Add(paragraph[start..end]);
+    }
+
+    /// Where a paragraph too wide for `width` breaks: each line as the start and end of the part of the paragraph it
+    /// holds, with `measure` giving the width of any part. Spans wrap with it too, measuring a part across their fonts.
+    /// Greedy: each word goes on the current line if the line, with the spaces before the word, still fits. The spaces
+    /// at a break are dropped, so they don't push a centred or right-aligned line off its mark.
+    public static List<(int Start, int End)> Breaks(string paragraph, float width, Func<int, int, float> measure)
+    {
+        var lines = new List<(int Start, int End)>();
+        int? lineStart = null;
+        var lineEnd = 0;
         var start = 0;
         while (start < paragraph.Length)
         {
@@ -39,21 +49,20 @@ static class TextLayout
             var wordEnd = paragraph.IndexOf(' ', wordStart);
             if (wordEnd < 0) wordEnd = paragraph.Length;
 
-            // The word with the spaces before it. The first line keeps the spaces it starts with, as indentation.
-            var withSpaces = paragraph[start..wordEnd];
-            var word = paragraph[wordStart..wordEnd];
-            if (line is null) line = withSpaces;
-            else if (measure(line + withSpaces) <= width) line += withSpaces;
-            else
+            // The word goes on with the spaces before it. The first line keeps the spaces it starts with, as indentation.
+            if (lineStart is null) lineStart = start;
+            else if (measure(lineStart.Value, wordEnd) > width)
             {
-                lines.Add(line);
-                line = word;
+                lines.Add((lineStart.Value, lineEnd));
+                lineStart = wordStart;
             }
 
+            lineEnd = wordEnd;
             start = wordEnd;
         }
 
-        lines.Add(line ?? "");
+        lines.Add((lineStart ?? 0, lineEnd));
+        return lines;
     }
 
     /// How many of `count` lines fit in `height`, where lines are `advance` apart and each is `extent` tall (ascent

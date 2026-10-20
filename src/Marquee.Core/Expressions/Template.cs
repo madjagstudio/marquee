@@ -5,14 +5,15 @@ namespace Marquee.Core.Expressions;
 
 /// Text with placeholders: `{cpu.temp}`, `{cpu.temp:0.0}` (a .NET numeric format), `{gpu.vram_used|bytes}`,
 /// `{claude.five_hour.resets_at - now|duration}`, `{now|time:HH:mm}` (a .NET date and time pattern, colons and all).
-/// `{{` and `}}` are literal braces.
+/// `{{` and `}}` are literal braces. In a value widget's spans, `{0}` is the widget's own value (`{0:0.0}`, `{0|bytes}`).
 public sealed class Template
 {
     abstract record Part;
     sealed record Literal(string Text) : Part;
     // TimePattern is set for the time helper, which writes in the renderer's zone and culture, so it is kept as data
     // rather than as a Func like the other helpers.
-    sealed record Placeholder(Expression Expression, string? Format, Func<double, string>? Helper, string? TimePattern) : Part;
+    // IsValue is set for `{0}` in a template that has a value of its own (Parse's withValue), which Render is given.
+    sealed record Placeholder(Expression Expression, string? Format, Func<double, string>? Helper, string? TimePattern, bool IsValue) : Part;
 
     readonly IReadOnlyList<Part> _parts;
 
@@ -20,7 +21,12 @@ public sealed class Template
 
     public bool IsStatic => _parts.All(p => p is Literal);
 
-    public static Template Parse(string text)
+    /// Whether it shows a value of its own: a `{0}` in a template parsed with a value.
+    public bool ShowsValue => _parts.Any(p => p is Placeholder { IsValue: true });
+
+    /// `withValue` is for a value widget's spans, where `{0}` is the widget's value, which Render's `value` gives. In any
+    /// other template `{0}` is the number 0, as it always was.
+    public static Template Parse(string text, bool withValue = false)
     {
         var parts = new List<Part>();
         var literal = new StringBuilder();
@@ -45,7 +51,7 @@ public sealed class Template
                     literal.Clear();
                 }
 
-                parts.Add(ParsePlaceholder(text, i + 1, close));
+                parts.Add(ParsePlaceholder(text, i + 1, close, withValue));
                 i = close;
             }
             else if (c == '}')
@@ -70,8 +76,9 @@ public sealed class Template
     }
 
     /// The rendered text. Stale is true when any placeholder's value was missing; each such placeholder shows "—".
-    /// `time` writes in the locale's zone and culture, the PC's own if it is null.
-    public TemplateResult Render(SensorSnapshot sensors, TimeLocale? locale = null)
+    /// `time` writes in the locale's zone and culture, the PC's own if it is null. `value` is what `{0}` shows in a
+    /// template parsed with a value; it is missing like any other when null.
+    public TemplateResult Render(SensorSnapshot sensors, TimeLocale? locale = null, SensorValue? value = null)
     {
         var text = new StringBuilder();
         var stale = false;
@@ -83,8 +90,11 @@ public sealed class Template
                 case Literal literal:
                     text.Append(literal.Text);
                     break;
-                case Placeholder placeholder when placeholder.Expression.Evaluate(sensors) is { } value:
-                    text.Append(Write(placeholder, value, locale));
+                case Placeholder { IsValue: true } placeholder when value is { } own:
+                    text.Append(Write(placeholder, own, locale));
+                    break;
+                case Placeholder { IsValue: false } placeholder when placeholder.Expression.Evaluate(sensors) is { } reading:
+                    text.Append(Write(placeholder, reading, locale));
                     break;
                 default:
                     text.Append(Formatting.Missing);
@@ -103,7 +113,7 @@ public sealed class Template
         : placeholder.Helper is { } helper ? helper(n)
         : Formatting.Format(value, placeholder.Format);
 
-    static Placeholder ParsePlaceholder(string text, int start, int end)
+    static Placeholder ParsePlaceholder(string text, int start, int end, bool withValue)
     {
         var content = text[start..end];
         var pipe = content.IndexOf('|');
@@ -141,7 +151,7 @@ public sealed class Template
 
         try
         {
-            return new Placeholder(Expression.Parse(expressionText), format, helper, timePattern);
+            return new Placeholder(Expression.Parse(expressionText), format, helper, timePattern, withValue && expressionText.Trim() == "0");
         }
         catch (ExpressionException ex)
         {

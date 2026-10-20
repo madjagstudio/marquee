@@ -11,6 +11,9 @@ public sealed record SchemaBlock(string Id, string Name, string Title, string He
     /// At least one of these keys must be there, such as what a ring rule changes.
     public IReadOnlyList<string> AtLeastOneOf { get; init; } = [];
 
+    /// At most one of these keys may be there, though none need be, such as a value widget's `format` and `spans`.
+    public IReadOnlyList<string> AtMostOneOf { get; init; } = [];
+
     /// For a widget type: a small widget of the type, as layout.yaml writes it, which the theme editor starts a new one
     /// from: its type, its size, the keys it needs and a sensible source, at the top-left corner. Null for other blocks.
     public string? Example { get; init; }

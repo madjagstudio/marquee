@@ -332,6 +332,31 @@ widgets:
   Letters in a pattern are pattern letters, so quote words (`"{now|time:'Today is' dddd}"`) and write a letter alone
   as `%H` (`"{now|time:%H}"`). The pattern runs to the closing brace, so spaces before the brace are kept.
 
+A value with a smaller unit, such as a big "52" with a small "°C", is a value widget with `spans` instead of
+`format`. Each span has its own template and style, and they share a baseline, so the unit stays beside the number as
+the number's width changes. `{0}` is the widget's value after `smooth` (`{0:0.0}` formats it), and other placeholders
+still read their keys. A missing value shows a single "—" in the first span's style. The widget's style places the
+spans, and its `when` rules change every span:
+
+```yaml
+- type: value
+  at: [140, 500]
+  size: [300, 90]
+  source: cpu.temp
+  smooth: 400
+  style: { size: 72, color: "#F4F6FA", align: center }
+  spans:
+    - { text: "{0:0}" }
+    - { text: "°C", style: { size: 30, color: "#36D1DC" } }
+  when:
+    - { above: 85, style: { color: "#FF5A36" } }
+```
+
+A text widget takes `spans` instead of `text` in the same way, for words in several styles; its placeholders show
+each reading as it comes, as a text widget's always do, since only a value widget's `{0}` follows `smooth`. A span's
+style sets how its letters look. The box keys (`fill`, `stroke`, `radius`, `padding`, `align`, `wrap`, `line_height`,
+`opacity`, `blend` and `pulse`) are the widget's: a span's own style can't set them, and a named style's are left out.
+
 Every key, with its values and default, is in [docs/themes-reference.md](docs/themes-reference.md). VS Code completes
 and checks theme files once the YAML extension (Red Hat) is installed: the examples' first line,
 `# yaml-language-server: $schema=../../docs/layout.schema.json`, points it at [the schema](docs/layout.schema.json).

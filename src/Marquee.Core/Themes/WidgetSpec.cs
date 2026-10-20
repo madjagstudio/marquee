@@ -30,8 +30,14 @@ public abstract record WidgetSpec
 /// Static text or a template such as "{claude.sessions.busy}/{claude.sessions.total} working".
 public sealed record TextWidget(Template Text) : WidgetSpec;
 
-/// One value. Format is a .NET composite format ("{0:0.0}°C") or a helper name ("duration", "bytes").
-public sealed record ValueWidget(string? Format) : WidgetSpec;
+/// One value. Format is a .NET composite format ("{0:0.0}°C") or a helper name ("duration", "bytes"); null shows the
+/// number plainly, or the value in Spans when it has them.
+public sealed record ValueWidget(string? Format) : WidgetSpec
+{
+    /// Written with `spans:` instead of `format`: runs in their own styles, as a SpansWidget's, where `{0}` is the value
+    /// after `smooth`. Null for a value widget without them.
+    public IReadOnlyList<TextSpan>? Spans { get; init; }
+}
 
 public enum BarDirection { Horizontal, Vertical }
 

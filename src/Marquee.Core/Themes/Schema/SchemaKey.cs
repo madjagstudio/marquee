@@ -118,4 +118,8 @@ public sealed record SchemaKey(string Name, SchemaKind Kind, string Help)
 
     /// The key also takes false, which turns its feature off, as a gauge's tick `labels` do.
     public bool TakesFalse { get; init; }
+
+    /// For a Style key that may set only some of a style's keys, such as a span's: the keys it may set, in
+    /// ThemeSchema.Style's order. Empty when it may set any.
+    public IReadOnlyList<string> StyleKeys { get; init; } = [];
 }

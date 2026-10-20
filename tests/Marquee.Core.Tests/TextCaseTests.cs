@@ -30,6 +30,18 @@ public class TextCaseTests
     public void Title_capitalises_the_first_letter_of_each_word_and_keeps_the_rest(string text, string expected) =>
         Assert.Equal(expected, TextCase.Apply(text, LetterCase.Title, English));
 
+    /// A span's text follows the spans before it on its line: it starts a word only where they end in white space, or
+    /// in signs after white space.
+    [Theory]
+    [InlineData("", "temp", "Temp")]
+    [InlineData("cpu", "temp", "temp")]
+    [InlineData("cpu ", "temp", "Temp")]
+    [InlineData("cpu\n", "temp", "Temp")]
+    [InlineData("at (", "hot)", "Hot)")]
+    [InlineData("1", "st", "st")]
+    public void Title_follows_the_text_before_it(string before, string text, string expected) =>
+        Assert.Equal(expected, TextCase.Apply(text, LetterCase.Title, English, before));
+
     [Fact]
     public void Title_keeps_a_letter_and_its_combining_mark_together()
     {

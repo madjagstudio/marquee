@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
+using Marquee.Core.Themes.Parsing;
 using Marquee.Core.Themes.Schema;
 using Marquee.SchemaDocs;
 
@@ -120,6 +121,40 @@ public class ThemeSchemaDocsTests
         Assert.Equal(64, definitions["widget.text"]!["properties"]!["name"]!["maxLength"]?.GetValue<int>());
         Assert.Equal(64, definitions["layer.fill"]!["properties"]!["name"]!["maxLength"]?.GetValue<int>());
         Assert.Contains("| `name` | text or number | up to 64 characters |", ReferenceWriter.Write());
+    }
+
+    /// A span's style offers only the keys a span may set in VS Code, each as the Style block gives it, and refuses the
+    /// others as the parser does; it may also name a style. The reference lists the keys it may set.
+    [Fact]
+    public void Docs_give_the_keys_a_spans_style_may_set()
+    {
+        var definitions = JsonNode.Parse(JsonSchemaWriter.Write())!["definitions"]!;
+        var key = definitions["text.span"]!["properties"]!["style"]!;
+        Assert.Equal("#/definitions/text.span.style", key["allOf"]![0]!["$ref"]!.GetValue<string>());
+
+        var forms = definitions["text.span.style"]!["anyOf"]!.AsArray();
+        Assert.Equal(2, forms.Count);
+        Assert.Equal("string", forms[0]!["type"]!.GetValue<string>());
+        var inPlace = forms[1]!;
+        Assert.Equal("object", inPlace["type"]!.GetValue<string>());
+        Assert.False(inPlace["additionalProperties"]!.GetValue<bool>());
+        var properties = inPlace["properties"]!.AsObject();
+        Assert.Equal(ThemeSchema.TextSpan.Key("style")!.StyleKeys, properties.Select(p => p.Key));
+        Assert.All(properties, p => Assert.True(JsonNode.DeepEquals(definitions["style"]!["properties"]![p.Key], p.Value), p.Key));
+
+        Assert.Contains("| `style` | style | only `extends`, `font`, `size`, ", ReferenceWriter.Write());
+    }
+
+    /// A value widget takes a format or spans, and VS Code refuses both, as the parser does.
+    [Fact]
+    public void Docs_give_a_value_widget_a_format_or_spans()
+    {
+        var value = JsonNode.Parse(JsonSchemaWriter.Write())!["definitions"]!["widget.value"]!;
+        var both = Assert.Single(value["not"]!["anyOf"]!.AsArray())!;
+        Assert.Equal(["format", "spans"], both["required"]!.AsArray().Select(k => k!.GetValue<string>()));
+        Assert.Equal("#/definitions/text.span", value["properties"]!["spans"]!["items"]!["$ref"]!.GetValue<string>());
+
+        Assert.Contains("Each takes at most one of `format` and `spans`.", ReferenceWriter.Write());
     }
 
     [Fact]

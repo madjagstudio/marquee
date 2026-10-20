@@ -92,6 +92,8 @@ static class ReferenceWriter
                 + (block.AtLeastOneOf.Count > 0 ? $", and at least one of {Words(block.AtLeastOneOf, "and")}.\n\n" : ".\n\n"));
         else if (block.AtLeastOneOf.Count > 0)
             md.Append($"Each needs at least one of {Words(block.AtLeastOneOf, "and")}.\n\n");
+        if (block.AtMostOneOf.Count > 0)
+            md.Append($"Each takes at most one of {Words(block.AtMostOneOf, "and")}.\n\n");
 
         // Blocks only this one uses, such as a style's stroke, come next.
         foreach (var child in ThemeSchema.Blocks.Where(b => !written.Contains(b.Id) && !IsSection(b) && keys.Any(k => k.Of == b.Id)))
@@ -149,6 +151,7 @@ static class ReferenceWriter
         SchemaKind.List or SchemaKind.Map or SchemaKind.Uniforms => Count(key.MinItems, key.MaxItems),
         SchemaKind.ThemeFile when key.FileTypes.Count > 0 => Codes(key.FileTypes),
         SchemaKind.String when key.MaxLength is { } length => $"up to {length} characters",
+        SchemaKind.Style when key.StyleKeys.Count > 0 => $"only {Codes(key.StyleKeys)}",
         _ => Range(key) + (key.MinFor is { } lower ? $", or {Number(lower.Min)} with `{lower.Key}: {lower.Value}`" : ""),
     };
 

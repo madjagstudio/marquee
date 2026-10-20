@@ -38,7 +38,11 @@ static class JsonSchemaWriter
         };
 
         foreach (var block in ThemeSchema.Blocks.Where(b => b != ThemeSchema.Layout))
+        {
             definitions[block.Id] = Object(block, block.Keys);
+            foreach (var key in block.Keys.Where(k => k.StyleKeys.Count > 0))
+                definitions[StyleId(block, key)] = OnlyStyleKeys(key);
+        }
 
         foreach (var union in ThemeSchema.Unions)
         {
@@ -75,7 +79,7 @@ static class JsonSchemaWriter
         foreach (var key in keys)
             properties[key.Name] = key.Name == discriminator
                 ? new JsonObject { ["const"] = block.Name, ["description"] = key.Help }
-                : Value(key);
+                : Value(key, block);
 
         var node = new JsonObject { ["description"] = Join(block.Title, block.Help), ["type"] = "object", ["properties"] = properties };
         if (keys.Where(k => k.Required).Select(k => (JsonNode?)k.Name).ToArray() is { Length: > 0 } required)
@@ -85,6 +89,8 @@ static class JsonSchemaWriter
             node["oneOf"] = new JsonArray(block.ExactlyOneOf.Select(k => (JsonNode?)Requires(k)).ToArray());
         if (block.AtLeastOneOf.Count > 0)
             node["anyOf"] = new JsonArray(block.AtLeastOneOf.Select(k => (JsonNode?)Requires(k)).ToArray());
+        if (block.AtMostOneOf.Count > 0)
+            node["not"] = new JsonObject { ["anyOf"] = new JsonArray(Pairs(block.AtMostOneOf).ToArray()) };
         var forms = keys.Where(k => k.OnlyFor is not null).GroupBy(k => k.OnlyFor!.Value).Select(OnlyFor)
             .Concat(keys.Where(k => k.MinFor is not null).Select(MinFor))
             .ToArray();
@@ -120,10 +126,33 @@ static class JsonSchemaWriter
 
     static JsonObject Requires(string key) => new() { ["required"] = new JsonArray(key) };
 
-    /// One key's schema, with its Description and its default.
-    static JsonObject Value(SchemaKey key)
+    /// Each two of the keys, together: a block that takes at most one of them refuses any of these.
+    static IEnumerable<JsonNode?> Pairs(IReadOnlyList<string> keys) =>
+        keys.SelectMany((first, i) => keys.Skip(i + 1).Select(second => (JsonNode?)new JsonObject { ["required"] = new JsonArray(first, second) }));
+
+    /// A style that may set only some keys, such as a span's, is a definition of its own, named for its block and key,
+    /// that offers only those, each as the Style block gives it, so VS Code doesn't suggest the others. A named style
+    /// can't be checked here, and the parser leaves its other keys out.
+    static JsonObject OnlyStyleKeys(SchemaKey key) => new()
     {
-        var node = Kind(key);
+        ["anyOf"] = new JsonArray(
+            new JsonObject { ["type"] = "string" },
+            new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject(ThemeSchema.Style.Keys.Where(k => key.StyleKeys.Contains(k.Name))
+                    .Select(k => KeyValuePair.Create(k.Name, (JsonNode?)Value(k)))),
+                ["additionalProperties"] = false,
+            }),
+    };
+
+    static string StyleId(SchemaBlock block, SchemaKey key) => $"{block.Id}.{key.Name}";
+
+    /// One key's schema, with its Description and its default. `owner` is the block the key is in, which names the
+    /// definition of a style that may set only some keys.
+    static JsonObject Value(SchemaKey key, SchemaBlock? owner = null)
+    {
+        var node = key.StyleKeys.Count > 0 && owner is not null ? Ref(StyleId(owner, key)) : Kind(key);
         if (key.TakesFalse) node = new JsonObject { ["anyOf"] = new JsonArray(node, new JsonObject { ["const"] = false }) };
         // A $ref's siblings are ignored in draft-07, so a description goes on an allOf around it.
         if (node.ContainsKey("$ref")) node = new JsonObject { ["allOf"] = new JsonArray(node) };

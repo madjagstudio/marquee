@@ -64,7 +64,7 @@ How a widget looks. A style is named in `styles:`, or written in place as a widg
 | `line_height` | number (times) | 0.5 to 4 | `1.2` | How far apart the lines of text are, as a multiple of the text's size. |
 | `wrap` | true or false |  | `false` | Breaks text too wide for its box onto more lines, at spaces. Without it, such text draws on one line past its box. A line break starts a new line either way. |
 | `text_stroke` | block: [Text stroke](#text-stroke) |  |  | An outline round each letter, drawn behind the letters' fill. |
-| `text_fill` | paint |  |  | The letters' color or gradient, in place of `color`, which keeps its other jobs. A gradient spans the widget's box, so texts whose boxes line up share one. |
+| `text_fill` | paint |  |  | The letters' color or gradient, in place of `color`, which keeps its other jobs. A span's or a rule's `color` doesn't change letters a `text_fill` paints: set `text_fill` there instead. A gradient spans the widget's box, so texts whose boxes line up share one. |
 | `italic` | true or false |  | `false` | Slanted letters: the font's italic face when an installed font has one, otherwise the letters slanted. |
 | `underline` | true or false |  | `false` | A line under the text, as long as the text, in the letters' color. |
 | `strike` | true or false |  | `false` | A line through the text, as long as the text, in the letters' color. |
@@ -245,16 +245,33 @@ Text, which can show values. A line break (`\n` in double quotes, or a `|` block
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
-| `text` | text template |  | required | The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used\|bytes} uses a helper and {now\|time:ddd HH:mm} shows the day and time. |
+| `text` | text template |  |  | The text. {cpu.temp} shows a value, {cpu.temp:0.0} formats it, {gpu.vram_used\|bytes} uses a helper and {now\|time:ddd HH:mm} shows the day and time. |
+| `spans` | list of [Text spans](#text-spans) | 1 to 32 |  | Instead of `text`: runs of text, each in its own style, side by side on one baseline, such as a big number with a small unit. The widget's style places them as it places text. |
+
+Each needs exactly one of `text` and `spans`.
+
+#### Text spans
+
+Goes under `spans:` in [Text](#text) or `spans:` in [Value](#value).
+
+One run of a text or value widget's `spans`. Its style goes over the widget's, and the widget's `when` rules go over every span, so a rule that turns the text red turns every span red. A line is as tall as its largest span, and its spans share the baseline of the tallest.
+
+| Key | Kind | Values | Default | What it does |
+|---|---|---|---|---|
+| `text` | text template |  | required | The span's text, a template as a text widget's is, where a value widget's {0} is its value. A line break in it starts a new line. |
+| `style` | style | only `extends`, `font`, `size`, `weight`, `color`, `shadow`, `glow`, `letter_spacing`, `text_stroke`, `text_fill`, `italic`, `underline`, `strike`, `case` |  | The span's letters: a style's name, or a style written in place, with the text keys only. The box keys, such as `fill`, `padding`, `align` and `wrap`, are the widget's: written in place they are an error, and a named style's are left out without a warning. |
 
 ### Value
 
-One value as text, laid out as a text widget's is. A missing or stale value shows as —.
+One value as text, laid out as a text widget's is. A missing or stale value shows as —. A value with a smaller unit, such as a big 52 with a small °C, takes `spans` instead of `format`.
 
 | Key | Kind | Values | Default | What it does |
 |---|---|---|---|---|
 | `source` | expression |  | required | The value to show: a sensor key such as cpu.temp, or an expression. |
 | `format` | format |  |  | How to write the value: a .NET format such as "{0:0.0}°C", duration, bytes, or time for Unix seconds as a local time ("time:HH:mm" gives a pattern). Left out, a number shows up to two decimals. |
+| `spans` | list of [Text spans](#text-spans) | 1 to 32 |  | Instead of `format`: runs of text, each in its own style, side by side on one baseline, as a text widget's spans are. {0} in them is the value after `smooth`, and {0:0.0} formats it. A missing or stale value shows a single — in the first span's style. |
+
+Each takes at most one of `format` and `spans`.
 
 ### Bar
 

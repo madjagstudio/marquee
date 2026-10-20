@@ -56,6 +56,8 @@ public sealed class ThemeAssets : IDisposable
                     assets._videoWidgets[widget] = player;
 
             var fonts = widgets.SelectMany(w => w.When.Select(r => r.Style).Prepend(w.Style))
+                .Concat(widgets.OfType<SpansWidget>().SelectMany(w => w.Spans).Select(span => span.Style))
+                .Concat(widgets.OfType<ValueWidget>().SelectMany(w => w.Spans ?? []).Select(span => span.Style))
                 .Select(s => s.Font)
                 .OfType<string>()
                 .Distinct(StringComparer.OrdinalIgnoreCase);
