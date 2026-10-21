@@ -93,6 +93,34 @@ public class FileCommandsTests
     });
 
     [Fact]
+    public void Clean_up_says_why_when_layout_yaml_is_locked_as_it_deletes() => Sta.Run(() =>
+    {
+        // The QA review's R5: an IOException from reading layout.yaml at the delete used to escape the command.
+        using var environment = new TestEnvironment();
+        var folder = environment.AddTheme("mine", Layout);
+        TestEnvironment.WritePng(Path.Combine(folder, "images", "spare.png"));
+        FileStream? locked = null;
+        environment.Dialogs.UnusedAnswer = files =>
+        {
+            locked = new FileStream(Path.Combine(folder, "layout.yaml"), FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            return files.Select(file => file.Path).ToList();
+        };
+        using var editor = new OpenEditor(environment, folder);
+
+        try
+        {
+            editor.Model.CleanUp();
+        }
+        finally
+        {
+            locked?.Dispose();
+        }
+
+        Assert.Contains(environment.Dialogs.Errors, error => error.StartsWith(Strings.CleanUpFailed("").TrimEnd(), StringComparison.Ordinal));
+        Assert.True(File.Exists(Path.Combine(folder, "images", "spare.png")));
+    });
+
+    [Fact]
     public void Clean_up_with_nothing_unused_says_so_and_a_cancel_deletes_nothing() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();

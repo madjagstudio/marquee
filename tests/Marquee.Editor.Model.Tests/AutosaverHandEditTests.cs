@@ -40,6 +40,33 @@ public class AutosaverHandEditTests
     }
 
     [Fact]
+    public void A_hand_edit_saved_between_the_check_and_the_replace_is_put_back_and_reloaded()
+    {
+        // The QA review's blocker: another program's save in the moment between Write's comparison and File.Replace.
+        using var saving = new Saving();
+        using var watcher = new ExternalChangeWatcher(saving.Session, saving.File, saving.Ui, saving.Clock);
+        saving.Move(20);
+        saving.File.BeforeReplace = () =>
+        {
+            saving.File.BeforeReplace = null;
+            File.WriteAllText(saving.Theme.LayoutPath, Saving.Moved(99));
+        };
+
+        saving.Advance(1);
+        saving.Ui.RunPending();
+
+        Assert.Equal(Saving.Moved(99), saving.OnDisk);
+        saving.Advance(1);
+        saving.Ui.RunPending();
+        Assert.Equal(Saving.Moved(99), saving.Session.Document.Text);
+        Assert.Equal(ExternalChangeWatcher.Label, saving.Session.History.NextUndo!.Label);
+        Assert.Equal(Saving.Moved(99), saving.OnDisk);
+        // The displaced file, kept for the check, is gone.
+        Assert.Equal([Path.Combine(saving.Theme.Folder, "layout.yaml")],
+            Directory.EnumerateFiles(saving.Theme.Folder, "*layout*", SearchOption.TopDirectoryOnly));
+    }
+
+    [Fact]
     public void A_write_that_lands_after_the_session_took_a_hand_edit_is_not_made()
     {
         // The review's R02: the autosave has taken its bytes when the watcher reads a hand edit and the UI thread takes

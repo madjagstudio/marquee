@@ -103,7 +103,7 @@ public sealed partial class MainViewModel
         {
             results = UnusedFiles.Delete(workspace.Session, chosen);
         }
-        catch (LayoutEditException ex)
+        catch (Exception ex) when (ex is LayoutEditException or IOException or UnauthorizedAccessException)
         {
             dialogs.ShowError(Strings.CleanUpFailed(ex.Message));
             return;

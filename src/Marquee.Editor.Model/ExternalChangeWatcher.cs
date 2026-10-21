@@ -30,6 +30,10 @@ public sealed class ExternalChangeWatcher : IDisposable
     readonly TimeSpan _debounce;
     readonly ITimer _timer;
     readonly object _gate = new();
+
+    /// Held while reading the file and posting what was read, so reads reach the UI thread in order.
+    readonly object _reading = new();
+
     FileSystemWatcher? _watcher;
     int _retries;
     bool _disposed;
@@ -109,27 +113,32 @@ public sealed class ExternalChangeWatcher : IDisposable
 
     static bool IsLayout(string? name) => string.Equals(name, ThemeLoader.LayoutFileName, StringComparison.OrdinalIgnoreCase);
 
-    /// On the timer thread: the file's bytes, posted to the UI thread when they are new.
+    /// On the timer thread: the file's bytes, posted to the UI thread when they are new. One read at a time, posted
+    /// before the next begins: a timer fired again while a slow read (a cloud file) is under way waits for it, so the UI
+    /// thread takes reads in the order they were made, and an older file never lands after a newer one.
     void Read()
     {
-        byte[]? bytes;
-        try
+        lock (_reading)
         {
-            bytes = _file.ReadChanged();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Usually another program mid-save, or a save that deletes the file before renaming the new one in.
-            // Read again shortly; after a few tries, wait for the next file event.
-            lock (_gate)
+            byte[]? bytes;
+            try
             {
-                if (!_disposed && ++_retries <= MaxUnreadableRetries) _timer.Change(_debounce, Timeout.InfiniteTimeSpan);
+                bytes = _file.ReadChanged();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Usually another program mid-save, or a save that deletes the file before renaming the new one in.
+                // Read again shortly; after a few tries, wait for the next file event.
+                lock (_gate)
+                {
+                    if (!_disposed && ++_retries <= MaxUnreadableRetries) _timer.Change(_debounce, Timeout.InfiniteTimeSpan);
+                }
+
+                return;
             }
 
-            return;
+            if (bytes is not null) _ui.Post(_ => Take(bytes), null);
         }
-
-        if (bytes is not null) _ui.Post(_ => Take(bytes), null);
     }
 
     /// On the UI thread: the session takes the bytes, or, during a drag, takes them when it ends.

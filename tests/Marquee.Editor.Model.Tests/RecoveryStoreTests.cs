@@ -132,6 +132,42 @@ public class RecoveryStoreTests
     }
 
     [Fact]
+    public void A_write_that_fails_is_tried_again_with_no_change_after_it()
+    {
+        using var saving = new Saving();
+        using var recovery = new RecoveryStore(saving.Session, saving.Folders, saving.Ui, saving.Clock);
+        Directory.CreateDirectory(saving.Folders.Root);
+        File.WriteAllText(saving.Folders.Recovery, "");
+        saving.Move(20);
+        saving.Clock.Advance(RecoveryStore.DefaultDelay);
+        Assert.NotNull(recovery.Problem);
+
+        File.Delete(saving.Folders.Recovery);
+        saving.Clock.Advance(RecoveryStore.RetryDelay);
+
+        Assert.Null(recovery.Problem);
+        Assert.Equal(Saving.Moved(20), File.ReadAllText(recovery.Path));
+    }
+
+    [Fact]
+    public void A_close_after_a_write_that_failed_keeps_the_text_with_no_change_after_it()
+    {
+        // The QA review's R2: the failed write's text used to be dropped, so a close with no change after it kept nothing.
+        using var saving = new Saving();
+        var recovery = new RecoveryStore(saving.Session, saving.Folders, saving.Ui, saving.Clock);
+        Directory.CreateDirectory(saving.Folders.Root);
+        File.WriteAllText(saving.Folders.Recovery, "");
+        saving.Move(20);
+        saving.Clock.Advance(RecoveryStore.DefaultDelay);
+        Assert.NotNull(recovery.Problem);
+
+        File.Delete(saving.Folders.Recovery);
+        recovery.Dispose();
+
+        Assert.Equal(Saving.Moved(20), File.ReadAllText(recovery.Path));
+    }
+
+    [Fact]
     public void A_recovery_file_that_cannot_be_read_is_a_problem_not_a_silent_nothing()
     {
         using var data = new TempFolder();

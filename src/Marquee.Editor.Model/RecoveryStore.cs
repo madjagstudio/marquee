@@ -21,6 +21,9 @@ public sealed class RecoveryStore : IDisposable
 {
     public static readonly TimeSpan DefaultDelay = TimeSpan.FromMilliseconds(200);
 
+    /// How soon a write that failed is tried again, when no change has come to try it sooner.
+    public static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(2);
+
     readonly EditorSession _session;
     readonly SynchronizationContext _ui;
     readonly TimeSpan _delay;
@@ -33,6 +36,10 @@ public sealed class RecoveryStore : IDisposable
     readonly object _writing = new();
 
     byte[]? _waiting;
+
+    /// The timer is armed only to retry a write that failed (RetryDelay), so a change arms it again, sooner.
+    bool _retrying;
+
     bool _closed;
     string? _problem;
 
@@ -142,10 +149,15 @@ public sealed class RecoveryStore : IDisposable
             var held = _holding;
             _holding = false;
             if (_closed || (bytes is null && !(held && _waiting is not null))) return;
-            // A timer stopped by the drag isn't armed, whatever waits.
-            var armed = _waiting is not null && !held;
+            // A timer stopped by the drag isn't armed, whatever waits; one waiting to retry a failed write is armed
+            // again for the change, sooner.
+            var armed = _waiting is not null && !held && !_retrying;
             if (bytes is not null) _waiting = bytes;
-            if (!armed) _timer.Change(_delay, Timeout.InfiniteTimeSpan);
+            if (!armed)
+            {
+                _retrying = false;
+                _timer.Change(_delay, Timeout.InfiniteTimeSpan);
+            }
         }
     }
 
@@ -162,6 +174,7 @@ public sealed class RecoveryStore : IDisposable
                 if ((_closed || _holding) && !evenIfClosed) return;
                 bytes = _waiting;
                 _waiting = null;
+                _retrying = false;
             }
 
             if (bytes is null) return;
@@ -172,9 +185,19 @@ public sealed class RecoveryStore : IDisposable
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // Recovery is a safety net, not the save: a failed write waits for the next change, and the user is
-                // told, without stopping them, that a crash now would lose what autosave hasn't saved.
+                // Recovery is a safety net, not the save: the user is told, without stopping them, that a crash now
+                // would lose what autosave hasn't saved. The text waits again, unless a change has brought newer, and
+                // is tried again shortly, so a close or a retry with no change after it still keeps it.
                 problem = $"Unsaved changes can't be kept for crash recovery: {ex.Message}";
+                lock (_gate)
+                {
+                    if (_waiting is null)
+                    {
+                        _waiting = bytes;
+                        _retrying = true;
+                        if (!_closed && !_holding) _timer.Change(RetryDelay, Timeout.InfiniteTimeSpan);
+                    }
+                }
             }
 
             SetProblem(problem);

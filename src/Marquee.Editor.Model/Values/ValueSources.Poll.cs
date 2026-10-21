@@ -138,9 +138,11 @@ public sealed partial class ValueSources
             else if (now - _okSince >= LocalLinger) _local.Stop();
         }
 
-        // A clock the theme shows moves on each second though no reading does.
+        // A clock the theme shows moves on each second though no reading does; so does a graph fed by the tray, whose
+        // history takes a point each poll, steady readings included.
         var ticks = _motion.Clock && TestValues.PinnedNow is null;
-        if (NoteChanges(keys, now) || statusChanged || ticks) RaiseUpdated();
+        var graphMoves = values.Message is not null && keys.Any(TestValues.IsGraphKey);
+        if (NoteChanges(keys, now) || statusChanged || ticks || graphMoves) RaiseUpdated();
     }
 
     /// The ask a history read would answer; null when none is waiting.

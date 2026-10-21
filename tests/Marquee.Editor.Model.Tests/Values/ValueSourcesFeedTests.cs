@@ -90,6 +90,33 @@ public class ValueSourcesFeedTests
     }
 
     [Fact]
+    public Task A_graph_is_drawn_again_each_poll_though_its_reading_holds_steady() =>
+        // The QA review's R8: the history moves on with a steady reading, so the canvas must draw it. Made off the
+        // test's context, Updated is raised on the poll's own thread, as it returns.
+        Task.Run(async () =>
+        {
+            var pipes = UniquePipes();
+            using var server = Serve(TrayStore(), pipes);
+            using var sources = Sources(pipes);
+            await sources.PollAsync();
+            var updates = 0;
+            sources.Updated += (_, _) => updates++;
+
+            await sources.PollAsync();
+            await sources.PollAsync();
+
+            Assert.Equal(2, updates);
+            Assert.Equal([10.0, 20.0, 30.0, 30.0, 30.0], sources.Snapshot().History("gpu.load"));
+
+            // Without a graph, a steady reading draws nothing.
+            sources.SetTheme(LayoutParser.Parse(Layout.Replace("type: graph", "type: value")));
+            await sources.PollAsync();
+            updates = 0;
+            await sources.PollAsync();
+            Assert.Equal(0, updates);
+        });
+
+    [Fact]
     public async Task History_is_read_on_open_and_again_when_a_graph_is_added_but_not_every_second()
     {
         var pipes = UniquePipes();

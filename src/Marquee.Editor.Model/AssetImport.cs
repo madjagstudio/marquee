@@ -13,7 +13,8 @@ namespace Marquee.Editor.Model;
 /// - The copy is written under a temporary name and renamed (AtomicFile.TryCopyNew). A link on the way is refused, as
 ///   for a save (ReparseTags): OneDrive's placeholders are written through, and a theme folder that is gone isn't
 ///   made again.
-/// - Files over the theme's per-file limit, 200 MB, are refused before they are read.
+/// - Files over the theme's per-file limit, 200 MB, are refused before they are read, and a copy stops at the limit, so
+///   a file that grows or is swapped after the check isn't taken either.
 ///
 /// AddImage, AddVideo and SetFile import, then make the edit that uses the file, as one undo step. Undo takes the
 /// reference away and leaves the file, which "Clean up unused files" (UnusedFiles) deletes later; a copy the edit
@@ -173,13 +174,18 @@ public sealed class AssetImport
             for (var number = 1; number <= MaxNumber; number++)
             {
                 var candidate = number == 1 ? name : $"{stem}-{number.ToString(CultureInfo.InvariantCulture)}{extension}";
-                if (AtomicFile.TryCopyNew(full, Path.Combine(into, candidate))) return candidate;
+                if (AtomicFile.TryCopyNew(full, Path.Combine(into, candidate), _maxBytes)) return candidate;
             }
         }
         catch (DirectoryNotFoundException ex)
         {
             throw new AssetImportException(
                 "The theme's folder is gone (moved, renamed or deleted), so the file wasn't copied into it, and it wasn't made again.", ex);
+        }
+        catch (FileTooLargeException ex)
+        {
+            // It grew, or was swapped for a larger file, after the size check: nothing was left behind.
+            throw new AssetImportException($"The file grew past the {Megabytes(_maxBytes)} MB limit for importing as it was copied.", ex);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

@@ -25,7 +25,7 @@ internal static class AtomicFile
     /// nobody can guess, which the theme's watchers ignore. Throws DirectoryNotFoundException when the folder is gone.
     public static string WriteTemporary(string path, byte[] bytes)
     {
-        var temporary = Path.Combine(Path.GetDirectoryName(path)!, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
+        var temporary = TemporaryName(path);
         try
         {
             using var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096);
@@ -40,15 +40,20 @@ internal static class AtomicFile
         }
     }
 
+    /// A hidden name beside `path` that nobody can guess, ending in `extension`, for a file of the moment.
+    public static string TemporaryName(string path, string extension = "tmp") =>
+        Path.Combine(Path.GetDirectoryName(path)!, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.{extension}");
+
     /// Puts the temporary file `temporary` in the place of `path`, which must exist (FileNotFoundException when it
-    /// doesn't, and nothing is made). False when another program has `path` open without sharing it for deleting: the
-    /// caller waits a moment (RetryDelaysMs) and tries again. Throws the IOException or UnauthorizedAccessException of
-    /// any other failure (a read-only file, a denied folder), and `path` is as it was.
-    public static bool TryReplace(string temporary, string path)
+    /// doesn't, and nothing is made). What `path` held goes to `displaced`, a free name in its folder, which the caller
+    /// checks and deletes. False when another program has `path` open without sharing it for deleting: the caller waits
+    /// a moment (RetryDelaysMs) and tries again. Throws the IOException or UnauthorizedAccessException of any other
+    /// failure (a read-only file, a denied folder), and `path` is as it was.
+    public static bool TryReplace(string temporary, string path, string displaced)
     {
         try
         {
-            File.Replace(temporary, path, destinationBackupFileName: null, ignoreMetadataErrors: true);
+            File.Replace(temporary, path, displaced, ignoreMetadataErrors: true);
             return true;
         }
         catch (IOException ex) when (ex is not FileNotFoundException and not DirectoryNotFoundException
@@ -112,12 +117,14 @@ internal static class AtomicFile
     /// DirectoryNotFoundException): a temporary file beside it, flushed, then renamed to its name without replacing
     /// anything (MoveFileEx, writing through), so a reader never sees part of it. False, leaving nothing behind, when
     /// something (a file, a folder or a link) already has the name: the caller tries another. Throws the IOException or
-    /// UnauthorizedAccessException of a failed read or write. The source is read wherever it is: the user chose it.
-    public static bool TryCopyNew(string source, string destination)
+    /// UnauthorizedAccessException of a failed read or write, and FileTooLargeException, leaving nothing behind, when
+    /// the source holds more than `maxBytes` as it is read (it was checked before, but may have grown or been swapped
+    /// since). The source is read wherever it is: the user chose it.
+    public static bool TryCopyNew(string source, string destination, long maxBytes)
     {
         // Checked first so a large file isn't copied for a name already in use; the rename checks again.
         if (Taken(destination)) return false;
-        var temporary = Path.Combine(Path.GetDirectoryName(destination)!, $".{Path.GetFileName(destination)}.{Guid.NewGuid():N}.tmp");
+        var temporary = TemporaryName(destination);
         try
         {
             using (var output = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920))
@@ -125,7 +132,15 @@ internal static class AtomicFile
                 using (var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, 81920,
                            FileOptions.SequentialScan))
                 {
-                    input.CopyTo(output);
+                    var buffer = new byte[81920];
+                    long copied = 0;
+                    int read;
+                    while ((read = input.Read(buffer)) > 0)
+                    {
+                        copied += read;
+                        if (copied > maxBytes) throw new FileTooLargeException(source, maxBytes);
+                        output.Write(buffer, 0, read);
+                    }
                 }
 
                 output.Flush(flushToDisk: true);
@@ -186,4 +201,11 @@ internal static class AtomicFile
             // A hidden temporary file left in the theme folder is harmless, and the caller has a failure to report.
         }
     }
+}
+
+/// A file that held more than a copy's limit as it was read (AtomicFile.TryCopyNew).
+internal sealed class FileTooLargeException(string path, long maxBytes)
+    : IOException($"{path} is over the {maxBytes} byte limit.")
+{
+    public long MaxBytes { get; } = maxBytes;
 }

@@ -24,6 +24,8 @@ public static class Strings
 
     public static string CouldNotOpen(string theme, string reason) => Format(nameof(CouldNotOpen), theme, reason);
 
+    public static string RecoveryWaiting(string path) => Format(nameof(RecoveryWaiting), path);
+
     public static string CouldNotCopy(string theme, string reason) => Format(nameof(CouldNotCopy), theme, reason);
 
     public static string CouldNotRestore(string reason) => Format(nameof(CouldNotRestore), reason);

@@ -145,7 +145,13 @@ public sealed class EditorWorkspace : IDisposable
         catch (Exception ex) when (ex is ThemeException or LayoutEditException or IOException or UnauthorizedAccessException)
         {
             themeLock.Dispose();
-            dialogs.ShowError(Strings.CouldNotOpen(Path.GetFileName(folder), ex.Message));
+            var message = Strings.CouldNotOpen(Path.GetFileName(folder), ex.Message);
+            // Crash recovery is offered only once the theme opens: a layout.yaml broken by hand stops that, so say where
+            // an earlier session's unsaved text is, and that fixing the file brings the offer.
+            var recovery = environment.Folders.RecoveryFile(folder);
+            if (ex is LayoutEditException && File.Exists(recovery))
+                message += Environment.NewLine + Environment.NewLine + Strings.RecoveryWaiting(recovery);
+            dialogs.ShowError(message);
             return null;
         }
         catch

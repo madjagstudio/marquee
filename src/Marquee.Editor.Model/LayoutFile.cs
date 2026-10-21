@@ -7,8 +7,8 @@ namespace Marquee.Editor.Model;
 /// Autosave never writes over such a change: Write compares the file with the last bytes, and writes only when they
 /// are the same, all while the gate is held, so the external change watcher's read can't land in between. It also
 /// refuses bytes made before the session last took text from outside (Taken), which would put back what that replaced.
-/// The race that remains is another program writing the file in the moment between Write's read and its File.Replace,
-/// which no rename can close (see Write).
+/// Another program's save landing in the moment between Write's comparison and its File.Replace, which no comparison
+/// can close, is caught after it: the replace keeps the file it displaced, and a hand edit found there is put back.
 ///
 /// Thread-safe: autosave writes from a timer thread, the watcher reads from another, and the UI thread accepts.
 public sealed class LayoutFile
@@ -47,6 +47,10 @@ public sealed class LayoutFile
     /// count they were made at, and Write refuses them once it has moved on.
     public long Taken => Interlocked.Read(ref _taken);
 
+    /// Run with the gate held, just before the replace: for tests, to land another program's save in the moment between
+    /// the comparison and the replace.
+    internal Action? BeforeReplace { get; set; }
+
     /// Raised, on the writing thread, when Write finds the file changed outside the editor and leaves it alone, so
     /// the external change watcher reads it now rather than at its next file event.
     public event EventHandler? ChangedOutside;
@@ -60,8 +64,11 @@ public sealed class LayoutFile
     /// - ChangedOutside, writing nothing and raising ChangedOutside, when the file doesn't hold the last bytes;
     /// - Written otherwise, atomically (AtomicFile: a temporary file in the folder, flushed, then File.Replace), and
     ///   the bytes are the last from then on.
-    /// The temporary file is written first, so the gate is held only for the comparison and the replace; another
-    /// program's save landing between those two (microseconds) is the one race left, and is written over.
+    /// The temporary file is written first, so the gate is held only for the comparison and the replace. Another
+    /// program's save landing between those two (microseconds) is displaced by the replace, which keeps it as a backup:
+    /// when the backup isn't the last bytes, it is put back over what was just written, and the result is
+    /// ChangedOutside, as if it had landed before the comparison. A backup is deleted only when it holds the editor's
+    /// own bytes, so whatever else happens, a hand edit is never deleted: at worst it is left beside layout.yaml.
     ///
     /// A cloud placeholder on the path (OneDrive) is written through; any other reparse point, the file included, is
     /// refused (ReparseTags). Throws UnsafePathException for a link, DirectoryNotFoundException or
@@ -70,7 +77,10 @@ public sealed class LayoutFile
     public LayoutWrite Write(byte[] bytes, long taken)
     {
         if (_tags.FirstLink(Path) is { } link) throw ReparseTags.Refusal(Path, link);
+        var before = _last;
         var temporary = AtomicFile.WriteTemporary(Path, bytes);
+        var displaced = AtomicFile.TemporaryName(Path, "old");
+        var putBack = AtomicFile.TemporaryName(Path, "old");
         try
         {
             for (var attempt = 0; ; attempt++)
@@ -80,10 +90,23 @@ public sealed class LayoutFile
                 {
                     if (taken != _taken) result = LayoutWrite.Stale;
                     else if (!Read().AsSpan().SequenceEqual(_last)) result = LayoutWrite.ChangedOutside;
-                    else if (AtomicFile.TryReplace(temporary, Path))
+                    else
                     {
-                        _last = bytes;
-                        result = LayoutWrite.Written;
+                        BeforeReplace?.Invoke();
+                        if (ReplaceOrUndo(temporary, displaced))
+                        {
+                            if (Holds(displaced, _last))
+                            {
+                                _last = bytes;
+                                result = LayoutWrite.Written;
+                            }
+                            else
+                            {
+                                if (!ReplaceOrUndo(displaced, putBack))
+                                    throw new IOException($"A hand edit to {Path} landed as the editor saved, and couldn't be put back: it is kept as {displaced}.");
+                                result = LayoutWrite.ChangedOutside;
+                            }
+                        }
                     }
                 }
 
@@ -98,6 +121,61 @@ public sealed class LayoutFile
         finally
         {
             AtomicFile.DeleteQuietly(temporary);
+            DeleteIfOwn(displaced, before, bytes);
+            DeleteIfOwn(putBack, before, bytes);
+        }
+    }
+
+    /// The replace (AtomicFile.TryReplace, or a test's), keeping what layout.yaml held as `backup`. One that fails part
+    /// way (ERROR_UNABLE_TO_MOVE_REPLACEMENT_2) has moved layout.yaml to the backup name and left nothing at its own:
+    /// it is moved back before the exception goes on.
+    bool ReplaceOrUndo(string replacement, string backup)
+    {
+        try
+        {
+            return Replace(replacement, Path, backup);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            if (!File.Exists(Path) && File.Exists(backup))
+            {
+                try
+                {
+                    File.Move(backup, Path);
+                }
+                catch (Exception moveEx) when (moveEx is IOException or UnauthorizedAccessException)
+                {
+                    // Left under the backup name, which isn't deleted (DeleteIfOwn): the user is told where.
+                    throw new IOException($"Saving {Path} failed part way, and the file couldn't be put back: it is kept as {backup}.", ex);
+                }
+            }
+
+            throw;
+        }
+    }
+
+    /// The replace Write makes: AtomicFile.TryReplace, except in tests, which make it fail part way.
+    internal Func<string, string, string, bool> Replace { get; set; } = AtomicFile.TryReplace;
+
+    /// Deletes the backup at `path` when it holds the editor's own bytes (`before` or `written`), or isn't there. Any
+    /// other file there is a hand edit, kept rather than lost.
+    static void DeleteIfOwn(string path, byte[] before, byte[] written)
+    {
+        if (!File.Exists(path)) return;
+        if (Holds(path, before) || Holds(path, written)) AtomicFile.DeleteQuietly(path);
+    }
+
+    /// Whether the file at `path` holds `bytes`. One that can't be read doesn't, so a hand edit is never taken for the
+    /// editor's own bytes and deleted.
+    static bool Holds(string path, byte[] bytes)
+    {
+        try
+        {
+            return File.ReadAllBytes(path).AsSpan().SequenceEqual(bytes);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 

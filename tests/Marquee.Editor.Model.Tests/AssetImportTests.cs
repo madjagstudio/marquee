@@ -240,6 +240,22 @@ public class AssetImportTests
         }
     }
 
+    [Fact]
+    public void A_copy_stops_at_the_limit_when_the_file_has_grown_since_its_check()
+    {
+        // The size is checked before the file is read; one swapped for a larger file in between is caught as it's copied.
+        using var setup = new Setup();
+        var source = setup.Download("logo.png");
+        File.WriteAllBytes(source, new byte[100_000]);
+        var destination = setup.InTheme("logo.png");
+
+        Assert.Throws<FileTooLargeException>(() => AtomicFile.TryCopyNew(source, destination, maxBytes: 50_000));
+
+        Assert.Empty(setup.ThemeFiles());
+        Assert.True(AtomicFile.TryCopyNew(source, destination, maxBytes: 100_000));
+        Assert.Equal(100_000, new FileInfo(destination).Length);
+    }
+
     [Theory]
     [InlineData("widgets[0].src", "type: image", AssetKind.Image)]
     [InlineData("widgets[0].src", "type: video", AssetKind.Video)]

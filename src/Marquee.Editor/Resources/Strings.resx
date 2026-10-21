@@ -41,6 +41,10 @@ Close it, and start it again normally: from the Start menu, or the tray's "Edit 
     <value>{0} couldn't be opened: {1}</value>
     <comment>{0} is the theme's folder name, {1} why it couldn't be opened, often with a line in layout.yaml.</comment>
   </data>
+  <data name="RecoveryWaiting" xml:space="preserve">
+    <value>Unsaved changes from an earlier session are kept in {0}. Fix layout.yaml and open the theme again to be offered them.</value>
+    <comment>Added to CouldNotOpen when layout.yaml is broken and a crash recovery copy exists. {0} is the copy's full path.</comment>
+  </data>
   <data name="CouldNotCopy" xml:space="preserve">
     <value>{0} couldn't be copied: {1}</value>
     <comment>When making a copy of a theme to edit. {0} is the theme's folder name, {1} the reason from Windows.</comment>

@@ -159,6 +159,24 @@ public class EditorWorkspaceTests
     });
 
     [Fact]
+    public void A_broken_layout_with_unsaved_changes_left_behind_says_where_they_are() => Sta.Run(() =>
+    {
+        // The QA review's R6: recovery is offered only once a theme opens, so a hand-broken file used to hide it.
+        using var environment = new TestEnvironment();
+        var broken = environment.AddTheme("broken", "widgets: [ { type: shape\n");
+        var recovery = environment.Environment.Folders.RecoveryFile(broken);
+        Directory.CreateDirectory(Path.GetDirectoryName(recovery)!);
+        File.WriteAllText(recovery, TestEnvironment.Layout);
+
+        Assert.Null(EditorWorkspace.Open(broken, environment.Environment, Ui));
+
+        var error = Assert.Single(environment.Dialogs.Errors);
+        Assert.StartsWith(Strings.CouldNotOpen("broken", "").TrimEnd(), error);
+        Assert.EndsWith(Strings.RecoveryWaiting(recovery), error);
+        Assert.Equal(TestEnvironment.Layout, File.ReadAllText(recovery));
+    });
+
+    [Fact]
     public void Closing_saves_what_waits_deletes_the_recovery_copy_and_lets_go() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();
