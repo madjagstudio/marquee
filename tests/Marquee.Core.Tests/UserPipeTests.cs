@@ -85,12 +85,17 @@ public class UserPipeTests
         using var squatter = UserPipeNative.Create(low, PipeDirection.Out, 1, firstInstance: false, binary);
         var marquee = UniquePipe();
         using var server = UserPipe.CreateServer(marquee, PipeDirection.Out, 1);
+        // Owned by the user with no label, which counts as Medium. Made explicitly: a plain NamedPipeServerStream from an
+        // elevated process (CI's runner) is owned by Administrators, not the user.
         var unlabelled = UniquePipe();
-        using var plain = new NamedPipeServerStream(unlabelled, PipeDirection.Out, 1);
+        var plainDescriptor = new RawSecurityDescriptor(sddl);
+        var plainBinary = new byte[plainDescriptor.BinaryLength];
+        plainDescriptor.GetBinaryForm(plainBinary, 0);
+        using var plain = UserPipeNative.Create(unlabelled, PipeDirection.Out, 1, firstInstance: false, plainBinary);
 
         Assert.Equal((true, false), Trust(low, user));
         Assert.Equal((true, true), Trust(marquee, user));
-        Assert.Equal((true, true), Trust(unlabelled, user)); // Medium without a label, as this test process is
+        Assert.Equal((true, true), Trust(unlabelled, user));
     }
 
     static (bool Owned, bool Trusted) Trust(string name, SecurityIdentifier user)
