@@ -3,16 +3,16 @@
 Builds Marquee's MSI: artifacts\Marquee-<version>-x64.msi.
 
 .DESCRIPTION
-Publishes marquee.exe (src\Marquee.Cli) and MarqueeTray.exe (src\Marquee.App) self-contained for win-x64, so users need
-no .NET installed, and stages them side by side in artifacts\staging with the example themes, LICENSE and
-THIRD-PARTY-NOTICES.md. Checks that THIRD-PARTY-NOTICES.md names every package a staged file came from, and copies each
-package's own license and notices files into licenses\. Then checks that marquee.exe runs from there and builds
-installer\Marquee.Installer.wixproj.
+Publishes marquee.exe (src\Marquee.Cli), MarqueeTray.exe (src\Marquee.App) and MarqueeEditor.exe (src\Marquee.Editor,
+the theme editor) self-contained for win-x64, so users need no .NET installed, and stages them side by side in
+artifacts\staging with the example themes, LICENSE and THIRD-PARTY-NOTICES.md. Checks that THIRD-PARTY-NOTICES.md names
+every package a staged file came from, and copies each package's own license and notices files into licenses\. Then
+checks that marquee.exe runs from there and builds installer\Marquee.Installer.wixproj.
 
-Not single-file: two self-contained single-file exes would each carry the whole runtime (twice the size), PresentMon
-and the themes must stay loose files anyway, and a single-file app that extracts its native libraries does so into a
-folder under %TEMP%, which the user can write, for an exe that runs elevated. Not trimmed: YamlDotNet, WinForms and
-the COM calls use reflection that trimming can break without a build error.
+Not single-file: three self-contained single-file exes would each carry the whole runtime (three times the size),
+PresentMon and the themes must stay loose files anyway, and a single-file app that extracts its native libraries does
+so into a folder under %TEMP%, which the user can write, for an exe that runs elevated. Not trimmed: YamlDotNet,
+WinForms, WPF and the COM calls use reflection that trimming can break without a build error.
 
 The version is Directory.Build.props's <Version>, the only place it is set, unless -Version overrides it for one
 build. Windows PowerShell 5.1 or later; no prompts, and any failure stops the build with a non-zero exit code, so CI can
@@ -68,10 +68,11 @@ foreach ($folder in $publish, $staging) {
     if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
 }
 
-# Each app into a folder of its own first, so the two can be compared before they share one.
+# Each app into a folder of its own first, so the three can be compared before they share one.
 $apps = @(
     @{ Project = 'src\Marquee.Cli\Marquee.Cli.csproj'; Folder = 'cli'; Exe = 'marquee' },
-    @{ Project = 'src\Marquee.App\Marquee.App.csproj'; Folder = 'tray'; Exe = 'MarqueeTray' }
+    @{ Project = 'src\Marquee.App\Marquee.App.csproj'; Folder = 'tray'; Exe = 'MarqueeTray' },
+    @{ Project = 'src\Marquee.Editor\Marquee.Editor.csproj'; Folder = 'editor'; Exe = 'MarqueeEditor' }
 )
 foreach ($app in $apps) {
     $out = Join-Path $publish $app.Folder
@@ -81,24 +82,35 @@ foreach ($app in $apps) {
     }
 }
 
-# Both apps load the runtime and Marquee's DLLs from the one folder, so every file they have in common must be the same
-# file. Only their own exe, DLL, deps.json and runtimeconfig.json differ, and those have different names.
-$cli = Join-Path $publish 'cli'
-$tray = Join-Path $publish 'tray'
+# The apps load the runtime and Marquee's DLLs from the one folder, so every file any two of them have in common must be
+# the same file. Only their own exe, DLL, deps.json and runtimeconfig.json differ, and those have different names. The
+# tray's WinForms and the editor's WPF share some of the desktop runtime's files (WindowsBase.dll, say), which agree
+# because both come from the one Microsoft.WindowsDesktop.App runtime pack. A file is hashed only once another app has
+# one of the same name, and each copy only once.
+$seen = @{} # a file's path below its app's folder, lowercased -> its first copy: @{ Path; Exe; Hash }
 $mismatches = @()
-foreach ($file in Get-ChildItem $cli -Recurse -File) {
-    $relative = $file.FullName.Substring($cli.Length + 1)
-    $other = Join-Path $tray $relative
-    if ((Test-Path $other) -and (Get-FileHash $file.FullName).Hash -ne (Get-FileHash $other).Hash) { $mismatches += $relative }
+foreach ($app in $apps) {
+    $from = Join-Path $publish $app.Folder
+    foreach ($file in Get-ChildItem $from -Recurse -File) {
+        $relative = $file.FullName.Substring($from.Length + 1)
+        $key = $relative.ToLowerInvariant()
+        if (-not $seen.ContainsKey($key)) {
+            $seen[$key] = @{ Path = $file.FullName; Exe = $app.Exe; Hash = $null }
+            continue
+        }
+        $first = $seen[$key]
+        if ($null -eq $first.Hash) { $first.Hash = (Get-FileHash $first.Path).Hash }
+        if ((Get-FileHash $file.FullName).Hash -ne $first.Hash) { $mismatches += "$relative ($($first.Exe).exe and $($app.Exe).exe)" }
+    }
 }
 if ($mismatches.Count -gt 0) {
-    throw "marquee.exe and MarqueeTray.exe were published with different copies of: $($mismatches -join ', '). They share one folder, so they must agree; check the two projects' package versions."
+    throw "The apps were published with different copies of: $($mismatches -join ', '). They share one folder, so they must agree; check the projects' package versions."
 }
 
 # Symbols stay out of the installer: they add size and nothing a user runs.
 New-Item -ItemType Directory $staging | Out-Null
-foreach ($source in $cli, $tray) {
-    Copy-Item (Join-Path $source '*') $staging -Recurse -Force
+foreach ($app in $apps) {
+    Copy-Item (Join-Path (Join-Path $publish $app.Folder) '*') $staging -Recurse -Force
 }
 Get-ChildItem $staging -Recurse -Filter '*.pdb' | Remove-Item
 
@@ -114,7 +126,7 @@ Get-ChildItem (Join-Path $root 'themes') -Directory -Filter 'example-*' | ForEac
 Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md') $staging
 
 # Everything else in the folder came from a NuGet package or the .NET runtime, and THIRD-PARTY-NOTICES.md must name each
-# one, so a new dependency can't ship without its notice. The two apps' deps.json say which library every file came
+# one, so a new dependency can't ship without its notice. The three apps' deps.json say which library every file came
 # from; a satellite assembly (de\X.resources.dll) isn't listed there and belongs to X.dll's. The build stops on a file
 # that came from nowhere they list, or from a package the notices don't name. Each package's own license and notices
 # files go into licenses\<package>, and Inter's (built into Marquee.Core.dll) into licenses\Inter.
@@ -123,7 +135,7 @@ $packagesRoot = ((& dotnet nuget locals global-packages --list | Out-String).Tri
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $packagesRoot)) { throw "Could not find the NuGet packages folder (got '$packagesRoot')." }
 
 $origins = @{} # a published file's name, lowercased -> the libraries (Id, Version, Type) that list it
-foreach ($deps in 'marquee.deps.json', 'MarqueeTray.deps.json') {
+foreach ($deps in $apps | ForEach-Object { "$($_.Exe).deps.json" }) {
     $json = Get-Content (Join-Path $staging $deps) -Raw | ConvertFrom-Json
     foreach ($target in $json.targets.PSObject.Properties) {
         foreach ($library in $target.Value.PSObject.Properties) {
@@ -142,8 +154,8 @@ foreach ($deps in 'marquee.deps.json', 'MarqueeTray.deps.json') {
     }
 }
 
-$ownFiles = 'marquee.exe', 'MarqueeTray.exe', 'marquee.deps.json', 'MarqueeTray.deps.json', 'marquee.runtimeconfig.json',
-    'MarqueeTray.runtimeconfig.json', 'LICENSE', 'THIRD-PARTY-NOTICES.md'
+$ownFiles = @($apps | ForEach-Object { "$($_.Exe).exe", "$($_.Exe).deps.json", "$($_.Exe).runtimeconfig.json" }) +
+    'LICENSE', 'THIRD-PARTY-NOTICES.md'
 $unknown = @()
 $shipped = @{} # "id/version" -> the package or runtime pack, for each one a staged file came from
 foreach ($file in Get-ChildItem $staging -Recurse -File) {
@@ -182,16 +194,16 @@ New-Item -ItemType Directory -Force (Join-Path $licenses 'Inter') | Out-Null
 Copy-Item (Join-Path $root 'src\Marquee.Core\Fonts\OFL.txt') (Join-Path $licenses 'Inter')
 Write-Host "Notices: $($presentMonExe.Name) is named; licenses\Inter has OFL.txt"
 
-foreach ($required in 'marquee.exe', 'MarqueeTray.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
+foreach ($required in 'marquee.exe', 'MarqueeTray.exe', 'MarqueeEditor.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
     'licenses\Microsoft.NETCore.App.Runtime.win-x64\THIRD-PARTY-NOTICES.TXT', 'licenses\Inter\OFL.txt',
     'themes\example-landscape\layout.yaml', 'themes\example-portrait\layout.yaml', 'themes\example-agents\layout.yaml',
     'themes\example-showcase\layout.yaml', 'themes\example-showcase\video\radar.mp4') {
     if (-not (Test-Path (Join-Path $staging $required))) { throw "The staging folder has no $required." }
 }
 
-# Both exes carry the MSI's version: the update check compares the running tray's own version with a release's, so a
+# Every exe carries the MSI's version: the update check compares the running tray's own version with a release's, so a
 # stale exe would be offered its own release again. The SDK adds "+<commit>".
-foreach ($exe in 'marquee.exe', 'MarqueeTray.exe') {
+foreach ($exe in 'marquee.exe', 'MarqueeTray.exe', 'MarqueeEditor.exe') {
     $exeVersion = (Get-Item (Join-Path $staging $exe)).VersionInfo.ProductVersion
     if ($exeVersion -notmatch "^$([regex]::Escape($version))(\+|$)") { throw "$exe is version '$exeVersion', not $version." }
 }

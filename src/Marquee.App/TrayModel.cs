@@ -4,6 +4,7 @@ using Marquee.Core.Config;
 using Marquee.Core.Devices;
 using Marquee.Core.Files;
 using Marquee.Core.Logging;
+using Marquee.Host;
 
 namespace Marquee.App;
 
@@ -117,6 +118,7 @@ sealed partial class TrayModel
             new(MenuKeys.Orientation, Strings.MenuOrientation) { Enabled = hasEngine, Children = OrientationItems(settings?.Orientation) },
             TrayMenuItem.Separator,
             new(MenuKeys.Preview, Strings.MenuOpenPreview) { Enabled = hasEngine, Command = _host.OpenPreview },
+            new(MenuKeys.EditTheme, Strings.MenuEditTheme) { Command = () => _ = EditTheme() },
             new(MenuKeys.ThemesFolder, Strings.MenuOpenThemesFolder) { Command = () => _ = OpenThemesFolder() },
             new(MenuKeys.Logs, Strings.MenuOpenLogs) { Command = () => _ = OpenLogs() },
             new(MenuKeys.Settings, Strings.MenuEditSettings) { Command = () => _ = EditSettings() },
@@ -172,6 +174,15 @@ sealed partial class TrayModel
     {
         if (!File.Exists(_paths.ConfigFile)) ConfigEditor.SetInFile(_paths.ConfigFile, "theme", FirstRun.DefaultTheme);
         _shell.Open(_paths.ConfigFile);
+    });
+
+    /// Starts the theme editor through Explorer, so it runs as the user: started by this elevated tray directly, it
+    /// would run elevated, and refuse to. Explorer passes no arguments, so the editor opens the theme config.yaml names,
+    /// the one on the screen. One that isn't beside the tray (a development build) is said, in the balloon.
+    public Task EditTheme() => Run(() =>
+    {
+        if (!File.Exists(_paths.EditorExe)) throw new InvalidOperationException(Strings.EditorMissing(_paths.EditorExe));
+        _shell.Open(_paths.EditorExe);
     });
 
     /// Cancels an update download, stops the engine (which lets go of the screen and saves the Claude limits), then

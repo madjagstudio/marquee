@@ -1,4 +1,3 @@
-using Marquee.App;
 using Marquee.Core.Config;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Editing;
@@ -7,6 +6,7 @@ using Marquee.Editor.Canvas;
 using Marquee.Editor.Model;
 using Marquee.Editor.Mvvm;
 using Marquee.Editor.Resources;
+using Marquee.Host;
 
 namespace Marquee.Editor.Shell;
 

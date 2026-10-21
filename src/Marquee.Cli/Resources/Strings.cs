@@ -161,6 +161,16 @@ internal static class Strings
 
     public static string ClaimScreenAlreadyHeld => Get(nameof(ClaimScreenAlreadyHeld));
 
+    public static string EditElevated => Get(nameof(EditElevated));
+
+    public static string EditorMissing(string path) => Format(nameof(EditorMissing), path);
+
+    public static string EditorNotStarted(string reason) => Format(nameof(EditorNotStarted), reason);
+
+    public static string EditStarted(string folder) => Format(nameof(EditStarted), folder);
+
+    public static string EditStartedConfigured => Get(nameof(EditStartedConfigured));
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages such as the usage get the platform's line breaks back, like the rest of the console output.
     static string Get(string name) =>

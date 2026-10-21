@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- MarqueeEditor.exe: the theme editor's window, a thin WPF shell of views over Marquee.Editor.Model, which holds
-       everything worth testing. It runs unelevated and refuses to start elevated (Startup\Elevation.cs). -->
+       everything worth testing. It runs unelevated and refuses to start elevated (Startup\EditorStartup.cs). -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
@@ -17,11 +17,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Marquee.Editor.Model\Marquee.Editor.Model.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <!-- The tray's theme list, compiled in rather than referenced: Marquee.App is an exe. Both list the same themes, the
-         same way, so the theme picker offers what the tray's Themes menu does. -->
-    <Compile Include="..\Marquee.App\ThemeCatalog.cs" Link="Shell\ThemeCatalog.cs" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Marquee.Editor.Tests" />

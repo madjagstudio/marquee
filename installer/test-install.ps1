@@ -12,8 +12,9 @@ In order:
    warned about in the install's log; and the install folder can't be moved from the command line: installs and
    uninstalls the current MSI over such a folder, asking for another install folder, then deletes the folder.
 2. Installs the older MSI: the files, their version, marquee.exe running from Program Files, the machine PATH, the
-   Start menu shortcut, the logon task (its principal, action and settings) and the permissions marquee task install
-   gave %ProgramData%\Marquee and its updates folder (SecureFolder's).
+   Start menu shortcuts (the tray's and the theme editor's), the logon task (its principal, action and settings) and
+   the permissions marquee task install gave %ProgramData%\Marquee and its updates folder (SecureFolder's). The editor
+   isn't started: it would open a window in this session.
 3. Upgrades to the current MSI: one Marquee in Settings > Apps, at the new version, its files updated, the task and
    one PATH entry kept, %ProgramData%\Marquee untouched.
 4. Repairs it: the task is still there, and a tray that was running runs again.
@@ -25,7 +26,7 @@ In order:
 8. Runs marquee run elevated for one frame into a file sink, which makes its log folder under %ProgramData%\Marquee
    through SecureFolder: the real check that Marquee accepts the folder the install made.
 9. Uninstalls, with a tray started, a downloaded update and a user's log planted first: the trays close, the files,
-   shortcut, PATH entry, task (and its folder) and downloaded updates go, the users' folders stay.
+   shortcuts, PATH entry, task (and its folder) and downloaded updates go, the users' folders stay.
 
 A check that passes only because there was nothing for it to see (no tray running, on a runner where the task can't
 start one) says so with an INFO line, "not exercised", so a green run isn't read as more than it shows.
@@ -94,7 +95,9 @@ $updatesSddl = 'O:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)'
 $installDir = Join-Path ([Environment]::GetFolderPath('ProgramFiles')) 'Marquee'
 $marquee = Join-Path $installDir 'marquee.exe'
 $trayExe = Join-Path $installDir 'MarqueeTray.exe'
+$editorExe = Join-Path $installDir 'MarqueeEditor.exe'
 $shortcut = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'Marquee.lnk'
+$editorShortcut = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'Marquee Theme Editor.lnk'
 $dataDir = Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) 'Marquee'
 $updatesDir = Join-Path $dataDir 'updates'
 $userSid = $identity.User.Value
@@ -276,10 +279,10 @@ function Get-PathEntries {
     @($path -split ';' | Where-Object { $_.Trim().TrimEnd('\') -eq $installDir })
 }
 
-function Get-ShortcutTarget {
-    if (-not (Test-Path -LiteralPath $shortcut)) { return '<no shortcut>' }
+function Get-ShortcutTarget([string] $link) {
+    if (-not (Test-Path -LiteralPath $link)) { return '<no shortcut>' }
     $shell = New-Object -ComObject WScript.Shell
-    $shell.CreateShortcut($shortcut).TargetPath
+    $shell.CreateShortcut($link).TargetPath
 }
 
 # The task's XML from Task Scheduler, or null when there is no task. Test-Task keeps the XML with the logs.
@@ -335,7 +338,8 @@ function Test-Product([string] $version) {
 }
 
 function Test-Files([string] $version) {
-    foreach ($file in 'marquee.exe', 'MarqueeTray.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'themes\example-landscape\layout.yaml',
+    foreach ($file in 'marquee.exe', 'MarqueeTray.exe', 'MarqueeEditor.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
+        'themes\example-landscape\layout.yaml',
         'themes\example-portrait\layout.yaml', 'themes\example-agents\layout.yaml', 'themes\example-showcase\layout.yaml',
         'themes\example-showcase\video\radar.mp4') {
         Check "installs $file" (Test-Path -LiteralPath (Join-Path $installDir $file) -PathType Leaf) 'missing'
@@ -344,6 +348,7 @@ function Test-Files([string] $version) {
     Check 'installs PresentMon\PresentMon-<version>-x64.exe' ($presentMon.Count -eq 1) "found $($presentMon.Count)"
     Test-Version $marquee $version
     Test-Version $trayExe $version
+    Test-Version $editorExe $version
 }
 
 function Test-PathEntry {
@@ -352,8 +357,10 @@ function Test-PathEntry {
 }
 
 function Test-Shortcut {
-    $target = Get-ShortcutTarget
+    $target = Get-ShortcutTarget $shortcut
     Check "the Start menu shortcut $shortcut starts MarqueeTray.exe" ($target -eq $trayExe) "target $target"
+    $target = Get-ShortcutTarget $editorShortcut
+    Check "the Start menu shortcut $editorShortcut starts MarqueeEditor.exe" ($target -eq $editorExe) "target $target"
 }
 
 # The task as LogonTask.Xml makes it, read back from Task Scheduler; the XML is kept with the logs.
@@ -590,6 +597,7 @@ try {
     $left = @(Get-ChildItem -LiteralPath $installDir -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
     Check "$installDir is gone" (-not (Test-Path -LiteralPath $installDir)) "left: $(($left | Select-Object -First 10) -join ', ')"
     Check 'the Start menu shortcut is gone' (-not (Test-Path -LiteralPath $shortcut)) 'still there'
+    Check "the theme editor's Start menu shortcut is gone" (-not (Test-Path -LiteralPath $editorShortcut)) 'still there'
     Check "the machine PATH no longer has $installDir" (@(Get-PathEntries).Count -eq 0) "$(@(Get-PathEntries).Count) entries"
     Check "the logon task $taskName is gone" ($null -eq (Get-TaskXml)) 'still there'
     Check 'the downloaded update is deleted' (@(Get-ChildItem $updatesDir -Filter 'Marquee-*' -ErrorAction SilentlyContinue).Count -eq 0) 'still there'

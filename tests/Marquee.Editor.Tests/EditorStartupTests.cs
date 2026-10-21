@@ -47,12 +47,4 @@ public class EditorStartupTests
         Assert.Null(workspace);
         Assert.Contains("nowhere", Assert.Single(environment.Dialogs.Errors));
     });
-
-    [Theory]
-    [InlineData(2, false, true)]   // TokenElevationTypeFull: an elevated administrator
-    [InlineData(3, false, false)]  // TokenElevationTypeLimited: the same administrator, unelevated
-    [InlineData(1, true, true)]    // TokenElevationTypeDefault with UAC off: an administrator has the full rights
-    [InlineData(1, false, false)]  // TokenElevationTypeDefault: a standard user
-    public void Elevation_is_read_from_the_tokens_elevation_type(int elevationType, bool isAdministrator, bool elevated) =>
-        Assert.Equal(elevated, Elevation.IsElevated(elevationType, isAdministrator));
 }

@@ -66,7 +66,7 @@ public sealed class TrayModelTests : IDisposable
 
         Assert.Equal([
             MenuKeys.Status, MenuKeys.Separator, MenuKeys.Themes, MenuKeys.Orientation, MenuKeys.Separator,
-            MenuKeys.Preview, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
+            MenuKeys.Preview, MenuKeys.EditTheme, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
             MenuKeys.AlwaysTakeOver, MenuKeys.Pause, MenuKeys.Separator, MenuKeys.CheckForUpdates, MenuKeys.About, MenuKeys.Quit,
         ], keys);
     }
@@ -82,7 +82,7 @@ public sealed class TrayModelTests : IDisposable
 
         Assert.Equal([
             MenuKeys.Status, MenuKeys.Separator, MenuKeys.Themes, MenuKeys.Orientation, MenuKeys.Separator,
-            MenuKeys.Preview, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
+            MenuKeys.Preview, MenuKeys.EditTheme, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
             MenuKeys.TakeOver, MenuKeys.AlwaysTakeOver, MenuKeys.Pause, MenuKeys.Separator, MenuKeys.InstallUpdate, MenuKeys.About,
             MenuKeys.Quit,
         ], keys);
@@ -358,6 +358,45 @@ public sealed class TrayModelTests : IDisposable
         Assert.Equal("theme: example-landscape\r\n", File.ReadAllText(_paths.ConfigFile));
         Assert.Equal([_paths.ConfigFile], _shell.Opened);
     }
+
+    /// Explorer starts it, as the user: the tray runs elevated, and an elevated editor would save theme files as
+    /// administrator (it refuses to run so). Explorer can't pass arguments; the editor opens the theme config.yaml names.
+    [Fact]
+    public async Task Edit_theme_starts_the_editor_beside_the_tray_through_the_shell()
+    {
+        var editor = _dir.Write("MarqueeEditor.exe", "");
+        var model = new TrayModel(_engine, _paths with { EditorExe = editor }, _shell, _host, _worker, _updates.Updates,
+            NullLog.Instance, () => _now);
+
+        var item = Item(model.BuildMenu(), MenuKeys.EditTheme);
+        item.Command!();
+
+        Assert.Equal("Edit theme…", item.Text);
+        Assert.True(item.Enabled);
+        Assert.True(await Wait.UntilAsync(() => !_shell.Opened.IsEmpty));
+        Assert.Equal([editor], _shell.Opened);
+        Assert.Empty(_host.Balloons);
+    }
+
+    /// A development build has the editor in its own project's output folder, not beside the tray.
+    [Fact]
+    public async Task Edit_theme_without_the_editor_says_where_it_looked_and_opens_nothing()
+    {
+        var missing = _dir.File("MarqueeEditor.exe");
+        var model = new TrayModel(_engine, _paths with { EditorExe = missing }, _shell, _host, _worker, _updates.Updates,
+            NullLog.Instance, () => _now);
+
+        await model.EditTheme().WaitAsync(Wait.Timeout);
+
+        Assert.Empty(_shell.Opened);
+        var balloon = Assert.Single(_host.Balloons);
+        Assert.Contains(missing, balloon.Text);
+        Assert.True(balloon.IsError);
+    }
+
+    [Fact]
+    public void The_installed_editor_is_looked_for_beside_the_tray() =>
+        Assert.Equal(Path.Combine(AppContext.BaseDirectory, "MarqueeEditor.exe"), _paths.EditorExe);
 
     [Fact]
     public void Preview_and_about_go_to_the_window_side()

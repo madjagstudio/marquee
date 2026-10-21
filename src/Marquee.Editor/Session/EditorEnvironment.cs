@@ -1,7 +1,7 @@
 using Marquee.Core;
+using Marquee.Core.Processes;
 using Marquee.Editor.Model;
 using Marquee.Editor.Model.Values;
-using Marquee.Editor.Startup;
 using Marquee.Host;
 
 namespace Marquee.Editor.Session;
@@ -35,8 +35,11 @@ public sealed record EditorEnvironment
 
     public TimeProvider Time { get; init; } = TimeProvider.System;
 
-    /// Whether this process runs elevated, which the editor refuses (Elevation).
-    public Func<bool> IsElevated { get; init; } = Elevation.IsCurrentProcessElevated;
+    /// Whether this process runs elevated, which the editor refuses: files it saved then would belong to
+    /// Administrators, and the user's own unelevated editor could be locked out of them. The check the tray and
+    /// `marquee edit` use (ProcessElevation), so all three agree; with UAC off, an administrator's token counts as
+    /// elevated there too.
+    public Func<bool> IsElevated { get; init; } = ProcessElevation.IsCurrentProcessElevated;
 
     public ThemeOpening Opening => new(InstalledThemes, UserThemes);
 

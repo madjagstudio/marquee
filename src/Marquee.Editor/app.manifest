@@ -5,7 +5,7 @@
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
         <!-- Never a UAC prompt: the editor saves theme files, which must stay the user's own, so it runs as the user
-             and refuses to run elevated (Startup\Elevation.cs). -->
+             and refuses to run elevated (Startup\EditorStartup.cs). -->
         <requestedExecutionLevel level="asInvoker" uiAccess="false" />
       </requestedPrivileges>
     </security>
