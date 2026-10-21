@@ -1,0 +1,118 @@
+<UserControl x:Class="Marquee.Editor.Layers.LayersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:Marquee.Editor.Resources"
+             Focusable="True" FocusVisualStyle="{x:Null}" KeyDown="OnKeyDown">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="Visible" />
+        <SolidColorBrush x:Key="Accent" Color="#FF2D8CFF" />
+
+        <!-- The eye and the lock: a glyph button that shows its state; the code-behind writes the change. -->
+        <Style x:Key="FlagButton" TargetType="Button">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#FF5F6368" />
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+
+        <!-- One row: the fold arrow for a group, the icon, the name (or the rename box), a read-only note, the eye and
+             the lock; lines above, below or around it while a drag would drop there. -->
+        <DataTemplate x:Key="LayerRow">
+            <Border x:Name="Row" Height="24" Background="Transparent" AllowDrop="True"
+                    MouseLeftButtonDown="OnRowDown" MouseMove="OnRowMove" MouseLeftButtonUp="OnRowUp"
+                    MouseRightButtonDown="OnRowRightDown"
+                    DragOver="OnRowDragOver" DragLeave="OnRowDragLeave" Drop="OnRowDrop">
+                <Grid>
+                    <Rectangle Height="2" VerticalAlignment="Top" Fill="{StaticResource Accent}"
+                               Visibility="{Binding DropAbove, Converter={StaticResource Visible}}" />
+                    <Rectangle Height="2" VerticalAlignment="Bottom" Fill="{StaticResource Accent}"
+                               Visibility="{Binding DropBelow, Converter={StaticResource Visible}}" />
+                    <Border BorderBrush="{StaticResource Accent}" BorderThickness="1"
+                            Visibility="{Binding DropInto, Converter={StaticResource Visible}}" />
+                    <DockPanel Margin="{Binding Indent}">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource FlagButton}" Click="OnLockClick"
+                                IsEnabled="{Binding IsEditable}">
+                            <Button.ToolTip>
+                                <TextBlock x:Name="LockTip" Text="{x:Static res:Strings.LockTip}" />
+                            </Button.ToolTip>
+                            <TextBlock x:Name="LockGlyph" Text="&#xE785;" Opacity="0.45" />
+                        </Button>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource FlagButton}" Click="OnHideClick"
+                                IsEnabled="{Binding IsEditable}">
+                            <Button.ToolTip>
+                                <TextBlock x:Name="HideTip" Text="{x:Static res:Strings.HideTip}" />
+                            </Button.ToolTip>
+                            <TextBlock x:Name="EyeGlyph" Text="&#xE7B3;" />
+                        </Button>
+                        <TextBlock DockPanel.Dock="Right" Text="{x:Static res:Strings.ReadOnlyLayer}" Foreground="#FF9AA0A6"
+                                   FontSize="11" VerticalAlignment="Center" Margin="4,0"
+                                   ToolTip="{x:Static res:Strings.ReadOnlyLayerTip}"
+                                   Visibility="Collapsed"
+                                   x:Name="ReadOnlyNote" />
+                        <Button x:Name="Fold" DockPanel.Dock="Left" Width="16" Padding="0" Background="Transparent"
+                                BorderBrush="Transparent" Focusable="False" Click="OnFoldClick" Visibility="Hidden"
+                                FontSize="9" Foreground="#FF5F6368" Content="▼" />
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" FontFamily="Segoe UI Symbol" Width="18"
+                                   TextAlignment="Center" VerticalAlignment="Center" Foreground="#FF5F6368" />
+                        <Grid Margin="4,0,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="NameText" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" />
+                            <TextBox x:Name="RenameBox" Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" Padding="1,0"
+                                     Visibility="{Binding IsRenaming, Converter={StaticResource Visible}}"
+                                     IsVisibleChanged="OnRenameShown" KeyDown="OnRenameKeyDown" LostKeyboardFocus="OnRenameLostFocus" />
+                        </Grid>
+                    </DockPanel>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter TargetName="Row" Property="Background" Value="#FFD2E3FC" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsNamed}" Value="False">
+                    <Setter TargetName="NameText" Property="FontStyle" Value="Italic" />
+                    <Setter TargetName="NameText" Property="Foreground" Value="#FF3C4043" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
+                    <Setter TargetName="NameText" Property="Visibility" Value="Hidden" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Hidden}" Value="True">
+                    <Setter TargetName="EyeGlyph" Property="Text" Value="&#xED1A;" />
+                    <Setter TargetName="NameText" Property="Opacity" Value="0.5" />
+                    <Setter TargetName="HideTip" Property="Text" Value="{x:Static res:Strings.ShowTip}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Locked}" Value="True">
+                    <Setter TargetName="LockGlyph" Property="Text" Value="&#xE72E;" />
+                    <Setter TargetName="LockGlyph" Property="Opacity" Value="1" />
+                    <Setter TargetName="LockTip" Property="Text" Value="{x:Static res:Strings.UnlockTip}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsGroup}" Value="True">
+                    <Setter TargetName="Fold" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsExpanded}" Value="False">
+                    <Setter TargetName="Fold" Property="Content" Value="▶" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsEditable}" Value="False">
+                    <Setter TargetName="ReadOnlyNote" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- The background layers, below the widgets: hide and lock only in E1. -->
+        <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding HasBackground, Converter={StaticResource Visible}}">
+            <Border BorderBrush="#FFDADCE0" BorderThickness="0,1,0,0" Padding="10,4,10,2">
+                <TextBlock Text="{x:Static res:Strings.BackgroundSection}" Foreground="#FF5F6368" FontWeight="SemiBold"
+                           ToolTip="{x:Static res:Strings.BackgroundSectionTip}" />
+            </Border>
+            <ItemsControl ItemsSource="{Binding Background}" ItemTemplate="{StaticResource LayerRow}" Margin="6,0,6,4" />
+        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+            <ItemsControl x:Name="WidgetList" ItemsSource="{Binding Widgets}" ItemTemplate="{StaticResource LayerRow}" Margin="6,0" />
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

@@ -15,11 +15,15 @@ public enum CopyChoice
     Cancel,
 }
 
-/// The questions and messages the shell puts to the user, behind an interface so tests answer them. Kept simple:
-/// message boxes in this task (MessageBoxDialogs); Task 12 gives some of them windows of their own.
+/// The questions and messages the shell puts to the user, behind an interface so tests answer them. MessageBoxDialogs
+/// asks most of them in message boxes and the file dialogs; the copy's name and the clean-up have windows of their own
+/// (the Dialogs folder).
 public interface IEditorDialogs
 {
     void ShowError(string message);
+
+    /// A message that needs no answer, such as what a clean-up did.
+    void ShowInfo(string message);
 
     /// The theme `theme` can't be saved, for `reason`: make a copy to edit, view it read-only, or don't open it.
     CopyChoice AskMakeCopy(string theme, string reason);
@@ -40,4 +44,19 @@ public interface IEditorDialogs
     /// Asks for a folder to save the theme's text in, its own folder having gone (SaveProblem.ThemeGone); null when the
     /// user cancels.
     string? PickSaveFolder();
+
+    /// Asks for a file to import as a `kind` (an image, a font or a clip); null when the user cancels.
+    string? PickImportFile(AssetKind kind);
+
+    /// "New from an example": asks what to call the copy of `example`, starting from `suggested`. `check` says why a
+    /// name typed can't be used (ThemeOpening.CopyNameProblem), or null when it can. Null when the user cancels.
+    string? AskCopyName(string example, string suggested, Func<string, string?> check);
+
+    /// "Clean up unused files": shows the files of `theme` that nothing uses, to tick and confirm. The paths ticked, or
+    /// null when the user cancels.
+    IReadOnlyList<string>? ChooseUnusedFiles(string theme, IReadOnlyList<UnusedFile> files);
+
+    /// "Revert to opened version": put `theme` back as it was when the editor opened it, discarding the changes made
+    /// since (undo brings them back)?
+    bool AskRevert(string theme);
 }

@@ -3,12 +3,18 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
+using Marquee.Core.Themes.Validation;
+using Marquee.Editor.Layers;
+using Marquee.Editor.Model;
+using Marquee.Editor.Properties;
 using Marquee.Editor.Resources;
+using Marquee.Editor.Values;
 
 namespace Marquee.Editor.Shell;
 
 /// The editor's window: a toolbar, the canvas, the panel area on the right (LayersPanel, PropertiesPanel and
-/// TestValuesPanel, which Task 12 fills) and a status bar, bound to a MainViewModel. Keys reach the model from here,
+/// TestValuesPanel, each its own view) and a status bar, bound to a MainViewModel. Keys reach the model from here,
 /// after the control with focus has had them, so text boxes and menus keep theirs.
 public partial class MainWindow : Window
 {
@@ -20,7 +26,10 @@ public partial class MainWindow : Window
         DataContext = model;
         InitializeComponent();
 
-        Fill(AddWidgetMenu, model.WidgetChoices());
+        Fill(AddWidgetMenu, [.. model.WidgetChoices(), null, .. model.FileChoices()]);
+        LayersPanel.Content = new LayersView { DataContext = model.Layers };
+        PropertiesPanel.Content = new PropertiesView { DataContext = model.Properties };
+        TestValuesPanel.Content = new TestValuesView { DataContext = model.TestValues };
         Fill(ArrangeMenu, model.ArrangeChoices());
         FillProblems();
         FillSave();
@@ -69,6 +78,8 @@ public partial class MainWindow : Window
         Fill(examples, _model.ExampleChoices());
         if (examples.Items.Count == 0) examples.Items.Add(new MenuItem { Header = Text(Strings.NoExamples), IsEnabled = false });
         ThemeMenu.Items.Add(examples);
+        ThemeMenu.Items.Add(new Separator());
+        foreach (var action in _model.ThemeActions()) ThemeMenu.Items.Add(Item(action));
     }
 
     /// Each problem, in the parser's or loader's words with its line; one in a widget selects it.
@@ -79,11 +90,28 @@ public partial class MainWindow : Window
         {
             ProblemsMenu.Items.Add(new MenuItem
             {
-                Header = new TextBlock { Text = problem.ToString(), TextWrapping = TextWrapping.Wrap, MaxWidth = 520 },
+                Header = ProblemLine(problem),
                 Command = _model.SelectProblemCommand,
                 CommandParameter = problem,
             });
         }
+    }
+
+    /// A problem's line in the list: an error's or a warning's mark, then "layout.yaml line 12: …".
+    static StackPanel ProblemLine(LayoutProblem problem)
+    {
+        var error = problem.Severity == IssueSeverity.Error;
+        var line = new StackPanel { Orientation = Orientation.Horizontal };
+        line.Children.Add(new TextBlock
+        {
+            Text = error ? "" : "",
+            FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+            Foreground = error ? Brushes.Firebrick : Brushes.DarkGoldenrod,
+            Margin = new Thickness(0, 2, 8, 0),
+            ToolTip = error ? Strings.ProblemError : Strings.ProblemWarning,
+        });
+        line.Children.Add(new TextBlock { Text = problem.ToString(), TextWrapping = TextWrapping.Wrap, MaxWidth = 520 });
+        return line;
     }
 
     /// Why the last save failed, and "Save to a folder…" when the theme's folder has gone.

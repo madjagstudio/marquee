@@ -2,10 +2,13 @@ using System.Windows.Input;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Editing;
 using Marquee.Editor.Canvas;
+using Marquee.Editor.Layers;
 using Marquee.Editor.Model;
 using Marquee.Editor.Mvvm;
+using Marquee.Editor.Properties;
 using Marquee.Editor.Resources;
 using Marquee.Editor.Session;
+using Marquee.Editor.Values;
 
 namespace Marquee.Editor.Shell;
 
@@ -28,11 +31,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _ui = ui;
         _screen = new ScreenTheme(environment.ConfigFile, environment.Locator);
         Canvas = new CanvasViewModel(Run, environment.Clipboard, Report, environment.Time);
+        Layers = new LayersViewModel(Run, Canvas, Report);
+        Properties = new PropertiesViewModel(Run, Report, Canvas, environment.Dialogs);
+        TestValues = new TestValuesViewModel();
         InitializeCommands();
         Attach(workspace);
     }
 
     public CanvasViewModel Canvas { get; }
+
+    /// The layers panel.
+    public LayersViewModel Layers { get; }
+
+    /// The properties panel.
+    public PropertiesViewModel Properties { get; }
+
+    /// The test values panel.
+    public TestValuesViewModel TestValues { get; }
 
     /// The theme open now; null once the window has closed it.
     public EditorWorkspace? Workspace => _workspace;
@@ -158,6 +173,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         workspace.RecoveryProblemChanged += OnRecoveryProblemChanged;
         if (workspace.Autosaver is { } autosaver) autosaver.StateChanged += OnSaveStateChanged;
         Canvas.Attach(workspace);
+        Layers.Attach(workspace.Session);
+        Properties.Attach(workspace);
+        TestValues.Attach(workspace.Values);
         Message = null;
         Raise(null);
         RefreshStatus();
@@ -166,6 +184,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     void Detach()
     {
         if (_workspace is not { } workspace) return;
+        TestValues.Detach();
+        Properties.Detach();
+        Layers.Detach();
         Canvas.Detach();
         workspace.Session.Changed -= OnSessionChanged;
         workspace.Values.Updated -= OnValuesUpdated;

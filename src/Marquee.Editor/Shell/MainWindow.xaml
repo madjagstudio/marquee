@@ -133,7 +133,7 @@
             </DockPanel>
         </Border>
 
-        <!-- The canvas, and the panels Task 12 fills. -->
+        <!-- The canvas, and the panels: layers, properties and test values, each a view of its own (MainWindow.xaml.cs). -->
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="300" />

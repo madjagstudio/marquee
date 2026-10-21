@@ -149,6 +149,244 @@ public static class Strings
 
     public static string CouldNotReadFramePixels => Get(nameof(CouldNotReadFramePixels));
 
+    public static string AddImage => Get(nameof(AddImage));
+
+    public static string AddVideo => Get(nameof(AddVideo));
+
+    public static string CleanUpMenu => Get(nameof(CleanUpMenu));
+
+    public static string RevertMenu => Get(nameof(RevertMenu));
+
+    public static string RevertQuestion(string theme) => Format(nameof(RevertQuestion), theme);
+
+    public static string CleanUpTitle => Get(nameof(CleanUpTitle));
+
+    public static string CleanUpIntro(string theme) => Format(nameof(CleanUpIntro), theme);
+
+    public static string CleanUpConfirm(string count) => Format(nameof(CleanUpConfirm), count);
+
+    public static string CleanUpFailed(string reason) => Format(nameof(CleanUpFailed), reason);
+
+    public static string NoUnusedFiles => Get(nameof(NoUnusedFiles));
+
+    public static string DeleteFiles(string count, string size) => Format(nameof(DeleteFiles), count, size);
+
+    public static string FilesDeleted(string count) => Format(nameof(FilesDeleted), count);
+
+    public static string FilesKept(string files) => Format(nameof(FilesKept), files);
+
+    public static string FileKept(string file, string reason) => Format(nameof(FileKept), file, reason);
+
+    public static string SelectAll => Get(nameof(SelectAll));
+
+    public static string SelectNone => Get(nameof(SelectNone));
+
+    public static string SizeBytes(string bytes) => Format(nameof(SizeBytes), bytes);
+
+    public static string SizeKilobytes(string kilobytes) => Format(nameof(SizeKilobytes), kilobytes);
+
+    public static string SizeMegabytes(string megabytes) => Format(nameof(SizeMegabytes), megabytes);
+
+    public static string SizeGigabytes(string gigabytes) => Format(nameof(SizeGigabytes), gigabytes);
+
+    public static string Cancel => Get(nameof(Cancel));
+
+    public static string Create => Get(nameof(Create));
+
+    public static string CopyNameTitle => Get(nameof(CopyNameTitle));
+
+    public static string CopyNamePrompt(string example) => Format(nameof(CopyNamePrompt), example);
+
+    public static string ImportImageTitle => Get(nameof(ImportImageTitle));
+
+    public static string ImportFontTitle => Get(nameof(ImportFontTitle));
+
+    public static string ImportVideoTitle => Get(nameof(ImportVideoTitle));
+
+    public static string ImageFiles => Get(nameof(ImageFiles));
+
+    public static string FontFiles => Get(nameof(FontFiles));
+
+    public static string VideoFiles => Get(nameof(VideoFiles));
+
+    public static string AllFiles => Get(nameof(AllFiles));
+
+    public static string ImportRefused(string file, string reason) => Format(nameof(ImportRefused), file, reason);
+
+    public static string Import => Get(nameof(Import));
+
+    public static string ImportFontTip => Get(nameof(ImportFontTip));
+
+    public static string ImportFileTip => Get(nameof(ImportFileTip));
+
+    public static string MenuGroup => Get(nameof(MenuGroup));
+
+    public static string MenuUngroup => Get(nameof(MenuUngroup));
+
+    public static string MenuCopy => Get(nameof(MenuCopy));
+
+    public static string MenuPaste => Get(nameof(MenuPaste));
+
+    public static string MenuDuplicate => Get(nameof(MenuDuplicate));
+
+    public static string MenuDelete => Get(nameof(MenuDelete));
+
+    public static string MenuRename => Get(nameof(MenuRename));
+
+    public static string HideTip => Get(nameof(HideTip));
+
+    public static string ShowTip => Get(nameof(ShowTip));
+
+    public static string LockTip => Get(nameof(LockTip));
+
+    public static string UnlockTip => Get(nameof(UnlockTip));
+
+    public static string ReadOnlyLayer => Get(nameof(ReadOnlyLayer));
+
+    public static string ReadOnlyLayerTip => Get(nameof(ReadOnlyLayerTip));
+
+    public static string BackgroundSection => Get(nameof(BackgroundSection));
+
+    public static string BackgroundSectionTip => Get(nameof(BackgroundSectionTip));
+
+    public static string NothingSelected => Get(nameof(NothingSelected));
+
+    public static string WidgetsSelected(int count) => Format(nameof(WidgetsSelected), count);
+
+    public static string Mixed => Get(nameof(Mixed));
+
+    public static string DefaultIs(string value) => Format(nameof(DefaultIs), value);
+
+    public static string FromNamedStyle(string value) => Format(nameof(FromNamedStyle), value);
+
+    public static string KeyReadOnly => Get(nameof(KeyReadOnly));
+
+    public static string ResetTip => Get(nameof(ResetTip));
+
+    public static string Width => Get(nameof(Width));
+
+    public static string Height => Get(nameof(Height));
+
+    public static string ListItem(string list, string number) => Format(nameof(ListItem), list, number);
+
+    public static string AddItem => Get(nameof(AddItem));
+
+    public static string RemoveItem => Get(nameof(RemoveItem));
+
+    public static string MoveItemUp => Get(nameof(MoveItemUp));
+
+    public static string MoveItemDown => Get(nameof(MoveItemDown));
+
+    public static string PickColorTip => Get(nameof(PickColorTip));
+
+    public static string Gradient => Get(nameof(Gradient));
+
+    public static string GradientTip => Get(nameof(GradientTip));
+
+    public static string EditGradient => Get(nameof(EditGradient));
+
+    public static string PreviewTip => Get(nameof(PreviewTip));
+
+    public static string SplitIntoSpans => Get(nameof(SplitIntoSpans));
+
+    public static string SplitIntoSpansTip => Get(nameof(SplitIntoSpansTip));
+
+    public static string StyleSection => Get(nameof(StyleSection));
+
+    public static string NamedStyle => Get(nameof(NamedStyle));
+
+    public static string NamedStyleTip => Get(nameof(NamedStyleTip));
+
+    public static string NoNamedStyle => Get(nameof(NoNamedStyle));
+
+    public static string StyleNone => Get(nameof(StyleNone));
+
+    public static string StyleKeysSetHere(string count) => Format(nameof(StyleKeysSetHere), count);
+
+    public static string StyleOverrides(string name, string count) => Format(nameof(StyleOverrides), name, count);
+
+    public static string ClearOverrides => Get(nameof(ClearOverrides));
+
+    public static string ClearOverridesTip => Get(nameof(ClearOverridesTip));
+
+    public static string CopyStyle => Get(nameof(CopyStyle));
+
+    public static string PasteStyle => Get(nameof(PasteStyle));
+
+    public static string SectionText => Get(nameof(SectionText));
+
+    public static string SectionFill => Get(nameof(SectionFill));
+
+    public static string SectionOutline => Get(nameof(SectionOutline));
+
+    public static string SectionEffects => Get(nameof(SectionEffects));
+
+    public static string SectionMore => Get(nameof(SectionMore));
+
+    public static string RulesSection => Get(nameof(RulesSection));
+
+    public static string RulesTip => Get(nameof(RulesTip));
+
+    public static string HueTip => Get(nameof(HueTip));
+
+    public static string AlphaTip => Get(nameof(AlphaTip));
+
+    public static string HexTip => Get(nameof(HexTip));
+
+    public static string RecentColors => Get(nameof(RecentColors));
+
+    public static string Linear => Get(nameof(Linear));
+
+    public static string Radial => Get(nameof(Radial));
+
+    public static string SpreadEvenly => Get(nameof(SpreadEvenly));
+
+    public static string SpreadEvenlyTip => Get(nameof(SpreadEvenlyTip));
+
+    public static string StopBarTip => Get(nameof(StopBarTip));
+
+    public static string Angle => Get(nameof(Angle));
+
+    public static string AngleTip => Get(nameof(AngleTip));
+
+    public static string RadialTip => Get(nameof(RadialTip));
+
+    public static string SourcePinned => Get(nameof(SourcePinned));
+
+    public static string SourceTray => Get(nameof(SourceTray));
+
+    public static string SourceLocal => Get(nameof(SourceLocal));
+
+    public static string SourceSample => Get(nameof(SourceSample));
+
+    public static string ValueMissing => Get(nameof(ValueMissing));
+
+    public static string ValueStale(string value) => Format(nameof(ValueStale), value);
+
+    public static string PinTip => Get(nameof(PinTip));
+
+    public static string Pin => Get(nameof(Pin));
+
+    public static string PinStale => Get(nameof(PinStale));
+
+    public static string PinMissing => Get(nameof(PinMissing));
+
+    public static string Unpin => Get(nameof(Unpin));
+
+    public static string UnpinAll => Get(nameof(UnpinAll));
+
+    public static string PatternTip => Get(nameof(PatternTip));
+
+    public static string TimeTip => Get(nameof(TimeTip));
+
+    public static string NotANumber(string text) => Format(nameof(NotANumber), text);
+
+    public static string NotATime(string text) => Format(nameof(NotATime), text);
+
+    public static string ProblemError => Get(nameof(ProblemError));
+
+    public static string ProblemWarning => Get(nameof(ProblemWarning));
+
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line
     // messages get the platform's line breaks back.
     static string Get(string name) =>

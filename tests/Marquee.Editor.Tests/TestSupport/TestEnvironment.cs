@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Marquee.Core.Themes;
 using Marquee.Editor.Model;
 using Marquee.Editor.Model.Values;
@@ -25,7 +26,8 @@ sealed class TestEnvironment : IDisposable
 
     readonly TempFolder _root = new();
 
-    public TestEnvironment()
+    /// `time` is the editor's clock, for autosave and recovery: the real one unless a test moves it itself.
+    public TestEnvironment(TimeProvider? time = null)
     {
         Directory.CreateDirectory(UserThemes);
         Directory.CreateDirectory(InstalledThemes);
@@ -41,6 +43,7 @@ sealed class TestEnvironment : IDisposable
             Dialogs = Dialogs,
             Clipboard = Clipboard,
             IsElevated = () => false,
+            Time = time ?? TimeProvider.System,
         };
     }
 
@@ -66,6 +69,34 @@ sealed class TestEnvironment : IDisposable
         File.WriteAllText(Path.Combine(folder, ThemeLoader.LayoutFileName), layout);
         return folder;
     }
+
+    /// Copies the repository's example theme `name`, every file, into the user's themes, or the installed examples, and
+    /// returns its folder.
+    public string AddExample(string name, bool installed = false)
+    {
+        var source = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisFile())!, "..", "..", "..", "themes", name));
+        var folder = Path.Combine(installed ? InstalledThemes : UserThemes, name);
+        foreach (var path in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            var target = Path.Combine(folder, Path.GetRelativePath(source, path));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(path, target);
+        }
+
+        return folder;
+    }
+
+    /// A small PNG at `path`, which the theme loader decodes.
+    public static void WritePng(string path, int size = 4)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using var bitmap = new SkiaSharp.SKBitmap(size, size);
+        bitmap.Erase(SkiaSharp.SKColors.Orange);
+        using var data = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+        File.WriteAllBytes(path, data.ToArray());
+    }
+
+    static string ThisFile([CallerFilePath] string file = "") => file;
 
     public void Dispose() => _root.Dispose();
 }

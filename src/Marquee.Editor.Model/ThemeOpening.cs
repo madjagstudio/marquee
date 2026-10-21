@@ -103,8 +103,13 @@ public sealed partial class ThemeOpening
     public string MakeCopy(string themeFolder)
     {
         var source = ThemeIdentity.FullPath(themeFolder);
+        return CopyAs(source, CopyFolderFor(source));
+    }
+
+    /// Copies the theme in `source`, a full path, into the folder `target` in the user's themes, as MakeCopy does.
+    string CopyAs(string source, string target)
+    {
         Directory.CreateDirectory(_userThemes);
-        var target = CopyFolderFor(source);
         var staging = Path.Combine(_userThemes, $".{Path.GetFileName(target)}.{Guid.NewGuid():N}.tmp");
         try
         {

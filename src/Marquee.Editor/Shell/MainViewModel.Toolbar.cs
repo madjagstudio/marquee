@@ -11,7 +11,8 @@ using Marquee.Editor.Resources;
 namespace Marquee.Editor.Shell;
 
 /// The toolbar (spec Part B, Toolbar): the theme picker and "New from an example", Add widget, undo and redo, align
-/// and distribute, zoom, and "Show on screen"; and the banner's "Revert to opened version" and "Make a copy to edit".
+/// and distribute, zoom, and "Show on screen"; "Revert to opened version", in the banner and the theme menu; and the
+/// banner's "Make a copy to edit".
 public sealed partial class MainViewModel
 {
     public RelayCommand UndoCommand { get; private set; } = null!;
@@ -98,7 +99,8 @@ public sealed partial class MainViewModel
     {
         UndoCommand = new RelayCommand(Undo, () => !IsReadOnly && !Canvas.IsDragging && _workspace?.Session.CanUndo == true);
         RedoCommand = new RelayCommand(Redo, () => !IsReadOnly && !Canvas.IsDragging && _workspace?.Session.CanRedo == true);
-        RevertCommand = new RelayCommand(Revert, () => CanRevert);
+        // Not only from the paused banner: the theme menu has it whenever there is an opened version to go back to.
+        RevertCommand = new RelayCommand(Revert, () => _workspace is { Backup: not null } && !Canvas.IsDragging);
         MakeCopyCommand = new RelayCommand(() => CopyAndOpen(_workspace!.Session.Folder), () => CanMakeCopy);
         KeepEditingCommand = new RelayCommand(KeepEditing, () => CanKeepEditing);
         SaveToFolderCommand = new RelayCommand(SaveToFolder, () => CanSaveToFolder);
@@ -108,7 +110,8 @@ public sealed partial class MainViewModel
         AddWidgetCommand = new RelayCommand(type => Run(new AddWidget((string)type!, Canvas.Group)), type => type is string && CanEdit);
         ArrangeCommand = new RelayCommand(Arrange, how => CanEdit && SelectionCount >= (how is Distribution ? 3 : 2));
         OpenThemeCommand = new RelayCommand(folder => OpenTheme((string)folder!), folder => folder is string);
-        NewFromExampleCommand = new RelayCommand(folder => CopyAndOpen((string)folder!), folder => folder is string);
+        NewFromExampleCommand = new RelayCommand(folder => NewFromExample((string)folder!), folder => folder is string);
+        InitializeFileCommands();
     }
 
     void RefreshCommands()
@@ -120,6 +123,8 @@ public sealed partial class MainViewModel
         KeepEditingCommand.Refresh();
         AddWidgetCommand.Refresh();
         ArrangeCommand.Refresh();
+        RefreshFileCommands();
+        Layers.RefreshCommands();
     }
 
     void Arrange(object? how)
@@ -137,9 +142,12 @@ public sealed partial class MainViewModel
         }
     }
 
+    /// "Revert to opened version", from the banner or the theme menu: asked first, since it discards the changes made
+    /// since the theme opened (one undo step, so undo brings them back).
     void Revert()
     {
-        if (_workspace?.Backup is { } backup) Run(backup.Revert());
+        if (_workspace is not { Backup: { } backup } workspace || !_environment.Dialogs.AskRevert(workspace.Name)) return;
+        Run(backup.Revert());
     }
 
     /// "Save to a folder…", the theme's folder having gone: writes the text into a folder the user picks, then opens the

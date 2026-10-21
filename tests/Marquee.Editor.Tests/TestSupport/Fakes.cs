@@ -49,7 +49,47 @@ sealed class FakeDialogs : IEditorDialogs
     public string? FolderAnswer { get; set; }
     public int FolderQuestions { get; private set; }
 
+    public List<string> Infos { get; } = [];
+
+    /// The file each import question answers, by kind; null cancels.
+    public Dictionary<AssetKind, string?> ImportAnswers { get; } = [];
+
+    /// The copy's name to give; null cancels. CopyNameChecks keeps what the check said of it.
+    public string? CopyNameAnswer { get; set; }
+    public List<string?> CopyNameChecks { get; } = [];
+
+    /// Which of the unused files offered to tick; null cancels. UnusedOffered keeps what was offered.
+    public Func<IReadOnlyList<UnusedFile>, IReadOnlyList<string>?> UnusedAnswer { get; set; } = _ => null;
+    public List<IReadOnlyList<UnusedFile>> UnusedOffered { get; } = [];
+
+    /// Whether "Revert to opened version" goes ahead; RevertQuestions keeps the themes it was asked about.
+    public bool RevertAnswer { get; set; } = true;
+    public List<string> RevertQuestions { get; } = [];
+
     public void ShowError(string message) => Errors.Add(message);
+
+    public void ShowInfo(string message) => Infos.Add(message);
+
+    public string? PickImportFile(AssetKind kind) => ImportAnswers.GetValueOrDefault(kind);
+
+    public string? AskCopyName(string example, string suggested, Func<string, string?> check)
+    {
+        CopyNameChecks.Add(check(suggested));
+        if (CopyNameAnswer is { } name) CopyNameChecks.Add(check(name));
+        return CopyNameAnswer;
+    }
+
+    public IReadOnlyList<string>? ChooseUnusedFiles(string theme, IReadOnlyList<UnusedFile> files)
+    {
+        UnusedOffered.Add(files);
+        return UnusedAnswer(files);
+    }
+
+    public bool AskRevert(string theme)
+    {
+        RevertQuestions.Add(theme);
+        return RevertAnswer;
+    }
 
     public CopyChoice AskMakeCopy(string theme, string reason)
     {

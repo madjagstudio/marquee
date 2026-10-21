@@ -1,0 +1,506 @@
+<UserControl x:Class="Marquee.Editor.Properties.PropertiesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Marquee.Editor.Properties"
+             xmlns:controls="clr-namespace:Marquee.Editor.Controls"
+             xmlns:gradients="clr-namespace:Marquee.Editor.Gradients"
+             xmlns:res="clr-namespace:Marquee.Editor.Resources">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="Visible" />
+        <local:PropertyTemplateSelector x:Key="Templates" />
+        <SolidColorBrush x:Key="Muted" Color="#FF9AA0A6" />
+        <SolidColorBrush x:Key="Error" Color="#FFB3261E" />
+
+        <!-- Squares of light and mid grey behind a swatch that may be see-through. -->
+        <DrawingBrush x:Key="Checks" TileMode="Tile" Viewport="0,0,8,8" ViewportUnits="Absolute">
+            <DrawingBrush.Drawing>
+                <DrawingGroup>
+                    <GeometryDrawing Brush="White" Geometry="M0,0 H2 V2 H0Z" />
+                    <GeometryDrawing Brush="#FFCCCCCC" Geometry="M0,0 H1 V1 H0Z M1,1 H2 V2 H1Z" />
+                </DrawingGroup>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <!-- The key's name: its help as a tooltip; greyed while the key isn't set, italic while the widgets differ. -->
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="Width" Value="108" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Text" Value="{Binding Label}" />
+            <Setter Property="ToolTip" Value="{Binding Help}" />
+            <Setter Property="ToolTipService.ShowDuration" Value="60000" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDefault}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource Muted}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsMixed}" Value="True">
+                    <Setter Property="FontStyle" Value="Italic" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- A value box: greyed while it shows the default, red-edged while what is typed is refused. -->
+        <Style x:Key="Box" TargetType="TextBox">
+            <Setter Property="Padding" Value="3,1" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="IsReadOnly" Value="{Binding IsEditable, Converter={x:Static local:Not.Instance}}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDefault}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource Muted}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasError}" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource Error}" />
+                    <Setter Property="ToolTip" Value="{Binding Error}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="Combo" TargetType="ComboBox">
+            <Setter Property="IsEnabled" Value="{Binding IsEditable}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDefault}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource Muted}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- "Mixed" over an empty box while the selected widgets differ. -->
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="Text" Value="{Binding Placeholder}" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="FontStyle" Value="Italic" />
+            <Setter Property="Margin" Value="6,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
+
+        <Style x:Key="Reset" TargetType="Button">
+            <Setter Property="Content" Value="&#xE72C;" />
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Margin" Value="2,0,0,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Command" Value="{Binding ResetCommand}" />
+            <Setter Property="ToolTip" Value="{x:Static res:Strings.ResetTip}" />
+            <Setter Property="Visibility" Value="Hidden" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding CanReset}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ErrorText" TargetType="TextBlock">
+            <Setter Property="Text" Value="{Binding Error}" />
+            <Setter Property="Foreground" Value="{StaticResource Error}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="108,1,0,0" />
+            <Setter Property="Visibility" Value="{Binding HasError, Converter={StaticResource Visible}}" />
+        </Style>
+
+        <Style x:Key="SmallButton" TargetType="Button">
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="Margin" Value="4,0,0,0" />
+        </Style>
+
+        <Style x:Key="Command" TargetType="Button" BasedOn="{StaticResource SmallButton}">
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- The editable dropdowns' lists can be long (every font on the PC): only the rows on screen are made. -->
+        <ItemsPanelTemplate x:Key="LongList">
+            <VirtualizingStackPanel />
+        </ItemsPanelTemplate>
+
+        <!-- Number: a slider and a box, with the unit. -->
+        <DataTemplate x:Key="NumberRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Unit}" Width="20" Margin="3,0,0,0" VerticalAlignment="Center"
+                               Foreground="#FF5F6368" />
+                    <Grid DockPanel.Dock="Right" Width="58">
+                        <TextBox Style="{StaticResource Box}" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
+                        <TextBlock Style="{StaticResource Hint}" />
+                    </Grid>
+                    <Slider Minimum="{Binding SliderMin}" Maximum="{Binding SliderMax}" Value="{Binding Number, Mode=OneWay}"
+                            SmallChange="{Binding Step}" IsEnabled="{Binding IsEditable}" VerticalAlignment="Center" Margin="0,0,6,0"
+                            ValueChanged="OnSliderChanged" Thumb.DragStarted="OnSlideStarted" Thumb.DragCompleted="OnSlideCompleted" />
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Boolean: a checkbox, filled in while the widgets differ. -->
+        <DataTemplate x:Key="BooleanRow">
+            <DockPanel Margin="0,3">
+                <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                <CheckBox IsChecked="{Binding Checked}" IsEnabled="{Binding IsEditable}" VerticalAlignment="Center" />
+            </DockPanel>
+        </DataTemplate>
+
+        <!-- Enum, style name: a dropdown. -->
+        <DataTemplate x:Key="ChoiceRow">
+            <DockPanel Margin="0,2">
+                <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                <ComboBox Style="{StaticResource Combo}" ItemsSource="{Binding Choices}" SelectedItem="{Binding Choice}" />
+            </DockPanel>
+        </DataTemplate>
+
+        <!-- Font weight: the names, then 100 to 900, or a number typed. -->
+        <DataTemplate x:Key="WeightRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <ComboBox Style="{StaticResource Combo}" IsEditable="True" ItemsSource="{Binding Choices}"
+                              Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                              KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" DropDownClosed="OnDropDownClosed" />
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Colour: a swatch that opens the picker, and the hex. -->
+        <DataTemplate x:Key="ColorRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <Grid DockPanel.Dock="Left">
+                        <ToggleButton x:Name="SwatchButton" Width="30" Height="22" Padding="2" IsEnabled="{Binding IsEditable}"
+                                      ToolTip="{x:Static res:Strings.PickColorTip}">
+                            <Border Background="{StaticResource Checks}">
+                                <Rectangle Fill="{Binding SwatchBrush}" />
+                            </Border>
+                        </ToggleButton>
+                        <Popup IsOpen="{Binding IsChecked, ElementName=SwatchButton}" PlacementTarget="{Binding ElementName=SwatchButton}"
+                               StaysOpen="False" AllowsTransparency="True">
+                            <Border Background="White" BorderBrush="#FFDADCE0" BorderThickness="1">
+                                <controls:ColorPicker Color="{Binding Text, Mode=OneWay}" ColorChanging="OnColorChanging"
+                                                      ColorCommitted="OnColorCommitted" />
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <Grid Margin="6,0,0,0">
+                        <TextBox Style="{StaticResource Box}" FontFamily="Consolas" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
+                        <TextBlock Style="{StaticResource Hint}" />
+                    </Grid>
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Paint: a colour, or a gradient through the gradient editor. -->
+        <DataTemplate x:Key="PaintRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <Grid DockPanel.Dock="Left">
+                        <ToggleButton x:Name="SwatchButton" Width="30" Height="22" Padding="2" IsEnabled="{Binding IsEditable}"
+                                      ToolTip="{x:Static res:Strings.PickColorTip}">
+                            <Border Background="{StaticResource Checks}">
+                                <Rectangle Fill="{Binding SwatchBrush}" />
+                            </Border>
+                        </ToggleButton>
+                        <Popup IsOpen="{Binding IsChecked, ElementName=SwatchButton}" PlacementTarget="{Binding ElementName=SwatchButton}"
+                               StaysOpen="False" AllowsTransparency="True">
+                            <Border Background="White" BorderBrush="#FFDADCE0" BorderThickness="1">
+                                <controls:ColorPicker Color="{Binding Text, Mode=OneWay}" ColorChanging="OnColorChanging"
+                                                      ColorCommitted="OnColorCommitted" />
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ToggleButton DockPanel.Dock="Right" Content="{x:Static res:Strings.Gradient}" Padding="6,0" Margin="4,0,0,0"
+                                  IsChecked="{Binding UseGradient}" IsEnabled="{Binding CanUseGradient}"
+                                  ToolTip="{x:Static res:Strings.GradientTip}" />
+                    <Grid Margin="6,0,0,0">
+                        <TextBox x:Name="Hex" Style="{StaticResource Box}" FontFamily="Consolas"
+                                 Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
+                        <ToggleButton x:Name="EditGradient" Content="{x:Static res:Strings.EditGradient}" Visibility="Collapsed"
+                                      IsChecked="{Binding IsGradientOpen}" HorizontalContentAlignment="Left" Padding="6,0" />
+                        <TextBlock Style="{StaticResource Hint}" />
+                    </Grid>
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+                <gradients:GradientEditor DataContext="{Binding Gradient}" Margin="12,0,0,0"
+                                          Visibility="{Binding DataContext.IsGradientOpen, RelativeSource={RelativeSource AncestorType=StackPanel}, Converter={StaticResource Visible}}" />
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsGradient}" Value="True">
+                    <Setter TargetName="Hex" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="EditGradient" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="SwatchButton" Property="IsEnabled" Value="False" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CanUseGradient}" Value="False">
+                    <Setter TargetName="EditGradient" Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Font family: the theme's font files, Inter and the PC's fonts, each in its own face; "Import…". -->
+        <DataTemplate x:Key="FontRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Import}" Style="{StaticResource SmallButton}"
+                            Command="{Binding ImportCommand}" ToolTip="{x:Static res:Strings.ImportFontTip}" />
+                    <ComboBox Style="{StaticResource Combo}" IsEditable="True" ItemsSource="{Binding Suggestions}"
+                              ItemsPanel="{StaticResource LongList}" MaxDropDownHeight="320"
+                              Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                              KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" DropDownClosed="OnDropDownClosed">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontFamily="{Binding}" FontSize="14" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Expression, sensor key: the theme's keys and the samples', or an expression typed, checked as it goes. -->
+        <DataTemplate x:Key="KeyRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <ComboBox Style="{StaticResource Combo}" IsEditable="True" ItemsSource="{Binding Suggestions}" FontFamily="Consolas"
+                              ItemsPanel="{StaticResource LongList}" MaxDropDownHeight="320"
+                              Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                              KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" DropDownClosed="OnDropDownClosed" />
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Template, format: the text, and what it shows now. -->
+        <DataTemplate x:Key="TemplateRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <Grid>
+                        <TextBox Style="{StaticResource Box}" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
+                        <TextBlock Style="{StaticResource Hint}" />
+                    </Grid>
+                </DockPanel>
+                <TextBlock Text="{Binding Preview, StringFormat='→ {0}'}" Foreground="#FF5F6368" Margin="108,1,0,0"
+                           TextTrimming="CharacterEllipsis" ToolTip="{x:Static res:Strings.PreviewTip}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Preview}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Text: a box. -->
+        <DataTemplate x:Key="TextRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <Grid>
+                        <TextBox Style="{StaticResource Box}" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
+                        <TextBlock Style="{StaticResource Hint}" />
+                    </Grid>
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Theme file: the theme's files of the key's type, or a path typed; "Import…". -->
+        <DataTemplate x:Key="FileRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Import}" Style="{StaticResource SmallButton}"
+                            Command="{Binding ImportCommand}" ToolTip="{x:Static res:Strings.ImportFileTip}" />
+                    <ComboBox Style="{StaticResource Combo}" IsEditable="True" ItemsSource="{Binding Suggestions}"
+                              Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                              KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" DropDownClosed="OnDropDownClosed" />
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Point, size: two boxes. -->
+        <DataTemplate x:Key="PairRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Unit}" Width="20" Margin="3,0,0,0" VerticalAlignment="Center"
+                               Foreground="#FF5F6368" />
+                    <UniformGrid Columns="2">
+                        <DockPanel Margin="0,0,4,0">
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding XLabel}" Foreground="#FF5F6368" Margin="0,0,4,0"
+                                       VerticalAlignment="Center" />
+                            <Grid>
+                                <TextBox Style="{StaticResource Box}" Text="{Binding X, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="OnPairKeyDown" LostKeyboardFocus="OnPairLostFocus" />
+                                <TextBlock Style="{StaticResource Hint}" />
+                            </Grid>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding YLabel}" Foreground="#FF5F6368" Margin="0,0,4,0"
+                                       VerticalAlignment="Center" />
+                            <TextBox Style="{StaticResource Box}" Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}"
+                                     KeyDown="OnPairKeyDown" LostKeyboardFocus="OnPairLostFocus" />
+                        </DockPanel>
+                    </UniformGrid>
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Block (stroke, shadow, needle…): a collapsible sub-section of rows. -->
+        <DataTemplate x:Key="BlockRow">
+            <Expander IsExpanded="{Binding IsExpanded}" Margin="0,2">
+                <Expander.Header>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                        <TextBlock Style="{StaticResource Label}" Width="Auto" FontWeight="SemiBold" />
+                    </DockPanel>
+                </Expander.Header>
+                <ItemsControl ItemsSource="{Binding Children}" ItemTemplateSelector="{StaticResource Templates}" Margin="12,0,0,0"
+                              Focusable="False" />
+            </Expander>
+        </DataTemplate>
+
+        <!-- List (series, slices, spans): items to add, remove and move, each a sub-section. -->
+        <DataTemplate x:Key="ListRow">
+            <StackPanel Margin="0,4">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.AddItem}" Style="{StaticResource SmallButton}"
+                            Command="{Binding AddItemCommand}" />
+                    <TextBlock Style="{StaticResource Label}" Width="Auto" FontWeight="SemiBold" />
+                </DockPanel>
+                <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Expander IsExpanded="{Binding IsExpanded}" Margin="8,2,0,2">
+                                <Expander.Header>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                Style="{StaticResource SmallButton}" Command="{Binding RemoveCommand}"
+                                                ToolTip="{x:Static res:Strings.RemoveItem}" />
+                                        <Button DockPanel.Dock="Right" Content="&#xE74B;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                Style="{StaticResource SmallButton}" Command="{Binding MoveDownCommand}"
+                                                ToolTip="{x:Static res:Strings.MoveItemDown}" />
+                                        <Button DockPanel.Dock="Right" Content="&#xE74A;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                Style="{StaticResource SmallButton}" Command="{Binding MoveUpCommand}"
+                                                ToolTip="{x:Static res:Strings.MoveItemUp}" />
+                                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </Expander.Header>
+                                <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Margin="12,0,0,0"
+                                              Focusable="False" />
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- What the file says, for a key the panel doesn't edit. -->
+        <DataTemplate x:Key="ReadOnlyRow">
+            <DockPanel Margin="0,3">
+                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                <TextBlock Text="{Binding Text}" Foreground="#FF5F6368" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text}" />
+            </DockPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+        <StackPanel Margin="10,0,10,10">
+            <TextBlock Text="{x:Static res:Strings.NothingSelected}" Foreground="#FF5F6368" TextWrapping="Wrap" Margin="0,4">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasSelection}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <StackPanel Visibility="{Binding HasSelection, Converter={StaticResource Visible}}">
+                <TextBlock Text="{Binding Heading}" FontWeight="SemiBold" FontSize="13" Margin="0,2,0,6" TextTrimming="CharacterEllipsis" />
+                <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
+                <Button Content="{x:Static res:Strings.SplitIntoSpans}" Command="{Binding SplitIntoSpansCommand}" Style="{StaticResource Command}"
+                        HorizontalAlignment="Left" Margin="108,4,0,0" ToolTip="{x:Static res:Strings.SplitIntoSpansTip}" />
+
+                <!-- The style: the named one it starts from, its overrides, and the keys in their groups. -->
+                <Border BorderBrush="#FFDADCE0" BorderThickness="0,1,0,0" Margin="0,10,0,4" Padding="0,6,0,0">
+                    <TextBlock Text="{x:Static res:Strings.StyleSection}" FontWeight="SemiBold" />
+                </Border>
+                <DockPanel Margin="0,2">
+                    <TextBlock DockPanel.Dock="Left" Text="{x:Static res:Strings.NamedStyle}" Width="108" VerticalAlignment="Center"
+                               ToolTip="{x:Static res:Strings.NamedStyleTip}" />
+                    <ComboBox ItemsSource="{Binding StyleChoices}" SelectedItem="{Binding StyleChoice}" IsEnabled="{Binding CanEdit}" />
+                </DockPanel>
+                <TextBlock Text="{Binding StyleLabel}" Foreground="#FF5F6368" Margin="108,2,0,2" />
+                <WrapPanel Margin="108,2,0,4">
+                    <Button Content="{x:Static res:Strings.ClearOverrides}" Command="{Binding ClearOverridesCommand}" Style="{StaticResource Command}"
+                            ToolTip="{x:Static res:Strings.ClearOverridesTip}" />
+                    <Button Content="{x:Static res:Strings.CopyStyle}" Command="{Binding CopyStyleCommand}" Style="{StaticResource SmallButton}"
+                            Margin="0,0,4,0" ToolTip="Ctrl+Shift+C" />
+                    <Button Content="{x:Static res:Strings.PasteStyle}" Command="{Binding PasteStyleCommand}" Style="{StaticResource SmallButton}"
+                            Margin="0" ToolTip="Ctrl+Shift+V" />
+                </WrapPanel>
+                <ItemsControl ItemsSource="{Binding Sections}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Expander Header="{Binding Title}" IsExpanded="True" Margin="0,2">
+                                <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Margin="4,0,0,0"
+                                              Focusable="False" />
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- The rules, in words, read-only: E2 edits them. -->
+                <StackPanel Visibility="{Binding HasRules, Converter={StaticResource Visible}}">
+                    <Border BorderBrush="#FFDADCE0" BorderThickness="0,1,0,0" Margin="0,10,0,4" Padding="0,6,0,0">
+                        <TextBlock Text="{x:Static res:Strings.RulesSection}" FontWeight="SemiBold" ToolTip="{x:Static res:Strings.RulesTip}" />
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Rules}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding StringFormat='• {0}'}" TextWrapping="Wrap" Foreground="#FF3C4043" Margin="0,1" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

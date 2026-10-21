@@ -70,6 +70,11 @@ public static class Samples
         ("*.pct", _ => SensorValue.Of(40)),
     ];
 
+    /// The keys the table names outright, in its order, `now` aside: what a key picker can offer beside the theme's own
+    /// keys. Patterns aren't keys, and are left out.
+    public static IReadOnlyList<string> Keys { get; } =
+        Table.Select(entry => entry.Pattern).Where(pattern => !pattern.Contains('*') && pattern != "now").ToList();
+
     /// True when the table has the key, by name or by pattern; other keys read Unknown.
     public static bool Knows(string key) => Find(key) is not null;
 

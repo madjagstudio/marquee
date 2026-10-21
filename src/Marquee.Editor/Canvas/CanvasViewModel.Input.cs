@@ -150,29 +150,28 @@ public sealed partial class CanvasViewModel
                 if (selection.Count > 0) _run(NudgeWidgets.Arrow(selection, Arrow(key), shift));
                 return true;
             case Key.Delete when !control:
-                if (selection.Count > 0) _run(new DeleteWidgets(selection));
+                DeleteSelection();
                 return true;
             case Key.C when control && shift:
-                Try(Strings.ActionCopyStyle, () => _styles.Copy(session));
+                CopyStyle();
                 return true;
             case Key.V when control && shift:
-                var targets = selection.Select(session.Widget).OfType<WidgetRef>().ToList();
-                if (_styles.Style is not null && targets.Count > 0) _run(_styles.Paste(targets));
+                PasteStyle();
                 return true;
             case Key.C when control:
-                CopyWidgets(session);
+                CopySelection();
                 return true;
             case Key.V when control:
-                PasteWidgets();
+                Paste();
                 return true;
             case Key.D when control:
-                if (selection.Count > 0) _run(new DuplicateWidgets(selection));
+                DuplicateSelection();
                 return true;
             case Key.G when control && shift:
-                if (selection.Count > 0) _run(new UngroupWidgets(selection));
+                UngroupSelection();
                 return true;
             case Key.G when control:
-                if (selection.Count > 0) _run(new GroupWidgets(selection));
+                GroupSelection();
                 return true;
             default:
                 return false;
@@ -196,24 +195,6 @@ public sealed partial class CanvasViewModel
         }
 
         if (session.Selection.Count > 0) Select([]);
-    }
-
-    void CopyWidgets(EditorSession session)
-    {
-        if (session.Selection.Count == 0) return;
-        try
-        {
-            if (!_clipboard.SetText(WidgetClipboard.Copy(session.Document, session.Selection))) _report(Strings.ClipboardBusy);
-        }
-        catch (LayoutEditException ex)
-        {
-            _report(Strings.ActionFailed(Strings.ActionCopy, ex.Message));
-        }
-    }
-
-    void PasteWidgets()
-    {
-        if (_clipboard.GetText() is { } text && WidgetClipboard.Items(text) is not null) _run(new PasteWidgets(text, _group));
     }
 
     void StartDrag(Func<CanvasDrag?> start, SKPoint point, ModifierKeys modifiers)

@@ -1,0 +1,68 @@
+<UserControl x:Class="Marquee.Editor.Gradients.GradientEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Marquee.Editor.Controls"
+             xmlns:res="clr-namespace:Marquee.Editor.Resources">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="Visible" />
+    </UserControl.Resources>
+    <!-- The gradient editor: its kind, the stop bar, the chosen stop's colour, and the angle dial or the radial
+         preview. Drawn and driven by GradientEditor.xaml.cs over a GradientEditorViewModel. -->
+    <StackPanel Margin="0,4,0,6">
+        <WrapPanel Margin="0,0,0,6">
+            <RadioButton x:Name="LinearChoice" Content="{x:Static res:Strings.Linear}" VerticalAlignment="Center" Checked="OnKindChecked" />
+            <RadioButton x:Name="RadialChoice" Content="{x:Static res:Strings.Radial}" VerticalAlignment="Center" Margin="12,0,0,0"
+                         Checked="OnKindChecked" />
+            <Button Content="{x:Static res:Strings.SpreadEvenly}" Padding="8,1" Margin="16,0,0,0" Click="OnSpreadEvenly"
+                    IsEnabled="{Binding HasStops}" ToolTip="{x:Static res:Strings.SpreadEvenlyTip}" />
+        </WrapPanel>
+
+        <!-- The bar: the colours along it, and a stop under it for each. Click to add, drag to move, drag off or Del to
+             remove. -->
+        <Grid x:Name="Bar" Height="34" Focusable="True" Background="Transparent" Cursor="Hand"
+              ToolTip="{x:Static res:Strings.StopBarTip}"
+              MouseLeftButtonDown="OnBarDown" MouseMove="OnBarMove" MouseLeftButtonUp="OnBarUp" LostMouseCapture="OnBarLost"
+              KeyDown="OnBarKeyDown">
+            <Border x:Name="Ramp" Height="18" VerticalAlignment="Top" BorderBrush="#FFDADCE0" BorderThickness="1" Margin="6,0" />
+            <Canvas x:Name="StopMarks" Margin="6,0" IsHitTestVisible="False" />
+        </Grid>
+
+        <controls:ColorPicker x:Name="StopColor" HorizontalAlignment="Left" Margin="-8,0,0,0"
+                              ColorChanging="OnStopColorChanging" ColorCommitted="OnStopColorCommitted" />
+
+        <!-- Linear: the dial, which also takes typing. -->
+        <DockPanel Visibility="{Binding IsLinear, Converter={StaticResource Visible}}" Margin="0,4,0,0">
+            <Grid x:Name="Dial" Width="56" Height="56" Background="Transparent" Cursor="Hand" ToolTip="{x:Static res:Strings.AngleTip}"
+                  MouseLeftButtonDown="OnDialDown" MouseMove="OnDialMove" MouseLeftButtonUp="OnDialUp" LostMouseCapture="OnDialLost">
+                <Ellipse Stroke="#FF9AA0A6" StrokeThickness="1" Fill="#FFF8F9FA" />
+                <Line x:Name="DialHand" Stroke="#FF2D8CFF" StrokeThickness="2" X1="28" Y1="28" />
+                <Ellipse Width="6" Height="6" Fill="#FF2D8CFF" />
+            </Grid>
+            <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
+                <TextBlock Text="{x:Static res:Strings.Angle}" Foreground="#FF5F6368" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="AngleBox" Width="60" Padding="3,1" Text="{Binding AngleText, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="OnAngleKeyDown" LostKeyboardFocus="OnAngleLostFocus" />
+                    <TextBlock Text="°" Margin="3,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Radial: the widget's box, small, with the centre and the radius to drag. -->
+        <StackPanel Visibility="{Binding IsRadial, Converter={StaticResource Visible}}" Margin="0,4,0,0">
+            <TextBlock Text="{x:Static res:Strings.RadialTip}" Foreground="#FF5F6368" TextWrapping="Wrap" Margin="0,0,0,4" />
+            <Border BorderBrush="#FFDADCE0" BorderThickness="1" HorizontalAlignment="Left">
+                <Grid x:Name="Preview" Background="Transparent" ClipToBounds="True"
+                      MouseLeftButtonDown="OnPreviewDown" MouseMove="OnPreviewMove" MouseLeftButtonUp="OnPreviewUp"
+                      LostMouseCapture="OnPreviewLost">
+                    <Rectangle x:Name="PreviewFill" />
+                    <Canvas IsHitTestVisible="False">
+                        <Ellipse x:Name="RadiusRing" Stroke="White" StrokeThickness="1" StrokeDashArray="3,2" />
+                        <Ellipse x:Name="CenterHandle" Width="10" Height="10" Fill="White" Stroke="#FF2D8CFF" StrokeThickness="2" />
+                        <Rectangle x:Name="RadiusHandle" Width="9" Height="9" Fill="White" Stroke="#FF2D8CFF" StrokeThickness="2" />
+                    </Canvas>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </StackPanel>
+</UserControl>
