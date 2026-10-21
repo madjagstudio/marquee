@@ -16,14 +16,15 @@ static class VideoAssets
 
     /// A player for the layer's clip, fitted to the canvas, or null when the layer is skipped (see the other Load).
     public static VideoPlayer? Load(string folder, VideoLayer layer, List<ThemeWarning> warnings, SKSizeI canvas, VideoProbe probe,
-        long maxBytes = MaxClipBytes) =>
-        Load(folder, layer.Path, layer.Fit, SKRect.Create(canvas.Width, canvas.Height), warnings, probe, maxBytes);
+        long maxBytes = MaxClipBytes, ThemeAssets? assets = null) =>
+        Load(folder, layer.Path, layer.Fit, SKRect.Create(canvas.Width, canvas.Height), warnings, probe, maxBytes, assets);
 
     /// A player for the clip at `path`, its frames fitted to `area` as `fit` says, or null when it is skipped: the clip
     /// is missing, too large, can't be decoded, or `probe` says it decodes slower than it plays. `maxBytes` is
-    /// MaxClipBytes except in tests.
+    /// MaxClipBytes except in tests. With `assets` loading through a cache, the player, or why there is none, comes from
+    /// there, and the cache owns the player.
     public static VideoPlayer? Load(string folder, string path, ImageFit fit, SKRect area, List<ThemeWarning> warnings,
-        VideoProbe probe, long maxBytes = MaxClipBytes)
+        VideoProbe probe, long maxBytes = MaxClipBytes, ThemeAssets? assets = null)
     {
         if (!ThemeAssets.TryInsideFolder(folder, path, out var full))
             return Skip(warnings, path, "It is not a valid path.");
@@ -38,6 +39,15 @@ static class VideoAssets
                 $"The file is {Math.Ceiling(file.Length / BytesPerMB):N0} MB, over the {maxBytes / BytesPerMB:N0} MB limit."));
         }
 
+        var clip = assets?.Cache is { } cache
+            ? cache.Clip(assets, full, fit, area, () => Open(full, fit, area, probe))
+            : Open(full, fit, area, probe);
+        return clip.Player ?? Skip(warnings, path, clip.Refusal!);
+    }
+
+    /// The clip playing, or why it can't play.
+    static OpenedClip Open(string full, ImageFit fit, SKRect area, VideoProbe probe)
+    {
         IVideoDecoder? decoder = null;
         try
         {
@@ -46,24 +56,26 @@ static class VideoAssets
             if (TooSlow(decoder, scaler, probe) is { } slow)
             {
                 decoder.Dispose();
-                return Skip(warnings, path, slow);
+                return new OpenedClip(null, slow);
             }
 
             decoder.Rewind();
-            return new VideoPlayer(decoder, scaler); // owns the decoder from here
+            return new OpenedClip(new VideoPlayer(decoder, scaler), null); // the player owns the decoder from here
         }
         catch (Exception ex)
         {
             // A VideoDecodeException says what's wrong with the clip; anything else (a codec bug, say) is still just a
-            // clip that can't play, not a theme that can't load.
+            // clip that can't play, not a theme that can't load. A file that couldn't be read (another program holds it
+            // locked, say) says nothing about the clip, so that refusal is only for now.
             decoder?.Dispose();
-            return Skip(warnings, path, ex is VideoDecodeException ? ex.Message : $"It could not be played: {ex.Message}");
+            return new OpenedClip(null, ex is VideoDecodeException ? ex.Message : $"It could not be played: {ex.Message}",
+                ForNow: ex is IOException or UnauthorizedAccessException);
         }
     }
 
     /// Why the clip can't keep up with itself, or null. A slow measurement is taken again, and the faster of the two
     /// counts, so a hiccup elsewhere on the PC doesn't cost a theme its background.
-    static string? TooSlow(IVideoDecoder decoder, FrameScaler scaler, VideoProbe probe)
+    internal static string? TooSlow(IVideoDecoder decoder, FrameScaler scaler, VideoProbe probe)
     {
         var cost = probe(decoder, scaler);
         if (cost.PerFrame > cost.FrameDuration)
@@ -86,3 +98,7 @@ static class VideoAssets
         return null;
     }
 }
+
+/// A clip opened for playing: its player, or why it has none (a sentence for the warning, without the clip's name).
+/// ForNow says the refusal comes from reading the file, not from the clip, and may not hold on the next try.
+sealed record OpenedClip(VideoPlayer? Player, string? Refusal, bool ForNow = false);

@@ -1,0 +1,32 @@
+plain: word
+words: GPU LOAD
+number: -12.5
+bool: true
+tilde: ~
+single: 'it''s here'
+double: "say \"hi\" \\o/ \u00B0"
+color: "#FF5A36"
+empty_single: ''
+empty_double: ""
+tagged: !!str 30
+plain_lines: a long plain value
+  that goes on
+quoted_lines: "a long quoted value
+  that goes on"
+literal: |
+  first line
+  second line
+literal_strip: |-
+  no break at the end
+literal_comment: |  # the header can hold a comment
+  text
+
+folded: >
+  folded text
+folded_strip: >-
+  folded
+  lines
+'quoted key': 1
+"double key": 2
+list: [plain, 'single', "double", -1, '#hash']
+map: { a: plain, b: 'single', c: "double" }

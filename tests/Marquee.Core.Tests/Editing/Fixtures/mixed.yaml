@@ -1,0 +1,32 @@
+canvas: { orientation: portrait, fps: 30 }
+styles:
+  meter: { fill: { linear: ["#36D1DC", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
+  tight: {size: 12,weight: bold}
+  trailing: { size: 14, }
+  block:
+    size: 20
+    stroke: { width: 2, color: "#FFFFFF14" }
+background:
+  - fill: { linear: ["#070A12", "#141B2E"], angle: 90 }
+  - { fill: "#FF5A3618", blend: overlay, hidden: true }
+widgets:
+  - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, style: meter }
+  - type: text
+    at: [28, 322]
+    size: [70, 36]
+    text: CPU
+    style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"], stops: [0, 0.3, 1] } }
+  - type: graph
+    at: [0, 0]
+    size: [100, 50]
+    series:
+      - { source: gpu.load, style: { stroke: { color: "#5B86E5" } } }
+      - source: cpu.load
+        style:
+          stroke: { color: "#36D1DC" }
+  - {
+      type: shape,
+      shape: rect,
+      at: [1, 2],
+      size: [3, 4]
+    }

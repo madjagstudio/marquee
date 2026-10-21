@@ -1,6 +1,6 @@
-using Marquee.App.Tests.TestSupport;
+using Marquee.Host.Tests.TestSupport;
 
-namespace Marquee.App.Tests;
+namespace Marquee.Host.Tests;
 
 public sealed class ThemeCatalogTests : IDisposable
 {

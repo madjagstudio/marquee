@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The theme editor's model: the open theme, its commands, undo, saving and values, in plain C# with no WPF, so all
+       of it is tested without a window. Marquee.Editor is the thin WPF shell over it. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Marquee.Core\Marquee.Core.csproj" />
+    <ProjectReference Include="..\Marquee.Host\Marquee.Host.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marquee.Editor.Model.Tests" />
+  </ItemGroup>
+</Project>

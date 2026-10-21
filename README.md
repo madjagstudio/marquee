@@ -24,7 +24,8 @@ It installs:
   can change.
 - That folder at the end of the system PATH, so `marquee` works in any new terminal. The folder also holds the .NET
   runtime's DLLs, so a program that looks for a DLL by name along the PATH may find them there.
-- "Marquee" in the Start menu, which starts the tray, or opens its menu if it is running.
+- "Marquee" in the Start menu, which starts the tray, or opens its menu if it is running, and "Marquee Theme Editor"
+  (see [Theme editor](#theme-editor)).
 - A logon task, `\Marquee\Marquee` in Task Scheduler, that starts the tray with administrator rights, without a UAC
   prompt, for every user who signs in (see [The tray](#the-tray)).
 - `%ProgramData%\Marquee`, where a Marquee running as administrator keeps each user's log and data, and where updates
@@ -42,7 +43,7 @@ says another program made the event the installer uses to close the tray, the ne
 
 ### Uninstalling
 
-Uninstall Marquee from Settings > Apps. It closes the trays and removes the program folder, the Start menu entry, the
+Uninstall Marquee from Settings > Apps. It closes the trays and removes the program folder, the Start menu entries, the
 PATH entry, the logon task (and its `\Marquee` folder in Task Scheduler) and any downloaded updates. It leaves what is
 yours, so installing again picks up where you left off:
 
@@ -65,8 +66,9 @@ settings are `config.yaml`'s, and what `marquee run` would print goes to its [lo
   handover also shows as a balloon, at most once a minute for each.
 - **Themes** and **Orientation:** your themes, then the installed examples, and the four orientations. Picking one
   writes `theme:` or `orientation:` to `config.yaml`, changing only that setting, then shows it.
-- **Open preview**, **Open themes folder** (`%LOCALAPPDATA%\Marquee\themes`, made if it isn't there), **Open logs** and
-  **Edit settings** (`config.yaml` in your editor; if there is none, one naming the theme on show is written first).
+- **Open preview**, **Edit theme…** (the theme on show in the [theme editor](#theme-editor)), **Open themes folder**
+  (`%LOCALAPPDATA%\Marquee\themes`, made if it isn't there), **Open logs** and **Edit settings** (`config.yaml` in your
+  editor; if there is none, one naming the theme on show is written first).
 - **Take over the screen from L-Connect** and **Always take over at start** (see
   [Sharing the screen with L-Connect](#sharing-the-screen-with-l-connect)).
 - **Pause** lets go of the screen, so another program (L-Connect, or `marquee run`) can have it, and turns the ring
@@ -120,6 +122,7 @@ it pauses or quits, and the others wait for it.
     marquee run [<theme-folder>] [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink <folder>] [--frames N]
                 [--http-port 1024-65535 | --no-http] [--no-claude-usage] [--no-fps] [--config <file>]
     marquee validate <theme-folder|zip> [--fps 1-60]
+    marquee edit [<theme-folder>]   (opens the theme editor; see Theme editor)
     marquee push <key> <value> [--ttl 30s|5m|2h] [--port 1024-65535] [--config <file>]
     marquee setup-claude [--undo] [--dry-run]
     marquee task install [--tray <file>] | remove [--updates] | status | start [--user <SID>] | stop
@@ -141,7 +144,8 @@ it reads no `config.yaml` unless `--config` names one (so it needs a theme folde
 `--orientation` says otherwise), and it neither shows nor saves the last Claude Code limits. It still logs, like any
 `marquee run`.
 
-The command line's, the tray's and the preview's messages are in resource files that can be translated;
+The command line's, the tray's, the preview's and the theme editor's messages are in resource files that can be
+translated;
 [docs/localization.md](docs/localization.md) says how to add a language.
 
 ### The logon task
@@ -479,6 +483,29 @@ Marquee updates the ring up to 30 times a second on a thread of its own, so the 
 that fails (held by another program, say) is tried again after 2 seconds, one that isn't plugged in is looked for
 every 5 seconds, and a screen without one is fine. Taking the screen from L-Connect takes the ring too. The ring goes
 dark when Marquee pauses or quits, and so while an update installs. `--sink` and `--frames` leave it alone.
+
+### Theme editor
+
+`MarqueeEditor.exe` edits a theme on a canvas that shows the theme's real frames, drawn by the same renderer as the
+screen. Open it with:
+
+- **Edit theme…** in the tray's menu, or **Marquee Theme Editor** in the Start menu: the theme `config.yaml` names, the
+  one on the screen;
+- `marquee edit` for that same theme, or `marquee edit <theme or folder>` for another, found as `marquee run` finds one.
+
+Select, move, resize and rotate widgets on the canvas; reorder, group, hide and lock them in the layers panel; set
+their properties, styles and gradients in the properties panel; import images, fonts and clips; and pin test values
+to see a theme at a full CPU or a missing sensor. "Show on screen" writes the theme to `config.yaml`.
+
+`layout.yaml` stays the source of truth. Each change is written into it about a second later, changing only the text
+that edit is about: your comments, order and formatting stay as they were, and the tray shows the change as it does a
+hand edit. You can keep editing the file by hand while the editor is open; it reloads what you saved, as one step you
+can undo. Undo goes back 500 steps, "Revert to opened version" brings back the file as it was when you opened it, and
+unsaved changes survive a crash. The installed examples are read-only: the editor offers to copy one into your themes
+folder first.
+
+The editor runs as you, never as administrator: started elevated, or by `marquee edit` from an administrator
+terminal, it refuses, so your theme files never end up owned by Administrators.
 
 ### Checking a theme
 

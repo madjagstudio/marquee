@@ -1,0 +1,306 @@
+# yaml-language-server: $schema=../../docs/layout.schema.json
+# A tour of the theme format for a horizontally mounted 8.8" Universal Screen (1920×480): a clock, outlined and
+# gradient letters, a video box, shapes, dials, a big number with a small unit, segmented meters, charts, a donut,
+# wrapped text, rotation, blending and hidden widgets, each where it fits.
+# Every key is in docs/themes-reference.md. Run it with:  marquee run themes/example-showcase --preview
+canvas:
+  orientation: landscape
+  fps: 30
+
+styles:
+  panel: { fill: "#FFFFFF08", radius: 28, stroke: { width: 2, color: "#FFFFFF14" } }
+  # letter_spacing adds px between characters: wide-set capitals read as headings.
+  heading: { size: 22, weight: semibold, color: "#8B95AA", letter_spacing: 4 }
+  accent: { fill: { linear: ["#36D1DC", "#5B86E5"] }, radius: 2 }
+  reading: { size: 56, weight: bold, color: "#F4F6FA", align: center }
+  caption: { size: 22, color: "#8B95AA", align: center }
+  meter: { fill: { linear: ["#36D1DC", "#5B86E5"] }, track: "#FFFFFF10", radius: 3 }
+  hot:
+    color: "#FF5A36"
+    glow: { color: "#FF5A36", radius: 18 }
+    pulse: { property: glow, period: 1200, min: 0.3 }
+  stale: { color: "#5A6275" }
+  # A caption made only of values would read "—% · —" while they're missing, so it steps aside instead.
+  gone: { opacity: 0 }
+  # blend: screen only ever lightens, so a soft radial glow lifts the panel under it without hiding anything.
+  glow: { fill: { radial: ["#36D1DC30", "#36D1DC00"] }, blend: screen }
+
+background:
+  # name is what the theme editor's layers list calls a layer or a widget; the screen ignores it.
+  - name: Night
+    fill: { linear: ["#070A12", "#141B2E"], angle: 90 }
+  - name: Blue haze
+    fill: { radial: ["#5B86E522", "#00000000"] }
+    blend: screen
+    # locked only stops the theme editor changing this layer; the screen ignores it.
+    locked: true
+  # hidden: true leaves a layer (or widget) off the screen, and marquee validate still checks it. Set it to false
+  # for a warmer tint.
+  - name: Warm tint
+    fill: "#FF5A3618"
+    blend: overlay
+    hidden: true
+
+widgets:
+  # The title, the time and a clip.
+  - type: group
+    name: Clock
+    at: [24, 24]
+    size: [300, 432]
+    style: panel
+    children:
+      # text_fill paints the letters with a color or a gradient (stops place each color along it: the white stays at
+      # the start), and text_stroke outlines them, width px outside each letter: a violet that none of the letters'
+      # colors are, so the outline shows round all of them.
+      - type: text
+        name: Title
+        at: [28, 18]
+        size: [244, 54]
+        text: MARQUEE
+        style:
+          size: 40
+          weight: bold
+          letter_spacing: 3
+          text_fill: { linear: ["#F4F6FA", "#36D1DC", "#5B86E5"], stops: [0, 0.3, 1] }
+          text_stroke: { width: 2, color: "#A770EF" }
+      # The time helper writes a Unix time, such as now, as the PC's local time, in a .NET date and time pattern.
+      # ddd is the day's short name in the PC's regional format, and case: upper turns Fri into FRI.
+      - type: text
+        name: Weekday
+        at: [28, 92]
+        size: [244, 30]
+        text: "{now|time:ddd}"
+        style: { extends: heading, color: "#36D1DC", case: upper }
+      - type: text
+        name: Time
+        at: [24, 120]
+        size: [252, 96]
+        text: "{now|time:HH:mm}"
+        # 80 px leaves the widest time, 00:00, inside the box.
+        style: { size: 80, weight: bold, color: "#F4F6FA" }
+      # A video widget plays a clip from the theme folder in its own box, over and over: a radar drawn by
+      # tools/Marquee.MakeClip. cover fills the box and crops what doesn't fit; radius rounds the clip's corners too.
+      - type: video
+        name: Radar
+        at: [24, 250]
+        size: [252, 158]
+        src: video/radar.mp4
+        fit: cover
+        style: { radius: 18, stroke: { width: 2, color: "#FFFFFF14" } }
+
+  # CPU: a needle dial with ticks and labels, its arc shading from cool to hot.
+  - type: group
+    name: CPU
+    at: [340, 24]
+    size: [360, 432]
+    style: panel
+    children:
+      - { type: shape, shape: ellipse, at: [20, 40], size: [320, 320], style: glow }
+      - { type: text, at: [28, 20], size: [200, 34], text: CPU, style: heading }
+      - { type: shape, shape: rect, at: [30, 56], size: [36, 4], style: accent }
+      # A status light: a shape with a source can be restyled by when rules, like any widget.
+      - type: shape
+        name: CPU status light
+        shape: ellipse
+        at: [314, 29]
+        size: [16, 16]
+        source: cpu.temp
+        style: { fill: "#36D1DC" }
+        when:
+          - { above: 85, style: { fill: "#FF5A36", glow: { color: "#FF5A36", radius: 10 } } }
+          - { stale: true, style: { fill: "#5A6275" } }
+      - type: gauge
+        name: CPU dial
+        at: [40, 66]
+        size: [280, 280]
+        source: cpu.temp
+        min: 20
+        max: 100
+        thickness: 12
+        smooth: 400
+        # 8 divisions of 20 to 100 put a labelled tick every 10°C, with one minor tick between each.
+        ticks: { major: 8, minor: 1, length: 11, width: 2, color: "#FFFFFF60", labels: "{0:0}" }
+        needle: { width: 8, length: 0.68, color: "#F4F6FA", cap: 12 }
+        style:
+          size: 16
+          weight: medium
+          color: "#8B95AA"
+          fill: { linear: ["#36D1DC", "#FF5A36"] }
+          track: "#FFFFFF14"
+          shadow: { color: "#00000080", x: 2, y: 3, blur: 4 }
+        when:
+          - { above: 85, style: { fill: "#FF5A36" } }
+      # A value widget can take spans instead of a format: runs of text, each in its own style, on one baseline, so
+      # the small unit stays beside the number as the number's width changes. {0} is the value, eased by smooth as
+      # the needle is. The widget's style places the spans, and its when rules go over every span. It sits in the
+      # dial's open bottom, clear of the labels and the needle even at 100°C and over.
+      - type: value
+        name: CPU temperature
+        at: [80, 296]
+        size: [200, 64]
+        source: cpu.temp
+        smooth: 400
+        style: { extends: reading, size: 50 }
+        spans:
+          - { text: "{0:0}" }
+          - { text: "°C", style: { size: 24, weight: semibold, color: "#36D1DC" } }
+        when:
+          - { above: 85, style: hot }
+          - { stale: true, style: stale }
+      - type: text
+        at: [0, 380]
+        size: [360, 30]
+        text: "{cpu.load:0}% · {cpu.clock / 1000:0.0} GHz"
+        style: caption
+        when:
+          - { stale: true, style: gone }
+
+  # GPU: a segmented ring, VU-meter style. One gradient spans the whole meter, so each segment keeps its own shade.
+  - type: group
+    name: GPU
+    at: [716, 24]
+    size: [300, 432]
+    style: panel
+    children:
+      - { type: shape, shape: ellipse, at: [10, 60], size: [280, 280], style: { extends: glow, fill: { radial: ["#5B86E538", "#5B86E500"] } } }
+      - { type: text, at: [28, 20], size: [200, 34], text: GPU, style: heading }
+      - { type: shape, shape: rect, at: [30, 56], size: [36, 4], style: accent }
+      # An arc shape: a thin band round the ring, a gauge's arc with no value.
+      - { type: shape, shape: arc, at: [18, 68], size: [264, 264], start: 135, sweep: 270, thickness: 2, style: { fill: "#FFFFFF24" } }
+      - type: gauge
+        name: GPU ring
+        at: [34, 84]
+        size: [232, 232]
+        source: gpu.temp
+        min: 20
+        max: 100
+        thickness: 20
+        segments: 24
+        gap: 3
+        smooth: 400
+        style: { extends: meter, fill: { linear: ["#36D1DC", "#5B86E5", "#FF5A36"] }, radius: 2 }
+      - type: value
+        at: [50, 165]
+        size: [200, 70]
+        source: gpu.temp
+        format: "{0:0}°"
+        smooth: 400
+        style: { extends: reading, size: 56 }
+        when:
+          - { above: 80, style: hot }
+          - { stale: true, style: stale }
+      - { type: text, at: [50, 230], size: [200, 24], text: TEMP, style: { extends: heading, size: 16, align: center } }
+      - type: text
+        at: [0, 380]
+        size: [300, 30]
+        text: "{gpu.load:0}% · {gpu.vram_used|bytes}"
+        style: caption
+        when:
+          - { stale: true, style: gone }
+
+  # Load: an area chart with two series and gridlines, then the same two loads now, as segmented bars.
+  - type: group
+    name: Load
+    at: [1032, 24]
+    size: [500, 432]
+    style: panel
+    children:
+      - { type: text, at: [28, 20], size: [280, 34], text: LOAD HISTORY, style: heading }
+      - { type: shape, shape: rect, at: [30, 56], size: [36, 4], style: accent }
+      - { type: shape, shape: ellipse, at: [314, 31], size: [12, 12], style: { fill: "#36D1DC" } }
+      - { type: text, at: [334, 22], size: [60, 30], text: CPU, style: { size: 18, weight: semibold, color: "#C8D0E0" } }
+      - { type: shape, shape: ellipse, at: [400, 31], size: [12, 12], style: { fill: "#5B86E5" } }
+      - { type: text, at: [420, 22], size: [52, 30], text: GPU, style: { size: 18, weight: semibold, color: "#C8D0E0" } }
+      - type: graph
+        name: Load chart
+        at: [28, 72]
+        size: [444, 210]
+        kind: area
+        min: 0
+        max: 100
+        points: 120
+        # 3 lines split 0 to 100 into quarters.
+        grid: { lines: 3, color: "#FFFFFF14" }
+        style: { stroke: { width: 2.5 } }
+        # Drawn in order, so CPU sits in front of GPU. Each series' style goes over the graph's.
+        series:
+          - { source: gpu.load, style: { stroke: { color: "#5B86E5" }, fill: { linear: ["#5B86E560", "#5B86E500"], angle: 90 } } }
+          - { source: cpu.load, style: { stroke: { color: "#36D1DC" }, fill: { linear: ["#36D1DC60", "#36D1DC00"], angle: 90 } } }
+      # The chart's box, for lining things up while editing. Hidden, so the screen never shows it.
+      - { type: shape, shape: rect, at: [28, 72], size: [444, 210], hidden: true, style: { stroke: { width: 1, color: "#FF00FF" } } }
+      - { type: shape, shape: line, at: [28, 302], size: [444, 0], style: { stroke: { width: 2, color: "#FFFFFF12" } } }
+      - { type: text, at: [28, 322], size: [70, 36], text: CPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
+      - { type: bar, at: [100, 326], size: [270, 28], source: cpu.load, segments: 20, gap: 4, smooth: 400, style: meter }
+      - { type: value, at: [380, 322], size: [92, 36], source: cpu.load, format: "{0:0}%", style: { size: 26, weight: semibold, align: right } }
+      - { type: text, at: [28, 372], size: [70, 36], text: GPU, style: { extends: heading, size: 18, letter_spacing: 2 } }
+      - { type: bar, at: [100, 376], size: [270, 28], source: gpu.load, segments: 20, gap: 4, smooth: 400, style: meter }
+      - { type: value, at: [380, 372], size: [92, 36], source: gpu.load, format: "{0:0}%", style: { size: 26, weight: semibold, align: right } }
+
+  # Memory: a donut splitting RAM into used and free, then the game's frame rate.
+  - type: group
+    name: Memory
+    at: [1548, 24]
+    size: [290, 432]
+    style: panel
+    children:
+      - { type: text, at: [28, 20], size: [200, 34], text: MEMORY, style: heading }
+      - { type: shape, shape: rect, at: [30, 56], size: [36, 4], style: accent }
+      - type: donut
+        name: Memory donut
+        at: [50, 66]
+        size: [190, 190]
+        hole: 0.74
+        gap: 3
+        style: { track: "#FFFFFF0C" }
+        # A slice's source can be an expression: what isn't used is free.
+        slices:
+          - { source: ram.used_pct, style: { fill: { linear: ["#36D1DC", "#5B86E5"] }, glow: { color: "#36D1DC70", radius: 12 } } }
+          - { source: 100 - ram.used_pct, style: { fill: "#FFFFFF1C" } }
+      - type: value
+        at: [75, 128]
+        size: [140, 52]
+        source: ram.used_pct
+        format: "{0:0}%"
+        smooth: 400
+        style: { extends: reading, size: 42 }
+        when:
+          - { above: 90, style: hot }
+          - { stale: true, style: stale }
+      - { type: text, at: [75, 180], size: [140, 22], text: USED, style: { extends: heading, size: 16, align: center } }
+      - type: text
+        at: [0, 266]
+        size: [290, 30]
+        text: "{ram.used|bytes} in use"
+        style: { extends: caption, size: 20 }
+        when:
+          - { stale: true, style: gone }
+      - { type: shape, shape: line, at: [28, 306], size: [234, 0], style: { stroke: { width: 2, color: "#FFFFFF12" } } }
+      # fps goes stale with no game in front: the text shows — and the stale rule dims it.
+      - type: text
+        at: [28, 316]
+        size: [150, 40]
+        text: "{fps:0} FPS"
+        style: { size: 30, weight: bold, color: "#F4F6FA" }
+        when:
+          - { stale: true, style: stale }
+      - type: text
+        at: [178, 320]
+        size: [84, 34]
+        text: "1% {fps.1pct_low:0}"
+        style: { size: 18, color: "#8B95AA", align: right }
+        when:
+          - { stale: true, style: stale }
+      # wrap: true breaks text at spaces to fit its box; line_height spaces the lines, as a multiple of the size.
+      - type: text
+        at: [28, 362]
+        size: [234, 62]
+        text: FPS shows while a game runs. All of this is one layout.yaml.
+        style: { size: 16, color: "#7A8499", line_height: 1.3, wrap: true }
+
+  # rotate turns a widget about its own centre: this 432×40 strip stands upright along the right edge.
+  - type: text
+    at: [1660, 220]
+    size: [432, 40]
+    rotate: 90
+    text: THEME FORMAT V2.1
+    style: { size: 16, weight: semibold, color: "#FFFFFF38", align: center, letter_spacing: 8 }

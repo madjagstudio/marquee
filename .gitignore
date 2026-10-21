@@ -8,5 +8,6 @@ obj/
 out/
 .superpowers/
 *.received.png
+*.received.txt
 .cache/
 artifacts/

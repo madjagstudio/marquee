@@ -5,9 +5,9 @@ Checks a built Marquee MSI's tables against what the installer sources say it mu
 .DESCRIPTION
 Opens the MSI read-only through Windows Installer's own COM object (nothing is installed) and checks: the version (from
 Directory.Build.props, or -Version), the UpgradeCode (from Package.wxs), a per-machine install, the files Marquee needs where it
-looks for them, marquee.exe's folder on the system PATH, the Start menu shortcut, the custom actions with their
-conditions and flags (deferred or commit, as SYSTEM), and that Windows Installer makes nothing under %ProgramData%
-(marquee task install makes %ProgramData%\Marquee itself).
+looks for them, marquee.exe's folder on the system PATH, the Start menu shortcuts (the tray's and the theme editor's),
+the custom actions with their conditions and flags (deferred or commit, as SYSTEM), and that Windows Installer makes
+nothing under %ProgramData% (marquee task install makes %ProgramData%\Marquee itself).
 Prints each check; exits 1 with every mismatch listed if any fails. No prompts, so CI can run it as it is:
 
     powershell -NoProfile -ExecutionPolicy Bypass -File installer\check-msi.ps1 artifacts\Marquee-0.1.0-x64.msi
@@ -118,7 +118,8 @@ foreach ($row in Get-Rows 'SELECT `File`, `Component_`, `FileName` FROM `File`')
     $path = if ($folder) { "$folder\$(Get-LongName $row.FileName)" } else { Get-LongName $row.FileName }
     $installed[$path.ToLowerInvariant()] = $row.File
 }
-foreach ($file in 'marquee.exe', 'MarqueeTray.exe', 'marquee.dll', 'MarqueeTray.dll', 'coreclr.dll', 'libSkiaSharp.dll',
+foreach ($file in 'marquee.exe', 'MarqueeTray.exe', 'MarqueeEditor.exe', 'marquee.dll', 'MarqueeTray.dll', 'MarqueeEditor.dll',
+    'Marquee.Editor.Model.dll', 'PresentationFramework.dll', 'wpfgfx_cor3.dll', 'coreclr.dll', 'libSkiaSharp.dll',
     "PresentMon\PresentMon-$presentMon-x64.exe", 'themes\example-agents\layout.yaml', 'themes\example-landscape\layout.yaml',
     'themes\example-portrait\layout.yaml', 'themes\example-showcase\layout.yaml', 'themes\example-showcase\video\radar.mp4',
     'LICENSE', 'THIRD-PARTY-NOTICES.md',
@@ -135,10 +136,13 @@ Check "PATH gets [InstallDir] appended, system-wide, removed on uninstall" ($pat
     "Environment rows: $(($path | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join '; ')"
 
 $shortcuts = @(Get-Rows 'SELECT `Shortcut`, `Directory_`, `Name`, `Target` FROM `Shortcut`')
-$trayFile = $installed['marqueetray.exe']
-Check 'Start menu shortcut "Marquee" to MarqueeTray.exe' ($shortcuts.Count -eq 1 -and $shortcuts[0].Directory_ -eq 'ProgramMenuFolder' -and
-    (Get-LongName $shortcuts[0].Name) -eq 'Marquee' -and $shortcuts[0].Target -eq "[#$trayFile]") `
-    "Shortcut rows: $(($shortcuts | ForEach-Object { "$($_.Name) in $($_.Directory_) -> $($_.Target)" }) -join '; ')"
+$shortcutText = "Shortcut rows: $(($shortcuts | ForEach-Object { "$($_.Name) in $($_.Directory_) -> $($_.Target)" }) -join '; ')"
+Check 'two Start menu shortcuts' ($shortcuts.Count -eq 2) $shortcutText
+foreach ($expectedShortcut in @{ Name = 'Marquee'; Exe = 'MarqueeTray.exe' }, @{ Name = 'Marquee Theme Editor'; Exe = 'MarqueeEditor.exe' }) {
+    $target = "[#$($installed[$expectedShortcut.Exe.ToLowerInvariant()])]"
+    Check "Start menu shortcut `"$($expectedShortcut.Name)`" to $($expectedShortcut.Exe)" (@($shortcuts | Where-Object {
+        $_.Directory_ -eq 'ProgramMenuFolder' -and (Get-LongName $_.Name) -eq $expectedShortcut.Name -and $_.Target -eq $target }).Count -eq 1) $shortcutText
+}
 
 # Custom action type bits (msidbCustomActionType*).
 $inScript = 0x400; $noImpersonate = 0x800; $rollback = 0x100; $commit = 0x200; $continue = 0x40

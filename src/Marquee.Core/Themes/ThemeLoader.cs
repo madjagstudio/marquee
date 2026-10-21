@@ -43,17 +43,39 @@ public static class ThemeLoader
 
     internal static LoadedTheme Load(string folder, int? fpsOverride, ShaderProbe probe, VideoProbe videoProbe)
     {
-        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
-        if (!Directory.Exists(full))
-            throw new ThemeException($"Theme folder {full} does not exist.");
+        var full = ExistingFolder(folder);
         var layout = Path.Combine(full, LayoutFileName);
         if (!File.Exists(layout))
             throw new ThemeException($"Theme folder {full} has no {LayoutFileName}.");
 
-        var spec = LayoutParser.Parse(File.ReadAllText(layout));
+        return Load(full, File.ReadAllText(layout), fpsOverride, probe, videoProbe, cache: null);
+    }
+
+    /// Loads `layoutText`, the theme editor's unsaved layout.yaml, against the files in `folder`, which needn't have a
+    /// layout.yaml yet. Throws ThemeException as the other Load does. The images, fonts, shaders and clips come from
+    /// `cache` where their files haven't changed since an earlier load, and are left in it (see ThemeAssetCache), so
+    /// load the next text before disposing this theme. Runs at the theme's own canvas.fps.
+    public static LoadedTheme Load(string folder, string layoutText, ThemeAssetCache cache)
+    {
+        cache.ThrowIfDisposed();
+        return Load(ExistingFolder(folder), layoutText, fpsOverride: null, cache.ShaderProbe, cache.VideoProbe, cache);
+    }
+
+    static LoadedTheme Load(string full, string layoutText, int? fpsOverride, ShaderProbe probe, VideoProbe videoProbe,
+        ThemeAssetCache? cache)
+    {
+        var spec = LayoutParser.Parse(layoutText);
         var warnings = new List<ThemeWarning>();
-        var assets = ThemeAssets.Load(full, Shown(spec), warnings, FrameRate(spec.Canvas, fpsOverride), probe, videoProbe);
+        var assets = ThemeAssets.Load(full, Shown(spec), warnings, FrameRate(spec.Canvas, fpsOverride), probe, videoProbe, cache: cache);
         return new LoadedTheme(full, spec, assets, warnings.Select(w => w.Message).ToList());
+    }
+
+    static string ExistingFolder(string folder)
+    {
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
+        if (!Directory.Exists(full))
+            throw new ThemeException($"Theme folder {full} does not exist.");
+        return full;
     }
 
     /// The spec without its hidden layers and widgets (a hidden group's children go with it), which is all the renderer

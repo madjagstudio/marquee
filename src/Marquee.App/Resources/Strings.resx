@@ -95,6 +95,10 @@
     <value>Open logs</value>
     <comment>Opens the folder of Marquee's daily log files, in File Explorer.</comment>
   </data>
+  <data name="MenuEditTheme" xml:space="preserve">
+    <value>Edit theme…</value>
+    <comment>Opens the theme editor on the theme on the screen.</comment>
+  </data>
   <data name="MenuEditSettings" xml:space="preserve">
     <value>Edit settings</value>
     <comment>Opens config.yaml in the user's editor for .yaml files.</comment>
@@ -285,6 +289,10 @@ Free for noncommercial use: PolyForm Noncommercial License 1.0.0.</value>
   <data name="NoDesktopShell" xml:space="preserve">
     <value>Explorer, the Windows desktop, isn't running, so Marquee opened nothing: without it, what the tray opens would run as administrator. Try again once the taskbar is back.</value>
     <comment>The balloon text when a menu item that opens a folder, a file or a web page is clicked while Explorer, the Windows desktop shell, isn't running (after it crashed, say).</comment>
+  </data>
+  <data name="EditorMissing" xml:space="preserve">
+    <value>The theme editor isn't installed beside the tray: there is no {0}. Reinstall Marquee to get it back.</value>
+    <comment>The balloon text when Edit theme is clicked and the theme editor isn't there. {0} is the full path of MarqueeEditor.exe where it looked.</comment>
   </data>
   <data name="PreviewStatus" xml:space="preserve">
     <value>{0:0.0} fps (target {1}) · render {2:0.0} ms · send {3:0.0} ms · {4} frames sent</value>

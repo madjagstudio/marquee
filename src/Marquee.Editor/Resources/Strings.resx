@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The theme editor's text in English: its window, toolbar, banners and dialogs. To translate, copy this file to
+     Strings.<culture>.resx (Strings.de.resx, say) and translate the values: see docs/localization.md. Keep every
+     {0}-style placeholder. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppName" xml:space="preserve">
+    <value>Marquee Theme Editor</value>
+    <comment>The editor's name, as message box titles show it.</comment>
+  </data>
+  <data name="WindowTitle" xml:space="preserve">
+    <value>{0} – Marquee Theme Editor</value>
+    <comment>The window's title. {0} is the open theme's folder name.</comment>
+  </data>
+  <data name="Usage" xml:space="preserve">
+    <value>The editor opens one theme at a time. Start it as: MarqueeEditor [theme or folder]</value>
+    <comment>Shown when the editor is started with more than one argument. "MarqueeEditor" stays as it is.</comment>
+  </data>
+  <data name="RefuseElevated" xml:space="preserve">
+    <value>The theme editor doesn't run as administrator, so the theme files it saves stay yours.
+Close it, and start it again normally: from the Start menu, or the tray's "Edit theme…".</value>
+    <comment>Shown when the editor is started with administrator rights; it then closes. "Edit theme…" is the tray menu's item.</comment>
+  </data>
+  <data name="ThemeNotFound" xml:space="preserve">
+    <value>The editor couldn't find the theme to open.
+{0}</value>
+    <comment>Shown when the theme named on the command line or in config.yaml isn't there. {0} says where it looked.</comment>
+  </data>
+  <data name="CouldNotOpen" xml:space="preserve">
+    <value>{0} couldn't be opened: {1}</value>
+    <comment>{0} is the theme's folder name, {1} why it couldn't be opened, often with a line in layout.yaml.</comment>
+  </data>
+  <data name="RecoveryWaiting" xml:space="preserve">
+    <value>Unsaved changes from an earlier session are kept in {0}. Fix layout.yaml and open the theme again to be offered them.</value>
+    <comment>Added to CouldNotOpen when layout.yaml is broken and a crash recovery copy exists. {0} is the copy's full path.</comment>
+  </data>
+  <data name="CouldNotCopy" xml:space="preserve">
+    <value>{0} couldn't be copied: {1}</value>
+    <comment>When making a copy of a theme to edit. {0} is the theme's folder name, {1} the reason from Windows.</comment>
+  </data>
+  <data name="CouldNotRestore" xml:space="preserve">
+    <value>The unsaved changes couldn't be restored: {0}</value>
+    <comment>{0} is the reason.</comment>
+  </data>
+  <data name="MakeCopyQuestion" xml:space="preserve">
+    <value>{0} can't be edited where it is. {1}
+
+Yes: make a copy to edit, in your themes.
+No: open it read-only.
+Cancel: don't open it.</value>
+    <comment>Asked when opening a theme the editor can't save, such as an installed example. {0} is the theme's folder name, {1} why it can't be saved. Yes, No and Cancel are the message box's buttons.</comment>
+  </data>
+  <data name="RestoreQuestion" xml:space="preserve">
+    <value>The editor closed without saving its last changes to {0}.
+
+Unsaved changes: {1}
+layout.yaml: {2}
+
+Restore the unsaved changes? You can undo it.</value>
+    <comment>Asked when a theme opens after the editor ended without closing (a crash, Task Manager). {0} is the theme's folder name; {1} and {2} are when the unsaved changes and layout.yaml were last written.</comment>
+  </data>
+  <data name="AlreadyOpen" xml:space="preserve">
+    <value>{0} is already open in another editor window.</value>
+    <comment>Shown when the theme is open in another editor whose window couldn't be brought forward. {0} is the theme's folder name.</comment>
+  </data>
+  <data name="CloseUnsavedQuestion" xml:space="preserve">
+    <value>layout.yaml couldn't be saved. {0}
+
+Close it anyway? Your changes are kept, and offered the next time you open this theme.</value>
+    <comment>Asked when the window closes, or another theme opens, while the last save failed. {0} is why, and when it is tried again.</comment>
+  </data>
+  <data name="ThemePickerTip" xml:space="preserve">
+    <value>Open another theme</value>
+    <comment>The tooltip of the theme's name in the toolbar, which opens the theme picker.</comment>
+  </data>
+  <data name="NewFromExample" xml:space="preserve">
+    <value>New from an example</value>
+    <comment>The theme picker's submenu that copies an example into your themes and opens the copy.</comment>
+  </data>
+  <data name="NoExamples" xml:space="preserve">
+    <value>No examples found</value>
+    <comment>The New from an example submenu's only line when no installed examples are found.</comment>
+  </data>
+  <data name="AddWidget" xml:space="preserve">
+    <value>Add widget</value>
+    <comment>The toolbar menu listing the widget types to add.</comment>
+  </data>
+  <data name="Undo" xml:space="preserve">
+    <value>Undo</value>
+    <comment>The toolbar's undo button, for screen readers, and its tooltip when there is nothing to undo.</comment>
+  </data>
+  <data name="Redo" xml:space="preserve">
+    <value>Redo</value>
+    <comment>The toolbar's redo button, for screen readers, and its tooltip when there is nothing to redo.</comment>
+  </data>
+  <data name="UndoStep" xml:space="preserve">
+    <value>Undo {0} (Ctrl+Z)</value>
+    <comment>The undo button's tooltip. {0} is what undo takes back, such as "Move" or "Add gauge".</comment>
+  </data>
+  <data name="RedoStep" xml:space="preserve">
+    <value>Redo {0} (Ctrl+Y)</value>
+    <comment>The redo button's tooltip. {0} is what redo makes again.</comment>
+  </data>
+  <data name="Align" xml:space="preserve">
+    <value>Align</value>
+    <comment>The toolbar menu that aligns and distributes the selected widgets.</comment>
+  </data>
+  <data name="AlignLeft" xml:space="preserve">
+    <value>Align left edges</value>
+    <comment>Moves the selected widgets so their left edges line up.</comment>
+  </data>
+  <data name="AlignCenter" xml:space="preserve">
+    <value>Align centres</value>
+    <comment>Moves the selected widgets so their centres line up, across.</comment>
+  </data>
+  <data name="AlignRight" xml:space="preserve">
+    <value>Align right edges</value>
+    <comment>Moves the selected widgets so their right edges line up.</comment>
+  </data>
+  <data name="AlignTop" xml:space="preserve">
+    <value>Align top edges</value>
+    <comment>Moves the selected widgets so their top edges line up.</comment>
+  </data>
+  <data name="AlignMiddle" xml:space="preserve">
+    <value>Align middles</value>
+    <comment>Moves the selected widgets so their middles line up, down.</comment>
+  </data>
+  <data name="AlignBottom" xml:space="preserve">
+    <value>Align bottom edges</value>
+    <comment>Moves the selected widgets so their bottom edges line up.</comment>
+  </data>
+  <data name="DistributeHorizontally" xml:space="preserve">
+    <value>Distribute horizontally</value>
+    <comment>Spaces three or more selected widgets evenly across.</comment>
+  </data>
+  <data name="DistributeVertically" xml:space="preserve">
+    <value>Distribute vertically</value>
+    <comment>Spaces three or more selected widgets evenly down.</comment>
+  </data>
+  <data name="ZoomFit" xml:space="preserve">
+    <value>Fit</value>
+    <comment>Zooms the canvas to fit the window.</comment>
+  </data>
+  <data name="Zoom100" xml:space="preserve">
+    <value>100%</value>
+    <comment>Zooms the canvas so each theme pixel is one pixel of the screen.</comment>
+  </data>
+  <data name="Zoom200" xml:space="preserve">
+    <value>200%</value>
+    <comment>Zooms the canvas to twice that.</comment>
+  </data>
+  <data name="ShowOnScreen" xml:space="preserve">
+    <value>Show on screen</value>
+    <comment>The toolbar button that makes the open theme the one on the screen.</comment>
+  </data>
+  <data name="ShowOnScreenTip" xml:space="preserve">
+    <value>Make this the theme on the screen: the editor writes it into config.yaml, and the tray switches to it.</value>
+    <comment>The Show on screen button's tooltip. config.yaml stays as it is.</comment>
+  </data>
+  <data name="ShownOnScreen" xml:space="preserve">
+    <value>config.yaml now names {0}, so the tray shows it.</value>
+    <comment>The status bar after Show on screen. {0} is the theme's folder name.</comment>
+  </data>
+  <data name="ShowOnScreenFailed" xml:space="preserve">
+    <value>Couldn't change config.yaml: {0}</value>
+    <comment>{0} is the reason.</comment>
+  </data>
+  <data name="Saved" xml:space="preserve">
+    <value>Saved</value>
+    <comment>The save state: layout.yaml holds every change.</comment>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Saving…</value>
+    <comment>The save state: a change is about to be saved, or being saved.</comment>
+  </data>
+  <data name="NotSaved" xml:space="preserve">
+    <value>Not saved</value>
+    <comment>The save state when the last save failed; its tooltip says why.</comment>
+  </data>
+  <data name="SaveReadOnly" xml:space="preserve">
+    <value>Read-only</value>
+    <comment>The save state of a theme opened read-only, which is never saved.</comment>
+  </data>
+  <data name="SaveFailedDetail" xml:space="preserve">
+    <value>{0} Trying again at {1}.</value>
+    <comment>The tooltip of Not saved. {0} is why the save failed, {1} the time it is tried again.</comment>
+  </data>
+  <data name="NoProblems" xml:space="preserve">
+    <value>No problems</value>
+    <comment>The toolbar's problems list when the theme has none.</comment>
+  </data>
+  <data name="OneProblem" xml:space="preserve">
+    <value>1 problem</value>
+    <comment>The toolbar's problems list with one problem.</comment>
+  </data>
+  <data name="Problems" xml:space="preserve">
+    <value>{0} problems</value>
+    <comment>The toolbar's problems list with two or more. {0} is how many.</comment>
+  </data>
+  <data name="PausedBanner" xml:space="preserve">
+    <value>Editing is paused: {0}. Fix layout.yaml, or revert to the version you opened.</value>
+    <comment>The bar over the canvas while layout.yaml doesn't load, after a hand edit. {0} is the error, with its line.</comment>
+  </data>
+  <data name="ReadOnlyBanner" xml:space="preserve">
+    <value>Read-only. {0}</value>
+    <comment>The bar over the canvas for a theme opened read-only. {0} says why it can't be saved.</comment>
+  </data>
+  <data name="RevertToOpened" xml:space="preserve">
+    <value>Revert to opened version</value>
+    <comment>The paused bar's button: puts layout.yaml back as it was when the editor opened it, as one undo step.</comment>
+  </data>
+  <data name="MakeCopyToEdit" xml:space="preserve">
+    <value>Make a copy to edit</value>
+    <comment>The read-only bar's button: copies the theme into your themes and opens the copy.</comment>
+  </data>
+  <data name="KeepEditing" xml:space="preserve">
+    <value>Keep editing in your text editor</value>
+    <comment>The paused bar's other button: puts the bar away, and editing stays paused until layout.yaml loads again.</comment>
+  </data>
+  <data name="SaveToFolder" xml:space="preserve">
+    <value>Save to a folder…</value>
+    <comment>Offered under the save state when the theme's folder was moved, renamed or deleted while it was open: saves the text as layout.yaml in a folder you choose, and opens it from there.</comment>
+  </data>
+  <data name="SaveToFolderTitle" xml:space="preserve">
+    <value>Choose a folder to save layout.yaml in</value>
+    <comment>The title of the folder picker Save to a folder… opens.</comment>
+  </data>
+  <data name="SaveToFolderFailed" xml:space="preserve">
+    <value>Couldn't save layout.yaml there: {0}</value>
+    <comment>The status bar when Save to a folder… fails. {0} is the reason.</comment>
+  </data>
+  <data name="ReplaceLayoutQuestion" xml:space="preserve">
+    <value>{0} already has a layout.yaml, another theme's perhaps. Replace it with this theme's?</value>
+    <comment>Asked by Save to a folder… when the folder chosen has a layout.yaml. {0} is the folder.</comment>
+  </data>
+  <data name="RecoveryOff" xml:space="preserve">
+    <value>Crash recovery is off: {0}</value>
+    <comment>The status bar when the editor can't keep its copy of unsaved changes for after a crash. {0} says why.</comment>
+  </data>
+  <data name="ReadOnlyRefused" xml:space="preserve">
+    <value>This theme is read-only. Make a copy to edit it.</value>
+    <comment>The status bar when an edit is tried on a read-only theme.</comment>
+  </data>
+  <data name="PausedRefused" xml:space="preserve">
+    <value>Editing is paused until layout.yaml loads again.</value>
+    <comment>The status bar when an edit is tried while editing is paused.</comment>
+  </data>
+  <data name="TrayNotRunning" xml:space="preserve">
+    <value>Tray not running</value>
+    <comment>The status bar when Marquee's tray isn't running.</comment>
+  </data>
+  <data name="TrayNotRunningTip" xml:space="preserve">
+    <value>Marquee's tray isn't running, so the canvas shows what the editor reads itself, and samples for the rest.</value>
+    <comment>The tooltip of Tray not running.</comment>
+  </data>
+  <data name="LayersPanel" xml:space="preserve">
+    <value>Layers</value>
+    <comment>The heading of the layers panel.</comment>
+  </data>
+  <data name="PropertiesPanel" xml:space="preserve">
+    <value>Properties</value>
+    <comment>The heading of the properties panel.</comment>
+  </data>
+  <data name="TestValuesPanel" xml:space="preserve">
+    <value>Test values</value>
+    <comment>The heading of the test values panel.</comment>
+  </data>
+  <data name="ActionFailed" xml:space="preserve">
+    <value>{0} didn't work: {1}</value>
+    <comment>The status bar when the editor refuses an action. {0} is the action, such as "Move" or "Paste"; {1} why.</comment>
+  </data>
+  <data name="ActionDrag" xml:space="preserve">
+    <value>Drag</value>
+    <comment>An action, as ActionFailed names it: moving, resizing or turning on the canvas.</comment>
+  </data>
+  <data name="ActionSelect" xml:space="preserve">
+    <value>Select</value>
+    <comment>An action, as ActionFailed names it.</comment>
+  </data>
+  <data name="ActionCopy" xml:space="preserve">
+    <value>Copy</value>
+    <comment>An action, as ActionFailed names it: copying widgets.</comment>
+  </data>
+  <data name="ActionCopyStyle" xml:space="preserve">
+    <value>Copy style</value>
+    <comment>An action, as ActionFailed names it: copying a widget's style (Ctrl+Shift+C).</comment>
+  </data>
+  <data name="ClipboardBusy" xml:space="preserve">
+    <value>Another program is using the clipboard. Try again.</value>
+    <comment>The status bar when copying fails because the clipboard is busy.</comment>
+  </data>
+  <data name="CouldNotReadFramePixels" xml:space="preserve">
+    <value>Could not read the frame's pixels.</value>
+    <comment>An internal error, if a frame couldn't be copied to the canvas.</comment>
+  </data>
+  <data name="AddImage" xml:space="preserve">
+    <value>Add image…</value>
+    <comment>Add widget's menu: imports an image file into the theme and adds an image widget showing it.</comment>
+  </data>
+  <data name="AddVideo" xml:space="preserve">
+    <value>Add video…</value>
+    <comment>Add widget's menu: imports a video file into the theme and adds a video widget playing it.</comment>
+  </data>
+  <data name="CleanUpMenu" xml:space="preserve">
+    <value>Clean up unused files…</value>
+    <comment>The theme menu: lists the theme's files nothing uses, to delete.</comment>
+  </data>
+  <data name="RevertMenu" xml:space="preserve">
+    <value>Revert to opened version…</value>
+    <comment>The theme menu: puts layout.yaml back as it was when the editor opened it, after asking, as one undo step.</comment>
+  </data>
+  <data name="RevertQuestion" xml:space="preserve">
+    <value>Put {0} back as it was when you opened it? This discards the changes made since; Undo brings them back.</value>
+    <comment>Asked before "Revert to opened version". {0} is the theme's name.</comment>
+  </data>
+  <data name="CleanUpTitle" xml:space="preserve">
+    <value>Clean up unused files</value>
+    <comment>The clean-up window's title.</comment>
+  </data>
+  <data name="CleanUpIntro" xml:space="preserve">
+    <value>Nothing in the layout.yaml of {0} uses these files. Tick the ones to delete.</value>
+    <comment>The clean-up window's first line. {0} is the theme's name.</comment>
+  </data>
+  <data name="CleanUpConfirm" xml:space="preserve">
+    <value>Delete {0} files from the theme folder? This can't be undone.</value>
+    <comment>The last question before the clean-up deletes. {0} is how many files.</comment>
+  </data>
+  <data name="CleanUpFailed" xml:space="preserve">
+    <value>The theme's unused files couldn't be listed: {0}</value>
+    <comment>When layout.yaml can't be read for the clean-up. {0} is why.</comment>
+  </data>
+  <data name="NoUnusedFiles" xml:space="preserve">
+    <value>Every file in the theme folder is used.</value>
+    <comment>When the clean-up finds nothing to delete.</comment>
+  </data>
+  <data name="DeleteFiles" xml:space="preserve">
+    <value>Delete {0} ({1})</value>
+    <comment>The clean-up window's delete button. {0} is how many files, {1} their total size.</comment>
+  </data>
+  <data name="FilesDeleted" xml:space="preserve">
+    <value>Deleted {0} unused files.</value>
+    <comment>The status bar after a clean-up. {0} is how many files.</comment>
+  </data>
+  <data name="FilesKept" xml:space="preserve">
+    <value>Some files were kept:\n{0}</value>
+    <comment>After a clean-up that couldn't delete everything. {0} is one line per file kept.</comment>
+  </data>
+  <data name="FileKept" xml:space="preserve">
+    <value>{0}: {1}</value>
+    <comment>One line of FilesKept: {0} is the file, {1} why it was kept.</comment>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>Tick all</value>
+    <comment>The clean-up window: ticks every file.</comment>
+  </data>
+  <data name="SelectNone" xml:space="preserve">
+    <value>Tick none</value>
+    <comment>The clean-up window: clears every tick.</comment>
+  </data>
+  <data name="SizeBytes" xml:space="preserve">
+    <value>{0} bytes</value>
+    <comment>A file size. {0} is the number.</comment>
+  </data>
+  <data name="SizeKilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+    <comment>A file size in kilobytes.</comment>
+  </data>
+  <data name="SizeMegabytes" xml:space="preserve">
+    <value>{0} MB</value>
+    <comment>A file size in megabytes.</comment>
+  </data>
+  <data name="SizeGigabytes" xml:space="preserve">
+    <value>{0} GB</value>
+    <comment>A file size in gigabytes.</comment>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>A dialog's cancel button.</comment>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Create</value>
+    <comment>The copy's name window: makes the copy.</comment>
+  </data>
+  <data name="CopyNameTitle" xml:space="preserve">
+    <value>New from an example</value>
+    <comment>The copy's name window's title.</comment>
+  </data>
+  <data name="CopyNamePrompt" xml:space="preserve">
+    <value>What should the copy of {0} be called? It goes in your themes folder.</value>
+    <comment>The copy's name window's question. {0} is the example's name.</comment>
+  </data>
+  <data name="ImportImageTitle" xml:space="preserve">
+    <value>Import an image</value>
+    <comment>The file dialog's title for importing an image.</comment>
+  </data>
+  <data name="ImportFontTitle" xml:space="preserve">
+    <value>Import a font</value>
+    <comment>The file dialog's title for importing a font file.</comment>
+  </data>
+  <data name="ImportVideoTitle" xml:space="preserve">
+    <value>Import a video</value>
+    <comment>The file dialog's title for importing a clip.</comment>
+  </data>
+  <data name="ImageFiles" xml:space="preserve">
+    <value>Images</value>
+    <comment>The file dialog's filter name for images.</comment>
+  </data>
+  <data name="FontFiles" xml:space="preserve">
+    <value>Fonts</value>
+    <comment>The file dialog's filter name for font files.</comment>
+  </data>
+  <data name="VideoFiles" xml:space="preserve">
+    <value>Videos</value>
+    <comment>The file dialog's filter name for clips.</comment>
+  </data>
+  <data name="AllFiles" xml:space="preserve">
+    <value>All files</value>
+    <comment>The file dialog's filter name for any file.</comment>
+  </data>
+  <data name="ImportRefused" xml:space="preserve">
+    <value>{0} wasn't imported: {1}</value>
+    <comment>When importing a file fails. {0} is the file's name, {1} why.</comment>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>Import…</value>
+    <comment>The properties panel: copies a file into the theme and uses it.</comment>
+  </data>
+  <data name="ImportFontTip" xml:space="preserve">
+    <value>Copy a font file into the theme's fonts folder and use it</value>
+    <comment>The font row's Import button's tooltip.</comment>
+  </data>
+  <data name="ImportFileTip" xml:space="preserve">
+    <value>Copy a file into the theme folder and use it</value>
+    <comment>A file row's Import button's tooltip.</comment>
+  </data>
+  <data name="MenuGroup" xml:space="preserve">
+    <value>Group</value>
+    <comment>The layers menu: puts the selected widgets in a group.</comment>
+  </data>
+  <data name="MenuUngroup" xml:space="preserve">
+    <value>Ungroup</value>
+    <comment>The layers menu: moves a group's widgets out of it.</comment>
+  </data>
+  <data name="MenuCopy" xml:space="preserve">
+    <value>Copy</value>
+    <comment>The layers menu.</comment>
+  </data>
+  <data name="MenuPaste" xml:space="preserve">
+    <value>Paste</value>
+    <comment>The layers menu.</comment>
+  </data>
+  <data name="MenuDuplicate" xml:space="preserve">
+    <value>Duplicate</value>
+    <comment>The layers menu.</comment>
+  </data>
+  <data name="MenuDelete" xml:space="preserve">
+    <value>Delete</value>
+    <comment>The layers menu.</comment>
+  </data>
+  <data name="MenuRename" xml:space="preserve">
+    <value>Rename</value>
+    <comment>The layers menu: edits the widget's name in place.</comment>
+  </data>
+  <data name="HideTip" xml:space="preserve">
+    <value>Hide</value>
+    <comment>The eye button on a layer that shows.</comment>
+  </data>
+  <data name="ShowTip" xml:space="preserve">
+    <value>Show</value>
+    <comment>The eye button on a hidden layer.</comment>
+  </data>
+  <data name="LockTip" xml:space="preserve">
+    <value>Lock, so the canvas can't move it</value>
+    <comment>The lock button on an unlocked layer.</comment>
+  </data>
+  <data name="UnlockTip" xml:space="preserve">
+    <value>Unlock</value>
+    <comment>The lock button on a locked layer.</comment>
+  </data>
+  <data name="ReadOnlyLayer" xml:space="preserve">
+    <value>read-only</value>
+    <comment>A layer that uses an anchor or alias, which the panel can't change.</comment>
+  </data>
+  <data name="ReadOnlyLayerTip" xml:space="preserve">
+    <value>This uses a YAML anchor or alias. Edit it in layout.yaml.</value>
+    <comment>The read-only note's tooltip.</comment>
+  </data>
+  <data name="BackgroundSection" xml:space="preserve">
+    <value>Background</value>
+    <comment>The layers panel's section of background layers.</comment>
+  </data>
+  <data name="BackgroundSectionTip" xml:space="preserve">
+    <value>Background layers can be hidden and locked here; their contents are edited in layout.yaml for now.</value>
+    <comment>The background section's tooltip.</comment>
+  </data>
+  <data name="NothingSelected" xml:space="preserve">
+    <value>Select a widget on the canvas or in the layers to see its properties.</value>
+    <comment>The properties panel with nothing selected.</comment>
+  </data>
+  <data name="WidgetsSelected" xml:space="preserve">
+    <value>{0} widgets selected</value>
+    <comment>The properties panel's heading for several widgets. {0} is how many.</comment>
+  </data>
+  <data name="Mixed" xml:space="preserve">
+    <value>Mixed</value>
+    <comment>A value box while the selected widgets have different values.</comment>
+  </data>
+  <data name="DefaultIs" xml:space="preserve">
+    <value>Left out, it is {0}.</value>
+    <comment>A row's tooltip: the key's default. {0} is the default as layout.yaml writes it.</comment>
+  </data>
+  <data name="FromNamedStyle" xml:space="preserve">
+    <value>The named style gives {0}.</value>
+    <comment>A row's tooltip: what the widget's named style sets. {0} is the value.</comment>
+  </data>
+  <data name="KeyReadOnly" xml:space="preserve">
+    <value>This key uses a YAML anchor or alias: edit it in layout.yaml.</value>
+    <comment>A read-only row's tooltip.</comment>
+  </data>
+  <data name="ResetTip" xml:space="preserve">
+    <value>Reset to the default</value>
+    <comment>A row's reset button: removes the key from layout.yaml.</comment>
+  </data>
+  <data name="Width" xml:space="preserve">
+    <value>W</value>
+    <comment>The first box of a size: the width.</comment>
+  </data>
+  <data name="Height" xml:space="preserve">
+    <value>H</value>
+    <comment>The second box of a size: the height.</comment>
+  </data>
+  <data name="ListItem" xml:space="preserve">
+    <value>{0} {1}</value>
+    <comment>A list item's heading, such as "series 2". {0} is the list's key, {1} the item's number.</comment>
+  </data>
+  <data name="AddItem" xml:space="preserve">
+    <value>Add</value>
+    <comment>A list row's button: adds an item.</comment>
+  </data>
+  <data name="RemoveItem" xml:space="preserve">
+    <value>Remove</value>
+    <comment>A list item's button.</comment>
+  </data>
+  <data name="MoveItemUp" xml:space="preserve">
+    <value>Move up</value>
+    <comment>A list item's button.</comment>
+  </data>
+  <data name="MoveItemDown" xml:space="preserve">
+    <value>Move down</value>
+    <comment>A list item's button.</comment>
+  </data>
+  <data name="PickColorTip" xml:space="preserve">
+    <value>Pick a colour</value>
+    <comment>A colour row's swatch.</comment>
+  </data>
+  <data name="Gradient" xml:space="preserve">
+    <value>Gradient</value>
+    <comment>The paint row's switch between a colour and a gradient.</comment>
+  </data>
+  <data name="GradientTip" xml:space="preserve">
+    <value>Paint with a gradient instead of one colour</value>
+    <comment>The gradient switch's tooltip.</comment>
+  </data>
+  <data name="EditGradient" xml:space="preserve">
+    <value>Edit…</value>
+    <comment>The paint row's button that opens the gradient editor.</comment>
+  </data>
+  <data name="PreviewTip" xml:space="preserve">
+    <value>What this shows now, with the canvas's values</value>
+    <comment>A template's preview line.</comment>
+  </data>
+  <data name="SplitIntoSpans" xml:space="preserve">
+    <value>Split into spans</value>
+    <comment>Turns a text into spans, each styled on its own.</comment>
+  </data>
+  <data name="SplitIntoSpansTip" xml:space="preserve">
+    <value>Turn the text into a span, to style parts of it on their own</value>
+    <comment>The Split into spans button's tooltip.</comment>
+  </data>
+  <data name="StyleSection" xml:space="preserve">
+    <value>Style</value>
+    <comment>The properties panel's style section.</comment>
+  </data>
+  <data name="NamedStyle" xml:space="preserve">
+    <value>Named style</value>
+    <comment>The style dropdown's label.</comment>
+  </data>
+  <data name="NamedStyleTip" xml:space="preserve">
+    <value>The style from styles: this widget starts from. Its own keys go over it.</value>
+    <comment>The named style dropdown's tooltip.</comment>
+  </data>
+  <data name="NoNamedStyle" xml:space="preserve">
+    <value>(none)</value>
+    <comment>The style dropdown's choice for no named style.</comment>
+  </data>
+  <data name="StyleNone" xml:space="preserve">
+    <value>No style keys set</value>
+    <comment>The style summary for a widget with no style.</comment>
+  </data>
+  <data name="StyleKeysSetHere" xml:space="preserve">
+    <value>{0} style keys set here</value>
+    <comment>The style summary without a named style. {0} is how many.</comment>
+  </data>
+  <data name="StyleOverrides" xml:space="preserve">
+    <value>{0} + {1} overrides</value>
+    <comment>The style summary: {0} is the named style, {1} how many keys the widget sets over it.</comment>
+  </data>
+  <data name="ClearOverrides" xml:space="preserve">
+    <value>Clear overrides</value>
+    <comment>Returns the widget to its named style alone.</comment>
+  </data>
+  <data name="ClearOverridesTip" xml:space="preserve">
+    <value>Remove the keys this widget sets over its named style</value>
+    <comment>The Clear overrides button's tooltip.</comment>
+  </data>
+  <data name="CopyStyle" xml:space="preserve">
+    <value>Copy style</value>
+    <comment>Copies the widget's style (Ctrl+Shift+C).</comment>
+  </data>
+  <data name="PasteStyle" xml:space="preserve">
+    <value>Paste style</value>
+    <comment>Pastes the copied style onto the selection (Ctrl+Shift+V).</comment>
+  </data>
+  <data name="SectionText" xml:space="preserve">
+    <value>Text</value>
+    <comment>A style group.</comment>
+  </data>
+  <data name="SectionFill" xml:space="preserve">
+    <value>Colour and fill</value>
+    <comment>A style group.</comment>
+  </data>
+  <data name="SectionOutline" xml:space="preserve">
+    <value>Outline</value>
+    <comment>A style group.</comment>
+  </data>
+  <data name="SectionEffects" xml:space="preserve">
+    <value>Effects</value>
+    <comment>A style group.</comment>
+  </data>
+  <data name="SectionMore" xml:space="preserve">
+    <value>More</value>
+    <comment>A style group for keys not placed in another.</comment>
+  </data>
+  <data name="RulesSection" xml:space="preserve">
+    <value>Rules</value>
+    <comment>The properties panel's read-only list of when rules.</comment>
+  </data>
+  <data name="RulesTip" xml:space="preserve">
+    <value>Rules change the style as values change. Edit them in layout.yaml for now.</value>
+    <comment>The rules section's tooltip.</comment>
+  </data>
+  <data name="HueTip" xml:space="preserve">
+    <value>Hue</value>
+    <comment>The colour picker's hue strip.</comment>
+  </data>
+  <data name="AlphaTip" xml:space="preserve">
+    <value>Transparency</value>
+    <comment>The colour picker's alpha strip.</comment>
+  </data>
+  <data name="HexTip" xml:space="preserve">
+    <value>Hex colour, such as #FF5A36 or #FF5A3680</value>
+    <comment>The colour picker's hex box.</comment>
+  </data>
+  <data name="RecentColors" xml:space="preserve">
+    <value>Recent</value>
+    <comment>The colour picker's recent colours.</comment>
+  </data>
+  <data name="Linear" xml:space="preserve">
+    <value>Linear</value>
+    <comment>The gradient editor's kind.</comment>
+  </data>
+  <data name="Radial" xml:space="preserve">
+    <value>Radial</value>
+    <comment>The gradient editor's kind.</comment>
+  </data>
+  <data name="SpreadEvenly" xml:space="preserve">
+    <value>Spread evenly</value>
+    <comment>Places the gradient's colours evenly again.</comment>
+  </data>
+  <data name="SpreadEvenlyTip" xml:space="preserve">
+    <value>Remove the stops, so the colours are spread evenly</value>
+    <comment>The Spread evenly button's tooltip.</comment>
+  </data>
+  <data name="StopBarTip" xml:space="preserve">
+    <value>Click to add a colour; drag a stop to move it; drag it off, or press Del, to remove it</value>
+    <comment>The gradient's stop bar.</comment>
+  </data>
+  <data name="Angle" xml:space="preserve">
+    <value>Angle</value>
+    <comment>The linear gradient's angle.</comment>
+  </data>
+  <data name="AngleTip" xml:space="preserve">
+    <value>Drag to turn the gradient; hold Shift for steps of 15°</value>
+    <comment>The angle dial's tooltip.</comment>
+  </data>
+  <data name="RadialTip" xml:space="preserve">
+    <value>Drag the centre, or the square to size it.</value>
+    <comment>The radial gradient's preview.</comment>
+  </data>
+  <data name="SourcePinned" xml:space="preserve">
+    <value>Pinned</value>
+    <comment>A test value's source: pinned in this panel.</comment>
+  </data>
+  <data name="SourceTray" xml:space="preserve">
+    <value>Tray</value>
+    <comment>A test value's source: the tray's readings.</comment>
+  </data>
+  <data name="SourceLocal" xml:space="preserve">
+    <value>Local</value>
+    <comment>A test value's source: what the editor reads itself.</comment>
+  </data>
+  <data name="SourceSample" xml:space="preserve">
+    <value>Sample</value>
+    <comment>A test value's source: a stand-in value.</comment>
+  </data>
+  <data name="ValueMissing" xml:space="preserve">
+    <value>—</value>
+    <comment>A test value with no value.</comment>
+  </data>
+  <data name="ValueStale" xml:space="preserve">
+    <value>{0} (stale)</value>
+    <comment>A stale test value. {0} is the value.</comment>
+  </data>
+  <data name="PinTip" xml:space="preserve">
+    <value>Click to pin a test value</value>
+    <comment>A test value line's tooltip.</comment>
+  </data>
+  <data name="Pin" xml:space="preserve">
+    <value>Pin</value>
+    <comment>Pins the clock to the date and time chosen.</comment>
+  </data>
+  <data name="PinStale" xml:space="preserve">
+    <value>Stale</value>
+    <comment>Pins the key as stale.</comment>
+  </data>
+  <data name="PinMissing" xml:space="preserve">
+    <value>Missing</value>
+    <comment>Pins the key as missing.</comment>
+  </data>
+  <data name="Unpin" xml:space="preserve">
+    <value>Unpin</value>
+    <comment>Ends the key's pin.</comment>
+  </data>
+  <data name="UnpinAll" xml:space="preserve">
+    <value>Unpin all</value>
+    <comment>Ends every pin.</comment>
+  </data>
+  <data name="PatternTip" xml:space="preserve">
+    <value>How a graph's history fills</value>
+    <comment>The pattern dropdown.</comment>
+  </data>
+  <data name="TimeTip" xml:space="preserve">
+    <value>The time of day, such as 21:45:00</value>
+    <comment>The clock pin's time box.</comment>
+  </data>
+  <data name="NotANumber" xml:space="preserve">
+    <value>'{0}' isn't a number.</value>
+    <comment>A pin's box. {0} is what was typed.</comment>
+  </data>
+  <data name="NotATime" xml:space="preserve">
+    <value>'{0}' isn't a time of day.</value>
+    <comment>The clock pin's time box. {0} is what was typed.</comment>
+  </data>
+  <data name="ProblemError" xml:space="preserve">
+    <value>Error: the theme can't load</value>
+    <comment>A problem's mark.</comment>
+  </data>
+  <data name="ProblemWarning" xml:space="preserve">
+    <value>Warning: the theme loads anyway</value>
+    <comment>A problem's mark.</comment>
+  </data>
+</root>

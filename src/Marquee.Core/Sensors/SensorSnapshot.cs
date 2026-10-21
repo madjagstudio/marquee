@@ -11,6 +11,11 @@ public sealed class SensorSnapshot
         _entries = entries;
     }
 
+    /// A snapshot of entries put together elsewhere than a store: the theme editor's, which mixes pinned, fed, local and
+    /// sample values. The entries are copied. An entry whose ExpiresAt is at or before `now` reads as stale.
+    public static SensorSnapshot Of(DateTimeOffset now, IReadOnlyDictionary<string, SensorEntry> entries) =>
+        new(now, new Dictionary<string, SensorEntry>(entries, StringComparer.Ordinal));
+
     public DateTimeOffset Now { get; }
 
     public IEnumerable<string> Keys => _entries.Keys.Order(StringComparer.Ordinal);
@@ -25,6 +30,23 @@ public sealed class SensorSnapshot
         }
 
         value = default;
+        return false;
+    }
+
+    /// The last value written to the key, expired or not, and whether it has expired. False only for unknown keys.
+    /// Rendering uses TryGet; the theme editor's sensor feed sends stale values too, so the editor can show what a
+    /// sensor last read.
+    public bool TryGetLast(string key, out SensorValue value, out bool stale)
+    {
+        if (_entries.TryGetValue(key, out var entry))
+        {
+            value = entry.Value;
+            stale = entry.ExpiresAt <= Now;
+            return true;
+        }
+
+        value = default;
+        stale = false;
         return false;
     }
 

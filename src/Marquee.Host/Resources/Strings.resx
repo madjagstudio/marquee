@@ -310,4 +310,12 @@
     <value>The installer could not be started: {0}</value>
     <comment>{0} is the reason, Windows' own text.</comment>
   </data>
+  <data name="SensorFeedUnavailable" xml:space="preserve">
+    <value>The theme editor's sensor feed pipe {0} is unavailable for now, and Marquee keeps trying: {1}</value>
+    <comment>The feed's pipe could not be made, usually because another Marquee of the same user has it. {0} is the pipe's name, {1} Windows' own text.</comment>
+  </data>
+  <data name="SensorFeedFailed" xml:space="preserve">
+    <value>The theme editor's sensor feed pipe {0} could not send its message, and Marquee keeps trying: {1}</value>
+    <comment>{0} is the pipe's name, {1} the reason.</comment>
+  </data>
 </root>

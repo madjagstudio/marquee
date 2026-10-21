@@ -1,0 +1,458 @@
+Edits of Fixtures/example-landscape.yaml: block and one-line { } widgets, groups, named styles and when rules.
+
+=== set canvas.fps 24
+@@ line 6
+-  fps: 30
++  fps: 24
+
+=== set widgets[0].at[0] 40
+@@ line 27
+-    at: [30, 30]
++    at: [40, 30]
+
+=== set widgets[0].children[0].text CPU LOAD
+@@ line 31
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }
++      - { type: text, at: [0, 24], size: [420, 36], text: CPU LOAD, style: label }
+
+=== set widgets[0].children[1].max 110
+@@ line 32
+-      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
++      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 110, thickness: 26, smooth: 400, style: ring }
+
+=== set widgets[0].children[2].format {0:0.0}°
+@@ line 37
+-        format: "{0:0}°"
++        format: "{0:0.0}°"
+
+=== set widgets[1].children[3].style.size 22
+@@ line 70
+-        style: { extends: label, size: 24, weight: normal }
++        style: { extends: label, size: 22, weight: normal }
+
+=== set styles.ring.fill.linear[1] #FFFFFF
+@@ line 12
+-  ring: { fill: { linear: ["#36D1DC", "#FF5A36"] }, track: "#FFFFFF14", stroke: { cap: round } }
++  ring: { fill: { linear: ["#36D1DC", "#FFFFFF"] }, track: "#FFFFFF14", stroke: { cap: round } }
+
+=== set background[1].blend overlay
+@@ line 23
+-    blend: screen
++    blend: overlay
+
+=== set widgets[3].style.stroke.color #FF00FF
+@@ line 80
+-    style: { stroke: { width: 3, color: "#36D1DC" }, fill: { linear: ["#36D1DC50", "#36D1DC00"], angle: 90 } }
++    style: { stroke: { width: 3, color: "#FF00FF" }, fill: { linear: ["#36D1DC50", "#36D1DC00"], angle: 90 } }
+
+=== replace styles.hot { color: "#FF0000" }
+@@ line 14
+-  hot:
+-    color: "#FF5A36"
+-    glow: { color: "#FF5A36", radius: 18 }
+-    pulse: { property: glow, period: 1200, min: 0.3 }
++  hot: { color: "#FF0000" }
+
+=== replace widgets[0].children[1].style { fill: "#36D1DC", track: "#FFFFFF14" }
+@@ line 32
+-      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
++      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: { fill: "#36D1DC", track: "#FFFFFF14" } }
+
+=== replace widgets[3].style stroke: { width: 4, color: "#36D1DC" }\nfill: "#36D1DC20"
+@@ line 80
+-    style: { stroke: { width: 3, color: "#36D1DC" }, fill: { linear: ["#36D1DC50", "#36D1DC00"], angle: 90 } }
++    style:
++      stroke: { width: 4, color: "#36D1DC" }
++      fill: "#36D1DC20"
+
+=== replace widgets[5].when[0] above: 95\nstyle: hot
+@@ line 90
+-      - { above: 90, style: { fill: "#FF5A36" } }
++      - above: 95
++        style: hot
+
+=== replace widgets[0].children[2].when [{ above: 90, style: hot }]
+@@ line 40
+-        when:
+-          - { above: 85, style: hot }
+-          - { stale: true, style: stale }
++        when: [{ above: 90, style: hot }]
+
+=== replace background[0].fill "#000000"
+@@ line 21
+-  - fill: { linear: ["#070A12", "#141B2E"], angle: 90 }
++  - fill: "#000000"
+
+=== replace widgets[0].children[0].style size: 30\nweight: bold
+refused: widgets[0].children[0].style is inside { } or [ ], so its new value must be written on one line.
+
+=== add widgets[0] name CPU
+@@ line 48
++    name: CPU
+
+=== add widgets[0].children[0] name Title
+@@ line 31
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }
++      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label, name: Title }
+
+=== add widgets[2].style weight bold
+@@ line 72
+-  - { type: text, at: [960, 40], size: [400, 36], text: GPU LOAD, style: { extends: label, align: left } }
++  - { type: text, at: [960, 40], size: [400, 36], text: GPU LOAD, style: { extends: label, align: left, weight: bold } }
+
+=== add styles cool { color: "#36D1DC" }
+@@ line 19
++  cool: { color: "#36D1DC" }
+
+=== add widgets[3] grid lines: 3\ncolor: "#FFFFFF14"
+@@ line 81
++    grid:
++      lines: 3
++      color: "#FFFFFF14"
+
+=== remove widgets[0].style
+@@ line 29
+-    style: panel
+
+=== remove widgets[0].children[0].style
+@@ line 31
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }
++      - { type: text, at: [0, 24], size: [420, 36], text: CPU }
+
+=== remove widgets[0].children[1].min
+@@ line 32
+-      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
++      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, max: 100, thickness: 26, smooth: 400, style: ring }
+
+=== remove widgets[0].children[2].when
+@@ line 40
+-        when:
+-          - { above: 85, style: hot }
+-          - { stale: true, style: stale }
+
+=== remove styles.hot.pulse
+@@ line 17
+-    pulse: { property: glow, period: 1200, min: 0.3 }
+
+=== remove styles.hot.glow
+@@ line 16
+-    glow: { color: "#FF5A36", radius: 18 }
+
+=== remove widgets[3].points
+@@ line 79
+-    points: 120
+
+=== remove background[1].blend
+@@ line 23
+-    blend: screen
+
+=== remove widgets[1].children[3].style.weight
+@@ line 70
+-        style: { extends: label, size: 24, weight: normal }
++        style: { extends: label, size: 24 }
+
+=== remove canvas.fps
+@@ line 6
+-  fps: 30
+
+=== set widgets[0] x
+refused: widgets[0] is a list or mapping, not a single value.
+
+=== add widgets[0] at [1, 2]
+refused: widgets[0] already has at.
+
+=== remove widgets[0].at[0]
+refused: widgets[0].at[0] isn't a mapping's key, so RemoveKey can't remove it.
+
+=== insert widgets 0 type: text\nat: [0, 0]\nsize: [240, 40]\ntext: "CPU {cpu.load:0}%"
+@@ line 26
++  - type: text
++    at: [0, 0]
++    size: [240, 40]
++    text: "CPU {cpu.load:0}%"
+
+=== insert widgets 5 { type: text, at: [0, 0], size: [240, 40], text: MID }
+@@ line 83
++  - type: text
++    at: [0, 0]
++    size: [240, 40]
++    text: MID
+
+=== insert widgets 8 type: bar\nat: [0, 0]\nsize: [240, 16]\nsource: cpu.load
+@@ line 94
++  - { type: bar, at: [0, 0], size: [240, 16], source: cpu.load }
+
+=== insert widgets 10 type: gauge\nat: [0, 0]\nsize: [160, 160]\nsource: cpu.load
+@@ line 96
++  - { type: gauge, at: [0, 0], size: [160, 160], source: cpu.load }
+
+=== insert widgets[0].children 4 { type: text, at: [0, 400], size: [420, 20], text: LAST }
+@@ line 48
++      - type: text
++        at: [0, 400]
++        size: [420, 20]
++        text: LAST
+
+=== insert widgets[0].children[2].when 2 { below: 20, style: stale }
+@@ line 43
++          - { below: 20, style: stale }
+
+=== insert background 2 fill: "#00000020"\nblend: multiply
+@@ line 24
++  - fill: "#00000020"
++    blend: multiply
+
+=== remove-item widgets[0]
+@@ line 26
+-  - type: group
+-    at: [30, 30]
+-    size: [420, 420]
+-    style: panel
+-    children:
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }
+-      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
+-      - type: value
+-        at: [60, 165]
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"
+-        smooth: 400
+-        style: reading
+-        when:
+-          - { above: 85, style: hot }
+-          - { stale: true, style: stale }
+-      - type: text
+-        at: [0, 362]
+-        size: [420, 36]
+-        text: "{cpu.load:0}% · {cpu.clock / 1000:0.0} GHz"
+-        style: { extends: label, size: 24, weight: normal }
+
+=== remove-item widgets[9]
+@@ line 95
+-  - { type: value, at: [1720, 390], size: [160, 36], source: cpu.load, format: "{0:0}%", style: { size: 30, weight: semibold, align: right } }
+
+=== remove-item widgets[0].children[1]
+@@ line 32
+-      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
+
+=== remove-item widgets[5].when[0]
+@@ line 89
+-    when:
+-      - { above: 90, style: { fill: "#FF5A36" } }
++    when: []
+
+=== move widgets[9] widgets 7
+@@ line 93
+-  - { type: text, at: [960, 390], size: [120, 36], text: CPU, style: { extends: label, align: left } }
+-  - { type: bar, at: [1090, 390], size: [620, 36], source: cpu.load, smooth: 400, style: bar }
+-  - { type: value, at: [1720, 390], size: [160, 36], source: cpu.load, format: "{0:0}%", style: { size: 30, weight: semibold, align: right } }
++  - { type: value, at: [1720, 390], size: [160, 36], source: cpu.load, format: "{0:0}%", style: { size: 30, weight: semibold, align: right } }
++  - { type: text, at: [960, 390], size: [120, 36], text: CPU, style: { extends: label, align: left } }
++  - { type: bar, at: [1090, 390], size: [620, 36], source: cpu.load, smooth: 400, style: bar }
+
+=== move widgets[7] widgets 9
+@@ line 93
+-  - { type: text, at: [960, 390], size: [120, 36], text: CPU, style: { extends: label, align: left } }
+-  - { type: bar, at: [1090, 390], size: [620, 36], source: cpu.load, smooth: 400, style: bar }
+-  - { type: value, at: [1720, 390], size: [160, 36], source: cpu.load, format: "{0:0}%", style: { size: 30, weight: semibold, align: right } }
++  - { type: bar, at: [1090, 390], size: [620, 36], source: cpu.load, smooth: 400, style: bar }
++  - { type: value, at: [1720, 390], size: [160, 36], source: cpu.load, format: "{0:0}%", style: { size: 30, weight: semibold, align: right } }
++  - { type: text, at: [960, 390], size: [120, 36], text: CPU, style: { extends: label, align: left } }
+
+=== move widgets[2] widgets[1].children 4
+@@ line 71
+-
+-  - { type: text, at: [960, 40], size: [400, 36], text: GPU LOAD, style: { extends: label, align: left } }
++      - { type: text, at: [960, 40], size: [400, 36], text: GPU LOAD, style: { extends: label, align: left } }
++
+
+=== move widgets[0].children[2] widgets 1
+@@ line 33
+-      - type: value
+-        at: [60, 165]
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"
+-        smooth: 400
+-        style: reading
+-        when:
+-          - { above: 85, style: hot }
+-          - { stale: true, style: stale }
+-      - type: text
+-        at: [0, 362]
+-        size: [420, 36]
+-        text: "{cpu.load:0}% · {cpu.clock / 1000:0.0} GHz"
+-        style: { extends: label, size: 24, weight: normal }
+-
++      - type: text
++        at: [0, 362]
++        size: [420, 36]
++        text: "{cpu.load:0}% · {cpu.clock / 1000:0.0} GHz"
++        style: { extends: label, size: 24, weight: normal }
++
++  - type: value
++    at: [60, 165]
++    size: [300, 110]
++    source: cpu.temp
++    format: "{0:0}°"
++    smooth: 400
++    style: reading
++    when:
++      - { above: 85, style: hot }
++      - { stale: true, style: stale }
+
+=== move widgets[1].children[3] widgets 2
+@@ line 66
+-      - type: text
+-        at: [0, 362]
+-        size: [420, 36]
+-        text: "{gpu.load:0}% · {gpu.vram_used|bytes}"
+-        style: { extends: label, size: 24, weight: normal }
+-
++
++  - type: text
++    at: [0, 362]
++    size: [420, 36]
++    text: "{gpu.load:0}% · {gpu.vram_used|bytes}"
++    style: { extends: label, size: 24, weight: normal }
+
+=== wrap widgets 2,3 type: group\nname: GPU load\nat: [960, 40]\nsize: [920, 230]
+@@ line 72
+-  - { type: text, at: [960, 40], size: [400, 36], text: GPU LOAD, style: { extends: label, align: left } }
+-  - type: graph
+-    at: [960, 90]
+-    size: [920, 180]
+-    source: gpu.load
+-    min: 0
+-    max: 100
+-    points: 120
+-    style: { stroke: { width: 3, color: "#36D1DC" }, fill: { linear: ["#36D1DC50", "#36D1DC00"], angle: 90 } }
++  - type: group
++    name: GPU load
++    at: [960, 40]
++    size: [920, 230]
++    children:
++      - { type: text, at: [960, 40], size: [400, 36], text: GPU LOAD, style: { extends: label, align: left } }
++      - type: graph
++        at: [960, 90]
++        size: [920, 180]
++        source: gpu.load
++        min: 0
++        max: 100
++        points: 120
++        style: { stroke: { width: 3, color: "#36D1DC" }, fill: { linear: ["#36D1DC50", "#36D1DC00"], angle: 90 } }
+
+=== wrap widgets 4,6,7 { type: group, at: [960, 310], size: [920, 116] }
+@@ line 82
+-  - { type: text, at: [960, 310], size: [120, 36], text: RAM, style: { extends: label, align: left } }
+-  - type: bar
+-    at: [1090, 310]
+-    size: [620, 36]
+-    source: ram.used_pct
+-    smooth: 400
+-    style: bar
+-    when:
+-      - { above: 90, style: { fill: "#FF5A36" } }
+-  - { type: value, at: [1720, 310], size: [160, 36], source: ram.used_pct, format: "{0:0}%", style: { size: 30, weight: semibold, align: right } }
+-
+-  - { type: text, at: [960, 390], size: [120, 36], text: CPU, style: { extends: label, align: left } }
++  - type: group
++    at: [960, 310]
++    size: [920, 116]
++    children:
++      - { type: text, at: [960, 310], size: [120, 36], text: RAM, style: { extends: label, align: left } }
++      - { type: value, at: [1720, 310], size: [160, 36], source: ram.used_pct, format: "{0:0}%", style: { size: 30, weight: semibold, align: right } }
++      - { type: text, at: [960, 390], size: [120, 36], text: CPU, style: { extends: label, align: left } }
++  - type: bar
++    at: [1090, 310]
++    size: [620, 36]
++    source: ram.used_pct
++    smooth: 400
++    style: bar
++    when:
++      - { above: 90, style: { fill: "#FF5A36" } }
++
+
+=== unwrap widgets[0]
+@@ line 26
+-  - type: group
+-    at: [30, 30]
+-    size: [420, 420]
+-    style: panel
+-    children:
+-      - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }
+-      - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
+-      - type: value
+-        at: [60, 165]
+-        size: [300, 110]
+-        source: cpu.temp
+-        format: "{0:0}°"
+-        smooth: 400
+-        style: reading
+-        when:
+-          - { above: 85, style: hot }
+-          - { stale: true, style: stale }
+-      - type: text
+-        at: [0, 362]
+-        size: [420, 36]
+-        text: "{cpu.load:0}% · {cpu.clock / 1000:0.0} GHz"
+-        style: { extends: label, size: 24, weight: normal }
++  - { type: text, at: [0, 24], size: [420, 36], text: CPU, style: label }
++  - { type: gauge, at: [60, 70], size: [300, 300], source: cpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
++  - type: value
++    at: [60, 165]
++    size: [300, 110]
++    source: cpu.temp
++    format: "{0:0}°"
++    smooth: 400
++    style: reading
++    when:
++      - { above: 85, style: hot }
++      - { stale: true, style: stale }
++  - type: text
++    at: [0, 362]
++    size: [420, 36]
++    text: "{cpu.load:0}% · {cpu.clock / 1000:0.0} GHz"
++    style: { extends: label, size: 24, weight: normal }
+
+=== unwrap widgets[1]
+@@ line 49
+-  - type: group
+-    at: [480, 30]
+-    size: [420, 420]
+-    style: panel
+-    children:
+-      - { type: text, at: [0, 24], size: [420, 36], text: GPU, style: label }
+-      - { type: gauge, at: [60, 70], size: [300, 300], source: gpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
+-      - type: value
+-        at: [60, 165]
+-        size: [300, 110]
+-        source: gpu.temp
+-        format: "{0:0}°"
+-        smooth: 400
+-        style: reading
+-        when:
+-          - { above: 80, style: hot }
+-          - { stale: true, style: stale }
+-      - type: text
+-        at: [0, 362]
+-        size: [420, 36]
+-        text: "{gpu.load:0}% · {gpu.vram_used|bytes}"
+-        style: { extends: label, size: 24, weight: normal }
++  - { type: text, at: [0, 24], size: [420, 36], text: GPU, style: label }
++  - { type: gauge, at: [60, 70], size: [300, 300], source: gpu.temp, min: 20, max: 100, thickness: 26, smooth: 400, style: ring }
++  - type: value
++    at: [60, 165]
++    size: [300, 110]
++    source: gpu.temp
++    format: "{0:0}°"
++    smooth: 400
++    style: reading
++    when:
++      - { above: 80, style: hot }
++      - { stale: true, style: stale }
++  - type: text
++    at: [0, 362]
++    size: [420, 36]
++    text: "{gpu.load:0}% · {gpu.vram_used|bytes}"
++    style: { extends: label, size: 24, weight: normal }

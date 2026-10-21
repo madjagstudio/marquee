@@ -51,6 +51,8 @@ internal static class Strings
 
     public static string MenuOpenLogs => Get(nameof(MenuOpenLogs));
 
+    public static string MenuEditTheme => Get(nameof(MenuEditTheme));
+
     public static string MenuEditSettings => Get(nameof(MenuEditSettings));
 
     public static string MenuPause => Get(nameof(MenuPause));
@@ -144,6 +146,8 @@ internal static class Strings
     public static string CommandFailed(string error) => Format(nameof(CommandFailed), error);
 
     public static string NoDesktopShell => Get(nameof(NoDesktopShell));
+
+    public static string EditorMissing(string path) => Format(nameof(EditorMissing), path);
 
     public static string PreviewStatus(double fps, int targetFps, double renderMs, double sendMs, long framesSent) =>
         Format(nameof(PreviewStatus), fps, targetFps, renderMs, sendMs, framesSent);

@@ -6,7 +6,7 @@ using YamlDotNet.Core;
 namespace Marquee.Core.Config;
 
 /// A plain string written as a YAML value, for ConfigEditor. It stays a bare word when that is safe, and is quoted
-/// otherwise, in the existing value's quoting where that can hold it.
+/// otherwise, in the existing value's quoting where that can hold it. The theme editor's LayoutScalar quotes with it.
 static class YamlScalar
 {
     /// Words that are safe unquoted anywhere: a letter or underscore first (no number, no YAML indicator), then
@@ -34,11 +34,11 @@ static class YamlScalar
     const char LineSeparator = (char)0x2028, ParagraphSeparator = (char)0x2029;
 
     /// Control characters, and the two Unicode separators YAML treats as line breaks.
-    static bool NeedsEscape(char c) => char.IsControl(c) || c is LineSeparator or ParagraphSeparator;
+    internal static bool NeedsEscape(char c) => char.IsControl(c) || c is LineSeparator or ParagraphSeparator;
 
-    static string SingleQuoted(string value) => $"'{value.Replace("'", "''")}'";
+    internal static string SingleQuoted(string value) => $"'{value.Replace("'", "''")}'";
 
-    static string DoubleQuoted(string value)
+    internal static string DoubleQuoted(string value)
     {
         var text = new StringBuilder("\"");
         foreach (var c in value)

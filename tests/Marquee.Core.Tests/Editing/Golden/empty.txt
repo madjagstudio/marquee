@@ -1,0 +1,189 @@
+Edits of Fixtures/empty.yaml: empty values, { } and [ ], and filling them.
+
+=== set name Clock
+@@ line 1
+-name:
++name: Clock
+
+=== set comment_after filled
+@@ line 2
+-comment_after:   # nothing yet
++comment_after: filled   # nothing yet
+
+=== set in_flow.a x
+@@ line 7
+-in_flow: { a: , b: 1, c: }
++in_flow: { a: x, b: 1, c: }
+
+=== set in_flow.c y
+@@ line 7
+-in_flow: { a: , b: 1, c: }
++in_flow: { a: , b: 1, c: y }
+
+=== set null_word word
+@@ line 8
+-null_word: null
++null_word: word
+
+=== set block.only x
+@@ line 11
+-  only:
++  only: x
+
+=== set nested.deeper.deepest x
+@@ line 14
+-    deepest:
++    deepest: x
+
+=== replace empty_list [1, 2]
+@@ line 5
+-empty_list: []
++empty_list: [1, 2]
+
+=== replace spaced_map { a: 1 }
+@@ line 4
+-spaced_map: { }
++spaced_map: { a: 1 }
+
+=== replace name { size: 1 }
+@@ line 1
+-name:
++name: { size: 1 }
+
+=== replace name size: 1\nweight: bold
+@@ line 2
++  size: 1
++  weight: bold
+
+=== replace comment_after - a\n- b
+@@ line 3
++  - a
++  - b
+
+=== add empty_map a 1
+@@ line 3
+-empty_map: {}
++empty_map: { a: 1 }
+
+=== add spaced_map a 1
+@@ line 4
+-spaced_map: { }
++spaced_map: { a: 1 }
+
+=== add name size 1
+@@ line 2
++  size: 1
+
+=== add comment_after size 1
+@@ line 3
++  size: 1
+
+=== add in_flow d 4
+@@ line 7
+-in_flow: { a: , b: 1, c: }
++in_flow: { a: , b: 1, c: , d: 4 }
+
+=== add in_flow.a size 1
+@@ line 7
+-in_flow: { a: , b: 1, c: }
++in_flow: { a: { size: 1 }, b: 1, c: }
+
+=== add block.only size 1
+@@ line 12
++    size: 1
+
+=== add nested.deeper.deepest size 1
+@@ line 15
++      size: 1
+
+=== add empty_list a 1
+refused: empty_list isn't a mapping of keys to values, so it can't take a.
+
+=== remove in_flow.a
+@@ line 7
+-in_flow: { a: , b: 1, c: }
++in_flow: { b: 1, c: }
+
+=== remove in_flow.c
+@@ line 7
+-in_flow: { a: , b: 1, c: }
++in_flow: { a: , b: 1 }
+
+=== remove block.only
+@@ line 10
+-block:
+-  only:
++block: { }
+
+=== remove nested.deeper.deepest
+@@ line 13
+-  deeper:
+-    deepest:
++  deeper: { }
+
+=== remove nested
+@@ line 12
+-nested:
+-  deeper:
+-    deepest:
+
+=== remove name
+@@ line 1
+-name:
+
+=== insert empty_list 0 x
+@@ line 5
+-empty_list: []
++empty_list: [x]
+
+=== insert empty_list 0 type: text\nat: [0, 0]
+@@ line 5
+-empty_list: []
++empty_list:
++  - type: text
++    at: [0, 0]
+
+=== insert spaced_list 0 x
+@@ line 6
+-spaced_list: [ ]
++spaced_list: [ x ]
+
+=== insert spaced_list 0 { a: 1 }
+@@ line 6
+-spaced_list: [ ]
++spaced_list:
++  - { a: 1 }
+
+=== insert name 0 { type: text }
+@@ line 2
++  - { type: text }
+
+=== insert comment_after 0 x
+@@ line 3
++  - x
+
+=== insert in_flow.a 0 x
+@@ line 7
+-in_flow: { a: , b: 1, c: }
++in_flow: { a: [x], b: 1, c: }
+
+=== insert block.only 0 x
+@@ line 12
++    - x
+
+=== insert nested.deeper.deepest 0 a: 1\nb: 2
+@@ line 15
++      - a: 1
++        b: 2
+
+=== insert empty_map 0 x
+refused: empty_map isn't a list, so it can't take an item.
+
+=== remove-item empty_list[0]
+refused: empty_list[0] isn't in the file.
+
+=== wrap empty_list 0 type: group
+refused: empty_list has 0 items, so there is no item 0.
+
+=== unwrap name
+refused: name isn't an item of a list.

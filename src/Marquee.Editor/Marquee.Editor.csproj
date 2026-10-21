@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- MarqueeEditor.exe: the theme editor's window, a thin WPF shell of views over Marquee.Editor.Model, which holds
+       everything worth testing. It runs unelevated and refuses to start elevated (Startup\EditorStartup.cs). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>MarqueeEditor</AssemblyName>
+    <!-- Resources are named from the root namespace and their folder: Resources\Strings.resx becomes
+         Marquee.Editor.Resources.Strings, the name Strings.cs looks up, as in the other projects. -->
+    <RootNamespace>Marquee.Editor</RootNamespace>
+    <EmbeddedResourceUseDependentUponConvention>false</EmbeddedResourceUseDependentUponConvention>
+    <NeutralLanguage>en</NeutralLanguage>
+    <!-- asInvoker and per-monitor v2 DPI awareness. WPF reads its DPI awareness from the manifest. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The tray's icon. A WPF window without an Icon of its own shows the exe's. -->
+    <ApplicationIcon>..\Marquee.App\marquee.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Marquee.Editor.Model\Marquee.Editor.Model.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marquee.Editor.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- WPF projects leave System.IO out of the implicit usings, for its Path beside System.Windows.Shapes.Path; the
+         editor works with files throughout, and draws no Path shapes. -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+</Project>

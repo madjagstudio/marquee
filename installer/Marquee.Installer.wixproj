@@ -12,7 +12,7 @@
     <!-- The name the update check looks for (ReleaseFeed.InstallerName), from the one version in Directory.Build.props. -->
     <OutputName>Marquee-$(Version)-x64</OutputName>
     <OutputPath>$(MSBuildThisFileDirectory)..\artifacts\</OutputPath>
-    <!-- What build.ps1 publishes and copies: both apps, PresentMon, the example themes and the license files. -->
+    <!-- What build.ps1 publishes and copies: the three apps, PresentMon, the example themes and the license files. -->
     <StagingDir Condition="'$(StagingDir)' == ''">$(MSBuildThisFileDirectory)..\artifacts\staging\</StagingDir>
     <StagingDir>$([MSBuild]::EnsureTrailingSlash('$(StagingDir)'))</StagingDir>
     <!-- Validation (ICE) stays on, here and on CI, except for these. ICE43 and ICE57 flag a non-advertised Start menu

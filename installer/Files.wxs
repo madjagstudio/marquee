@@ -13,7 +13,7 @@
     <StandardDirectory Id="ProgramMenuFolder" />
 
     <ComponentGroup Id="Program" Directory="InstallDir">
-      <!-- The two exes by name, because the PATH entry, the shortcut and the custom actions refer to them. -->
+      <!-- The three exes by name, because the PATH entry, the shortcuts and the custom actions refer to them. -->
       <Component Id="MarqueeCli">
         <File Id="MarqueeExe" Name="marquee.exe" Source="!(bindpath.Staging)marquee.exe" KeyPath="yes" />
         <!-- marquee.exe's folder at the end of the system PATH, so `marquee` works in any new terminal. Windows Installer
@@ -30,6 +30,15 @@
                     Description="Marquee: themes, sensors and game FPS on the Lian Li Universal Screen" />
         </File>
       </Component>
+      <Component Id="MarqueeEditor">
+        <File Id="MarqueeEditorExe" Name="MarqueeEditor.exe" Source="!(bindpath.Staging)MarqueeEditor.exe" KeyPath="yes">
+          <!-- "Marquee Theme Editor" in the Start menu, as the tray's shortcut is made (and for the same reasons): the
+               editor opens the theme config.yaml names, the one on the screen. It runs as whoever opens it, and refuses
+               to run elevated. -->
+          <Shortcut Id="EditorStartMenu" Directory="ProgramMenuFolder" Name="Marquee Theme Editor" WorkingDirectory="InstallDir"
+                    Description="Edit Marquee themes on a canvas, with the theme's own renderer" />
+        </File>
+      </Component>
 
       <!-- Everything else as it is laid out in the staging folder, one component per file, with GUIDs WiX derives from
            the paths: the .NET runtime and Marquee's DLLs beside the exes, PresentMon\PresentMon-<version>-x64.exe where
@@ -38,6 +47,7 @@
       <Files Include="!(bindpath.Staging)**">
         <Exclude Files="!(bindpath.Staging)marquee.exe" />
         <Exclude Files="!(bindpath.Staging)MarqueeTray.exe" />
+        <Exclude Files="!(bindpath.Staging)MarqueeEditor.exe" />
       </Files>
     </ComponentGroup>
   </Fragment>

@@ -1,0 +1,164 @@
+<Window x:Class="Marquee.Editor.Shell.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:canvas="clr-namespace:Marquee.Editor.Canvas"
+        xmlns:res="clr-namespace:Marquee.Editor.Resources"
+        Title="{Binding Title}"
+        Width="1400" Height="860" MinWidth="800" MinHeight="480"
+        UseLayoutRounding="True"
+        Background="#FFF3F4F6">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="Visible" />
+        <Style x:Key="ToolButton" TargetType="Button">
+            <Setter Property="Margin" Value="2,0" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="MinWidth" Value="32" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="GlyphButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style x:Key="Divider" TargetType="Separator">
+            <Setter Property="Margin" Value="6,4" />
+            <Setter Property="LayoutTransform">
+                <Setter.Value>
+                    <RotateTransform Angle="90" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PanelHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="10,8,10,4" />
+            <Setter Property="Foreground" Value="#FF3C4043" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- The toolbar. Its menus are filled from the model by the code-behind (MainWindow.xaml.cs). -->
+        <Border DockPanel.Dock="Top" Background="White" BorderBrush="#FFDADCE0" BorderThickness="0,0,0,1" Padding="6,4">
+            <DockPanel LastChildFill="False">
+                <Menu DockPanel.Dock="Left" IsMainMenu="False" Background="Transparent" VerticalAlignment="Center">
+                    <MenuItem x:Name="ThemeMenu" SubmenuOpened="OnThemeMenuOpened" ToolTip="{x:Static res:Strings.ThemePickerTip}">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding ThemeName}" FontWeight="SemiBold" />
+                                <TextBlock Text=" ▾" Foreground="#FF5F6368" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                        <!-- Replaced with the themes each time the menu opens; a menu with no items doesn't open. -->
+                        <MenuItem IsEnabled="False" />
+                    </MenuItem>
+                    <MenuItem x:Name="AddWidgetMenu">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{x:Static res:Strings.AddWidget}" />
+                                <TextBlock Text=" ▾" Foreground="#FF5F6368" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                </Menu>
+                <Separator DockPanel.Dock="Left" Style="{StaticResource Divider}" />
+                <Button DockPanel.Dock="Left" Style="{StaticResource GlyphButton}" Content="&#xE7A7;"
+                        Command="{Binding UndoCommand}" ToolTip="{Binding UndoToolTip}"
+                        AutomationProperties.Name="{x:Static res:Strings.Undo}" />
+                <Button DockPanel.Dock="Left" Style="{StaticResource GlyphButton}" Content="&#xE7A6;"
+                        Command="{Binding RedoCommand}" ToolTip="{Binding RedoToolTip}"
+                        AutomationProperties.Name="{x:Static res:Strings.Redo}" />
+                <Separator DockPanel.Dock="Left" Style="{StaticResource Divider}" />
+                <Menu DockPanel.Dock="Left" IsMainMenu="False" Background="Transparent" VerticalAlignment="Center">
+                    <MenuItem x:Name="ArrangeMenu">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{x:Static res:Strings.Align}" />
+                                <TextBlock Text=" ▾" Foreground="#FF5F6368" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                </Menu>
+                <Separator DockPanel.Dock="Left" Style="{StaticResource Divider}" />
+                <Button DockPanel.Dock="Left" Style="{StaticResource ToolButton}" Content="{x:Static res:Strings.ZoomFit}"
+                        Command="{Binding ZoomCommand}" CommandParameter="{x:Static canvas:ZoomMode.Fit}" />
+                <Button DockPanel.Dock="Left" Style="{StaticResource ToolButton}" Content="{x:Static res:Strings.Zoom100}"
+                        Command="{Binding ZoomCommand}" CommandParameter="{x:Static canvas:ZoomMode.Actual}" />
+                <Button DockPanel.Dock="Left" Style="{StaticResource ToolButton}" Content="{x:Static res:Strings.Zoom200}"
+                        Command="{Binding ZoomCommand}" CommandParameter="{x:Static canvas:ZoomMode.Double}" />
+                <Separator DockPanel.Dock="Left" Style="{StaticResource Divider}" />
+                <Button DockPanel.Dock="Left" Style="{StaticResource ToolButton}" Content="{x:Static res:Strings.ShowOnScreen}"
+                        Command="{Binding ShowOnScreenCommand}" ToolTip="{x:Static res:Strings.ShowOnScreenTip}" />
+
+                <!-- The save state, then the problems, at the right: menus, filled by the code-behind, that open on the
+                     details (why a save failed, and "Save to a folder…"; each problem, which selects its widget). -->
+                <Menu DockPanel.Dock="Right" IsMainMenu="False" Background="Transparent" VerticalAlignment="Center">
+                    <MenuItem x:Name="SaveMenu" ToolTip="{Binding SaveDetail}">
+                        <MenuItem.Header>
+                            <TextBlock Text="{Binding SaveText}" Foreground="#FF5F6368" />
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem x:Name="ProblemsMenu">
+                        <MenuItem.Header>
+                            <TextBlock Text="{Binding ProblemsText}" />
+                        </MenuItem.Header>
+                    </MenuItem>
+                </Menu>
+            </DockPanel>
+        </Border>
+
+        <!-- The status bar: the last message, whether the tray is running, the zoom. -->
+        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="#FFDADCE0" BorderThickness="0,1,0,0" Padding="10,3">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding Canvas.ZoomText}" Foreground="#FF5F6368" Margin="12,0,0,0" />
+                <TextBlock DockPanel.Dock="Right" Text="{x:Static res:Strings.TrayNotRunning}" Foreground="#FF5F6368"
+                           ToolTip="{x:Static res:Strings.TrayNotRunningTip}"
+                           Visibility="{Binding TrayNotRunning, Converter={StaticResource Visible}}" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding RecoveryProblem}" Foreground="#FFB3261E" Margin="0,0,12,0"
+                           MaxWidth="480" TextTrimming="CharacterEllipsis" ToolTip="{Binding RecoveryProblem}" />
+                <TextBlock Text="{Binding Message}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Message}" />
+            </DockPanel>
+        </Border>
+
+        <!-- The banner: editing paused on a file that doesn't load, or a read-only theme. -->
+        <Border DockPanel.Dock="Top" Background="#FFFFF4CE" BorderBrush="#FFE8D48A" BorderThickness="0,0,0,1" Padding="10,6"
+                Visibility="{Binding HasBanner, Converter={StaticResource Visible}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Padding="10,2" Margin="8,0,0,0" Content="{x:Static res:Strings.KeepEditing}"
+                        Command="{Binding KeepEditingCommand}" Visibility="{Binding CanKeepEditing, Converter={StaticResource Visible}}" />
+                <Button DockPanel.Dock="Right" Padding="10,2" Margin="8,0,0,0" Content="{x:Static res:Strings.RevertToOpened}"
+                        Command="{Binding RevertCommand}" Visibility="{Binding CanRevert, Converter={StaticResource Visible}}" />
+                <Button DockPanel.Dock="Right" Padding="10,2" Margin="8,0,0,0" Content="{x:Static res:Strings.MakeCopyToEdit}"
+                        Command="{Binding MakeCopyCommand}" Visibility="{Binding CanMakeCopy, Converter={StaticResource Visible}}" />
+                <TextBlock Text="{Binding Banner}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <!-- The canvas, and the panels: layers, properties and test values, each a view of its own (MainWindow.xaml.cs). -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="300" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="340" MinWidth="240" />
+            </Grid.ColumnDefinitions>
+            <canvas:CanvasView x:Name="CanvasArea" Grid.Column="0" DataContext="{Binding Canvas}" />
+            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                          Background="#FFDADCE0" ResizeBehavior="PreviousAndNext" />
+            <Grid Grid.Column="2" Background="White">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Style="{StaticResource PanelHeader}" Text="{x:Static res:Strings.LayersPanel}" />
+                <ContentControl x:Name="LayersPanel" Grid.Row="1" Focusable="False" />
+                <TextBlock Grid.Row="2" Style="{StaticResource PanelHeader}" Text="{x:Static res:Strings.PropertiesPanel}" />
+                <ContentControl x:Name="PropertiesPanel" Grid.Row="3" Focusable="False" />
+                <TextBlock Grid.Row="4" Style="{StaticResource PanelHeader}" Text="{x:Static res:Strings.TestValuesPanel}" />
+                <ContentControl x:Name="TestValuesPanel" Grid.Row="5" Focusable="False" />
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>

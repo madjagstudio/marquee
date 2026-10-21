@@ -292,4 +292,80 @@ public class VideoPlayerTests
         Assert.Null(player.FrameAt(Ms(100)));
         player.Dispose(); // a second dispose does nothing
     }
+
+    [Fact]
+    public void Fitting_to_a_box_moved_by_whole_pixels_only_moves_the_frames()
+    {
+        var decoder = Numbered(100, 50);
+        using var player = new VideoPlayer(decoder, new FrameScaler(ImageFit.Stretch, decoder.Size, SKRect.Create(10, 20, 8, 8)));
+        Assert.True(Wait.Until(() => player.Queued == VideoPlayer.FramesAhead), "The decoder never filled its queue");
+        var buffers = player.BuffersCreated;
+
+        player.FitTo(ImageFit.Stretch, SKRect.Create(13, 19, 8, 8));
+
+        Assert.Equal(SKRectI.Create(13, 19, 8, 8), player.Destination);
+        Assert.Equal((VideoPlayer.FramesAhead, buffers), (player.Queued, player.BuffersCreated));
+        player.FitTo(ImageFit.Stretch, SKRect.Create(10, 20, 8, 8));
+        Assert.Equal(SKRectI.Create(10, 20, 8, 8), player.Destination);
+    }
+
+    [Fact]
+    public void Fitting_to_a_new_size_scales_the_frames_to_come_and_plays_on()
+    {
+        var decoder = Numbered(100, 50);
+        using var player = Play(decoder);
+        Assert.Equal(0, Render(player, Ms(0)));
+        Assert.Equal(1, Render(player, Ms(100)));
+
+        player.FitTo(ImageFit.Stretch, SKRect.Create(2, 2, 16, 4));
+
+        // The frame on screen was made for the old box; the next ones are made for the new one, from where the decoder
+        // was rather than from the first frame.
+        Assert.Equal(SKRectI.Create(2, 2, 16, 4), player.Destination);
+        Assert.Equal(8, player.FrameAt(Ms(100))!.Width);
+        var time = Ms(100);
+        Assert.True(Wait.Until(() => player.FrameAt(time += Ms(100))?.Width == 16), "no frame of the new size came");
+        Assert.True(NumberAt(player, time) > 1);
+    }
+
+    [Fact]
+    public void A_still_is_scaled_to_a_new_size_at_once()
+    {
+        var decoder = new FakeDecoder(100, SKColors.Red);
+        using var player = Play(decoder);
+        Assert.True(Wait.Until(() => player.IsStill), "the decoder never found the clip was a still");
+
+        player.FitTo(ImageFit.Stretch, SKRect.Create(16, 4));
+
+        var frame = player.FrameAt(Ms(500))!;
+        Assert.Equal((16, 4), (frame.Width, frame.Height));
+        Assert.Equal(SKColors.Red, frame.PeekPixels().GetPixelColor(15, 3));
+    }
+
+    [Fact]
+    public void Fitting_a_disposed_player_does_nothing()
+    {
+        var player = Play(new FakeDecoder(100, Rgb));
+        player.Dispose();
+
+        player.FitTo(ImageFit.Stretch, SKRect.Create(16, 4));
+
+        Assert.Null(player.FrameAt(Ms(0)));
+    }
+
+    /// The theme editor shares a clip's player between the theme on screen and the next one, each drawn by a renderer
+    /// whose clock starts at zero. A clock that goes back carries on from where the clip is, rather than freezing it
+    /// until the new clock catches up with the old one.
+    [Fact]
+    public void A_render_clock_that_goes_back_carries_on_from_where_the_clip_is()
+    {
+        using var player = Play(Numbered(100, 50));
+        Assert.Equal(0, Render(player, Ms(10_000)));
+        Assert.Equal(2, Render(player, Ms(10_200)));
+
+        // A new renderer, its clock from zero.
+        Assert.Equal(2, Render(player, Ms(0)));
+        Assert.Equal(3, Render(player, Ms(100)));
+        Assert.Equal(4, Render(player, Ms(200)));
+    }
 }

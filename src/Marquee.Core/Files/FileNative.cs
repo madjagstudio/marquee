@@ -8,6 +8,7 @@ static class FileNative
 {
     public const uint FILE_LIST_DIRECTORY = 0x0001;
     public const uint FILE_READ_ATTRIBUTES = 0x0080;
+    public const uint DELETE = 0x00010000;
     public const uint GENERIC_READ = 0x80000000;
     public const uint FILE_SHARE_READ = 0x0001;
     public const uint FILE_SHARE_WRITE = 0x0002;
@@ -16,6 +17,10 @@ static class FileNative
     public const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
     public const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
     public const int FileBasicInfo = 0;
+    public const int FileDispositionInfo = 4;
+    public const int FileDispositionInfoEx = 21;
+    public const uint FILE_DISPOSITION_FLAG_DELETE = 0x1;
+    public const uint FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE = 0x10;
 
     // FILE_INFORMATION_CLASS values for NtSetInformationFile.
     public const int FileRenameInformation = 10;
@@ -24,7 +29,10 @@ static class FileNative
     public const uint FILE_RENAME_POSIX_SEMANTICS = 0x2;
 
     public const int ERROR_FILE_NOT_FOUND = 2;
+    public const int ERROR_PATH_NOT_FOUND = 3;
     public const int ERROR_ACCESS_DENIED = 5;
+    public const int ERROR_FILE_EXISTS = 80;
+    public const int ERROR_ALREADY_EXISTS = 183;
     public const int ERROR_SHARING_VIOLATION = 32;
     public const int ERROR_NOT_SUPPORTED = 50;
     public const int ERROR_INVALID_PARAMETER = 87;
@@ -66,6 +74,19 @@ static class FileNative
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FILE_DISPOSITION_INFO
+    {
+        public byte DeleteFile; // a BOOLEAN
+    }
+
+    /// FILE_DISPOSITION_INFO_EX, Windows 10 1809 and later on NTFS.
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FILE_DISPOSITION_INFO_EX
+    {
+        public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct IO_STATUS_BLOCK
     {
         public IntPtr Status;
@@ -84,6 +105,16 @@ static class FileNative
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetFileInformationByHandle(SafeFileHandle file, out BY_HANDLE_FILE_INFORMATION info);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetFileInformationByHandle(SafeFileHandle file, int fileInformationClass, ref FILE_DISPOSITION_INFO info,
+        int bufferSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetFileInformationByHandle(SafeFileHandle file, int fileInformationClass, ref FILE_DISPOSITION_INFO_EX info,
+        int bufferSize);
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "GetFinalPathNameByHandleW", ExactSpelling = true)]
     public static extern int GetFinalPathNameByHandle(SafeFileHandle file, [Out] char[] path, int pathLength, uint flags);

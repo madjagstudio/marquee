@@ -25,6 +25,7 @@ sealed class EngineRun : IDisposable
     ISensorProvider? _hardware;
     ISensorProvider? _fps;
     IDisposable? _statusLine;
+    IDisposable? _sensorFeed;
     IDisposable? _http;
     ClockSettingsWatch? _clockSettings; // live runs only
     volatile string? _themeName;
@@ -159,6 +160,7 @@ sealed class EngineRun : IDisposable
         _loop?.Dispose();
         _device?.Dispose();
         _http?.Dispose();
+        _sensorFeed?.Dispose();
         _statusLine?.Dispose();
         _providers?.Dispose();
     }
@@ -187,6 +189,8 @@ sealed class EngineRun : IDisposable
             _providers.Start(agent);
         if (Settings.GameFps) StartFps(services);
         _statusLine = services.StartStatusLineServer(store, _log);
+        // The theme editor reads the store through it, from `marquee run` and the tray alike.
+        _sensorFeed = services.StartSensorFeedServer(store, _log);
         StartHttp(Settings, services);
 
         if (Live)

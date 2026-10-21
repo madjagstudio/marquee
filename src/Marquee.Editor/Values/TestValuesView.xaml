@@ -1,0 +1,114 @@
+<UserControl x:Class="Marquee.Editor.Values.TestValuesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:Marquee.Editor.Resources">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="Visible" />
+        <!-- Why a pin was refused; nothing, and no room taken, while there is nothing to say. -->
+        <Style x:Key="ErrorText" TargetType="TextBlock">
+            <Setter Property="Text" Value="{Binding Error}" />
+            <Setter Property="Foreground" Value="#FFB3261E" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Error}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="Small" TargetType="Button">
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="MinHeight" Value="20" />
+        </Style>
+    </UserControl.Resources>
+    <!-- Each key the theme reads, with its source and value; a click opens its pin. -->
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="10,0,10,4" LastChildFill="False">
+            <TextBlock DockPanel.Dock="Left" Text="{x:Static res:Strings.TrayNotRunning}" Foreground="#FF9A6700"
+                       ToolTip="{x:Static res:Strings.TrayNotRunningTip}" VerticalAlignment="Center"
+                       Visibility="{Binding TrayNotRunning, Converter={StaticResource Visible}}" />
+            <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.UnpinAll}" Command="{Binding UnpinAllCommand}"
+                    Style="{StaticResource Small}" Margin="0" />
+        </DockPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Rows}" Margin="6,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel>
+                            <!-- The line: key, source badge, value. -->
+                            <Border x:Name="Line" Padding="4,2" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="OnLineDown"
+                                    ToolTip="{x:Static res:Strings.PinTip}">
+                                <DockPanel>
+                                    <Border x:Name="Badge" DockPanel.Dock="Right" CornerRadius="3" Padding="5,0" Margin="6,0,0,0"
+                                            Background="#FFE8EAED" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding SourceText}" FontSize="10" />
+                                    </Border>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding ValueText}" Foreground="#FF3C4043" Margin="8,0,0,0" />
+                                    <TextBlock Text="{Binding Key}" FontFamily="Consolas" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                </DockPanel>
+                            </Border>
+                            <!-- The pin: a number on the key's range, stale, missing, unpin; a pattern for a graph's key. -->
+                            <StackPanel x:Name="NumberPin" Margin="12,2,4,6" Visibility="Collapsed">
+                                <DockPanel>
+                                    <TextBox DockPanel.Dock="Right" Width="64" Margin="6,0,0,0" Padding="2,0"
+                                             Text="{Binding NumberText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnNumberKeyDown"
+                                             LostKeyboardFocus="OnNumberLostFocus" />
+                                    <Slider Minimum="{Binding Min}" Maximum="{Binding Max}" Value="{Binding Number}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <DockPanel Margin="0,4,0,0" LastChildFill="False">
+                                    <Button Content="{x:Static res:Strings.PinStale}" Command="{Binding StaleCommand}" Style="{StaticResource Small}" />
+                                    <Button Content="{x:Static res:Strings.PinMissing}" Command="{Binding MissingCommand}" Style="{StaticResource Small}" />
+                                    <Button Content="{x:Static res:Strings.Unpin}" Command="{Binding UnpinCommand}" Style="{StaticResource Small}" />
+                                    <ComboBox DockPanel.Dock="Right" ItemsSource="{Binding Patterns}" SelectedItem="{Binding Pattern}" MinWidth="80"
+                                              ToolTip="{x:Static res:Strings.PatternTip}"
+                                              Visibility="{Binding IsGraph, Converter={StaticResource Visible}}" />
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource ErrorText}" />
+                            </StackPanel>
+                            <!-- now's pin: a date and a time. -->
+                            <StackPanel x:Name="NowPin" Margin="12,2,4,6" Visibility="Collapsed">
+                                <DockPanel>
+                                    <DatePicker SelectedDate="{Binding Date}" Width="120" />
+                                    <TextBox Width="72" Margin="6,0,0,0" Padding="2,1" Text="{Binding Time, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="{x:Static res:Strings.TimeTip}" VerticalContentAlignment="Center" />
+                                    <Button Content="{x:Static res:Strings.Pin}" Command="{Binding PinNowCommand}" Style="{StaticResource Small}"
+                                            Margin="6,0,4,0" />
+                                    <Button Content="{x:Static res:Strings.Unpin}" Command="{Binding UnpinCommand}" Style="{StaticResource Small}"
+                                            HorizontalAlignment="Left" />
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource ErrorText}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <DataTemplate.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsOpen}" Value="True" />
+                                    <Condition Binding="{Binding IsNow}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="NumberPin" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="Line" Property="Background" Value="#FFF1F3F4" />
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsOpen}" Value="True" />
+                                    <Condition Binding="{Binding IsNow}" Value="True" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="NowPin" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="Line" Property="Background" Value="#FFF1F3F4" />
+                            </MultiDataTrigger>
+                            <DataTrigger Binding="{Binding Source}" Value="Pinned">
+                                <Setter TargetName="Badge" Property="Background" Value="#FFD2E3FC" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Source}" Value="Tray">
+                                <Setter TargetName="Badge" Property="Background" Value="#FFCEEAD6" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Source}" Value="Local">
+                                <Setter TargetName="Badge" Property="Background" Value="#FFFEEFC3" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

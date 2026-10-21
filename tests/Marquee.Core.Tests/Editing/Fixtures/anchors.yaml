@@ -1,0 +1,16 @@
+styles:
+  base: &base { size: 20, color: "#FFFFFF" }
+  gap: &gap 8
+  copy: *base
+widgets:
+  - { type: text, at: [*gap, 0], size: [100, 30], text: A, style: *base }
+  - type: text
+    at: [0, 40]
+    size: [100, 30]
+    text: B
+    style: { size: 12 }
+  - &third
+    type: text
+    at: [0, 80]
+    size: [100, 30]
+    text: C

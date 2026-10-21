@@ -1,0 +1,156 @@
+Edits of Fixtures/anchors.yaml: the parts without anchors or aliases edit as usual; the rest is refused.
+
+=== set widgets[0].type value
+@@ line 6
+-  - { type: text, at: [*gap, 0], size: [100, 30], text: A, style: *base }
++  - { type: value, at: [*gap, 0], size: [100, 30], text: A, style: *base }
+
+=== set widgets[0].at[1] 4
+@@ line 6
+-  - { type: text, at: [*gap, 0], size: [100, 30], text: A, style: *base }
++  - { type: text, at: [*gap, 4], size: [100, 30], text: A, style: *base }
+
+=== set widgets[1].style.size 14
+@@ line 11
+-    style: { size: 12 }
++    style: { size: 14 }
+
+=== add widgets[1] name B
+@@ line 12
++    name: B
+
+=== remove widgets[1].style
+@@ line 11
+-    style: { size: 12 }
+
+=== set styles.base.size 30
+refused: styles.base.size uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== set styles.gap 9
+refused: styles.gap uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== set widgets[0].at[0] 9
+refused: widgets[0].at[0] uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== set widgets[0].style.size 30
+refused: widgets[0].style.size uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== set widgets[2].text D
+refused: widgets[2].text uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== replace styles.copy { size: 1 }
+refused: styles.copy uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== add styles.base weight bold
+refused: styles.base uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== add widgets[2] name C
+refused: widgets[2] uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== remove styles.base
+refused: styles.base uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== remove widgets[0].style
+refused: widgets[0].style uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== remove styles
+refused: styles uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== insert widgets 0 { type: shape, shape: rect, at: [0, 0], size: [10, 10] }
+@@ line 6
++  - type: shape
++    shape: rect
++    at: [0, 0]
++    size: [10, 10]
+
+=== insert widgets 1 { type: shape, shape: rect, at: [0, 0], size: [10, 10] }
+@@ line 7
++  - type: shape
++    shape: rect
++    at: [0, 0]
++    size: [10, 10]
+
+=== insert widgets 3 { type: shape, shape: rect, at: [0, 0], size: [10, 10] }
+@@ line 17
++  - type: shape
++    shape: rect
++    at: [0, 0]
++    size: [10, 10]
+
+=== remove-item widgets[1]
+@@ line 7
+-  - type: text
+-    at: [0, 40]
+-    size: [100, 30]
+-    text: B
+-    style: { size: 12 }
+
+=== remove-item widgets[0]
+refused: widgets[0] uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== remove-item widgets[2]
+refused: widgets[2] uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== move widgets[1] widgets 0
+@@ line 6
+-  - { type: text, at: [*gap, 0], size: [100, 30], text: A, style: *base }
+-  - type: text
+-    at: [0, 40]
+-    size: [100, 30]
+-    text: B
+-    style: { size: 12 }
++  - type: text
++    at: [0, 40]
++    size: [100, 30]
++    text: B
++    style: { size: 12 }
++  - { type: text, at: [*gap, 0], size: [100, 30], text: A, style: *base }
+
+=== move widgets[1] widgets 2
+@@ line 7
+-  - type: text
+-    at: [0, 40]
+-    size: [100, 30]
+-    text: B
+-    style: { size: 12 }
+-  - &third
+-    type: text
+-    at: [0, 80]
+-    size: [100, 30]
+-    text: C
++  - &third
++    type: text
++    at: [0, 80]
++    size: [100, 30]
++    text: C
++  - type: text
++    at: [0, 40]
++    size: [100, 30]
++    text: B
++    style: { size: 12 }
+
+=== move widgets[0] widgets 2
+refused: widgets[0] uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== wrap widgets 1 type: group\nat: [0, 0]\nsize: [10, 10]
+@@ line 7
+-  - type: text
+-    at: [0, 40]
+-    size: [100, 30]
+-    text: B
+-    style: { size: 12 }
++  - type: group
++    at: [0, 0]
++    size: [10, 10]
++    children:
++      - type: text
++        at: [0, 40]
++        size: [100, 30]
++        text: B
++        style: { size: 12 }
+
+=== wrap widgets 0,1 type: group\nat: [0, 0]\nsize: [10, 10]
+refused: widgets[0] uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.
+
+=== unwrap widgets[2]
+refused: widgets[2] uses an anchor (&) or alias (*), so changing it would change the other places that use it too. Edit it in the file.

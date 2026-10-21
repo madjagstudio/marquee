@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Pipes;
-using System.Security.AccessControl;
 using System.Security.Principal;
+using Marquee.Core.Pipes;
 
 namespace Marquee.Providers.Agents.Claude;
 
@@ -14,21 +14,15 @@ namespace Marquee.Providers.Agents.Claude;
 /// temperatures) would then make a pipe that the user's non-elevated bridge can neither open nor recognize. With the
 /// user's SID, any of this user's processes, elevated or not, can post to the pipe; other users can't. Letting a
 /// non-elevated process of the same user write to an elevated Marquee is accepted on purpose: a message is at most
-/// 64 KB of JSON, parsed defensively, and only ever shown on the screen.
+/// 64 KB of JSON, parsed defensively, and only ever shown on the screen. The lock itself is UserPipe's, which the
+/// theme editor's sensor feed shares.
 public static class StatusLinePipe
 {
     /// One pipe per Windows user, since pipe names are shared by every session on the PC.
     public static string DefaultName { get; } = $"marquee-statusline-{CurrentUser?.Value ?? Environment.UserName}";
 
     /// The user this process runs as. An administrator's elevated and non-elevated processes share it.
-    static SecurityIdentifier? CurrentUser
-    {
-        get
-        {
-            using var identity = WindowsIdentity.GetCurrent();
-            return identity.User;
-        }
-    }
+    static SecurityIdentifier? CurrentUser => UserPipe.CurrentUser;
 
     /// Hands one status-line JSON to the app. False if Marquee isn't running (nothing to connect to within `timeout`),
     /// doesn't take the message within `timeout` (the whole call is bounded by it, connecting plus writing), the
@@ -70,36 +64,14 @@ public static class StatusLinePipe
     internal static NamedPipeServerStream CreateServer(string name) => CreateServer(name, CurrentUser);
 
     /// CreateServer, accepting the pipe only if `owner` owns it.
-    internal static NamedPipeServerStream CreateServer(string name, SecurityIdentifier? owner)
-    {
-        var user = CurrentUser ?? throw new UnauthorizedAccessException("this process has no Windows user to restrict the pipe to");
-        var pipe = NamedPipeServerStreamAcl.Create(name, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances,
-            PipeTransmissionMode.Byte, PipeOptions.Asynchronous, inBufferSize: 0, outBufferSize: 0, ServerSecurity(user));
-        try
-        {
-            if (owner is null || !IsOwnedBy(pipe, owner))
-                throw new UnauthorizedAccessException($"the pipe {name} already exists and belongs to another user");
-            return pipe;
-        }
-        catch
-        {
-            pipe.Dispose();
-            throw;
-        }
-    }
+    internal static NamedPipeServerStream CreateServer(string name, SecurityIdentifier? owner) =>
+        UserPipe.CreateServer(name, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, owner);
 
     /// Owned by `user`, with full control for `user` only (full control includes adding instances, which the app
     /// needs for the next client).
-    internal static PipeSecurity ServerSecurity(SecurityIdentifier user)
-    {
-        var security = new PipeSecurity();
-        security.SetOwner(user);
-        security.AddAccessRule(new PipeAccessRule(user, PipeAccessRights.FullControl, AccessControlType.Allow));
-        return security;
-    }
+    internal static PipeSecurity ServerSecurity(SecurityIdentifier user) => UserPipe.ServerSecurity(user);
 
-    static bool IsOwnedBy(PipeStream pipe, SecurityIdentifier owner) =>
-        owner.Equals(pipe.GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+    static bool IsOwnedBy(PipeStream pipe, SecurityIdentifier owner) => UserPipe.IsOwnedBy(pipe, owner);
 
     static async Task WriteAndFlush(Stream pipe, byte[] json, CancellationToken token)
     {

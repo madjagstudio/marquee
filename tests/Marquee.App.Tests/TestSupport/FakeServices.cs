@@ -52,6 +52,8 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
 
     public IDisposable StartCustomValuesServer(SensorStore store, ILog log, int port, int maxKeys) => new Nothing();
 
+    public IDisposable StartSensorFeedServer(SensorStore store, ILog log) => new Nothing();
+
     public ClaudeLimitsFile CreateClaudeLimits(ILog log) => new(claudeLimitsPath, log);
 
     // No LED ring, and no L-Connect: the tray's tests are about hosting the engine, so these stay out of the way.

@@ -28,7 +28,15 @@ public sealed class ThemeRenderer : IDisposable
     public TimeLocale? Locale { get; set; }
 
     /// One frame. `time` is animation time (pulse, smoothing); `sensors.Now` is the wall clock seen by expressions.
-    public SKImage Render(SensorSnapshot sensors, TimeSpan time)
+    public SKImage Render(SensorSnapshot sensors, TimeSpan time) =>
+        Render(sensors, time, _theme.Spec.Widgets, RenderContext.NoStandIns);
+
+    /// A frame with `widgets` drawn in place of the theme's own: the theme editor's preview of a drag, which moves,
+    /// resizes or turns widgets in memory (copies made with `with`) and draws them without loading the theme again.
+    /// `standIns` maps each copy, by reference, to the theme's widget it stands in for, so it keeps that widget's clip,
+    /// drawn in its new box, and its smoothing; a group holding one is a copy too. Widgets not in it draw as they are.
+    public SKImage Render(SensorSnapshot sensors, TimeSpan time, IReadOnlyList<WidgetSpec> widgets,
+        IReadOnlyDictionary<WidgetSpec, WidgetSpec> standIns)
     {
         var canvas = _surface.Canvas;
         canvas.Clear(SKColors.Black);
@@ -36,9 +44,10 @@ public sealed class ThemeRenderer : IDisposable
         var ctx = new RenderContext(canvas, sensors, time, _theme.Assets, _smoothers, _shaderSurfaces)
         {
             Locale = Locale ?? TimeLocale.Pc,
+            StandIns = standIns,
         };
         BackgroundPainter.Paint(ctx, _theme.Spec.Background, SKRect.Create(Size.Width, Size.Height));
-        foreach (var widget in _theme.Spec.Widgets)
+        foreach (var widget in widgets)
             WidgetPainter.Paint(ctx, widget, StyleSpec.Empty);
 
         canvas.Flush();

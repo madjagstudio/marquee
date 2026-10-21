@@ -18,6 +18,8 @@ public sealed class FrameScaler
     /// `fit` places a clip of `clip` pixels in `area` as it would an image.
     public FrameScaler(ImageFit fit, SKSizeI clip, SKRect area)
     {
+        (Fit, Clip, Area) = (fit, clip, area);
+
         var (source, destination) = ImageFitting.Fit(fit, clip.Width, clip.Height, area);
 
         // A clip at natural size (fit: none) can overflow the area. Only the part inside it is ever seen, so only that
@@ -35,6 +37,13 @@ public sealed class FrameScaler
         Destination = new SKRectI(rounded.Left, rounded.Top, Math.Max(rounded.Right, rounded.Left + 1),
             Math.Max(rounded.Bottom, rounded.Top + 1));
     }
+
+    /// How the clip is placed, its size, and the box it is placed in.
+    public ImageFit Fit { get; }
+
+    public SKSizeI Clip { get; }
+
+    public SKRect Area { get; }
 
     /// The canvas pixels a frame covers.
     public SKRectI Destination { get; }

@@ -27,7 +27,8 @@ public static partial class ThemeSchema
                 },
                 new("sweep", SchemaKind.Number, "How far the arc runs from its start; negative runs anticlockwise. It can't be 0.")
                 {
-                    Default = Number(Arcs.DefaultSweep), Min = -Arcs.MaxAngle, Max = Arcs.MaxAngle, Unit = SchemaUnit.Degrees, OnlyFor = arc,
+                    Default = Number(Arcs.DefaultSweep), Min = -Arcs.MaxAngle, Max = Arcs.MaxAngle, NotZero = true, Unit = SchemaUnit.Degrees,
+                    OnlyFor = arc,
                 },
                 new("thickness", SchemaKind.Number, "How thick the arc's band is. The style's `stroke.cap` shapes its ends.")
                 {

@@ -23,6 +23,7 @@
   marquee run [&lt;theme-folder&gt;] [--orientation ...] [--fps 1-60] [--sensors lhm|hwinfo|none] [--preview] [--sink &lt;folder&gt;] [--frames N]
               [--http-port 1024-65535 | --no-http] [--no-claude-usage] [--no-fps] [--config &lt;file&gt;]
   marquee validate &lt;theme-folder|zip&gt; [--fps 1-60]
+  marquee edit [&lt;theme-folder&gt;]   (opens the theme editor; with no theme, on the one config.yaml names)
   marquee push &lt;key&gt; &lt;value&gt; [--ttl 30s|5m|2h] [--port 1024-65535] [--config &lt;file&gt;]
   marquee setup-claude [--undo] [--dry-run]
   marquee task install [--tray &lt;file&gt;] | remove [--updates] | status | start [--user &lt;SID&gt;] | stop
@@ -310,5 +311,25 @@ A --sink run reads only the file --config names, and leaves the saved Claude Cod
   <data name="ClaimScreenAlreadyHeld" xml:space="preserve">
     <value>Marquee already has the screen.</value>
     <comment>marquee claim-screen found a running Marquee that has the screen already, so it left L-Connect alone.</comment>
+  </data>
+  <data name="EditElevated" xml:space="preserve">
+    <value>This terminal is running as administrator, so marquee edit won't start the theme editor: the theme files it saved would belong to Administrators. Run marquee edit from a normal terminal.</value>
+    <comment>marquee edit, run as administrator, started nothing. The command name stays as it is.</comment>
+  </data>
+  <data name="EditorMissing" xml:space="preserve">
+    <value>The theme editor isn't installed beside marquee.exe: there is no {0}. Reinstall Marquee to get it back.</value>
+    <comment>marquee edit found no theme editor. {0} is the full path of MarqueeEditor.exe where it looked.</comment>
+  </data>
+  <data name="EditorNotStarted" xml:space="preserve">
+    <value>Couldn't start the theme editor: {0}</value>
+    <comment>marquee edit couldn't start MarqueeEditor.exe. {0} is the reason Windows gave.</comment>
+  </data>
+  <data name="EditStarted" xml:space="preserve">
+    <value>Opened {0} in the theme editor.</value>
+    <comment>marquee edit started the theme editor. {0} is the theme's folder.</comment>
+  </data>
+  <data name="EditStartedConfigured" xml:space="preserve">
+    <value>Opened the theme config.yaml names in the theme editor.</value>
+    <comment>marquee edit, with no theme given, started the theme editor on the theme config.yaml's theme: setting names, the one on the screen. config.yaml stays as it is.</comment>
   </data>
 </root>

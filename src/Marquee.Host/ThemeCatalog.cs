@@ -1,12 +1,14 @@
 using Marquee.Core.Themes;
 
-namespace Marquee.App;
+namespace Marquee.Host;
 
-/// A theme the Themes menu offers: its name, which is what config.yaml's `theme:` says, and its folder.
-sealed record ThemeEntry(string Name, string Folder);
+/// A theme the tray's Themes menu and the editor's theme picker offer: its name, which is what config.yaml's `theme:`
+/// says, and its folder.
+public sealed record ThemeEntry(string Name, string Folder);
 
-/// The themes in the theme folders, for the Themes menu.
-static class ThemeCatalog
+/// The themes in the theme folders, for the tray's Themes menu and the editor's theme picker, so both offer the same
+/// themes the same way.
+public static class ThemeCatalog
 {
     /// One list per folder, in the folders' order (the user's own themes, then the installed examples), each sorted by
     /// name. A theme is a folder holding a layout.yaml. A name already listed for an earlier folder is left out of the

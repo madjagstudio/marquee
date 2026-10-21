@@ -44,6 +44,19 @@ public class ThemeSchemaExampleTests
         Assert.Equal((1920, 480), (frame.Width, frame.Height));
     }
 
+    /// The files an example names are in the folders the example themes keep them in, and the editor imports into:
+    /// images/ and video/.
+    [Theory]
+    [MemberData(nameof(Types))]
+    public void An_examples_files_are_in_the_themes_folders(string type)
+    {
+        var widgets = Layouts.Parse("canvas: { orientation: landscape }\nwidgets:\n  - " +
+            ThemeSchema.Widget(type)!.Example!.ReplaceLineEndings("\n").TrimEnd('\n').Replace("\n", "\n    ") + "\n").Widgets;
+
+        Assert.All(Images(widgets), path => Assert.StartsWith("images/", path, StringComparison.Ordinal));
+        Assert.All(Clips(widgets), path => Assert.StartsWith("video/", path, StringComparison.Ordinal));
+    }
+
     /// The image files the widgets show, which the test writes so the example's file is there.
     static IEnumerable<string> Images(IEnumerable<WidgetSpec> widgets) =>
         widgets.SelectMany(w => w switch

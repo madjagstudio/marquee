@@ -17,7 +17,26 @@ public sealed class Template
 
     readonly IReadOnlyList<Part> _parts;
 
-    Template(IReadOnlyList<Part> parts) => _parts = parts;
+    readonly KeyList _keys = [];
+
+    Template(IReadOnlyList<Part> parts)
+    {
+        _parts = parts;
+        foreach (var placeholder in parts.OfType<Placeholder>()) placeholder.Expression.AddKeys(_keys);
+        Keys = _keys.AsReadOnly(); // a view: a caller can't cast it back to the list and change it
+    }
+
+    /// The sensor keys its placeholders read, each once, in the order they first appear, without `now`. In a value
+    /// widget's spans `{0}` reads no key of its own: it is the widget's value, whose key is the widget's source.
+    public IReadOnlyList<string> Keys { get; }
+
+    /// Adds the keys it reads that `keys` doesn't hold yet, in order, and, to a KeyList, whether it reads `now`.
+    internal void AddKeys(List<string> keys)
+    {
+        foreach (var key in _keys)
+            if (!keys.Contains(key)) keys.Add(key);
+        if (_keys.ReadsClock && keys is KeyList list) list.ReadsClock = true;
+    }
 
     public bool IsStatic => _parts.All(p => p is Literal);
 

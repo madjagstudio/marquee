@@ -109,7 +109,7 @@ public static partial class ThemeSchema
             type: video
             at: [0, 0]
             size: [320, 180]
-            src: videos/clip.mp4
+            src: video/clip.mp4
             """,
         "shape" => """
             type: shape

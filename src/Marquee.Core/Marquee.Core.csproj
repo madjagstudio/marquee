@@ -19,6 +19,8 @@
     <InternalsVisibleTo Include="Marquee.Providers.Fps.Tests" />
     <!-- marquee validate's tests swap the machine-dependent shader and video cost probes for fixed ones. -->
     <InternalsVisibleTo Include="Marquee.Cli.Tests" />
+    <!-- The theme editor's import tests do the same for AssetChecks, so a busy machine can't change a result. -->
+    <InternalsVisibleTo Include="Marquee.Editor.Model.Tests" />
     <!-- tools/Marquee.MakeClip compiles in the tests' ClipWriter, which calls Media Foundation through Core's interop. -->
     <InternalsVisibleTo Include="Marquee.MakeClip" />
   </ItemGroup>

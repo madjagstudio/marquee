@@ -3,6 +3,7 @@ using Marquee.Core.Devices.LedRing;
 using Marquee.Core.Logging;
 using Marquee.Core.Processes;
 using Marquee.Core.Sensors;
+using Marquee.Host.SensorFeed;
 using Marquee.Providers.Agents.Claude;
 using Marquee.Providers.Custom;
 using Marquee.Providers.Fps;
@@ -46,6 +47,14 @@ public sealed class MachineServices : IEngineServices
     public IDisposable StartCustomValuesServer(SensorStore store, ILog log, int port, int maxKeys)
     {
         var server = new CustomValuesServer(store, log, port, maxKeys);
+        server.Start();
+        return server;
+    }
+
+    /// A pipe that can't be made is logged by the server and tried again; the rest of Marquee runs on.
+    public IDisposable StartSensorFeedServer(SensorStore store, ILog log)
+    {
+        var server = new SensorFeedServer(store, log, TimeProvider.System);
         server.Start();
         return server;
     }
