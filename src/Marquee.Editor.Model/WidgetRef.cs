@@ -28,6 +28,12 @@ public sealed record WidgetRef(
     WidgetSpec Spec,
     IReadOnlyList<WidgetRef> Children)
 {
+    /// A properties-only stand-in for a background layer or the canvas, with nothing to draw. An empty group supplies
+    /// the required Spec without assets or a theme; this owner is never added to the widget tree.
+    internal static WidgetRef Owner(YamlPath path, string type) =>
+        new(path, type, type, SKRect.Empty, SKRect.Empty, 0, Hidden: false, Locked: false, IsEditable: true,
+            Spec: new GroupWidget([]), Children: []);
+
     /// Where its group's corner is on the canvas (the canvas's own for a top-level widget): canvas pixels less this
     /// are the coordinates `at` is written in.
     public SKPoint Offset => new(Bounds.Left - LocalBounds.Left, Bounds.Top - LocalBounds.Top);

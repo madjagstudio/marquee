@@ -15,6 +15,17 @@ static class ShaderCost
     /// The test frame is 1/8 of the rendered size each way, so it costs about 1/64 of a frame.
     const int ProbeDivisor = 8;
 
+    /// Measures again only when over budget, keeping the faster result so a transient stall doesn't skip a shader.
+    public static TimeSpan Measure(int fps, Func<TimeSpan> probe)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fps);
+        var budget = TimeSpan.FromSeconds(1.0 / fps);
+        var cost = probe();
+        if (cost <= budget) return cost;
+        var retry = probe();
+        return retry < cost ? retry : cost;
+    }
+
     /// The test frame's size for a shader that renders `width` × `height` pixels.
     public static (int Width, int Height) ProbeSize(int width, int height) =>
         (Math.Max(1, width / ProbeDivisor), Math.Max(1, height / ProbeDivisor));

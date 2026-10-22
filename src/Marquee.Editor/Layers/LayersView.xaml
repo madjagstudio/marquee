@@ -102,17 +102,34 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <DockPanel>
-        <!-- The background layers, below the widgets: hide and lock only in E1. -->
-        <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding HasBackground, Converter={StaticResource Visible}}">
-            <Border BorderBrush="#FFDADCE0" BorderThickness="0,1,0,0" Padding="10,4,10,2">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*" MinHeight="60" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" MinHeight="100" />
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+            <ItemsControl x:Name="WidgetList" ItemsSource="{Binding Widgets}" ItemTemplate="{StaticResource LayerRow}" Margin="6,0" />
+        </ScrollViewer>
+        <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                      Background="#FFDADCE0" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" />
+        <!-- Background rows have their own add menu and scroll within their resizable section. -->
+        <DockPanel x:Name="BackgroundSection" Grid.Row="2">
+            <Border DockPanel.Dock="Top" Padding="10,4,10,2">
                 <TextBlock Text="{x:Static res:Strings.BackgroundSection}" Foreground="#FF5F6368" FontWeight="SemiBold"
                            ToolTip="{x:Static res:Strings.BackgroundSectionTip}" />
             </Border>
-            <ItemsControl ItemsSource="{Binding Background}" ItemTemplate="{StaticResource LayerRow}" Margin="6,0,6,4" />
-        </StackPanel>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
-            <ItemsControl x:Name="WidgetList" ItemsSource="{Binding Widgets}" ItemTemplate="{StaticResource LayerRow}" Margin="6,0" />
-        </ScrollViewer>
-    </DockPanel>
+            <Menu DockPanel.Dock="Top" Background="Transparent" Margin="6,4" IsEnabled="{Binding CanEdit}">
+                <MenuItem Header="{x:Static res:Strings.AddLayerMenu}">
+                    <MenuItem Header="{x:Static res:Strings.LayerFill}" Command="{Binding AddFillLayerCommand}" />
+                    <MenuItem Header="{x:Static res:Strings.AddLayerImage}" Command="{Binding AddImageLayerCommand}" />
+                    <MenuItem Header="{x:Static res:Strings.AddLayerVideo}" Command="{Binding AddVideoLayerCommand}" />
+                    <MenuItem Header="{x:Static res:Strings.AddLayerShader}" Command="{Binding AddShaderLayerCommand}" />
+                </MenuItem>
+            </Menu>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                <ItemsControl x:Name="BackgroundList" ItemsSource="{Binding Background}" ItemTemplate="{StaticResource LayerRow}" Margin="6,0,6,4" />
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
 </UserControl>

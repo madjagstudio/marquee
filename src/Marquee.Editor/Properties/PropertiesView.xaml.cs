@@ -20,6 +20,18 @@ public partial class PropertiesView : UserControl
 
     static PropertyRowViewModel? RowOf(object sender) => (sender as FrameworkElement)?.DataContext as PropertyRowViewModel;
 
+    void OnUniformKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || (sender as FrameworkElement)?.DataContext is not UniformComponentViewModel component) return;
+        component.Commit();
+        e.Handled = true;
+    }
+
+    void OnUniformLostFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is UniformComponentViewModel component) component.Commit();
+    }
+
     void OnBoxKeyDown(object sender, KeyEventArgs e)
     {
         if (RowOf(sender) is not { } row) return;

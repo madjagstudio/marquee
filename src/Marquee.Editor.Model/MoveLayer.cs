@@ -8,13 +8,15 @@ namespace Marquee.Editor.Model;
 /// works it out from the panel). It keeps its text and comments, and a widget changing groups has its `at` (and, for a
 /// turned group, its `rotate`) rewritten so it doesn't move on screen. The moved widget becomes the selection. Throws
 /// ArgumentException for a Group that isn't a group, or is the widget or inside it.
-public sealed record MoveLayer(YamlPath Widget, YamlPath? Group, int Index) : EditorCommand
+public sealed partial record MoveLayer(YamlPath Widget, YamlPath? Group, int Index) : EditorCommand
 {
     public override string Label =>
+        IsBackgroundMove ? "Move layer" :
         CanvasGeometry.GroupOf(Widget) == Group ? "Reorder" : Group is null ? "Move out of group" : "Move into group";
 
     public override CommandResult Run(CommandContext context)
     {
+        if (IsBackgroundMove) return MoveBackground(context);
         var widget = context.RequireWidget(Widget);
         if (Group is not null)
         {

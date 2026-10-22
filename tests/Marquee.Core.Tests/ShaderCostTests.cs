@@ -90,6 +90,17 @@ public class ShaderCostTests
     }
 
     [Fact]
+    public void The_shared_cost_policy_keeps_a_second_measurement_within_budget()
+    {
+        var calls = 0;
+
+        var cost = ShaderCost.Measure(30, () => TimeSpan.FromMilliseconds(++calls == 1 ? 500 : 5));
+
+        Assert.Equal(2, calls);
+        Assert.Equal(TimeSpan.FromMilliseconds(5), cost);
+    }
+
+    [Fact]
     public void Each_shader_layer_is_measured_on_the_themes_canvas()
     {
         using var folder = Theme("  - shader: a.sksl\n    scale: 0.5\n  - shader: b.sksl", 30, ("a.sksl", Cheap), ("b.sksl", Cheap));

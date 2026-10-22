@@ -263,7 +263,6 @@ public class AssetImportTests
     [InlineData("widgets[0].spans[0].style.font", "type: text", AssetKind.Font)]
     [InlineData("background[0].image", "type: text", AssetKind.Image)]
     [InlineData("background[0].video", "type: text", AssetKind.Video)]
-    [InlineData("background[0].shader", "type: text", null)]
     [InlineData("widgets[0].src", "type: text", null)]
     [InlineData("widgets[0].text", "type: text", null)]
     public void A_file_key_takes_its_kind_of_file(string key, string type, AssetKind? kind)
@@ -271,5 +270,26 @@ public class AssetImportTests
         var document = LayoutDocument.Open($"background:\n  - fill: red\nwidgets:\n  - {{ {type}, at: [0, 0] }}\n");
 
         Assert.Equal(kind, AssetImport.KindFor(document, YamlPath.Parse(key)));
+    }
+
+    [Fact]
+    public void A_shader_goes_into_shaders_and_one_that_does_not_compile_is_refused()
+    {
+        using var setup = new Setup();
+        var good = setup.Download("glow.sksl");
+        File.WriteAllText(good, "uniform float heat; half4 main(float2 p) { return half4(heat); }");
+        var bad = setup.Download("bad.sksl");
+        File.WriteAllText(bad, "half4 main(float2 p) { return nope; }");
+
+        Assert.Equal(new ImportedFile("shaders/glow.sksl", AssetKind.Shader, null, true), setup.Import().Import(good, AssetKind.Shader));
+        var ex = Assert.Throws<AssetImportException>(() => setup.Import().Import(bad, AssetKind.Shader));
+        Assert.Contains("doesn't compile", ex.Reason);
+    }
+
+    [Fact]
+    public void A_shader_layer_key_takes_a_shader()
+    {
+        var document = LayoutDocument.Open("background:\n  - shader: shaders/a.sksl\nwidgets: []\n");
+        Assert.Equal(AssetKind.Shader, AssetImport.KindFor(document, YamlPath.Parse("background[0].shader")));
     }
 }

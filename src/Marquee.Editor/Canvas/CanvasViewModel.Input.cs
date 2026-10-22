@@ -32,6 +32,7 @@ public sealed partial class CanvasViewModel
     {
         if (Session is not { Theme: not null } session || Geometry() is not { } geometry) return;
         CancelGesture();
+        if (session.SelectedLayer is not null) Select([]);
         var point = Transform.ToTheme(at);
 
         if (clicks >= 2)
@@ -140,7 +141,7 @@ public sealed partial class CanvasViewModel
 
         var control = modifiers.HasFlag(ModifierKeys.Control);
         var shift = modifiers.HasFlag(ModifierKeys.Shift);
-        var selection = session.Selection;
+        var selection = session.SelectedLayer is null ? session.Selection : [];
         switch (key)
         {
             case Key.Escape:

@@ -3,6 +3,8 @@ using Marquee.Core.Themes.Schema;
 
 namespace Marquee.Editor.Model;
 
+public enum PropertyTargetKind { Widgets, Layer, Canvas }
+
 /// The properties panel for a selection, built from the catalog (ThemeSchema) and the file, so a key the catalog
 /// gains shows here without editor code unless its kind needs a new control:
 /// - Rows: the widget type's keys in the catalog's order, `type` and the common keys first. Its `style` is the Style
@@ -23,6 +25,7 @@ public sealed partial class PropertyModel
     PropertyModel(LayoutDocument document, IReadOnlyList<WidgetRef> widgets)
     {
         _document = document;
+        Target = PropertyTargetKind.Widgets;
         Widgets = widgets;
         StyleNames = StyleValues.Names(document);
         var types = widgets.Select(w => w.Type).Distinct().ToList();
@@ -39,16 +42,46 @@ public sealed partial class PropertyModel
         }
     }
 
-    /// The properties of the session's selection.
+    PropertyModel(LayoutDocument document, WidgetRef owner, PropertyTargetKind target, IReadOnlyList<SchemaBlock> blocks)
+        : this(document, [])
+    {
+        Target = target;
+        Type = owner.Type.Length == 0 ? null : owner.Type;
+        var keys = blocks.SelectMany(block => block.Keys).ToList();
+        Rows = blocks.SelectMany(block => block.Keys.Select(key =>
+            Row(target == PropertyTargetKind.Canvas ? $"canvas.{key.Name}" : key.Name,
+                [new PropertyTarget(owner, owner.Path.Child(key.Name), key, owner.Path) { Siblings = keys, Groups = block }])))
+            .ToList();
+    }
+
+    /// The properties of the selected widgets or background layer, or the canvas when nothing is selected.
     public static PropertyModel For(EditorSession session) =>
-        Build(session.Document, session.Selection.Select(session.Widget).OfType<WidgetRef>().ToList());
+        session.SelectedLayer is { } layer ? ForLayer(session.Document, layer)
+        : session.Selection.Count == 0 ? ForCanvas(session.Document)
+        : Build(session.Document, session.Selection.Select(session.Widget).OfType<WidgetRef>().ToList());
+
+    /// The common layer keys followed by the keys of its kind, in catalog order.
+    public static PropertyModel ForLayer(LayoutDocument document, YamlPath layer)
+    {
+        var kind = new[] { "fill", "image", "shader", "video" }.FirstOrDefault(kind => document.Exists(layer.Child(kind)));
+        List<SchemaBlock> blocks = [ThemeSchema.Block("layer.common")!];
+        if (kind is not null) blocks.Add(ThemeSchema.Block($"layer.{kind}")!);
+        return new(document, WidgetRef.Owner(layer, kind ?? ""), PropertyTargetKind.Layer, blocks);
+    }
+
+    /// The canvas's orientation and frame rate, at canvas.*.
+    public static PropertyModel ForCanvas(LayoutDocument document) =>
+        new(document, WidgetRef.Owner(YamlPath.Root.Child("canvas"), "canvas"), PropertyTargetKind.Canvas,
+            [ThemeSchema.Block("canvas")!]);
 
     /// The properties of `widgets`, read from `document`.
     public static PropertyModel Build(LayoutDocument document, IReadOnlyList<WidgetRef> widgets) => new(document, widgets);
 
     public IReadOnlyList<WidgetRef> Widgets { get; }
 
-    /// The selected widgets' type when they share one; null for mixed types or none.
+    public PropertyTargetKind Target { get; }
+
+    /// The selected widgets' shared type, a layer's kind, or "canvas"; null for a missing kind, mixed types or no widgets in Build.
     public string? Type { get; }
 
     public IReadOnlyList<PropertyRow> Rows { get; } = [];
@@ -114,7 +147,10 @@ public sealed partial class PropertyModel
             IsMixed = written.Count > 1,
             // A widget's type isn't changed in place: another type is another widget.
             IsEditable = !(key.Name == ThemeSchema.Widgets.Discriminator && targets[0].Block.Equals(targets[0].Widget.Path))
-                && targets.All(target => Editable(target.Path)),
+                && targets.All(target => Editable(target.Path)
+                    && !(Target == PropertyTargetKind.Layer
+                        && _document.TryGetScalar(target.Widget.Path.Child("locked"), out var value)
+                        && bool.TryParse(value, out var locked) && locked)),
             Choices = key.Kind is SchemaKind.Enum or SchemaKind.FontWeight ? key.Values
                 : key.Kind is SchemaKind.StyleName or SchemaKind.Style ? StyleNames
                 : [],

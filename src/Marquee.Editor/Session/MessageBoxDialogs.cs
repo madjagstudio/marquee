@@ -13,6 +13,21 @@ namespace Marquee.Editor.Session;
 /// the clean-up as windows of their own (NameDialog, CleanUpDialog).
 public sealed class MessageBoxDialogs : IEditorDialogs
 {
+    public bool? AskRearrange(string orientation)
+    {
+        var dialog = new OrientationDialog(orientation) { Owner = Owner() };
+        dialog.ShowDialog();
+        return dialog.Rearrange;
+    }
+
+    public string? PickLayerFile(LayerKindChoice kind) => PickImportFile(kind switch
+    {
+        LayerKindChoice.Image => AssetKind.Image,
+        LayerKindChoice.Video => AssetKind.Video,
+        LayerKindChoice.Shader => AssetKind.Shader,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+    });
+
     public void ShowError(string message) => Show(message, MessageBoxButton.OK, MessageBoxImage.Warning);
 
     public void ShowInfo(string message) => Show(message, MessageBoxButton.OK, MessageBoxImage.Information);
@@ -49,6 +64,7 @@ public sealed class MessageBoxDialogs : IEditorDialogs
         {
             AssetKind.Image => (Strings.ImportImageTitle, Filter(Strings.ImageFiles, PropertyChoices.ImageExtensions)),
             AssetKind.Font => (Strings.ImportFontTitle, Filter(Strings.FontFiles, AssetChecks.FontExtensions)),
+            AssetKind.Shader => (Strings.ImportShaderTitle, Filter(Strings.ShaderFiles, [".sksl"])),
             _ => (Strings.ImportVideoTitle, Filter(Strings.VideoFiles, AssetChecks.VideoExtensions)),
         };
         var dialog = new OpenFileDialog { Title = title, Filter = filter, CheckFileExists = true };

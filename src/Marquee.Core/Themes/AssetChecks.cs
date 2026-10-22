@@ -107,6 +107,13 @@ public sealed class AssetChecks
         }
     }
 
+    /// Whether the shader at `path` compiles within the theme loader's shader file size limit.
+    public AssetCheck Shader(string path)
+    {
+        using var shader = ShaderUniforms.Compile(path);
+        return shader.Problem is { } problem ? AssetCheck.Refused($"The shader {problem}.") : AssetCheck.Accepted;
+    }
+
     static AssetCheck? Missing(string path) => File.Exists(path) ? null : AssetCheck.Refused("The file was not found.");
 
     /// ".a, .b or .c".

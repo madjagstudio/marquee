@@ -99,8 +99,15 @@ public sealed partial class EditorSession : IDisposable
     /// The widget at `path`, or null when there is none.
     public WidgetRef? Widget(YamlPath path) => _tree.Find(path);
 
-    /// The selected widgets' paths, in the order they were chosen.
+    /// The selected widgets' paths, in the order they were chosen, or one background layer's path.
     public IReadOnlyList<YamlPath> Selection => _selection;
+
+    /// The selected background layer, or null when widgets or nothing are selected.
+    public YamlPath? SelectedLayer => _selection is [var only] && IsBackgroundLayer(only) ? only : null;
+
+    /// Whether `path` names an existing item of the background list.
+    public bool IsBackgroundLayer(YamlPath path) =>
+        path.Parent == YamlPath.Root.Child("background") && path.Last is { IsKey: false } && _document.Exists(path);
 
     /// The undo steps, for their labels and for sealing a merge.
     public UndoStack History { get; }
@@ -125,14 +132,17 @@ public sealed partial class EditorSession : IDisposable
     /// Raised when the selection changes, before Changed.
     public event EventHandler? SelectionChanged;
 
-    /// Chooses the widgets at `widgets`, each once, in order. Throws ArgumentException for a path that isn't a widget,
-    /// and the selection stays as it was.
+    /// Chooses widgets, each once in order, or exactly one background layer. Throws ArgumentException for missing
+    /// paths or a background layer mixed with another selection, and the selection stays as it was.
     public void Select(IEnumerable<YamlPath> widgets)
     {
         ThrowIfDisposed();
         var paths = widgets.Distinct().ToList();
+        if (paths.Any(IsBackgroundLayer) && paths.Count != 1)
+            throw new ArgumentException("A background layer is selected on its own.", nameof(widgets));
         foreach (var path in paths)
-            if (_tree.Find(path) is null) throw new ArgumentException($"There is no widget at {path}.", nameof(widgets));
+            if (_tree.Find(path) is null && !IsBackgroundLayer(path))
+                throw new ArgumentException($"There is no widget or background layer at {path}.", nameof(widgets));
         Raise(SetSelection(paths));
     }
 
@@ -241,10 +251,10 @@ public sealed partial class EditorSession : IDisposable
         return SessionChanges.Selection;
     }
 
-    /// The paths that are still widgets, once the tree is current; while paused it is the last good theme's, so they
-    /// are kept as they are.
+    /// The paths that are still widgets or background layers, once the tree is current; while paused it is the last
+    /// good theme's, so they are kept as they are.
     IReadOnlyList<YamlPath> StillThere(IReadOnlyList<YamlPath> paths) =>
-        IsPaused ? paths : paths.Distinct().Where(path => _tree.Find(path) is not null).ToList();
+        IsPaused ? paths : paths.Distinct().Where(path => _tree.Find(path) is not null || IsBackgroundLayer(path)).ToList();
 
     void Raise(SessionChanges changes)
     {

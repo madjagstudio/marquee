@@ -1,7 +1,7 @@
 namespace Marquee.Editor.Model;
 
 /// The kinds of file the editor imports into a theme, each into its own folder (AssetImport.FolderFor).
-public enum AssetKind { Image, Font, Video }
+public enum AssetKind { Image, Font, Video, Shader }
 
 /// A file imported into the theme. Path is what layout.yaml names it by: relative to the theme folder, with forward
 /// slashes, as themes are written (`images/logo.png`). Warning says what a file that was taken will do, such as a clip

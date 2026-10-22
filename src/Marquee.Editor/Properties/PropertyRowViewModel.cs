@@ -171,7 +171,9 @@ public sealed partial class PropertyRowViewModel : ObservableObject
 
         Error = null;
         _dirty = false;
-        var written = _owner.Write(() => model.Set(_row, value, merge));
+        var written = Name == "canvas.orientation" && value is YamlText orientation
+            ? _owner.SetOrientation(orientation.Value)
+            : _owner.Write(() => model.Set(_row, value, merge));
         if (!written) Load();
         return written;
     }

@@ -55,6 +55,17 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="UniformBox" TargetType="TextBox">
+            <Setter Property="Padding" Value="3,1" />
+            <Setter Property="IsReadOnly" Value="{Binding IsEditable, Converter={x:Static local:Not.Instance}}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasError}" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource Error}" />
+                    <Setter Property="ToolTip" Value="{Binding Error}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="Combo" TargetType="ComboBox">
             <Setter Property="IsEnabled" Value="{Binding IsEditable}" />
             <Style.Triggers>
@@ -444,7 +455,7 @@
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasSelection}" Value="True">
+                            <DataTrigger Binding="{Binding HasProperties}" Value="True">
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -452,13 +463,64 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <StackPanel Visibility="{Binding HasSelection, Converter={StaticResource Visible}}">
+            <StackPanel Visibility="{Binding HasProperties, Converter={StaticResource Visible}}">
                 <TextBlock Text="{Binding Heading}" FontWeight="SemiBold" FontSize="13" Margin="0,2,0,6" TextTrimming="CharacterEllipsis" />
+                <DockPanel Margin="0,2,0,6" Visibility="{Binding IsLayer, Converter={StaticResource Visible}}">
+                    <TextBlock Text="{x:Static res:Strings.LayerKind}" Width="108" VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding KindChoices}" DisplayMemberPath="Label" SelectedValuePath="Kind"
+                              SelectedValue="{Binding Kind}" IsEnabled="{Binding CanEdit}" />
+                </DockPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
+                <ContentControl Content="{Binding Shader}" Focusable="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,8,0,0">
+                                <TextBlock Text="{Binding Problem}" Foreground="{StaticResource Error}" TextWrapping="Wrap" />
+                                <ItemsControl ItemsSource="{Binding Uniforms}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,3">
+                                                <DockPanel>
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Visibility="{Binding IsUnused, Converter={StaticResource Visible}}">
+                                                        <TextBlock Text="{x:Static res:Strings.UnusedUniform}" Foreground="{StaticResource Muted}" Margin="4,0" />
+                                                        <Button Content="{x:Static res:Strings.RemoveUniform}" Command="{Binding RemoveCommand}" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                </DockPanel>
+                                                <ItemsControl ItemsSource="{Binding Components}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Margin="0,2" Style="{StaticResource UniformBox}" FontFamily="Consolas"
+                                                                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                                                     KeyDown="OnUniformKeyDown" LostKeyboardFocus="OnUniformLostFocus" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{Binding CostText}" TextWrapping="Wrap" Margin="0,6">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#FF5F6368" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding OverBudget}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource Error}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
                 <Button Content="{x:Static res:Strings.SplitIntoSpans}" Command="{Binding SplitIntoSpansCommand}" Style="{StaticResource Command}"
                         HorizontalAlignment="Left" Margin="108,4,0,0" ToolTip="{x:Static res:Strings.SplitIntoSpansTip}" />
 
                 <!-- The style: the named one it starts from, its overrides, and the keys in their groups. -->
+                <StackPanel Visibility="{Binding IsWidgets, Converter={StaticResource Visible}}">
                 <Border BorderBrush="#FFDADCE0" BorderThickness="0,1,0,0" Margin="0,10,0,4" Padding="0,6,0,0">
                     <TextBlock Text="{x:Static res:Strings.StyleSection}" FontWeight="SemiBold" />
                 </Border>
@@ -487,6 +549,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
+                </StackPanel>
                 <!-- The rules, in words, read-only: E2 edits them. -->
                 <StackPanel Visibility="{Binding HasRules, Converter={StaticResource Visible}}">
                     <Border BorderBrush="#FFDADCE0" BorderThickness="0,1,0,0" Margin="0,10,0,4" Padding="0,6,0,0">

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Marquee.Core.Themes;
@@ -21,6 +22,63 @@ public class PanelsWindowTests
 {
     /// Where the render check saves its picture, when set: a folder outside the repository.
     const string SnapshotFolderVariable = "MARQUEE_EDITOR_SNAPSHOT_DIR";
+
+    [Fact]
+    public void Background_owns_add_layer_and_the_side_sections_can_be_resized() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        var window = Show(environment, environment.AddTheme("mine"));
+        try
+        {
+            var layers = (LayersView)Panel(window, "LayersPanel");
+            var background = Assert.IsType<DockPanel>(layers.FindName("BackgroundSection"));
+            Assert.Contains(Descendants(background).OfType<TextBlock>(),
+                text => text.Text == Resources.Strings.BackgroundSection);
+            Assert.Contains(Descendants(background).OfType<MenuItem>(),
+                item => Equals(item.Header, Resources.Strings.AddLayerMenu));
+
+            var widgetList = (ItemsControl)layers.FindName("WidgetList");
+            var backgroundList = (ItemsControl)layers.FindName("BackgroundList");
+            Assert.DoesNotContain(widgetList, Descendants(background));
+            foreach (var list in new[] { widgetList, backgroundList })
+            {
+                var scroll = Assert.IsType<ScrollViewer>(list.Parent);
+                Assert.Equal(ScrollBarVisibility.Auto, scroll.VerticalScrollBarVisibility);
+                Assert.True(scroll.ViewportHeight > 0);
+            }
+
+            var splitters = Descendants(window).OfType<GridSplitter>().ToArray();
+            Assert.Equal(3, splitters.Length);
+            Assert.Equal(2, splitters.Count(splitter => splitter.ResizeDirection == GridResizeDirection.Rows));
+            foreach (var splitter in splitters)
+            {
+                Assert.Equal(GridResizeBehavior.PreviousAndNext, splitter.ResizeBehavior);
+                var grid = Assert.IsType<Grid>(splitter.Parent);
+                var rows = splitter.ResizeDirection == GridResizeDirection.Rows;
+                var index = rows ? Grid.GetRow(splitter) : Grid.GetColumn(splitter);
+                double Size() => rows ? grid.RowDefinitions[index - 1].ActualHeight : grid.ColumnDefinitions[index - 1].ActualWidth;
+                var before = Size();
+                if (rows)
+                {
+                    Assert.True(grid.RowDefinitions[index - 1].MinHeight > 0);
+                    Assert.True(grid.RowDefinitions[index + 1].MinHeight > 0);
+                }
+                else
+                {
+                    Assert.True(grid.ColumnDefinitions[index - 1].MinWidth > 0);
+                    Assert.True(grid.ColumnDefinitions[index + 1].MinWidth > 0);
+                }
+
+                // Keyboard resizing exercises the same GridSplitter sizing path as dragging.
+                splitter.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window),
+                    0, rows ? Key.Up : Key.Right) { RoutedEvent = Keyboard.KeyDownEvent });
+                Sta.Pump();
+                Assert.True(rows ? Size() < before : Size() > before,
+                    $"The {splitter.ResizeDirection} splitter at {index} did not resize: {before} -> {Size()}.");
+            }
+        }
+        finally { window.Close(); }
+    });
 
     [Fact]
     public void Each_panel_has_its_view_bound_to_its_model() => Sta.Run(() =>

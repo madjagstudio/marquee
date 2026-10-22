@@ -20,6 +20,10 @@ public enum CopyChoice
 /// (the Dialogs folder).
 public interface IEditorDialogs
 {
+    bool? AskRearrange(string orientation);
+
+    string? PickLayerFile(LayerKindChoice kind);
+
     void ShowError(string message);
 
     /// A message that needs no answer, such as what a clean-up did.
