@@ -52,7 +52,7 @@ static class ShaderAssets
 
     /// The file's shader compiled, or why it can't be; null when it can't be read. One open, so a file replaced after
     /// the Exists check can't throw out of the load.
-    static CompiledShader? Compile(string full)
+    internal static CompiledShader? Compile(string full)
     {
         string source;
         try
@@ -129,7 +129,7 @@ static class ShaderAssets
     }
 
     /// Whether the uniform (if the shader declares it) takes `count` floats.
-    static bool Fits(SKRuntimeEffectUniforms uniforms, string name, int count)
+    internal static bool Fits(SKRuntimeEffectUniforms uniforms, string name, int count)
     {
         if (!uniforms.Contains(name)) return true;
         try

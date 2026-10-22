@@ -8,8 +8,7 @@ using Marquee.Editor.Resources;
 namespace Marquee.Editor.Layers;
 
 /// The layers panel (spec Part B, Layers panel), over LayersModel:
-/// - the widgets front to back, as rows indented under their groups, which fold; then the background layers, which E1
-///   only hides and locks;
+/// - widgets front to back, indented under folding groups, then background layers with their own add menu;
 /// - selection shared with the canvas: a click selects, Ctrl-click adds or removes, Shift-click takes the run of rows
 ///   between; and the canvas's selection shows here;
 /// - rename in place (writes `name:`), hide and lock (write `hidden:` and `locked:`);
@@ -30,7 +29,8 @@ public sealed class LayersViewModel : ObservableObject
     IReadOnlyList<LayerItem> _widgets = [];
     IReadOnlyList<LayerItem> _background = [];
 
-    public LayersViewModel(Func<EditorCommand, bool> run, CanvasViewModel canvas, Action<string> report)
+    public LayersViewModel(Func<EditorCommand, bool> run, CanvasViewModel canvas, Action<string> report,
+        Action<LayerKindChoice> addLayer, Action delete)
     {
         _run = run;
         _canvas = canvas;
@@ -40,7 +40,11 @@ public sealed class LayersViewModel : ObservableObject
         CopyCommand = new RelayCommand(_canvas.CopySelection, () => _canvas.HasSelection);
         PasteCommand = new RelayCommand(_canvas.Paste, () => CanEdit && _canvas.CanPaste);
         DuplicateCommand = new RelayCommand(_canvas.DuplicateSelection, () => CanEdit && _canvas.HasSelection);
-        DeleteCommand = new RelayCommand(_canvas.DeleteSelection, () => CanEdit && _canvas.HasSelection);
+        DeleteCommand = new RelayCommand(delete, () => CanEdit && (_canvas.HasSelection || _session?.SelectedLayer is not null));
+        AddFillLayerCommand = new RelayCommand(() => addLayer(LayerKindChoice.Fill), () => CanEdit);
+        AddImageLayerCommand = new RelayCommand(() => addLayer(LayerKindChoice.Image), () => CanEdit);
+        AddVideoLayerCommand = new RelayCommand(() => addLayer(LayerKindChoice.Video), () => CanEdit);
+        AddShaderLayerCommand = new RelayCommand(() => addLayer(LayerKindChoice.Shader), () => CanEdit);
         RenameCommand = new RelayCommand(item => BeginRename((LayerItem)item!), item => item is LayerItem { IsBackground: false } layer && CanChange(layer));
     }
 
@@ -78,6 +82,18 @@ public sealed class LayersViewModel : ObservableObject
 
     public RelayCommand DeleteCommand { get; }
 
+    public RelayCommand AddFillLayerCommand { get; }
+    public RelayCommand AddImageLayerCommand { get; }
+    public RelayCommand AddVideoLayerCommand { get; }
+    public RelayCommand AddShaderLayerCommand { get; }
+
+    /// Selects a layer by its YAML index (the rows display front to back).
+    public void SelectBackground(int index)
+    {
+        if (Background.FirstOrDefault(row => row.Path.Last!.Value.Index == index) is { } item)
+            Click(item, ModifierKeys.None);
+    }
+
     /// Its parameter is the LayerItem to rename.
     public RelayCommand RenameCommand { get; }
 
@@ -102,11 +118,17 @@ public sealed class LayersViewModel : ObservableObject
     }
 
     /// A click on `item` with `modifiers` held: selects it alone; with Ctrl, adds or removes it; with Shift, selects
-    /// the rows from the last one clicked to it. Background layers aren't selected (E1 edits only their hide and lock).
+    /// the rows from the last one clicked to it. A background layer is always selected on its own.
     public void Click(LayerItem item, ModifierKeys modifiers)
     {
-        if (_session is not { } session || item.IsBackground) return;
-        var selection = session.Selection;
+        if (_session is not { } session) return;
+        if (item.IsBackground)
+        {
+            _anchor = null;
+            Select([item.Path]);
+            return;
+        }
+        var selection = session.SelectedLayer is null ? session.Selection : [];
         IReadOnlyList<YamlPath> chosen;
         if (modifiers.HasFlag(ModifierKeys.Shift) && _anchor is { } anchor && Widgets.Contains(anchor))
         {
@@ -130,7 +152,7 @@ public sealed class LayersViewModel : ObservableObject
     /// A right-click: the row joins the selection unless it is in it already, so the menu works on what was clicked.
     public void ContextClick(LayerItem item)
     {
-        if (_session is { } session && !item.IsBackground && !session.Selection.Contains(item.Path)) Click(item, ModifierKeys.None);
+        if (_session is { } session && !session.Selection.Contains(item.Path)) Click(item, ModifierKeys.None);
     }
 
     /// Folds or unfolds a group's children.
@@ -174,8 +196,17 @@ public sealed class LayersViewModel : ObservableObject
 
     /// Whether `item` could be dropped `place` the row `target`: the move LayersModel works out, or null for a drop that
     /// goes nowhere.
-    public MoveLayer? DropFor(LayerItem item, LayerItem target, DropPlace place) =>
-        CanEdit && item.IsEditable ? _model?.Drop(item.Path, target.Path, place) : null;
+    public MoveLayer? DropFor(LayerItem item, LayerItem target, DropPlace place)
+    {
+        if (!CanEdit || !item.CanMove || item.IsBackground != target.IsBackground) return null;
+        if (!item.IsBackground) return _model?.Drop(item.Path, target.Path, place);
+        if (place == DropPlace.Into || item.Path == target.Path) return null;
+        var from = item.Path.Last!.Value.Index;
+        var at = target.Path.Last!.Value.Index;
+        if (from < at) at--;
+        var index = place == DropPlace.Above ? at + 1 : at;
+        return index == from ? null : new MoveLayer(item.Path, index);
+    }
 
     /// Drops `item` `place` the row `target`, as one undo step. False when the drop goes nowhere.
     public bool Drop(LayerItem item, LayerItem target, DropPlace place) =>
@@ -200,6 +231,10 @@ public sealed class LayersViewModel : ObservableObject
         DuplicateCommand.Refresh();
         DeleteCommand.Refresh();
         RenameCommand.Refresh();
+        AddFillLayerCommand.Refresh();
+        AddImageLayerCommand.Refresh();
+        AddVideoLayerCommand.Refresh();
+        AddShaderLayerCommand.Refresh();
     }
 
     bool SelectedGroups => _session is { } session && session.Selection.Any(path => session.Widget(path)?.IsGroup == true);
@@ -271,6 +306,6 @@ public sealed class LayersViewModel : ObservableObject
     void ShowSelection()
     {
         var selected = _session?.Selection.ToHashSet() ?? [];
-        foreach (var row in Widgets) row.IsSelected = selected.Contains(row.Path);
+        foreach (var row in Widgets.Concat(Background)) row.IsSelected = selected.Contains(row.Path);
     }
 }

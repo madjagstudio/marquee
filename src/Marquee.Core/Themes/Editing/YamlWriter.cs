@@ -15,10 +15,11 @@ public static class YamlWriter
 {
     /// A single value: plain where YAML reads it back as the same text there (in a block mapping or list, or with
     /// `inFlow` inside `{ }` or `[ ]`), else double-quoted, with escapes for line breaks and control characters.
-    public static string Scalar(string value, bool inFlow = false)
+    /// `forceQuotes` writes a string in double quotes even when it could safely be plain.
+    public static string Scalar(string value, bool inFlow = false, bool forceQuotes = false)
     {
         ArgumentNullException.ThrowIfNull(value);
-        return LayoutScalar.IsPlain(value, inFlow) ? value : YamlScalar.DoubleQuoted(value);
+        return !forceQuotes && LayoutScalar.IsPlain(value, inFlow) ? value : YamlScalar.DoubleQuoted(value);
     }
 
     /// The value on one line: `{ type: text, at: [0, 0] }`, `[1, 2]`, or a single value. An empty mapping is `{ }`

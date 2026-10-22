@@ -501,7 +501,7 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
     <comment>The layers panel's section of background layers.</comment>
   </data>
   <data name="BackgroundSectionTip" xml:space="preserve">
-    <value>Background layers can be hidden and locked here; their contents are edited in layout.yaml for now.</value>
+    <value>Select a background layer to edit its contents. Drag to reorder layers within this section.</value>
     <comment>The background section's tooltip.</comment>
   </data>
   <data name="NothingSelected" xml:space="preserve">
@@ -780,4 +780,24 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
     <value>Warning: the theme loads anyway</value>
     <comment>A problem's mark.</comment>
   </data>
+  <data name="ThemeSettings" xml:space="preserve"><value>Theme settings</value></data>
+  <data name="LayerKind" xml:space="preserve"><value>Kind</value></data>
+  <data name="LayerFill" xml:space="preserve"><value>Fill</value></data>
+  <data name="LayerImage" xml:space="preserve"><value>Image</value></data>
+  <data name="LayerVideo" xml:space="preserve"><value>Video</value></data>
+  <data name="LayerShader" xml:space="preserve"><value>Shader</value></data>
+  <data name="AddLayerMenu" xml:space="preserve"><value>Add layer ▾</value></data>
+  <data name="AddLayerImage" xml:space="preserve"><value>Image…</value></data>
+  <data name="AddLayerVideo" xml:space="preserve"><value>Video…</value></data>
+  <data name="AddLayerShader" xml:space="preserve"><value>Shader…</value></data>
+  <data name="UnusedUniform" xml:space="preserve"><value>unused</value></data>
+  <data name="RemoveUniform" xml:space="preserve"><value>Remove binding</value></data>
+  <data name="ImportShaderTitle" xml:space="preserve"><value>Import a shader</value></data>
+  <data name="ShaderFiles" xml:space="preserve"><value>Shader files</value></data>
+  <data name="RearrangeQuestion" xml:space="preserve"><value>Rearrange the widgets for {0}?</value></data>
+  <data name="PartlyOffCanvas" xml:space="preserve"><value>{0} widgets are partly off canvas.</value></data>
+  <data name="ShaderCostOver" xml:space="preserve"><value>Would take about {0:N0} ms a frame, over the {1:0} ms budget at {2:0} fps: the screen skips it. Lower its scale.</value></data>
+  <data name="ShaderCostWithin" xml:space="preserve"><value>About {0:N0} ms a frame at this scale, within the {1:0} ms budget at {2:0} fps</value></data>
+  <data name="Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="No" xml:space="preserve"><value>No</value></data>
 </root>

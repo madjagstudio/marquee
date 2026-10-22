@@ -31,8 +31,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _ui = ui;
         _screen = new ScreenTheme(environment.ConfigFile, environment.Locator);
         Canvas = new CanvasViewModel(Run, environment.Clipboard, Report, environment.Time);
-        Layers = new LayersViewModel(Run, Canvas, Report);
-        Properties = new PropertiesViewModel(Run, Report, Canvas, environment.Dialogs);
+        Layers = new LayersViewModel(Run, Canvas, Report, AddBackground, DeleteSelection);
+        Properties = new PropertiesViewModel(Run, Report, Canvas, environment.Dialogs, ChangeOrientation, ChangeBackgroundKind);
         TestValues = new TestValuesViewModel();
         InitializeCommands();
         Attach(workspace);
@@ -103,6 +103,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// rest the canvas's.
     public bool KeyDown(Key key, ModifierKeys modifiers)
     {
+        if (key == Key.Delete && modifiers == ModifierKeys.None && _workspace?.Session.SelectedLayer is not null)
+        {
+            DeleteSelection();
+            return true;
+        }
         if (modifiers.HasFlag(ModifierKeys.Control) && !Canvas.IsDragging)
         {
             var shift = modifiers.HasFlag(ModifierKeys.Shift);
@@ -120,6 +125,61 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
 
         return Canvas.KeyDown(key, modifiers);
+    }
+
+    void DeleteSelection()
+    {
+        if (!Layers.CanEdit) return;
+        if (_workspace?.Session.SelectedLayer is { } layer) Run(new RemoveLayer(layer));
+        else Canvas.DeleteSelection();
+    }
+
+    bool ChangeOrientation(string orientation)
+    {
+        if (!Properties.CanEdit || _environment.Dialogs.AskRearrange(orientation) is not { } rearrange) return false;
+        if (!Run(new SetOrientation(orientation, rearrange))) return false;
+        if (rearrange && SetOrientation.PartlyOffCanvas(_workspace!.Session) is var count && count > 0)
+            Report(Strings.PartlyOffCanvas(count));
+        return true;
+    }
+
+    void AddBackground(LayerKindChoice kind)
+    {
+        if (_workspace is not { } workspace || !Layers.CanEdit) return;
+        if (kind == LayerKindChoice.Fill)
+            Run(new AddLayer(kind, null, AddLayer.AddIndex(workspace.Session)));
+        else ImportBackground(kind, change: false);
+    }
+
+    void ChangeBackgroundKind(LayerKindChoice kind)
+    {
+        if (!Properties.CanEdit || _workspace?.Session.SelectedLayer is not { } layer) return;
+        if (kind == LayerKindChoice.Fill) Run(new ChangeLayerKind(layer, kind, null));
+        else ImportBackground(kind, change: true);
+    }
+
+    void ImportBackground(LayerKindChoice kind, bool change)
+    {
+        if (_workspace is not { } workspace || _environment.Dialogs.PickLayerFile(kind) is not { } file) return;
+        try
+        {
+            var session = workspace.Session;
+            var import = new AssetImport(session.Folder);
+            var imported = change
+                ? import.ChangeLayerKind(session, session.SelectedLayer!, kind, file)
+                : import.AddLayer(session, kind, file);
+            PropertyChoices.Forget();
+            Message = imported.Warning;
+        }
+        catch (AssetImportException ex)
+        {
+            _environment.Dialogs.ShowError(Strings.ImportRefused(Path.GetFileName(file), ex.Reason));
+        }
+        catch (Exception ex) when (ex is LayoutEditException or ThemeException or ArgumentException or InvalidOperationException
+                                       or IOException or UnauthorizedAccessException)
+        {
+            _environment.Dialogs.ShowError(Strings.ImportRefused(Path.GetFileName(file), ex.Message));
+        }
     }
 
     /// Before the window closes: saves what waits. When that fails, asks whether to close anyway, leaving the changes

@@ -9,6 +9,27 @@ namespace Marquee.Editor.Resources;
 /// properties ({x:Static}).
 public static class Strings
 {
+    public static string ThemeSettings => Get(nameof(ThemeSettings));
+    public static string LayerKind => Get(nameof(LayerKind));
+    public static string LayerFill => Get(nameof(LayerFill));
+    public static string LayerImage => Get(nameof(LayerImage));
+    public static string LayerVideo => Get(nameof(LayerVideo));
+    public static string LayerShader => Get(nameof(LayerShader));
+    public static string AddLayerMenu => Get(nameof(AddLayerMenu));
+    public static string AddLayerImage => Get(nameof(AddLayerImage));
+    public static string AddLayerVideo => Get(nameof(AddLayerVideo));
+    public static string AddLayerShader => Get(nameof(AddLayerShader));
+    public static string UnusedUniform => Get(nameof(UnusedUniform));
+    public static string RemoveUniform => Get(nameof(RemoveUniform));
+    public static string ImportShaderTitle => Get(nameof(ImportShaderTitle));
+    public static string ShaderFiles => Get(nameof(ShaderFiles));
+    public static string RearrangeQuestion(string orientation) => Format(nameof(RearrangeQuestion), orientation);
+    public static string PartlyOffCanvas(int count) => Format(nameof(PartlyOffCanvas), count);
+    public static string ShaderCostOver(double cost, double budget, double fps) => Format(nameof(ShaderCostOver), cost, budget, fps);
+    public static string ShaderCostWithin(double cost, double budget, double fps) => Format(nameof(ShaderCostWithin), cost, budget, fps);
+    public static string Yes => Get(nameof(Yes));
+    public static string No => Get(nameof(No));
+
     /// Settable so tests can put a pseudo-translation in front of the real resources.
     internal static ResourceManager ResourceManager { get; set; } = new("Marquee.Editor.Resources.Strings", typeof(Strings).Assembly);
 

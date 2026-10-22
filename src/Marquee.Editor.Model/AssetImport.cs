@@ -8,7 +8,7 @@ namespace Marquee.Editor.Model;
 /// "Import…": copies a file the user chose into the theme folder, so the theme carries it wherever it is shared.
 /// - The file is checked first, as the theme loader would load it (AssetChecks), and a refusal says why. A clip too
 ///   slow for this PC is taken, with a warning.
-/// - It goes into images\, fonts\ or video\ by its kind, under its own name, or with a number added when that is taken
+/// - It goes into images\, fonts\, video\ or shaders\ by its kind, under its own name, or with a number added when that is taken
 ///   (logo-2.png). A file already in the theme folder is used where it is.
 /// - The copy is written under a temporary name and renamed (AtomicFile.TryCopyNew). A link on the way is refused, as
 ///   for a save (ReparseTags): OneDrive's placeholders are written through, and a theme folder that is gone isn't
@@ -16,7 +16,7 @@ namespace Marquee.Editor.Model;
 /// - Files over the theme's per-file limit, 200 MB, are refused before they are read, and a copy stops at the limit, so
 ///   a file that grows or is swapped after the check isn't taken either.
 ///
-/// AddImage, AddVideo and SetFile import, then make the edit that uses the file, as one undo step. Undo takes the
+/// AddImage, AddVideo, AddLayer and SetFile import, then make the edit that uses the file, as one undo step. Undo takes the
 /// reference away and leaves the file, which "Clean up unused files" (UnusedFiles) deletes later; a copy the edit
 /// doesn't take is deleted at once.
 public sealed class AssetImport
@@ -58,12 +58,12 @@ public sealed class AssetImport
         AssetKind.Image => "images",
         AssetKind.Font => "fonts",
         AssetKind.Video => "video",
+        AssetKind.Shader => "shaders",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
     /// The kind of file the key at `key` names, or null when it names none the editor imports: a style's `font`, a
-    /// background layer's `image` or `video`, and an image or video widget's `src`. (A shader layer's `shader` is
-    /// written in a text editor, not imported.)
+    /// background layer's `image`, `video` or `shader`, and an image or video widget's `src`.
     public static AssetKind? KindFor(LayoutDocument document, YamlPath key)
     {
         if (key.Last is not { IsKey: true } last) return null;
@@ -72,6 +72,7 @@ public sealed class AssetImport
             "font" => AssetKind.Font,
             "image" => AssetKind.Image,
             "video" => AssetKind.Video,
+            "shader" => AssetKind.Shader,
             "src" when document.TryGetScalar(key.Parent!.Child("type"), out var type) => type switch
             {
                 "image" => AssetKind.Image,
@@ -107,6 +108,7 @@ public sealed class AssetImport
             AssetKind.Image => _checks.Image(full),
             AssetKind.Font => _checks.Font(full),
             AssetKind.Video => _checks.Video(full),
+            AssetKind.Shader => _checks.Shader(full),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
         if (check.Refusal is { } refusal) throw new AssetImportException(refusal);
@@ -129,6 +131,20 @@ public sealed class AssetImport
     public ImportedFile AddVideo(EditorSession session, string source, YamlPath? group = null) =>
         Apply(session, source, AssetKind.Video, file => new AddImportedWidget("video", file.Path, group));
 
+    /// Imports a background's image, video or shader and adds its layer above the selection as one undo step.
+    /// A refused edit discards a new copy. Fill has no file; add it directly with the AddLayer command.
+    public ImportedFile AddLayer(EditorSession session, LayerKindChoice kind, string source)
+    {
+        var assetKind = kind switch
+        {
+            LayerKindChoice.Image => AssetKind.Image,
+            LayerKindChoice.Video => AssetKind.Video,
+            LayerKindChoice.Shader => AssetKind.Shader,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), "Only image, video and shader layers import files."),
+        };
+        return Apply(session, source, assetKind, file => new AddLayer(kind, file.Path, Model.AddLayer.AddIndex(session)));
+    }
+
     /// Imports the file at `source` for the file key at `key` (KindFor says which kind it takes) and sets the key to
     /// it, adding the key when the file hasn't it, as one undo step. Throws ArgumentException, before anything is
     /// copied, for a key that takes no file the editor imports, and otherwise as Import and EditorSession.Apply do.
@@ -136,9 +152,19 @@ public sealed class AssetImport
     {
         ArgumentNullException.ThrowIfNull(session);
         var kind = KindFor(session.Document, key)
-            ?? throw new ArgumentException($"{key} doesn't name an image, font or video file.", nameof(key));
+            ?? throw new ArgumentException($"{key} doesn't name an image, font, video or shader file.", nameof(key));
         return Apply(session, source, kind, file => new SetImportedFile(key, file.Path));
     }
+
+    /// Imports a replacement layer's file, discarding the copy if the kind change is refused.
+    public ImportedFile ChangeLayerKind(EditorSession session, YamlPath layer, LayerKindChoice kind, string source) =>
+        Apply(session, source, kind switch
+        {
+            LayerKindChoice.Image => AssetKind.Image,
+            LayerKindChoice.Video => AssetKind.Video,
+            LayerKindChoice.Shader => AssetKind.Shader,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        }, file => new ChangeLayerKind(layer, kind, file.Path));
 
     ImportedFile Apply(EditorSession session, string source, AssetKind kind, Func<ImportedFile, EditorCommand> edit)
     {

@@ -26,6 +26,9 @@ public sealed class PropertiesViewModel : ObservableObject
     readonly Action<string> _report;
     readonly CanvasViewModel _canvas;
     readonly IEditorDialogs _dialogs;
+    readonly Func<string, bool> _orientation;
+    readonly Action<LayerKindChoice> _changeKind;
+    ShaderPanelViewModel? _shader;
     EditorWorkspace? _workspace;
     PropertyModel? _model;
     string _shape = "";
@@ -38,12 +41,15 @@ public sealed class PropertiesViewModel : ObservableObject
     string? _styleChoice;
     bool _hasSelection;
 
-    public PropertiesViewModel(Func<EditorCommand, bool> run, Action<string> report, CanvasViewModel canvas, IEditorDialogs dialogs)
+    public PropertiesViewModel(Func<EditorCommand, bool> run, Action<string> report, CanvasViewModel canvas, IEditorDialogs dialogs,
+        Func<string, bool> orientation, Action<LayerKindChoice> changeKind)
     {
         _run = run;
         _report = report;
         _canvas = canvas;
         _dialogs = dialogs;
+        _orientation = orientation;
+        _changeKind = changeKind;
         ClearOverridesCommand = new RelayCommand(() => Write(() => Model!.ClearOverrides()), () => CanEdit && Model?.StyleUse is { Name: not null, Count: > 0 });
         SplitIntoSpansCommand = new RelayCommand(() => Write(() => Model!.SplitIntoSpans()), () => CanEdit && Model?.CanSplitIntoSpans == true);
         CopyStyleCommand = new RelayCommand(() => _canvas.CopyStyle(), () => HasSelection);
@@ -55,7 +61,45 @@ public sealed class PropertiesViewModel : ObservableObject
     /// The panel's model for the selection now; null with no theme open.
     public PropertyModel? Model => _model;
 
-    /// Something is selected, so the panel has rows.
+    public PropertyTargetKind? Target => Model?.Target;
+    public bool IsLayer => Target == PropertyTargetKind.Layer;
+    public bool IsWidgets => Target == PropertyTargetKind.Widgets;
+    public bool HasProperties => Model is not null;
+    public ShaderPanelViewModel? Shader
+    {
+        get => _shader;
+        private set => Set(ref _shader, value);
+    }
+
+    public IReadOnlyList<LayerKindOption> KindChoices { get; } =
+    [
+        new(LayerKindChoice.Fill, Strings.LayerFill), new(LayerKindChoice.Image, Strings.LayerImage),
+        new(LayerKindChoice.Video, Strings.LayerVideo), new(LayerKindChoice.Shader, Strings.LayerShader),
+    ];
+
+    public LayerKindChoice? Kind
+    {
+        get => IsLayer && Enum.TryParse<LayerKindChoice>(Model?.Type, true, out var kind) ? kind : null;
+        set
+        {
+            if (value is not { } kind || value == Kind || !CanEdit) return;
+            _changeKind(kind);
+            Raise();
+        }
+    }
+
+    public void SetChoice(string name, string value)
+    {
+        if (Row(name) is { } row) row.Choice = value;
+    }
+
+    internal bool SetOrientation(string orientation)
+    {
+        EndDrag();
+        return _orientation(orientation);
+    }
+
+    /// Widgets are selected, so widget-only commands may run.
     public bool HasSelection
     {
         get => _hasSelection;
@@ -152,6 +196,8 @@ public sealed class PropertiesViewModel : ObservableObject
         EndDrag();
         workspace.Session.Changed -= OnSessionChanged;
         _workspace = null;
+        Shader?.Dispose();
+        Shader = null;
         Refresh(rebuild: true);
     }
 
@@ -227,6 +273,11 @@ public sealed class PropertiesViewModel : ObservableObject
         var session = Session;
         var model = session is null ? null : PropertyModel.For(session);
         _model = model;
+        Raise(nameof(Target));
+        Raise(nameof(IsLayer));
+        Raise(nameof(IsWidgets));
+        Raise(nameof(HasProperties));
+        Raise(nameof(Kind));
         HasSelection = model is { Widgets.Count: > 0 };
         var shape = Shape(model);
         if (!rebuild && shape == _shape)
@@ -243,7 +294,9 @@ public sealed class PropertiesViewModel : ObservableObject
                 ?? [];
         }
 
-        Heading = model?.Widgets.Count switch
+        Heading = model?.Target == PropertyTargetKind.Canvas ? Strings.ThemeSettings
+            : model?.Target == PropertyTargetKind.Layer ? LayersModel.Of(session!).Find(session!.SelectedLayer!)!.Name
+            : model?.Widgets.Count switch
         {
             null or 0 => "",
             1 => model.Widgets[0].Name,
@@ -255,6 +308,20 @@ public sealed class PropertiesViewModel : ObservableObject
         _styleChoice = model?.StyleUse is { } used ? used.Name ?? Strings.NoNamedStyle : null;
         Raise(nameof(StyleChoice));
         Rules = model?.Rules.Select(rule => rule.Text).ToList() ?? [];
+        if (session?.SelectedLayer is { } layer && model?.Type == "shader")
+        {
+            if (Shader?.Layer != layer || rebuild)
+            {
+                Shader?.Dispose();
+                Shader = new ShaderPanelViewModel(this, layer);
+            }
+            Shader.Refresh();
+        }
+        else
+        {
+            Shader?.Dispose();
+            Shader = null;
+        }
         Raise(nameof(CanEdit));
         ClearOverridesCommand.Refresh();
         SplitIntoSpansCommand.Refresh();
@@ -274,7 +341,8 @@ public sealed class PropertiesViewModel : ObservableObject
     static string Shape(PropertyModel? model) =>
         model is null
             ? ""
-            : string.Join("|", model.Widgets.Select(widget => widget.Path.ToString()))
+            : model.Target + ":" + string.Join("|", model.Rows.SelectMany(row => row.Paths))
+              + string.Join("|", model.Widgets.Select(widget => widget.Path.ToString()))
               + "#" + string.Join("|", Flatten(model.Rows.Concat(model.Style.SelectMany(section => section.Rows)))
                   .Select(row => $"{row.Name}:{PropertyEditors.For(row.Kind)}:{row.IsEditable}"));
 
@@ -302,3 +370,5 @@ public sealed class PropertiesViewModel : ObservableObject
 
 /// One group of the Style section, with its title in the user's language.
 public sealed record PropertySectionViewModel(string Title, IReadOnlyList<PropertyRowViewModel> Rows);
+
+public sealed record LayerKindOption(LayerKindChoice Kind, string Label);

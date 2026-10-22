@@ -70,6 +70,7 @@ public static class PropertyEditors
         SchemaKind.Point or SchemaKind.Size => PropertyEditor.Pair,
         SchemaKind.Block or SchemaKind.Style => PropertyEditor.Block,
         SchemaKind.List => PropertyEditor.List,
+        SchemaKind.Uniforms => PropertyEditor.ReadOnly,
         _ => PropertyEditor.ReadOnly,
     };
 }

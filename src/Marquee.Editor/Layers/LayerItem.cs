@@ -40,6 +40,8 @@ public sealed class LayerItem : ObservableObject
     /// False for a widget or layer that uses an anchor or alias: the panel shows it read-only.
     public bool IsEditable => Node.IsEditable;
 
+    public bool CanMove => IsEditable && !Locked;
+
     public bool IsGroup => Node.Kind == LayerKind.Group;
 
     public bool IsBackground => Node.Kind == LayerKind.Background;
@@ -79,7 +81,7 @@ public sealed class LayerItem : ObservableObject
         set => Set(ref _editName, value);
     }
 
-    /// Where a widget dragged over this row would go; null when none is.
+    /// Where a widget or background layer dragged over this row would go; null when none is.
     public DropPlace? DropHint
     {
         get => _dropHint;

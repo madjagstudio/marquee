@@ -52,8 +52,11 @@ public class LayersPanelTests
 
         editor.Session.Select([P("widgets[1]")]);
         Assert.Equal([P("widgets[1]")], layers.Widgets.Where(row => row.IsSelected).Select(row => row.Path));
-        // Background layers aren't selected in E1.
+        // Background layers select alone, sharing the same session selection.
         layers.Click(layers.Background[0], ModifierKeys.None);
+        Assert.Equal([P("background[0]")], editor.Session.Selection);
+        Assert.True(layers.Background[0].IsSelected);
+        layers.Click(Row(editor, "widgets[1]"), ModifierKeys.Control);
         Assert.Equal([P("widgets[1]")], editor.Session.Selection);
     });
 

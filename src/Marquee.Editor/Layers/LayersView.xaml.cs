@@ -21,6 +21,7 @@ public partial class LayersView : UserControl
         {
             _model = e.NewValue as LayersViewModel;
             WidgetList.ContextMenu = _model is null ? null : Menu(_model);
+            BackgroundList.ContextMenu = _model is null ? null : Menu(_model);
         };
     }
 
@@ -39,7 +40,7 @@ public partial class LayersView : UserControl
         }
 
         _model.Click(item, Keyboard.Modifiers);
-        _pressed = item.IsBackground ? null : item;
+        _pressed = item;
         _pressedAt = e.GetPosition(this);
         e.Handled = true;
     }
@@ -49,7 +50,7 @@ public partial class LayersView : UserControl
     /// A press that has moved far enough starts dragging the row.
     void OnRowMove(object sender, MouseEventArgs e)
     {
-        if (_pressed is not { } item || e.LeftButton != MouseButtonState.Pressed || _model?.CanEdit != true || !item.IsEditable) return;
+        if (_pressed is not { } item || e.LeftButton != MouseButtonState.Pressed || _model?.CanEdit != true || !item.CanMove) return;
         var moved = e.GetPosition(this) - _pressedAt;
         if (Math.Abs(moved.X) < SystemParameters.MinimumHorizontalDragDistance
             && Math.Abs(moved.Y) < SystemParameters.MinimumVerticalDragDistance)
@@ -61,9 +62,9 @@ public partial class LayersView : UserControl
 
     void OnRowRightDown(object sender, MouseButtonEventArgs e)
     {
-        if (_model is null || ItemOf(sender) is not { IsBackground: false } item) return;
+        if (_model is null || ItemOf(sender) is not { } item) return;
         _model.ContextClick(item);
-        if (WidgetList.ContextMenu is { } menu) menu.Tag = item;
+        if ((item.IsBackground ? BackgroundList.ContextMenu : WidgetList.ContextMenu) is { } menu) menu.Tag = item;
     }
 
     void OnRowDragOver(object sender, DragEventArgs e)

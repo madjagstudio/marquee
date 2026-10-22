@@ -10,7 +10,7 @@ namespace Marquee.Editor.Canvas;
 public sealed partial class CanvasViewModel
 {
     /// Something is selected for the edits to work on.
-    public bool HasSelection => Session?.Selection.Count > 0;
+    public bool HasSelection => Session is { Selection.Count: > 0, SelectedLayer: null };
 
     /// A style has been copied (Ctrl+Shift+C), so it can be pasted.
     public bool HasCopiedStyle => _styles.Style is not null;
@@ -21,7 +21,7 @@ public sealed partial class CanvasViewModel
     /// Ctrl+C: the selected widgets' YAML onto the clipboard.
     public void CopySelection()
     {
-        if (Session is not { Selection.Count: > 0 } session) return;
+        if (Session is not { Selection.Count: > 0, SelectedLayer: null } session) return;
         try
         {
             if (!_clipboard.SetText(WidgetClipboard.Copy(session.Document, session.Selection))) _report(Strings.ClipboardBusy);
@@ -53,7 +53,7 @@ public sealed partial class CanvasViewModel
     /// Ctrl+Shift+C: the first selected widget's style as it draws.
     public void CopyStyle()
     {
-        if (Session is { } session) Try(Strings.ActionCopyStyle, () => _styles.Copy(session));
+        if (HasSelection && Session is { } session) Try(Strings.ActionCopyStyle, () => _styles.Copy(session));
     }
 
     /// Ctrl+Shift+V: the copied style onto every selected widget, as overrides.
@@ -66,6 +66,6 @@ public sealed partial class CanvasViewModel
 
     void OnSelection(Func<IReadOnlyList<YamlPath>, EditorCommand> command)
     {
-        if (Session is { Selection.Count: > 0 } session) _run(command(session.Selection));
+        if (Session is { Selection.Count: > 0, SelectedLayer: null } session) _run(command(session.Selection));
     }
 }

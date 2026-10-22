@@ -331,7 +331,7 @@ public sealed class ThemeAssets : IDisposable
 
     /// False if `relative` can't be resolved as a path at all (a NUL character, say). Otherwise `full` is the
     /// full path, or null when it leaves the theme folder.
-    internal static bool TryInsideFolder(string folder, string relative, out string? full)
+    public static bool TryInsideFolder(string folder, string relative, out string? full)
     {
         try
         {
