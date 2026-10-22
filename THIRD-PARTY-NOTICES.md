@@ -19,6 +19,8 @@ each under its own license. The license and notices files each NuGet package com
 | Mono.Posix | `Mono.Posix.NETStandard` | A LibreHardwareMonitorLib dependency for Linux, unused on Windows: `Mono.Posix.NETStandard.dll`, `MonoPosixHelper.dll`, `libMonoPosixHelper.dll` | Mono's license, as the package's license link says (<https://go.microsoft.com/fwlink/?linkid=869050>). © Microsoft Corporation |
 | [PresentMon](https://github.com/GameTechDev/PresentMon) 2.6.0 | none (downloaded from its GitHub release when Marquee is built) | Game FPS: Intel's console exe, unmodified, as `PresentMon\PresentMon-2.6.0-x64.exe` | MIT ([below](#presentmon-license)) |
 | [Inter](https://github.com/rsms/inter) | none (`src/Marquee.Core/Fonts`) | The default font, built into `Marquee.Core.dll` | SIL Open Font License 1.1, in `licenses\Inter\OFL.txt` |
+| [Rajdhani](https://github.com/google/fonts/tree/main/ofl/rajdhani) Medium, SemiBold and Bold, by the Indian Type Foundry | none (`src/Marquee.Editor/Fonts/Rajdhani`) | The theme editor's headings and numbers, built into `MarqueeEditor.exe` | SIL Open Font License 1.1, in `licenses\Rajdhani\OFL.txt` |
+| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) Medium | none (`src/Marquee.Editor/Fonts/JetBrainsMono`) | The theme editor's small labels, built into `MarqueeEditor.exe` | SIL Open Font License 1.1, in `licenses\JetBrainsMono\OFL.txt` |
 
 The MSI file also holds a custom-action DLL from the [WiX Toolset](https://github.com/wixtoolset/wix) 5.0.2 Util
 extension (`Wix4UtilCA_X64`), which Windows Installer uses to run Marquee's own `marquee task` commands while it
