@@ -9,6 +9,13 @@ public partial class RulesView : UserControl
     Point _start;
     public RulesView() => InitializeComponent();
 
+    void OnTryValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (sender is Slider { IsLoaded: true, DataContext: RulesViewModel rules }
+            && Math.Abs(e.NewValue - rules.TryNumber) > 0.000001)
+            rules.TryNumber = e.NewValue;
+    }
+
     void OnValueKey(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || ((FrameworkElement)sender).DataContext is not RuleRowViewModel row) return;

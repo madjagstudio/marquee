@@ -60,15 +60,18 @@ public sealed partial class PropertyRowViewModel : ObservableObject
         get
         {
             var help = new StringBuilder(_row.Tooltip);
-            if (_row.Default is { } fallback) help.Append('\n').Append(Strings.DefaultIs(fallback));
-            if (!_row.IsSet && _row.Inherited is { } inherited) help.Append('\n').Append(Strings.FromNamedStyle(Show(inherited)));
+            if (_row.Default is { } fallback) help.Append('\n').Append(Strings.DefaultIs(DisplayText(fallback) + (IsPercentage ? "%" : "")));
+            if (!_row.IsSet && _row.Inherited is { } inherited) help.Append('\n').Append(Strings.FromNamedStyle(DisplayText(Show(inherited))));
             if (!_row.IsEditable) help.Append('\n').Append(Strings.KeyReadOnly);
             return help.ToString();
         }
     }
 
-    /// The unit after a number: px, °, ms, %, ×; empty for none, and for a fraction.
-    public string Unit => _row.Unit switch
+    // Only opacity is described as a percentage in the plain-label catalog.
+    bool IsPercentage => _row.Unit == SchemaUnit.Fraction && _row.Key.Name == "opacity";
+
+    /// The unit after a number: px, °, ms, %, ×; empty for none and for fractions not labelled as percentages.
+    public string Unit => IsPercentage ? "%" : _row.Unit switch
     {
         SchemaUnit.Px => "px",
         SchemaUnit.Degrees => "°",
@@ -151,7 +154,7 @@ public sealed partial class PropertyRowViewModel : ObservableObject
             return true;
         }
 
-        return Write(new YamlText(text));
+        return Write(StoredValue(text));
     }
 
     /// Puts the file's value back in the box, dropping what was typed.
@@ -232,13 +235,19 @@ public sealed partial class PropertyRowViewModel : ObservableObject
     string Shown()
     {
         if (_row.IsMixed) return "";
-        if (_row.Value is { } value) return Show(value);
-        if (_row.Inherited is { } inherited) return Show(inherited);
-        return _row.Default ?? "";
+        if (_row.Value is { } value) return DisplayText(Show(value));
+        if (_row.Inherited is { } inherited) return DisplayText(Show(inherited));
+        return DisplayText(_row.Default ?? "");
     }
 
     string? Check(string text) =>
-        text.Trim().Length == 0 || _owner.Model is not { } model ? null : model.Validate(_row, new YamlText(text.Trim()));
+        text.Trim().Length == 0 || _owner.Model is not { } model ? null : model.Validate(_row, StoredValue(text.Trim()));
+
+    string DisplayText(string text) => IsPercentage && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+        ? (number * 100).ToString("G", CultureInfo.InvariantCulture) : text;
+
+    YamlText StoredValue(string text) => new(IsPercentage && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+        ? (number / 100).ToString("G", CultureInfo.InvariantCulture) : text);
 
     static string Show(YamlValue value) => value is YamlText text ? text.Value : YamlWriter.Flow(value);
 

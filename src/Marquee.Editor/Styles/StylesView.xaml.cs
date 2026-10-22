@@ -29,8 +29,8 @@ public partial class StylesView : UserControl
         {
             Items =
             {
-                new MenuItem { Header = Strings.MenuRename, InputGestureText = "F2", Command = model.RenameCommand },
-                new MenuItem { Header = Strings.MenuDelete, InputGestureText = "Del", Command = model.DeleteCommand },
+                new MenuItem { Header = Strings.MenuRename, ToolTip = Strings.RenameStyleTip, InputGestureText = "F2", Command = model.RenameCommand },
+                new MenuItem { Header = Strings.MenuDelete, ToolTip = Strings.DeleteStyleTip, InputGestureText = "Del", Command = model.DeleteCommand },
             },
         };
     }

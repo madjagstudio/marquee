@@ -46,6 +46,37 @@ public class PropertiesPanelTests
 
     static string Text(OpenEditor editor) => editor.Session.Document.Text;
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Transparency_uses_percentages_and_preserves_yaml_fractions(bool background) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("percent", TestEnvironment.Layout));
+        if (background) editor.Model.Layers.SelectBackground(0);
+        else Select(editor, "widgets[0]");
+        var row = Row(editor, background ? "opacity" : "style.opacity");
+        Assert.Equal("100", row.Text);
+        Assert.Contains("100%", row.Help);
+        Assert.Equal("%", row.Unit);
+        Assert.Equal(0, row.SliderMin);
+        Assert.Equal(100, row.SliderMax);
+        row.Text = "50";
+        Assert.False(row.HasError);
+        Assert.True(row.Commit());
+        Assert.Contains("opacity: 0.5", Text(editor));
+        row.SlideTo(25, final: true);
+        Assert.Contains("opacity: 0.25", Text(editor));
+        // Recreate the rows from stored YAML, rather than relying on the edited text.
+        editor.Session.Select([]);
+        if (background) editor.Model.Layers.SelectBackground(0);
+        else Select(editor, "widgets[0]");
+        row = Row(editor, background ? "opacity" : "style.opacity");
+        Assert.Equal("25", row.Text);
+        Assert.Equal(25, row.Number);
+        Assert.Equal("%", row.Unit);
+    });
+
     [Fact]
     public void Numbers_checkboxes_dropdowns_and_blocks_write_their_keys() => Sta.Run(() =>
     {
@@ -274,10 +305,10 @@ public class PropertiesPanelTests
         var opacity = Row(editor, "style.opacity");
         Assert.True(opacity.IsDefault);
         Assert.False(opacity.CanReset);
-        Assert.Contains(Strings.DefaultIs("1"), opacity.Help);
+        Assert.Contains(Strings.DefaultIs("100%"), opacity.Help);
         Assert.False(Row(editor, "at").CanReset);
 
-        opacity.Text = "0.5";
+        opacity.Text = "50";
         opacity.Commit();
         Assert.Contains("opacity: 0.5", Text(editor));
         Assert.True(Row(editor, "style.opacity").CanReset);

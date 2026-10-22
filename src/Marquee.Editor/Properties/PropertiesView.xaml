@@ -11,6 +11,13 @@
                 <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="Visible" />
+            <Style x:Key="OptionalContent" TargetType="ContentControl">
+                <Style.Triggers>
+                    <Trigger Property="Content" Value="{x:Null}">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
             <local:PropertyTemplateSelector x:Key="Templates" />
             <SolidColorBrush x:Key="Muted" Color="{StaticResource TextMutedColor}" />
             <SolidColorBrush x:Key="Error" Color="{StaticResource WarningColor}" />
@@ -487,21 +494,12 @@
                               SelectedValue="{Binding Kind}" IsEnabled="{Binding CanEdit}" />
                 </DockPanel>
                 <ItemsControl x:Name="BasicsRows" ItemsSource="{Binding Basics}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
-                <TextBlock Text="{x:Static res:Strings.MoreStylingSection}" FontWeight="SemiBold" Margin="0,10,0,4" />
-                <ItemsControl x:Name="MoreStylingSections" ItemsSource="{Binding MoreStyling}" Focusable="False">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Expander ToolTip="{x:Static res:Strings.StylingSectionTip}" Header="{Binding Title}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,2">
-                                <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Margin="4,0,0,0" Focusable="False" />
-                            </Expander>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <Expander ToolTip="{x:Static res:Strings.RawSectionTip}" x:Name="RawSection" Header="{x:Static res:Strings.RawSection}" IsExpanded="{Binding IsRawExpanded, Mode=TwoWay}"
-                          local:PropertiesView.RawLabels="True" Margin="0,10,0,4">
-                    <ItemsControl ItemsSource="{Binding Raw}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
-                </Expander>
-                <ContentControl Content="{Binding Ring}" Focusable="False">
+                <ContentControl Style="{StaticResource OptionalContent}" Content="{Binding RulesList}" Focusable="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate><local:RulesView /></DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+                <ContentControl Style="{StaticResource OptionalContent}" Content="{Binding Ring}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>
                             <Expander ToolTip="{x:Static res:Strings.RingSectionTip}" Header="{x:Static res:Strings.RingSection}" IsExpanded="True" Margin="0,8">
@@ -516,6 +514,20 @@
                         </DataTemplate>
                     </ContentControl.ContentTemplate>
                 </ContentControl>
+                <TextBlock Text="{x:Static res:Strings.MoreStylingSection}" FontWeight="SemiBold" Margin="0,10,0,4" />
+                <ItemsControl x:Name="MoreStylingSections" ItemsSource="{Binding MoreStyling}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Expander ToolTip="{x:Static res:Strings.StylingSectionTip}" Header="{Binding Title}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,2">
+                                <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Margin="4,0,0,0" Focusable="False" />
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Expander ToolTip="{x:Static res:Strings.RawSectionTip}" x:Name="RawSection" Header="{x:Static res:Strings.RawSection}" IsExpanded="{Binding IsRawExpanded, Mode=TwoWay}"
+                          local:PropertiesView.RawLabels="True" Margin="0,10,0,4">
+                    <ItemsControl ItemsSource="{Binding Raw}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
+                </Expander>
                 <ContentControl Content="{Binding Shader}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>
@@ -587,11 +599,6 @@
                 </WrapPanel>
                 </StackPanel>
 
-                <ContentControl Content="{Binding RulesList}" Focusable="False">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate><local:RulesView /></DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

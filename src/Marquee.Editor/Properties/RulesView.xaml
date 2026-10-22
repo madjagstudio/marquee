@@ -15,6 +15,19 @@
     <StackPanel IsEnabled="{Binding CanEdit}">
         <TextBlock Text="{x:Static res:Strings.RulesSection}" FontWeight="SemiBold" Margin="0,8,0,4" />
         <TextBlock Text="{x:Static res:Strings.RulesTip}" TextWrapping="Wrap" Margin="0,0,0,4" />
+        <StackPanel Visibility="{Binding HasTryValue, Converter={StaticResource Visible}}" Margin="0,4">
+            <DockPanel>
+                <TextBlock Text="{x:Static res:Strings.TryValue}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding TrySource}" Margin="8,0,0,0" />
+            </DockPanel>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Unpin}" ToolTip="{x:Static res:Strings.UnpinTip}"
+                        Command="{Binding UnpinCommand}" Margin="6,0,0,0" />
+                <Slider x:Name="TryValueSlider" Minimum="{Binding TryMin}" Maximum="{Binding TryMax}"
+                        Value="{Binding TryNumber, Mode=OneWay}" ValueChanged="OnTryValueChanged"
+                        ToolTip="{x:Static res:Strings.TryValueTip}" />
+            </DockPanel>
+        </StackPanel>
         <ItemsControl ItemsSource="{Binding Rows}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>

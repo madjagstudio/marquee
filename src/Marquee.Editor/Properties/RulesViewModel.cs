@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using Marquee.Core.Expressions;
+using Marquee.Editor.Model.Values;
 using Marquee.Core.Themes.Editing;
 using Marquee.Editor.Model;
 using Marquee.Editor.Mvvm;
@@ -14,6 +16,7 @@ public sealed class RulesViewModel : ObservableObject
         Panel = panel;
         Owner = owner;
         AddCommand = new RelayCommand(() => Rows.Add(new RuleRowViewModel(this, Rows.Count, draft: true)), () => CanAdd);
+        UnpinCommand = new RelayCommand(() => { if (TrySource is { } key) Panel.Workspace?.Values.TestValues.Unpin(key); }, () => IsPinned);
         Refresh();
     }
 
@@ -34,11 +37,54 @@ public sealed class RulesViewModel : ObservableObject
     public ObservableCollection<RuleRowViewModel> Rows { get; } = [];
     public RelayCommand AddCommand { get; }
 
+    public RelayCommand UnpinCommand { get; }
+    public string? TrySource { get; private set; }
+    public bool HasTryValue => TrySource is not null;
+    public bool IsPinned => TrySource is { } key && Panel.Workspace?.Values.TestValues.PinOf(key) is not null;
+    public double TryMin => TrySource is { } key ? Panel.Workspace!.Values.TestValues.RangeOf(key).Min : 0;
+    public double TryMax => TrySource is { } key ? Panel.Workspace!.Values.TestValues.RangeOf(key).Max : 100;
+    public double TryNumber
+    {
+        get
+        {
+            var values = Panel.Workspace?.Values;
+            var number = TrySource is { } key && values is not null && values.Snapshot().TryGet(key, out var value)
+                ? value.Number ?? TryMin : TryMin;
+            return Math.Clamp(number, TryMin, TryMax);
+        }
+        set
+        {
+            if (TrySource is not { } key || !double.IsFinite(value)) return;
+            Panel.Workspace?.Values.TestValues.Pin(key, TestPin.Of(Math.Clamp(value, TryMin, TryMax)));
+            RefreshMatching();
+        }
+    }
+
+    void RefreshSource()
+    {
+        TrySource = null;
+        if (Panel.Session!.Document.TryGetScalar(Owner.Child("source"), out var source))
+        {
+            try
+            {
+                // Sweep a single source without guessing which input of a calculation to change.
+                var keys = Expression.Parse(source).Keys;
+                if (keys.Count == 1) TrySource = keys[0];
+            }
+            catch (ExpressionException) { }
+        }
+        Raise(nameof(TrySource));
+        Raise(nameof(HasTryValue));
+        Raise(nameof(TryMin));
+        Raise(nameof(TryMax));
+    }
+
     internal void Refresh()
     {
         AddCommand.Refresh();
         Raise(nameof(CanEdit));
         if (Panel.Session!.IsPaused) return;
+        RefreshSource();
         var count = Panel.Session!.Document.GetNode(Owner.Child("when"))?.Count ?? 0;
         var saved = Rows.Where(row => !row.IsDraft).ToList();
         if (saved.Count != count)
@@ -61,6 +107,9 @@ public sealed class RulesViewModel : ObservableObject
     public void RefreshMatching()
     {
         if (Panel.Session is not { IsPaused: false } session || Panel.Workspace is not { } workspace) return;
+        Raise(nameof(TryNumber));
+        Raise(nameof(IsPinned));
+        UnpinCommand.Refresh();
         var matching = RuleSummaries.Matching(session.Document, Owner, workspace.Values.Snapshot());
         foreach (var row in Rows) row.IsMatching = !row.IsDraft && row.Index < matching.Count && matching[row.Index];
     }

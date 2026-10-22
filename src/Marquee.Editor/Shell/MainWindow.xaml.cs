@@ -77,9 +77,9 @@ public partial class MainWindow : Window
         }
 
         if (ThemeMenu.Items.Count > 0) ThemeMenu.Items.Add(new Separator());
-        var examples = new MenuItem { Header = Text(Strings.NewFromExample) };
+        var examples = new MenuItem { Header = Text(Strings.NewFromExample), ToolTip = Strings.NewFromExampleTip };
         Fill(examples, _model.ExampleChoices());
-        if (examples.Items.Count == 0) examples.Items.Add(new MenuItem { Header = Text(Strings.NoExamples), IsEnabled = false });
+        if (examples.Items.Count == 0) examples.Items.Add(new MenuItem { Header = Text(Strings.NoExamples), ToolTip = Strings.NoExamplesTip, IsEnabled = false });
         ThemeMenu.Items.Add(examples);
         ThemeMenu.Items.Add(new Separator());
         foreach (var action in _model.ThemeActions()) ThemeMenu.Items.Add(Item(action));
@@ -94,6 +94,7 @@ public partial class MainWindow : Window
             ProblemsMenu.Items.Add(new MenuItem
             {
                 Header = ProblemLine(problem),
+                ToolTip = Strings.SelectProblemTip,
                 Command = _model.SelectProblemCommand,
                 CommandParameter = problem,
             });
@@ -127,10 +128,11 @@ public partial class MainWindow : Window
             {
                 Header = new TextBlock { Text = detail, TextWrapping = TextWrapping.Wrap, MaxWidth = 520 },
                 StaysOpenOnClick = true,
+                ToolTip = Strings.SaveDetailsTip,
             });
         }
 
-        if (_model.CanSaveToFolder) SaveMenu.Items.Add(Item(new MenuChoice(Strings.SaveToFolder, _model.SaveToFolderCommand)));
+        if (_model.CanSaveToFolder) SaveMenu.Items.Add(Item(new MenuChoice(Strings.SaveToFolder, _model.SaveToFolderCommand, Strings.SaveToFolderTip)));
     }
 
     void OnKeyDown(object sender, KeyEventArgs e)
@@ -162,7 +164,7 @@ public partial class MainWindow : Window
     }
 
     static MenuItem Item(MenuChoice choice) =>
-        new() { Header = Text(choice.Label), Command = choice.Command, CommandParameter = choice.Parameter };
+        new() { Header = Text(choice.Label), ToolTip = choice.ToolTip, Command = choice.Command, CommandParameter = choice.Parameter };
 
     /// A header as plain text: a theme's name may hold an underscore, which a string header would take for an access key.
     static TextBlock Text(string text) => new() { Text = text };

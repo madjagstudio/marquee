@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Input;
+using Marquee.Editor.Styles;
 using Marquee.Editor.Dialogs;
 using Marquee.Editor.Controls;
 using Marquee.Editor.Model;
@@ -33,6 +35,7 @@ public class TooltipTests
                 Inspect(window, missing);
             }
 
+            InspectMenus(window, missing);
             editor.Model.Styles.BeginRename(editor.Model.Styles.Items[0]);
             Inspect(window, missing);
             editor.Model.Styles.CancelRename(editor.Model.Styles.Items[0]);
@@ -53,7 +56,7 @@ public class TooltipTests
     {
         using var environment = new TestEnvironment();
         using var editor = new OpenEditor(environment, environment.AddTheme("background",
-            TestEnvironment.Layout.Replace("widgets:\n", "ring: { effect: static }\nwidgets:\n")));
+            TestEnvironment.Layout.Replace("widgets:\n", "ring: { effect: static }\nstyles: { hot: { color: '#FF0000' } }\nwidgets:\n")));
         var window = new MainWindow(editor.Model);
         var missing = new HashSet<string>();
         Show(window);
@@ -61,6 +64,7 @@ public class TooltipTests
         {
             editor.Model.Layers.SelectBackground(0);
             Inspect(window, missing);
+            InspectMenus(window, missing);
             editor.Session.Select([OpenEditor.P("widgets[2]")]);
             editor.Model.Layers.RenameCommand.Execute(null);
             Inspect(window, missing);
@@ -129,6 +133,46 @@ public class TooltipTests
         finally { window.Close(); }
         Assert.True(missing.Count == 0, "Controls without tooltips:\n" + string.Join("\n", missing.Order()));
     });
+
+    static void InspectMenus(Window window, HashSet<string> missing)
+    {
+        // Styles create their context menu on right-click, as an actual user opens it.
+        foreach (var row in Walk(window).Select(item => item.Node).OfType<Border>()
+                     .Where(row => row.Name == "Row" && row.DataContext is StyleItem).ToList())
+            row.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Right)
+                { RoutedEvent = UIElement.MouseRightButtonDownEvent });
+        foreach (var menu in Walk(window).Select(item => item.Node).OfType<Menu>().ToList())
+            InspectItems(menu, missing, "Menu");
+        var contexts = Walk(window).Select(item => item.Node).OfType<FrameworkElement>()
+            .Where(element => element.ContextMenu is not null).ToList();
+        Assert.True(contexts.Count >= 3, "Expected Background, Widgets and Styles context menus.");
+        foreach (var owner in contexts)
+        {
+            var menu = owner.ContextMenu!;
+            menu.PlacementTarget = owner;
+            menu.Placement = PlacementMode.AbsolutePoint;
+            menu.HorizontalOffset = menu.VerticalOffset = -20000;
+            menu.IsOpen = true;
+            Sta.Pump();
+            try { InspectItems(menu, missing, $"ContextMenu[{owner.Name}]"); }
+            finally { menu.IsOpen = false; }
+        }
+    }
+
+    static void InspectItems(ItemsControl menu, HashSet<string> missing, string path)
+    {
+        foreach (var item in menu.Items.OfType<MenuItem>().ToList())
+        {
+            var name = item.Header is TextBlock text ? text.Text : item.Header?.ToString() ?? item.Name;
+            var itemPath = $"{path}/{name}";
+            if (item.ToolTip is null || string.IsNullOrWhiteSpace(item.ToolTip.ToString())) missing.Add(itemPath);
+            if (!item.HasItems) continue;
+            item.IsSubmenuOpen = true;
+            Sta.Pump();
+            try { InspectItems(item, missing, itemPath); }
+            finally { item.IsSubmenuOpen = false; }
+        }
+    }
 
     static void Show(Window window)
     {

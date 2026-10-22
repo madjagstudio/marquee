@@ -51,7 +51,7 @@
                             <MenuItem.Header>
                                 <TextBlock Text="{Binding ThemeHeading}" FontFamily="{StaticResource HeadFont}" FontSize="20" FontWeight="SemiBold" MaxWidth="220" TextTrimming="CharacterEllipsis" />
                             </MenuItem.Header>
-                            <MenuItem IsEnabled="False" />
+                            <MenuItem IsEnabled="False" ToolTip="{x:Static res:Strings.ThemePickerTip}" />
                         </MenuItem>
                     </Menu>
                     <Button DockPanel.Dock="Left" Style="{StaticResource GlyphButton}" Content="&#xE7A7;"
@@ -59,7 +59,7 @@
                     <Button DockPanel.Dock="Left" Style="{StaticResource GlyphButton}" Content="&#xE7A6;"
                             Command="{Binding RedoCommand}" ToolTip="{Binding RedoToolTip}" AutomationProperties.Name="{x:Static res:Strings.Redo}" />
                     <Menu DockPanel.Dock="Left" IsMainMenu="False" Background="{StaticResource Clear}" VerticalAlignment="Center">
-                        <MenuItem x:Name="SaveMenu" ToolTip="{Binding SaveDetail}">
+                        <MenuItem x:Name="SaveMenu" ToolTip="{x:Static res:Strings.SaveDetailsTip}">
                             <MenuItem.Header><TextBlock Text="{Binding SaveText}" Foreground="{StaticResource TextMuted}" /></MenuItem.Header>
                         </MenuItem>
                     </Menu>

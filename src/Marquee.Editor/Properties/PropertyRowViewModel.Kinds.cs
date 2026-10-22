@@ -30,7 +30,7 @@ public sealed partial class PropertyRowViewModel
 
     public double SliderMax { get; private set; }
 
-    public double Step => _row.Step;
+    public double Step => _row.Step * (IsPercentage ? 100 : 1);
 
     /// The slider's value: the number shown, or the slider's low end when the text isn't one.
     public double Number
@@ -50,7 +50,7 @@ public sealed partial class PropertyRowViewModel
         {
             _text = text;
             Raise(nameof(Text));
-            Write(new YamlText(text), merge: true);
+            Write(StoredValue(text), merge: true);
         }
 
         if (final) EndSlide();
@@ -325,11 +325,11 @@ public sealed partial class PropertyRowViewModel
     void LoadNumber()
     {
         double.TryParse(_text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value);
-        var min = _row.Min ?? (_row.Unit == SchemaUnit.Degrees ? -360 : Math.Min(0, Math.Floor(value)));
-        var max = _row.Max ?? _row.Unit switch
+        var min = _row.Min * (IsPercentage ? 100 : 1) ?? (_row.Unit == SchemaUnit.Degrees ? -360 : Math.Min(0, Math.Floor(value)));
+        var max = _row.Max * (IsPercentage ? 100 : 1) ?? _row.Unit switch
         {
             SchemaUnit.Degrees => 360,
-            SchemaUnit.Fraction => 1,
+            SchemaUnit.Fraction => IsPercentage ? 100 : 1,
             SchemaUnit.Percent => 100,
             SchemaUnit.Ms => Math.Max(5000, value),
             SchemaUnit.Multiplier => Math.Max(4, value),

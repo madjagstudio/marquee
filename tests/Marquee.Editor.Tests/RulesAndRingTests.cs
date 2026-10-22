@@ -268,7 +268,7 @@ public class RulesAndRingTests
     public void Window_renders_rules_and_ring_offscreen_and_stops_hidden_or_minimized_strip() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();
-        using var editor = new OpenEditor(environment, environment.AddTheme("mine", Layout));
+        using var editor = new OpenEditor(environment, environment.AddTheme("mine", Layout.Replace("type: value", "type: gauge, min: -20, max: 180") + "ring: { source: cpu.temp }\n"));
         var window = new MainWindow(editor.Model)
         {
             Left = -20000, Top = -20000, Width = 1400, Height = 1100,
@@ -280,6 +280,7 @@ public class RulesAndRingTests
             Sta.Pump();
             var strip = Descendants(window).OfType<RingStrip>().Single();
             Assert.True(strip.IsVisible);
+            AssertRulesInBasics(window, editor);
             Assert.True(strip.IsAnimating);
             var section = Descendants(window).OfType<Expander>().Single(expander => Equals(expander.Header, Strings.RingSection));
             section.IsExpanded = false;
@@ -298,11 +299,39 @@ public class RulesAndRingTests
             editor.Model.Properties.RulesList!.AddCommand.Execute(null);
             Sta.Pump();
             Assert.False(strip.IsAnimating);
-            Assert.Contains(Descendants(window).OfType<RulesView>(), view => view.IsVisible);
+            AssertRulesInBasics(window, editor);
             Assert.Contains(Descendants(window).OfType<Button>(), button => button.IsVisible && Equals(button.Content, Strings.AddRule));
         }
         finally { window.Close(); }
     });
+
+    static void AssertRulesInBasics(MainWindow window, OpenEditor editor)
+    {
+        var panel = Descendants(window).OfType<PropertiesView>().Single();
+        var rules = Descendants(panel).OfType<RulesView>().Single(view => view.IsVisible);
+        var styling = Descendants(panel).OfType<ItemsControl>().Single(view => view.Name == "MoreStylingSections");
+        var firstStyling = Descendants(styling).OfType<Expander>().First();
+        var slider = Descendants(rules).OfType<Slider>().Single(control => control.Name == "TryValueSlider");
+        Assert.True(slider.IsVisible);
+        Assert.True(rules.TransformToAncestor(panel).Transform(new Point(0, rules.ActualHeight)).Y
+                    <= firstStyling.TransformToAncestor(panel).Transform(new Point()).Y);
+        Assert.Equal(-20, slider.Minimum);
+        Assert.Equal(180, slider.Maximum);
+        Assert.Null(editor.Workspace.Values.TestValues.PinOf("cpu.temp"));
+        var live = editor.Workspace.Values.Snapshot();
+        Assert.True(live.TryGet("cpu.temp", out var reading));
+        slider.Value = 95;
+        Sta.Pump();
+        Assert.Equal(95, editor.Workspace.Values.TestValues.PinOf("cpu.temp")!.Number);
+        Assert.True(editor.Model.TestValues.Row("cpu.temp")!.IsPinned);
+        var unpin = Descendants(rules).OfType<Button>().Single(button => Equals(button.Content, Strings.Unpin));
+        Assert.True(unpin.Command.CanExecute(null));
+        unpin.Command.Execute(null);
+        Sta.Pump();
+        Assert.Null(editor.Workspace.Values.TestValues.PinOf("cpu.temp"));
+        Assert.True(editor.Workspace.Values.Snapshot().TryGet("cpu.temp", out var restored));
+        Assert.Equal(reading, restored);
+    }
 
     static string? Scalar(OpenEditor editor, string path) => editor.Session.Document.TryGetScalar(OpenEditor.P(path), out var value) ? value : null;
 

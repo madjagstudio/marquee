@@ -913,4 +913,26 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="NextPeriodTip" xml:space="preserve"><value>Show the next calendar period.</value></data>
   <data name="CalendarViewTip" xml:space="preserve"><value>Show months or years to choose a different calendar period.</value></data>
   <data name="GradientAngleTip" xml:space="preserve"><value>Set the direction of the gradient in degrees.</value></data>
+  <data name="TryValue" xml:space="preserve"><value>Try a value</value></data>
+  <data name="TryValueTip" xml:space="preserve"><value>Pin this source to a test reading to preview its warnings.</value></data>
+  <data name="AddLayerTip" xml:space="preserve"><value>Choose a background layer to add to the theme.</value></data>
+  <data name="AddFillLayerTip" xml:space="preserve"><value>Add a solid colour or gradient background layer.</value></data>
+  <data name="AddImageTip" xml:space="preserve"><value>Choose an image file to add to the theme.</value></data>
+  <data name="AddVideoTip" xml:space="preserve"><value>Choose a video file to add to the theme.</value></data>
+  <data name="AddShaderLayerTip" xml:space="preserve"><value>Choose a shader file to add as a background layer.</value></data>
+  <data name="GroupTip" xml:space="preserve"><value>Combine the selected widgets into a group.</value></data>
+  <data name="UngroupTip" xml:space="preserve"><value>Move the selected group's widgets out of the group.</value></data>
+  <data name="CopyTip" xml:space="preserve"><value>Copy the selected items to the clipboard.</value></data>
+  <data name="PasteTip" xml:space="preserve"><value>Add the copied items to the theme.</value></data>
+  <data name="DuplicateTip" xml:space="preserve"><value>Create a copy of the selected items.</value></data>
+  <data name="DeleteItemTip" xml:space="preserve"><value>Remove the selected items from the theme.</value></data>
+  <data name="DeleteStyleTip" xml:space="preserve"><value>Remove this named style while preserving the appearance of widgets that use it.</value></data>
+  <data name="NewFromExampleTip" xml:space="preserve"><value>Create an editable copy of an installed example.</value></data>
+  <data name="NoExamplesTip" xml:space="preserve"><value>No installed examples are available to copy.</value></data>
+  <data name="OpenThemeTip" xml:space="preserve"><value>Open this theme in the editor.</value></data>
+  <data name="AddWidgetItemTip" xml:space="preserve"><value>Add this kind of widget to the canvas.</value></data>
+  <data name="CleanUpTip" xml:space="preserve"><value>Review unused theme files and choose which to remove.</value></data>
+  <data name="SaveToFolderTip" xml:space="preserve"><value>Choose a folder in which to save this theme.</value></data>
+  <data name="SaveDetailsTip" xml:space="preserve"><value>Read the details of the last save attempt.</value></data>
+  <data name="SelectProblemTip" xml:space="preserve"><value>Select the widget associated with this theme problem.</value></data>
 </root>

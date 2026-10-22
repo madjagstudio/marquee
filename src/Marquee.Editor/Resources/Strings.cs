@@ -9,6 +9,28 @@ namespace Marquee.Editor.Resources;
 /// properties ({x:Static}).
 public static class Strings
 {
+    public static string TryValue => Get(nameof(TryValue));
+    public static string TryValueTip => Get(nameof(TryValueTip));
+    public static string AddLayerTip => Get(nameof(AddLayerTip));
+    public static string AddFillLayerTip => Get(nameof(AddFillLayerTip));
+    public static string AddImageTip => Get(nameof(AddImageTip));
+    public static string AddVideoTip => Get(nameof(AddVideoTip));
+    public static string AddShaderLayerTip => Get(nameof(AddShaderLayerTip));
+    public static string GroupTip => Get(nameof(GroupTip));
+    public static string UngroupTip => Get(nameof(UngroupTip));
+    public static string CopyTip => Get(nameof(CopyTip));
+    public static string PasteTip => Get(nameof(PasteTip));
+    public static string DuplicateTip => Get(nameof(DuplicateTip));
+    public static string DeleteItemTip => Get(nameof(DeleteItemTip));
+    public static string DeleteStyleTip => Get(nameof(DeleteStyleTip));
+    public static string NewFromExampleTip => Get(nameof(NewFromExampleTip));
+    public static string NoExamplesTip => Get(nameof(NoExamplesTip));
+    public static string OpenThemeTip => Get(nameof(OpenThemeTip));
+    public static string AddWidgetItemTip => Get(nameof(AddWidgetItemTip));
+    public static string CleanUpTip => Get(nameof(CleanUpTip));
+    public static string SaveToFolderTip => Get(nameof(SaveToFolderTip));
+    public static string SaveDetailsTip => Get(nameof(SaveDetailsTip));
+    public static string SelectProblemTip => Get(nameof(SelectProblemTip));
     public static string TestDateTip => Get(nameof(TestDateTip));
     public static string OpenCalendarTip => Get(nameof(OpenCalendarTip));
     public static string ChooseDateTip => Get(nameof(ChooseDateTip));

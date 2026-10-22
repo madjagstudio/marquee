@@ -24,15 +24,15 @@ public sealed partial class MainViewModel
     /// it back as it was opened (asked first; the banner offers it too while paused, and "Keep editing" doesn't hide this).
     public IReadOnlyList<MenuChoice> ThemeActions() =>
     [
-        new(Strings.CleanUpMenu, CleanUpCommand),
-        new(Strings.RevertMenu, RevertCommand),
+        new(Strings.CleanUpMenu, CleanUpCommand, Strings.CleanUpTip),
+        new(Strings.RevertMenu, RevertCommand, Strings.RevertTip),
     ];
 
     /// Add widget's file choices, after the widget types: an image or a video from a file.
     public IReadOnlyList<MenuChoice> FileChoices() =>
     [
-        new(Strings.AddImage, AddImageCommand),
-        new(Strings.AddVideo, AddVideoCommand),
+        new(Strings.AddImage, AddImageCommand, Strings.AddImageTip),
+        new(Strings.AddVideo, AddVideoCommand, Strings.AddVideoTip),
     ];
 
     void InitializeFileCommands()

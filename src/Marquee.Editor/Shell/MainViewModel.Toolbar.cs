@@ -48,32 +48,32 @@ public sealed partial class MainViewModel
 
     /// The widget types, as Add widget lists them: the catalog's, each added from its example.
     public IReadOnlyList<MenuChoice> WidgetChoices() =>
-        ThemeSchema.Widgets.Variants.Select(type => new MenuChoice(type.Title, AddWidgetCommand, type.Name)).ToList();
+        ThemeSchema.Widgets.Variants.Select(type => new MenuChoice(type.Title, AddWidgetCommand, Strings.AddWidgetItemTip, type.Name)).ToList();
 
     /// The align menu: the six alignments, then a null for a separator, then the two distributions.
     public IReadOnlyList<MenuChoice?> ArrangeChoices() =>
     [
-        new(Strings.AlignLeft, ArrangeCommand, Alignment.Left),
-        new(Strings.AlignCenter, ArrangeCommand, Alignment.Center),
-        new(Strings.AlignRight, ArrangeCommand, Alignment.Right),
-        new(Strings.AlignTop, ArrangeCommand, Alignment.Top),
-        new(Strings.AlignMiddle, ArrangeCommand, Alignment.Middle),
-        new(Strings.AlignBottom, ArrangeCommand, Alignment.Bottom),
+        new(Strings.AlignLeft, ArrangeCommand, Strings.ArrangeTip, Alignment.Left),
+        new(Strings.AlignCenter, ArrangeCommand, Strings.ArrangeTip, Alignment.Center),
+        new(Strings.AlignRight, ArrangeCommand, Strings.ArrangeTip, Alignment.Right),
+        new(Strings.AlignTop, ArrangeCommand, Strings.ArrangeTip, Alignment.Top),
+        new(Strings.AlignMiddle, ArrangeCommand, Strings.ArrangeTip, Alignment.Middle),
+        new(Strings.AlignBottom, ArrangeCommand, Strings.ArrangeTip, Alignment.Bottom),
         null,
-        new(Strings.DistributeHorizontally, ArrangeCommand, Distribution.Horizontal),
-        new(Strings.DistributeVertically, ArrangeCommand, Distribution.Vertical),
+        new(Strings.DistributeHorizontally, ArrangeCommand, Strings.ArrangeTip, Distribution.Horizontal),
+        new(Strings.DistributeVertically, ArrangeCommand, Strings.ArrangeTip, Distribution.Vertical),
     ];
 
     /// The theme picker: the user's themes, then the installed examples, as the tray's Themes menu lists them.
     public IReadOnlyList<IReadOnlyList<MenuChoice>> ThemeChoices() =>
         ThemeCatalog.List([_environment.UserThemes, _environment.InstalledThemes])
-            .Select(group => (IReadOnlyList<MenuChoice>)group.Select(theme => new MenuChoice(theme.Name, OpenThemeCommand, theme.Folder)).ToList())
+            .Select(group => (IReadOnlyList<MenuChoice>)group.Select(theme => new MenuChoice(theme.Name, OpenThemeCommand, Strings.OpenThemeTip, theme.Folder)).ToList())
             .ToList();
 
     /// "New from an example": the installed examples.
     public IReadOnlyList<MenuChoice> ExampleChoices() =>
         ThemeCatalog.List([_environment.InstalledThemes])[0]
-            .Select(theme => new MenuChoice(theme.Name, NewFromExampleCommand, theme.Folder))
+            .Select(theme => new MenuChoice(theme.Name, NewFromExampleCommand, Strings.NewFromExampleTip, theme.Folder))
             .ToList();
 
     /// Writes this theme into config.yaml's `theme:`, and the tray switches to it.

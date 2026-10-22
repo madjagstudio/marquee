@@ -157,15 +157,15 @@ public partial class LayersView : UserControl
     static ContextMenu Menu(LayersViewModel model)
     {
         var menu = new ContextMenu();
-        menu.Items.Add(Item(Strings.MenuGroup, "Ctrl+G", model.GroupCommand));
-        menu.Items.Add(Item(Strings.MenuUngroup, "Ctrl+Shift+G", model.UngroupCommand));
+        menu.Items.Add(Item(Strings.MenuGroup, Strings.GroupTip, "Ctrl+G", model.GroupCommand));
+        menu.Items.Add(Item(Strings.MenuUngroup, Strings.UngroupTip, "Ctrl+Shift+G", model.UngroupCommand));
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item(Strings.MenuCopy, "Ctrl+C", model.CopyCommand));
-        menu.Items.Add(Item(Strings.MenuPaste, "Ctrl+V", model.PasteCommand));
-        menu.Items.Add(Item(Strings.MenuDuplicate, "Ctrl+D", model.DuplicateCommand));
-        menu.Items.Add(Item(Strings.MenuDelete, "Del", model.DeleteCommand));
+        menu.Items.Add(Item(Strings.MenuCopy, Strings.CopyTip, "Ctrl+C", model.CopyCommand));
+        menu.Items.Add(Item(Strings.MenuPaste, Strings.PasteTip, "Ctrl+V", model.PasteCommand));
+        menu.Items.Add(Item(Strings.MenuDuplicate, Strings.DuplicateTip, "Ctrl+D", model.DuplicateCommand));
+        menu.Items.Add(Item(Strings.MenuDelete, Strings.DeleteItemTip, "Del", model.DeleteCommand));
         menu.Items.Add(new Separator());
-        var rename = Item(Strings.MenuRename, "F2", model.RenameCommand);
+        var rename = Item(Strings.MenuRename, Strings.RenameLayerTip, "F2", model.RenameCommand);
         menu.Items.Add(rename);
         // The row right-clicked is the menu's Tag (OnRowRightDown): Rename renames it.
         menu.Opened += (_, _) =>
@@ -176,6 +176,6 @@ public partial class LayersView : UserControl
         return menu;
     }
 
-    static MenuItem Item(string header, string keys, System.Windows.Input.ICommand command) =>
-        new() { Header = new TextBlock { Text = header }, InputGestureText = keys, Command = command };
+    static MenuItem Item(string header, string tooltip, string keys, System.Windows.Input.ICommand command) =>
+        new() { Header = new TextBlock { Text = header }, ToolTip = tooltip, InputGestureText = keys, Command = command };
 }
