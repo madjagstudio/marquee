@@ -48,8 +48,8 @@ public class PanelsWindowTests
             }
 
             var splitters = Descendants(window).OfType<GridSplitter>().ToArray();
-            Assert.Equal(3, splitters.Length);
-            Assert.Equal(2, splitters.Count(splitter => splitter.ResizeDirection == GridResizeDirection.Rows));
+            Assert.Equal(4, splitters.Length);
+            Assert.Equal(3, splitters.Count(splitter => splitter.ResizeDirection == GridResizeDirection.Rows));
             foreach (var splitter in splitters)
             {
                 Assert.Equal(GridResizeBehavior.PreviousAndNext, splitter.ResizeBehavior);
@@ -87,6 +87,7 @@ public class PanelsWindowTests
         var window = Show(environment, environment.AddTheme("mine"));
 
         Assert.Same(window.Model.Layers, ((FrameworkElement)Panel(window, "LayersPanel")).DataContext);
+        Assert.Same(window.Model.Styles, ((FrameworkElement)Panel(window, "StylesPanel")).DataContext);
         Assert.Same(window.Model.Properties, ((PropertiesView)Panel(window, "PropertiesPanel")).DataContext);
         Assert.Same(window.Model.TestValues, ((TestValuesView)Panel(window, "TestValuesPanel")).DataContext);
         window.Close();

@@ -99,11 +99,17 @@ public sealed partial class EditorSession : IDisposable
     /// The widget at `path`, or null when there is none.
     public WidgetRef? Widget(YamlPath path) => _tree.Find(path);
 
-    /// The selected widgets' paths, in the order they were chosen, or one background layer's path.
+    /// The selected widgets' paths, in the order they were chosen, or one background layer or named style.
     public IReadOnlyList<YamlPath> Selection => _selection;
 
     /// The selected background layer, or null when widgets or nothing are selected.
     public YamlPath? SelectedLayer => _selection is [var only] && IsBackgroundLayer(only) ? only : null;
+
+    /// The selected named style's key, or null for another selection.
+    public string? SelectedStyle => _selection is [var only] && IsNamedStyle(only) ? only.Last!.Value.Key : null;
+
+    public bool IsNamedStyle(YamlPath path) =>
+        path.Parent == YamlPath.Root.Child("styles") && path.Last is { IsKey: true } && _document.Exists(path);
 
     /// Whether `path` names an existing item of the background list.
     public bool IsBackgroundLayer(YamlPath path) =>
@@ -132,17 +138,17 @@ public sealed partial class EditorSession : IDisposable
     /// Raised when the selection changes, before Changed.
     public event EventHandler? SelectionChanged;
 
-    /// Chooses widgets, each once in order, or exactly one background layer. Throws ArgumentException for missing
-    /// paths or a background layer mixed with another selection, and the selection stays as it was.
+    /// Chooses widgets, each once in order, or exactly one background layer or named style. Throws ArgumentException
+    /// for missing paths or a layer/style mixed with another selection, and the selection stays as it was.
     public void Select(IEnumerable<YamlPath> widgets)
     {
         ThrowIfDisposed();
         var paths = widgets.Distinct().ToList();
-        if (paths.Any(IsBackgroundLayer) && paths.Count != 1)
-            throw new ArgumentException("A background layer is selected on its own.", nameof(widgets));
+        if (paths.Any(path => IsBackgroundLayer(path) || IsNamedStyle(path)) && paths.Count != 1)
+            throw new ArgumentException("A background layer or named style is selected on its own.", nameof(widgets));
         foreach (var path in paths)
-            if (_tree.Find(path) is null && !IsBackgroundLayer(path))
-                throw new ArgumentException($"There is no widget or background layer at {path}.", nameof(widgets));
+            if (_tree.Find(path) is null && !IsBackgroundLayer(path) && !IsNamedStyle(path))
+                throw new ArgumentException($"There is no widget, background layer or named style at {path}.", nameof(widgets));
         Raise(SetSelection(paths));
     }
 
@@ -254,7 +260,7 @@ public sealed partial class EditorSession : IDisposable
     /// The paths that are still widgets or background layers, once the tree is current; while paused it is the last
     /// good theme's, so they are kept as they are.
     IReadOnlyList<YamlPath> StillThere(IReadOnlyList<YamlPath> paths) =>
-        IsPaused ? paths : paths.Distinct().Where(path => _tree.Find(path) is not null || IsBackgroundLayer(path)).ToList();
+        IsPaused ? paths : paths.Distinct().Where(path => _tree.Find(path) is not null || IsBackgroundLayer(path) || IsNamedStyle(path)).ToList();
 
     void Raise(SessionChanges changes)
     {

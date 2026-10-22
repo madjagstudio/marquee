@@ -7,11 +7,12 @@ using Marquee.Editor.Model.Values;
 using Marquee.Editor.Mvvm;
 using Marquee.Editor.Resources;
 using Marquee.Editor.Session;
+using Marquee.Editor.Styles;
 
 namespace Marquee.Editor.Properties;
 
 /// The properties panel: the selected widgets' keys from the catalog (PropertyModel), then the Style section in its
-/// groups, with the named style the widget uses and "Clear overrides", its rules read-only, "Split into spans", and
+/// groups, with the named style the widget uses and "Clear overrides", editable rules, "Split into spans", and
 /// copy and paste style. Each row is a PropertyRowViewModel, whose control writes through PropertyModel as one undo
 /// step.
 ///
@@ -40,9 +41,13 @@ public sealed class PropertiesViewModel : ObservableObject
     string? _styleLabel;
     string? _styleChoice;
     bool _hasSelection;
+    bool _nested;
+    readonly string? _configFile;
+    public RulesViewModel? RulesList { get; private set; }
+    public RingViewModel? Ring { get; private set; }
 
     public PropertiesViewModel(Func<EditorCommand, bool> run, Action<string> report, CanvasViewModel canvas, IEditorDialogs dialogs,
-        Func<string, bool> orientation, Action<LayerKindChoice> changeKind)
+        Func<string, bool> orientation, Action<LayerKindChoice> changeKind, string? configFile = null)
     {
         _run = run;
         _report = report;
@@ -50,10 +55,12 @@ public sealed class PropertiesViewModel : ObservableObject
         _dialogs = dialogs;
         _orientation = orientation;
         _changeKind = changeKind;
+        _configFile = configFile;
         ClearOverridesCommand = new RelayCommand(() => Write(() => Model!.ClearOverrides()), () => CanEdit && Model?.StyleUse is { Name: not null, Count: > 0 });
         SplitIntoSpansCommand = new RelayCommand(() => Write(() => Model!.SplitIntoSpans()), () => CanEdit && Model?.CanSplitIntoSpans == true);
         CopyStyleCommand = new RelayCommand(() => _canvas.CopyStyle(), () => HasSelection);
         PasteStyleCommand = new RelayCommand(() => _canvas.PasteStyle(), () => CanEdit && HasSelection && _canvas.HasCopiedStyle);
+        SaveAsStyleCommand = new RelayCommand(SaveAsStyle, () => CanEdit && Model is { Target: PropertyTargetKind.Widgets, Widgets.Count: 1 });
     }
 
     public EditorSession? Session => _workspace?.Session;
@@ -64,6 +71,7 @@ public sealed class PropertiesViewModel : ObservableObject
     public PropertyTargetKind? Target => Model?.Target;
     public bool IsLayer => Target == PropertyTargetKind.Layer;
     public bool IsWidgets => Target == PropertyTargetKind.Widgets;
+    public bool IsStyle => Target == PropertyTargetKind.Style;
     public bool HasProperties => Model is not null;
     public ShaderPanelViewModel? Shader
     {
@@ -153,7 +161,7 @@ public sealed class PropertiesViewModel : ObservableObject
         }
     }
 
-    /// The widget's `when` rules in plain words, read-only (E2 edits them).
+    /// Plain-language summaries, retained for consumers that don't show the editable RulesList.
     public IReadOnlyList<string> Rules
     {
         get => _rules;
@@ -172,6 +180,15 @@ public sealed class PropertiesViewModel : ObservableObject
     public RelayCommand CopyStyleCommand { get; }
 
     public RelayCommand PasteStyleCommand { get; }
+    public RelayCommand SaveAsStyleCommand { get; }
+
+    void SaveAsStyle()
+    {
+        if (Session is not { } session || Model is not { Widgets.Count: 1 } model) return;
+        var name = _dialogs.AskStyleName(StylesViewModel.FreeName(session.Document),
+            candidate => StyleCommands.StyleNameProblem(session.Document, candidate.Trim()));
+        if (name is not null) Write(() => new SaveAsStyle(model.Widgets[0].Path, name.Trim()));
+    }
 
     internal IEditorDialogs Dialogs => _dialogs;
 
@@ -185,6 +202,7 @@ public sealed class PropertiesViewModel : ObservableObject
         Detach();
         _workspace = workspace;
         workspace.Session.Changed += OnSessionChanged;
+        workspace.Values.Updated += OnValuesUpdated;
         PropertyChoices.Forget();
         Refresh(rebuild: true);
     }
@@ -195,6 +213,7 @@ public sealed class PropertiesViewModel : ObservableObject
         // A drag cut short by closing the theme: what it made is saved.
         EndDrag();
         workspace.Session.Changed -= OnSessionChanged;
+        workspace.Values.Updated -= OnValuesUpdated;
         _workspace = null;
         Shader?.Dispose();
         Shader = null;
@@ -267,15 +286,35 @@ public sealed class PropertiesViewModel : ObservableObject
         Refresh(rebuild: false);
     }
 
+    void OnValuesUpdated(object? sender, EventArgs args)
+    {
+        RulesList?.RefreshMatching();
+        Ring?.Rules.RefreshMatching();
+    }
+
+    // Nested panels share the workspace and writers, but own their row index and never follow selection themselves.
+    internal PropertiesViewModel CreateTarget(PropertyModel model, Func<EditorCommand, bool>? run = null)
+    {
+        var panel = new PropertiesViewModel(run ?? _run, _report, _canvas, _dialogs, _orientation, _changeKind)
+        {
+            _workspace = _workspace, _nested = true,
+        };
+        panel.RefreshTarget(model);
+        return panel;
+    }
+
+    internal void RefreshTarget(PropertyModel model) => Refresh(false, model);
+
     /// Builds the model again, and the rows: in place when the panel's shape is the same, else afresh.
-    void Refresh(bool rebuild)
+    void Refresh(bool rebuild, PropertyModel? target = null)
     {
         var session = Session;
-        var model = session is null ? null : PropertyModel.For(session);
+        var model = target ?? (session is null ? null : PropertyModel.For(session));
         _model = model;
         Raise(nameof(Target));
         Raise(nameof(IsLayer));
         Raise(nameof(IsWidgets));
+        Raise(nameof(IsStyle));
         Raise(nameof(HasProperties));
         Raise(nameof(Kind));
         HasSelection = model is { Widgets.Count: > 0 };
@@ -295,6 +334,7 @@ public sealed class PropertiesViewModel : ObservableObject
         }
 
         Heading = model?.Target == PropertyTargetKind.Canvas ? Strings.ThemeSettings
+            : model?.Target == PropertyTargetKind.Style ? session!.SelectedStyle!
             : model?.Target == PropertyTargetKind.Layer ? LayersModel.Of(session!).Find(session!.SelectedLayer!)!.Name
             : model?.Widgets.Count switch
         {
@@ -308,6 +348,21 @@ public sealed class PropertiesViewModel : ObservableObject
         _styleChoice = model?.StyleUse is { } used ? used.Name ?? Strings.NoNamedStyle : null;
         Raise(nameof(StyleChoice));
         Rules = model?.Rules.Select(rule => rule.Text).ToList() ?? [];
+        if (!_nested)
+        {
+            var owner = model is { Target: PropertyTargetKind.Widgets, Widgets.Count: 1 } ? model.Widgets[0].Path : null;
+            if (RulesList?.Owner != owner || rebuild)
+                RulesList = owner is null ? null : new RulesViewModel(this, owner);
+            RulesList?.Refresh();
+            if (model?.Target == PropertyTargetKind.Canvas)
+            {
+                if (Ring is null || rebuild) Ring = new RingViewModel(this, _configFile);
+                Ring.Refresh();
+            }
+            else Ring = null;
+            Raise(nameof(RulesList));
+            Raise(nameof(Ring));
+        }
         if (session?.SelectedLayer is { } layer && model?.Type == "shader")
         {
             if (Shader?.Layer != layer || rebuild)
@@ -327,6 +382,7 @@ public sealed class PropertiesViewModel : ObservableObject
         SplitIntoSpansCommand.Refresh();
         CopyStyleCommand.Refresh();
         PasteStyleCommand.Refresh();
+        SaveAsStyleCommand.Refresh();
     }
 
     PropertyRowViewModel Make(PropertyRow row)

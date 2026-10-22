@@ -23,6 +23,8 @@ public static class Samples
         ("gpu.temp", _ => SensorValue.Of(58)),
         ("*.temp", _ => SensorValue.Of(45)),
         ("ram.used_pct", _ => SensorValue.Of(45)),
+        ("cpu.load", _ => SensorValue.Of(30)),
+        ("gpu.load", _ => SensorValue.Of(30)),
         ("*.load", _ => SensorValue.Of(30)),
         ("cpu.clock", _ => SensorValue.Of(4500)),
         ("gpu.clock", _ => SensorValue.Of(2100)),

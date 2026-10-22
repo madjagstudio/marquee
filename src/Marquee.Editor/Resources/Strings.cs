@@ -9,6 +9,25 @@ namespace Marquee.Editor.Resources;
 /// properties ({x:Static}).
 public static class Strings
 {
+    public static string StylesSection => Get(nameof(StylesSection));
+    public static string NewStyle => Get(nameof(NewStyle));
+    public static string SaveAsStyle => Get(nameof(SaveAsStyle));
+    public static string StyleNamePrompt => Get(nameof(StyleNamePrompt));
+    public static string StyleUsedBy(int count) => Format(nameof(StyleUsedBy), count);
+    public static string StyleCopiedInto(string name, int count) => Format(nameof(StyleCopiedInto), name, count);
+    public static string PickerSensor => Get(nameof(PickerSensor));
+    public static string PickerNumber => Get(nameof(PickerNumber));
+    public static string PickerAdvanced => Get(nameof(PickerAdvanced));
+    public static string PickerMode => Get(nameof(PickerMode));
+    public static string PickerSearch => Get(nameof(PickerSearch));
+    public static string PickerFromLow => Get(nameof(PickerFromLow));
+    public static string PickerFromHigh => Get(nameof(PickerFromHigh));
+    public static string PickerToLow => Get(nameof(PickerToLow));
+    public static string PickerToHigh => Get(nameof(PickerToHigh));
+    public static string PickerNoReading => Get(nameof(PickerNoReading));
+    public static string PickerChooseSensor => Get(nameof(PickerChooseSensor));
+    public static string PickerInvalidNumber => Get(nameof(PickerInvalidNumber));
+    public static string PickerInvalidRange => Get(nameof(PickerInvalidRange));
     public static string ThemeSettings => Get(nameof(ThemeSettings));
     public static string LayerKind => Get(nameof(LayerKind));
     public static string LayerFill => Get(nameof(LayerFill));
@@ -405,6 +424,17 @@ public static class Strings
     public static string NotANumber(string text) => Format(nameof(NotANumber), text);
 
     public static string NotATime(string text) => Format(nameof(NotATime), text);
+
+    public static string AddRule => Get(nameof(AddRule));
+    public static string RuleCustom => Get(nameof(RuleCustom));
+    public static string RuleWhen => Get(nameof(RuleWhen));
+    public static string RuleUse => Get(nameof(RuleUse));
+    public static string RuleSet => Get(nameof(RuleSet));
+    public static string RuleOn => Get(nameof(RuleOn));
+    public static string RuleDelete => Get(nameof(RuleDelete));
+    public static string RuleDrag => Get(nameof(RuleDrag));
+    public static string RingSection => Get(nameof(RingSection));
+    public static string RingOverridden => Get(nameof(RingOverridden));
 
     public static string ProblemError => Get(nameof(ProblemError));
 

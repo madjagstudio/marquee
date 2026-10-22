@@ -33,6 +33,9 @@ public sealed partial class ValueSources
     CancellationTokenSource? _stop;
     Task _loop = Task.CompletedTask;
 
+    // The poll's last catalog, so a new unused sensor also refreshes an open picker.
+    IReadOnlyList<string> _knownKeys = [];
+
     /// The bound on one values read. A read that finds no tray returns at once (SensorFeedClient), so this only bounds
     /// a busy or stuck one. A setting only for tests.
     internal TimeSpan ValuesTimeout { get; set; } = TimeSpan.FromMilliseconds(500);
@@ -142,7 +145,10 @@ public sealed partial class ValueSources
         // history takes a point each poll, steady readings included.
         var ticks = _motion.Clock && TestValues.PinnedNow is null;
         var graphMoves = values.Message is not null && keys.Any(TestValues.IsGraphKey);
-        if (NoteChanges(keys, now) || statusChanged || ticks || graphMoves) RaiseUpdated();
+        var knownKeys = KnownKeys();
+        var keysChanged = !knownKeys.SequenceEqual(_knownKeys);
+        _knownKeys = knownKeys;
+        if (NoteChanges(keys, now) || statusChanged || ticks || graphMoves || keysChanged) RaiseUpdated();
     }
 
     /// The ask a history read would answer; null when none is waiting.

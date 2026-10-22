@@ -2,9 +2,40 @@ using YamlDotNet.RepresentationModel;
 
 namespace Marquee.Core.Themes.Editing;
 
-/// Adding and removing a mapping's keys.
+/// Adding, renaming and removing a mapping's keys.
 public sealed partial class LayoutDocument
 {
+    /// Renames only the key's scalar text, keeping its value, comments and position in the mapping.
+    public LayoutDocument RenameKey(YamlPath path, string newKey)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(newKey);
+        if (LayoutScalar.LoneSurrogate(newKey) >= 0)
+            throw new LayoutEditException(LayoutScalar.LoneSurrogateReason("The key"));
+        if (path.Last is not { IsKey: true } last)
+            throw new LayoutEditException($"{Name(path)} isn't a mapping's key, so RenameKey can't rename it.");
+
+        var at = Locate(path);
+        CheckEditable(at, inside: true);
+        var key = at.Key!;
+        if (IsAnchored(key))
+            throw new LayoutEditException($"{Name(path)} uses an anchor (&) or alias (*), so its key can't be renamed.", at.Line);
+        if (last.Key == newKey) return this;
+        var map = (YamlMappingNode)at.Parent!;
+        if (map.Children.Any(e => e.Key is YamlScalarNode { Value: var name } && name == newKey))
+            throw new LayoutEditException($"{Name(path.Parent!)} already has {newKey}.", at.Line);
+
+        return Edit(path, () => (
+            [YamlSplice.ReplaceScalar(Body, key, YamlWriter.Scalar(newKey, inFlow: at.InFlow))],
+            tree => YamlTree.Change(tree, path.Parent!, old =>
+            {
+                var parent = (YamlTreeMap)old!;
+                var entries = parent.Entries.ToList();
+                var index = parent.IndexOf(last.Key!);
+                entries[index] = entries[index] with { Key = ((YamlTreeScalar)entries[index].Key) with { Value = newKey } };
+                return parent with { Entries = entries };
+            })));
+    }
+
     /// Adds `key`, with the value `valueYaml` (written as for ReplaceValue), as the last entry of the mapping at
     /// `mapping`: inside the braces of a `{ }` mapping, else on its own line after the mapping's last entry, at its
     /// indentation. An empty value (`style:`) becomes a mapping holding the key, and an empty file one at the top.

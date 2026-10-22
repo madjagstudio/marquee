@@ -20,6 +20,9 @@ public enum CopyChoice
 /// (the Dialogs folder).
 public interface IEditorDialogs
 {
+    /// Asks for a named style, checking each edit; null when cancelled.
+    string? AskStyleName(string suggested, Func<string, string?> problem);
+
     bool? AskRearrange(string orientation);
 
     string? PickLayerFile(LayerKindChoice kind);

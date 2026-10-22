@@ -14,7 +14,7 @@ namespace Marquee.Editor.Model.Values;
 /// While active (SetActive), a poll asks the tray for values about once a second, off the UI thread
 /// (ValueSources.Poll.cs), and its history when a theme opens or gains a graph; after that it keeps each key's history
 /// from the values it receives, as the tray's store does. With no tray the editor reads sensors itself, and the panel
-/// says "tray not running". Updated says when a poll changed a value the theme reads (or the clock it shows moved on),
+/// says "tray not running". Updated says when a poll changed a value the theme reads, the known keys, or its clock,
 /// so the canvas can redraw; Animates says when it should draw at the theme's fps instead.
 ///
 /// Snapshot, Rows and the test values are safe from any thread. Attach, SetTheme, SetActive and Dispose belong to the
@@ -94,8 +94,8 @@ public sealed partial class ValueSources : IDisposable
         }
     }
 
-    /// Raised when a poll changed a value the theme reads, or what the tray said, at every poll while the theme reads an
-    /// unpinned `now` (a clock moves on each second), and when the test values change.
+    /// Raised when a poll changed a value the theme reads, the known keys, or what the tray said, at every poll while
+    /// the theme reads an unpinned `now` (a clock moves on each second), and when the test values change.
     public event EventHandler? Updated;
 
     /// Makes `session` draw with these sources and keeps the list of keys following its theme, until another session is
@@ -137,6 +137,15 @@ public sealed partial class ValueSources : IDisposable
 
     /// Where the key's value comes from now.
     public ValueSourceKind SourceOf(string key) => View().Resolve(key).Source;
+
+    /// All known keys, including readings that the current theme does not use.
+    public IReadOnlyList<string> KnownKeys()
+    {
+        Tray? tray;
+        lock (_gate) tray = _tray;
+        return TestValues.Keys.Concat(tray?.Values.Keys ?? []).Concat(_local.Snapshot().Keys)
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+    }
 
     /// The panel's lines, one per key in TestValues.Keys.
     public IReadOnlyList<ValueRow> Rows()

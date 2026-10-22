@@ -12,6 +12,9 @@ public sealed partial class PropertyModel
     public string? Validate(PropertyRow row, YamlValue value)
     {
         if (!row.IsEditable) return NotEditable(row);
+        if (Target == PropertyTargetKind.Style && row.Name == "extends" && value is YamlText parent
+            && StyleCommands.ExtendsProblem(_document, row.Targets[0].Block.Last!.Value.Key!, parent.Value) is { } problem)
+            return problem;
         return row.Targets.Select(target => PropertyValues.Check(target.Key, value, Context(target))).FirstOrDefault(error => error is not null);
     }
 
@@ -39,7 +42,12 @@ public sealed partial class PropertyModel
         if (!row.CanReset) throw new PropertyValueException($"{row.Key.Name} can't be left out, so it has no default to reset to");
         var targets = row.Targets;
         return new EditDocument($"Reset {row.Key.Name}", document => targets.Aggregate(document, (d, target) =>
-            target.Style is { } style ? StyleValues.Remove(d, style, target.StyleKey) : EditDocument.Remove(d, target.Path)));
+        {
+            if (target.Style is not { } style) return EditDocument.Remove(d, target.Path);
+            d = StyleValues.Remove(d, style, target.StyleKey);
+            // A rule requires its style even after the last override is reset.
+            return Target == PropertyTargetKind.Rule && !d.Exists(style) ? EditDocument.Set(d, style, YamlMap.Empty) : d;
+        }));
     }
 
     /// Returns each selected widget's style to its named style alone (`style: meter`), or removes it when there is none.
@@ -123,6 +131,9 @@ public sealed partial class PropertyModel
     /// One widget's write: in its style for a style key; else in place, removing the keys only another form takes.
     static LayoutDocument Write(LayoutDocument document, PropertyTarget target, YamlValue value)
     {
+        if (target.Key.Name == "extends" && target.Block.Parent == StyleCommands.Styles && value is YamlText parent
+            && StyleCommands.ExtendsProblem(document, target.Block.Last!.Value.Key!, parent.Value) is { } problem)
+            throw new PropertyValueException(problem);
         if (target.Style is { } style) return StyleValues.Set(document, style, [(target.StyleKey, value)]);
 
         document = EditDocument.Set(document, target.Path, value);

@@ -91,7 +91,7 @@ public class BackgroundPanelsTests
             Assert.Null(shader.Problem);
             Assert.Contains(shader.Uniforms, row => row.Name == "heat" && row.Components[0].Text == "cpu.load / 100");
             var heat = Descendants(window).OfType<TextBox>().Single(box =>
-                box.DataContext is UniformComponentViewModel component && component.Text == "cpu.load / 100");
+                box.DataContext is ValuePickerViewModel picker && picker.IsAdvanced && box.Text == "cpu.load / 100");
             heat.BringIntoView();
             Sta.Pump();
             var root = (FrameworkElement)window.Content;

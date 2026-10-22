@@ -1,6 +1,7 @@
 using System.Windows.Threading;
 using Marquee.Core.Themes.Editing;
 using Marquee.Editor.Model;
+using Marquee.Editor.Model.Values;
 using Marquee.Editor.Mvvm;
 using Marquee.Editor.Resources;
 
@@ -25,6 +26,7 @@ public sealed class ShaderPanelViewModel : ObservableObject, IDisposable
     }
 
     public YamlPath Layer { get; }
+    internal ValueSources Values => _owner.Workspace!.Values;
     public string? Problem { get => _problem; private set => Set(ref _problem, value); }
     public IReadOnlyList<UniformRowViewModel> Uniforms { get => _uniforms; private set => Set(ref _uniforms, value); }
     public CostHint? Cost { get => _cost; private set { if (Set(ref _cost, value)) { Raise(nameof(CostText)); Raise(nameof(OverBudget)); } } }

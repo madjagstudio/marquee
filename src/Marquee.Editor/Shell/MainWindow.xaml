@@ -148,6 +148,8 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="2*" MinHeight="164" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" MinHeight="64" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="2*" MinHeight="100" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" MinHeight="60" />
@@ -156,12 +158,15 @@
                 <ContentControl x:Name="LayersPanel" Grid.Row="1" Focusable="False" />
                 <GridSplitter Grid.Row="2" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                               Background="#FFDADCE0" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" />
-                <DockPanel Grid.Row="3">
+                <ContentControl x:Name="StylesPanel" Grid.Row="3" Focusable="False" />
+                <GridSplitter Grid.Row="4" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                              Background="#FFDADCE0" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" />
+                <DockPanel Grid.Row="5">
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource PanelHeader}" Text="{x:Static res:Strings.PropertiesPanel}" />
                     <ContentControl x:Name="PropertiesPanel" Focusable="False" />
                 </DockPanel>
-                <TextBlock Grid.Row="4" Style="{StaticResource PanelHeader}" Text="{x:Static res:Strings.TestValuesPanel}" />
-                <ContentControl x:Name="TestValuesPanel" Grid.Row="5" Focusable="False" />
+                <TextBlock Grid.Row="6" Style="{StaticResource PanelHeader}" Text="{x:Static res:Strings.TestValuesPanel}" />
+                <ContentControl x:Name="TestValuesPanel" Grid.Row="7" Focusable="False" />
             </Grid>
         </Grid>
     </DockPanel>

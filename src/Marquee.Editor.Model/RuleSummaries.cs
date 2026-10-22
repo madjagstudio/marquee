@@ -1,5 +1,8 @@
 using System.Globalization;
+using Marquee.Core.Sensors;
+using Marquee.Core.Themes;
 using Marquee.Core.Themes.Editing;
+using Marquee.Core.Themes.Parsing;
 using Marquee.Core.Themes.Schema;
 
 namespace Marquee.Editor.Model;
@@ -11,6 +14,27 @@ public sealed record RuleSummary(int Index, YamlPath Path, string Text, string? 
 
 public static class RuleSummaries
 {
+    /// Which rules hold now, in file order, with the runtime's source evaluation and condition matching.
+    public static IReadOnlyList<bool> Matching(LayoutDocument document, YamlPath owner, SensorSnapshot values)
+    {
+        var spec = LayoutParser.Parse(document.Text);
+        if (owner == RuleCommands.Ring)
+        {
+            if (spec.Ring is not { } ring) return [];
+            var value = ring.Source?.Evaluate(values);
+            return ring.When.Select(rule => rule.Matches(value, value is null)).ToList();
+        }
+
+        var widget = WidgetTree.Build(document, spec).Find(owner)?.Spec
+            ?? throw new ArgumentException($"There is no widget at {owner}.", nameof(owner));
+        var subject = widget.Source?.Evaluate(values);
+        var stale = widget.Source is not null && subject is null;
+        if (widget is TextWidget text) stale |= text.Text.Render(values).Stale;
+        var spans = widget switch { SpansWidget s => s.Spans, ValueWidget v => v.Spans, _ => null };
+        if (spans is not null) stale |= spans.Any(span => span.Text.Render(values, value: subject).Stale);
+        return widget.When.Select(rule => rule.Matches(subject, stale)).ToList();
+    }
+
     /// The rules of the widget at `widget`, in order; empty when it has none.
     public static IReadOnlyList<RuleSummary> Of(LayoutDocument document, YamlPath widget)
     {

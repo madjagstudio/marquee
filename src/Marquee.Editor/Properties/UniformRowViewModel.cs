@@ -1,4 +1,5 @@
 using Marquee.Editor.Model;
+using Marquee.Editor.Model.Values;
 using Marquee.Editor.Mvvm;
 
 namespace Marquee.Editor.Properties;
@@ -13,6 +14,7 @@ public sealed class UniformRowViewModel : ObservableObject
     {
         _owner = owner;
         Name = row.Name;
+        Hint = row.Hint;
         IsUnused = !row.Declared;
         _saved = Values(row);
         Components = _saved.Select(value => new UniformComponentViewModel(this, value)).ToList();
@@ -20,6 +22,8 @@ public sealed class UniformRowViewModel : ObservableObject
     }
 
     public string Name { get; }
+    public string? Hint { get; private set; }
+    internal ValueSources Sources => _owner.Values;
     public bool IsUnused { get; }
     public bool IsEditable => _owner.IsEditable;
     public IReadOnlyList<UniformComponentViewModel> Components { get; }
@@ -27,7 +31,7 @@ public sealed class UniformRowViewModel : ObservableObject
 
     public bool Commit()
     {
-        if (!IsEditable || Components.Any(component => component.HasError)) return false;
+        if (!IsEditable || Components.Any(component => component.Picker.Text is null)) return false;
         var values = Components.Select(component => component.Text.Trim()).ToArray();
         if (values.SequenceEqual(_saved)) return true;
         if (!_owner.Set(Name, values)) return false;
@@ -37,10 +41,10 @@ public sealed class UniformRowViewModel : ObservableObject
 
     internal void Update(UniformRow row)
     {
-        var clean = Components.Select(component => component.Text).SequenceEqual(_saved);
+        Hint = row.Hint;
+        Raise(nameof(Hint));
         _saved = Values(row);
-        if (clean)
-            for (var i = 0; i < Components.Count; i++) Components[i].Text = _saved[i];
+        for (var i = 0; i < Components.Count; i++) Components[i].Picker.Update(_saved[i]);
         foreach (var component in Components) component.Refresh();
         RemoveCommand.Refresh();
     }
@@ -52,28 +56,25 @@ public sealed class UniformRowViewModel : ObservableObject
 public sealed class UniformComponentViewModel : ObservableObject
 {
     readonly UniformRowViewModel _owner;
-    string _text;
 
     internal UniformComponentViewModel(UniformRowViewModel owner, string text)
     {
         _owner = owner;
-        _text = text;
+        Picker = new ValuePickerViewModel(owner.Sources, text, showRange: true, owner.Hint);
+        Picker.PropertyChanged += (_, _) => Raise(null);
+        Picker.Committed += (_, _) => Commit();
     }
 
+    public ValuePickerViewModel Picker { get; }
     public string Text
     {
-        get => _text;
-        set
-        {
-            if (!Set(ref _text, value)) return;
-            Raise(nameof(Error));
-            Raise(nameof(HasError));
-        }
+        get => Picker.Text ?? Picker.AdvancedText;
+        set => Picker.Read(value);
     }
 
-    public string? Error => ShaderLayerModel.Check(Text.Trim());
+    public string? Error => Picker.Problem;
     public bool HasError => Error is not null;
     public bool IsEditable => _owner.IsEditable;
     public bool Commit() => _owner.Commit();
-    internal void Refresh() => Raise(null);
+    internal void Refresh() { Picker.Hint = _owner.Hint; Raise(null); }
 }

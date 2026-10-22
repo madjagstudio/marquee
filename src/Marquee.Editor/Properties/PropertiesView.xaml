@@ -55,17 +55,6 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="UniformBox" TargetType="TextBox">
-            <Setter Property="Padding" Value="3,1" />
-            <Setter Property="IsReadOnly" Value="{Binding IsEditable, Converter={x:Static local:Not.Instance}}" />
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding HasError}" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource Error}" />
-                    <Setter Property="ToolTip" Value="{Binding Error}" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
         <Style x:Key="Combo" TargetType="ComboBox">
             <Setter Property="IsEnabled" Value="{Binding IsEditable}" />
             <Style.Triggers>
@@ -163,11 +152,14 @@
 
         <!-- Enum, style name: a dropdown. -->
         <DataTemplate x:Key="ChoiceRow">
-            <DockPanel Margin="0,2">
-                <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
-                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
-                <ComboBox Style="{StaticResource Combo}" ItemsSource="{Binding Choices}" SelectedItem="{Binding Choice}" />
-            </DockPanel>
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <ComboBox Style="{StaticResource Combo}" ItemsSource="{Binding Choices}" SelectedItem="{Binding Choice}" />
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
         </DataTemplate>
 
         <!-- Font weight: the names, then 100 to 900, or a number typed. -->
@@ -296,6 +288,19 @@
                               ItemsPanel="{StaticResource LongList}" MaxDropDownHeight="320"
                               Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
                               KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" DropDownClosed="OnDropDownClosed" />
+                </DockPanel>
+                <TextBlock Style="{StaticResource ErrorText}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ValuePickerRow">
+            <StackPanel Margin="0,2">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
+                    <Grid IsEnabled="{Binding IsEditable}">
+                        <controls:ValuePickerControl DataContext="{Binding Picker}" />
+                    </Grid>
                 </DockPanel>
                 <TextBlock Style="{StaticResource ErrorText}" />
             </StackPanel>
@@ -471,6 +476,21 @@
                               SelectedValue="{Binding Kind}" IsEnabled="{Binding CanEdit}" />
                 </DockPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
+                <ContentControl Content="{Binding Ring}" Focusable="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <Expander Header="{x:Static res:Strings.RingSection}" IsExpanded="True" Margin="0,8">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static res:Strings.RingOverridden}" TextWrapping="Wrap"
+                                               Visibility="{Binding IsOverridden, Converter={StaticResource Visible}}" />
+                                    <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" />
+                                    <controls:RingStrip Margin="0,6" />
+                                    <local:RulesView DataContext="{Binding Rules}" />
+                                </StackPanel>
+                            </Expander>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
                 <ContentControl Content="{Binding Shader}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>
@@ -490,12 +510,13 @@
                                                 <ItemsControl ItemsSource="{Binding Components}">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <TextBox Margin="0,2" Style="{StaticResource UniformBox}" FontFamily="Consolas"
-                                                                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
-                                                                     KeyDown="OnUniformKeyDown" LostKeyboardFocus="OnUniformLostFocus" />
+                                                            <Grid IsEnabled="{Binding IsEditable}" Margin="0,2">
+                                                                <controls:ValuePickerControl DataContext="{Binding Picker}" />
+                                                            </Grid>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
+                                                <TextBlock Text="{Binding Hint}" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -531,6 +552,7 @@
                 </DockPanel>
                 <TextBlock Text="{Binding StyleLabel}" Foreground="#FF5F6368" Margin="108,2,0,2" />
                 <WrapPanel Margin="108,2,0,4">
+                    <Button Content="{x:Static res:Strings.SaveAsStyle}" Command="{Binding SaveAsStyleCommand}" Style="{StaticResource Command}" />
                     <Button Content="{x:Static res:Strings.ClearOverrides}" Command="{Binding ClearOverridesCommand}" Style="{StaticResource Command}"
                             ToolTip="{x:Static res:Strings.ClearOverridesTip}" />
                     <Button Content="{x:Static res:Strings.CopyStyle}" Command="{Binding CopyStyleCommand}" Style="{StaticResource SmallButton}"
@@ -538,6 +560,7 @@
                     <Button Content="{x:Static res:Strings.PasteStyle}" Command="{Binding PasteStyleCommand}" Style="{StaticResource SmallButton}"
                             Margin="0" ToolTip="Ctrl+Shift+V" />
                 </WrapPanel>
+                </StackPanel>
                 <ItemsControl ItemsSource="{Binding Sections}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -549,20 +572,11 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                </StackPanel>
-                <!-- The rules, in words, read-only: E2 edits them. -->
-                <StackPanel Visibility="{Binding HasRules, Converter={StaticResource Visible}}">
-                    <Border BorderBrush="#FFDADCE0" BorderThickness="0,1,0,0" Margin="0,10,0,4" Padding="0,6,0,0">
-                        <TextBlock Text="{x:Static res:Strings.RulesSection}" FontWeight="SemiBold" ToolTip="{x:Static res:Strings.RulesTip}" />
-                    </Border>
-                    <ItemsControl ItemsSource="{Binding Rules}" Focusable="False">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding StringFormat='• {0}'}" TextWrapping="Wrap" Foreground="#FF3C4043" Margin="0,1" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
+                <ContentControl Content="{Binding RulesList}" Focusable="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate><local:RulesView /></DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>
