@@ -3,7 +3,7 @@ using Marquee.Core.Themes.Schema;
 
 namespace Marquee.Editor.Model;
 
-public enum PropertyTargetKind { Widgets, Layer, Canvas }
+public enum PropertyTargetKind { Widgets, Layer, Canvas, Style, Rule, Ring }
 
 /// The properties panel for a selection, built from the catalog (ThemeSchema) and the file, so a key the catalog
 /// gains shows here without editor code unless its kind needs a new control:
@@ -49,14 +49,39 @@ public sealed partial class PropertyModel
         Type = owner.Type.Length == 0 ? null : owner.Type;
         var keys = blocks.SelectMany(block => block.Keys).ToList();
         Rows = blocks.SelectMany(block => block.Keys.Select(key =>
-            Row(target == PropertyTargetKind.Canvas ? $"canvas.{key.Name}" : key.Name,
-                [new PropertyTarget(owner, owner.Path.Child(key.Name), key, owner.Path) { Siblings = keys, Groups = block }])))
+                new PropertyTarget(owner, owner.Path.Child(key.Name), key, owner.Path) { Siblings = keys, Groups = block }))
+            .Where(property => target != PropertyTargetKind.Rule || Shows(property))
+            .Select(property => Row(target == PropertyTargetKind.Canvas ? $"canvas.{property.Key.Name}" : property.Key.Name, [property]))
             .ToList();
+        if (target == PropertyTargetKind.Rule && blocks[0].Id == "when")
+        {
+            var style = owner.Path.Child("style");
+            var widget = WidgetRef.Owner(owner.Path.Parent!.Parent!, owner.Type);
+            Style = Sections(StyleRows([(widget, style)], [owner.Type], "style", []), [owner.Type]);
+            StyleUse = new StyleUse(StyleValues.NameOf(document, style), StyleValues.Leaves(StyleValues.Own(document, style)));
+        }
     }
 
-    /// The properties of the selected widgets or background layer, or the canvas when nothing is selected.
+    PropertyModel(LayoutDocument document, string name) : this(document, [])
+    {
+        StyleCommands.RequireStyle(document, name);
+        Target = PropertyTargetKind.Style;
+        Type = "style";
+        var path = YamlPath.Root.Child("styles").Child(name);
+        var owner = WidgetRef.Owner(path, "style");
+        var extends = ThemeSchema.Style.Key("extends")!;
+        Rows = [Row("extends", [new PropertyTarget(owner, path.Child("extends"), extends, path)]) with
+        {
+            Choices = StyleNames.Where(other => other != name).ToList(),
+        }];
+        var allTypes = ThemeSchema.Widgets.Names.ToList();
+        Style = Sections(StyleRows([(owner, path)], allTypes, "style", []), allTypes);
+    }
+
+    /// The properties of the selected widgets, background layer or named style, or the canvas when nothing is selected.
     public static PropertyModel For(EditorSession session) =>
         session.SelectedLayer is { } layer ? ForLayer(session.Document, layer)
+        : session.SelectedStyle is { } style ? ForStyle(session.Document, style)
         : session.Selection.Count == 0 ? ForCanvas(session.Document)
         : Build(session.Document, session.Selection.Select(session.Widget).OfType<WidgetRef>().ToList());
 
@@ -73,6 +98,22 @@ public sealed partial class PropertyModel
     public static PropertyModel ForCanvas(LayoutDocument document) =>
         new(document, WidgetRef.Owner(YamlPath.Root.Child("canvas"), "canvas"), PropertyTargetKind.Canvas,
             [ThemeSchema.Block("canvas")!]);
+
+    public static PropertyModel ForStyle(LayoutDocument document, string name) => new(document, name);
+
+    /// A rule's one condition and its widget style or ring overrides, written at the rule's path.
+    public static PropertyModel ForRule(LayoutDocument document, YamlPath rule)
+    {
+        var owner = RuleCommands.OwnerOf(document, rule);
+        var ring = owner == RuleCommands.Ring;
+        var type = ring ? "ring" : document.TryGetScalar(owner.Child("type"), out var written) ? written : "";
+        return new(document, WidgetRef.Owner(rule, type), PropertyTargetKind.Rule,
+            [ThemeSchema.Block(ring ? "ring.when" : "when")!]);
+    }
+
+    /// The ring's catalog keys, including defaults for fields it leaves out.
+    public static PropertyModel ForRing(LayoutDocument document) =>
+        new(document, WidgetRef.Owner(RuleCommands.Ring, "ring"), PropertyTargetKind.Ring, [ThemeSchema.Block("ring")!]);
 
     /// The properties of `widgets`, read from `document`.
     public static PropertyModel Build(LayoutDocument document, IReadOnlyList<WidgetRef> widgets) => new(document, widgets);
@@ -91,7 +132,7 @@ public sealed partial class PropertyModel
     /// For one widget: the named style it uses and the keys it sets over it ("meter + 2 overrides"). Null for several.
     public StyleUse? StyleUse { get; }
 
-    /// The theme's named styles, in the file's order: the style dropdown's choices. Editing them is E2.
+    /// The theme's named styles, in the file's order: the style dropdown's choices.
     public IReadOnlyList<string> StyleNames { get; }
 
     /// For one widget: its `when` rules in plain words, read-only.
@@ -211,14 +252,14 @@ public sealed partial class PropertyModel
         var rows = new List<PropertyRow>();
         foreach (var key in ThemeSchema.Style.Keys.Where(key => key.Kind != SchemaKind.StyleName))
         {
-            if (allowed.Count > 0 ? !allowed.Contains(key.Name) : !types.All(type => Applies(key, type))) continue;
+            if (allowed.Count > 0 ? !allowed.Contains(key.Name) : Target != PropertyTargetKind.Style && !types.All(type => Applies(key, type))) continue;
             var targets = owners.Select(owner => StyleTarget(owner.Widget, owner.Style, [key.Name], key)).ToList();
             var row = Row($"{name}.{key.Name}", targets) with { Inherited = Inherited(named, [key.Name]) };
             if (key.Kind == SchemaKind.Block && ThemeSchema.Block(key.Of!) is { } block)
             {
                 row = row with
                 {
-                    Children = block.Keys.Where(inner => types.All(type => Applies(inner, type))).Select(inner =>
+                    Children = block.Keys.Where(inner => Target == PropertyTargetKind.Style || types.All(type => Applies(inner, type))).Select(inner =>
                         Row($"{row.Name}.{inner.Name}", owners.Select(owner => StyleTarget(owner.Widget, owner.Style, [key.Name, inner.Name], inner)).ToList())
                             with { Inherited = Inherited(named, [key.Name, inner.Name]) }).ToList(),
                 };
@@ -301,7 +342,7 @@ public sealed partial class PropertyModel
     {
         var at = path;
         while (!at.IsRoot && !_document.Exists(at)) at = at.Parent!;
-        return !at.IsRoot && _document.IsEditable(at);
+        return (!at.IsRoot || Target == PropertyTargetKind.Ring) && _document.IsEditable(at);
     }
 
     static bool Applies(SchemaKey key, string type) => key.AppliesTo.Count == 0 || key.AppliesTo.Contains(type);

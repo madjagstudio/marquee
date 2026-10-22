@@ -10,6 +10,7 @@ using Marquee.Editor.Model;
 using Marquee.Editor.Properties;
 using Marquee.Editor.Resources;
 using Marquee.Editor.Values;
+using Marquee.Editor.Styles;
 
 namespace Marquee.Editor.Shell;
 
@@ -28,6 +29,7 @@ public partial class MainWindow : Window
 
         Fill(AddWidgetMenu, [.. model.WidgetChoices(), null, .. model.FileChoices()]);
         LayersPanel.Content = new LayersView { DataContext = model.Layers };
+        StylesPanel.Content = new StylesView { DataContext = model.Styles };
         PropertiesPanel.Content = new PropertiesView { DataContext = model.Properties };
         TestValuesPanel.Content = new TestValuesView { DataContext = model.TestValues };
         Fill(ArrangeMenu, model.ArrangeChoices());

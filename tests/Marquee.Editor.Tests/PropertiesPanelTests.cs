@@ -141,9 +141,9 @@ public class PropertiesPanelTests
 
         Select(editor, "widgets[1]");
         var source = Row(editor, "source");
-        Assert.Equal(PropertyEditor.Key, source.Editor);
-        Assert.Contains("cpu.load", source.Suggestions);
-        Assert.Contains("gpu.temp", source.Suggestions);
+        Assert.Equal(PropertyEditor.ValuePicker, source.Editor);
+        Assert.Contains(source.Picker!.Keys, key => key.Key == "cpu.load");
+        Assert.Contains(source.Picker.Keys, key => key.Key == "gpu.temp");
         source.Text = "max(cpu.load,";
         Assert.NotNull(source.Error);
         source.Text = "max(cpu.load, gpu.load)";

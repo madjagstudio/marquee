@@ -22,6 +22,7 @@ public sealed partial class PropertyRowViewModel
     string? _preview;
     bool _isGradientOpen;
     GradientEditorViewModel? _gradient;
+    public ValuePickerViewModel? Picker { get; private set; }
 
     // --- Number ---
 
@@ -269,6 +270,20 @@ public sealed partial class PropertyRowViewModel
 
     void LoadKinds()
     {
+        if (Editor == PropertyEditor.ValuePicker && _owner.Workspace is { } workspace)
+        {
+            if (Picker is null)
+            {
+                Picker = new ValuePickerViewModel(workspace.Values, Text, showRange: false);
+                Picker.Committed += (_, _) =>
+                {
+                    if (!IsEditable || Picker.Text is not { } text) return;
+                    Text = text;
+                    Commit();
+                };
+            }
+            else Picker.Update(Text);
+        }
         if (Editor == PropertyEditor.Number) LoadNumber();
         if (Editor == PropertyEditor.Pair && _row.Value is YamlList { Items: [YamlText x, YamlText y] })
             (_x, _y) = (x.Value, y.Value);

@@ -5,7 +5,7 @@ namespace Marquee.Editor.Model;
 
 /// Reading and writing a `style:` as the file holds it, for a widget or a list item: a named style (`style: meter`), a
 /// style written in place (`style: { size: 30 }`), or one in place over a named one (`style: { extends: meter, size:
-/// 30 }`). Named styles are read here, never written: editing them is E2.
+/// 30 }`). The same keys can be edited directly in a named style's definition.
 ///
 /// A style flattens as the parser builds it (StyleTable): `extends` first, then the keys set over it, a stroke,
 /// shadow, glow, pulse or text stroke merged key by key, and anything else replaced whole.
@@ -125,7 +125,8 @@ static class StyleValues
             document = document.RemoveKey(parent);
         }
 
-        return Collapse(document, style);
+        // A named definition must remain a mapping even with no overrides: its users still name it.
+        return style.Parent == Styles ? document : Collapse(document, style);
     }
 
     /// The style back to its named style alone (`style: meter`), or gone when it has none.

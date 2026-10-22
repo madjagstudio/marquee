@@ -9,6 +9,7 @@ using Marquee.Editor.Properties;
 using Marquee.Editor.Resources;
 using Marquee.Editor.Session;
 using Marquee.Editor.Values;
+using Marquee.Editor.Styles;
 
 namespace Marquee.Editor.Shell;
 
@@ -32,7 +33,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _screen = new ScreenTheme(environment.ConfigFile, environment.Locator);
         Canvas = new CanvasViewModel(Run, environment.Clipboard, Report, environment.Time);
         Layers = new LayersViewModel(Run, Canvas, Report, AddBackground, DeleteSelection);
-        Properties = new PropertiesViewModel(Run, Report, Canvas, environment.Dialogs, ChangeOrientation, ChangeBackgroundKind);
+        Styles = new StylesViewModel(Run, Canvas, Report);
+        Properties = new PropertiesViewModel(Run, Report, Canvas, environment.Dialogs, ChangeOrientation, ChangeBackgroundKind, environment.ConfigFile);
         TestValues = new TestValuesViewModel();
         InitializeCommands();
         Attach(workspace);
@@ -42,6 +44,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     /// The layers panel.
     public LayersViewModel Layers { get; }
+    public StylesViewModel Styles { get; }
 
     /// The properties panel.
     public PropertiesViewModel Properties { get; }
@@ -91,7 +94,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Message = null;
             return true;
         }
-        catch (Exception ex) when (ex is LayoutEditException or ThemeException or ArgumentException or InvalidOperationException
+        catch (Exception ex) when (ex is LayoutEditException or ThemeException or PropertyValueException or ArgumentException or InvalidOperationException
                                        or IOException or UnauthorizedAccessException)
         {
             Report(Strings.ActionFailed(command.Label, ex.Message));
@@ -234,6 +237,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (workspace.Autosaver is { } autosaver) autosaver.StateChanged += OnSaveStateChanged;
         Canvas.Attach(workspace);
         Layers.Attach(workspace.Session);
+        Styles.Attach(workspace.Session);
         Properties.Attach(workspace);
         TestValues.Attach(workspace.Values);
         Message = null;
@@ -246,6 +250,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_workspace is not { } workspace) return;
         TestValues.Detach();
         Properties.Detach();
+        Styles.Detach();
         Layers.Detach();
         Canvas.Detach();
         workspace.Session.Changed -= OnSessionChanged;

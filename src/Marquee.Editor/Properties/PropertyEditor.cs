@@ -29,6 +29,9 @@ public enum PropertyEditor
     /// A key picker with a free-text expression box, checked as it is typed.
     Key,
 
+    /// A sensor, fixed number or advanced expression for a source.
+    ValuePicker,
+
     /// A text box with a live preview of the result.
     Template,
 

@@ -7,6 +7,21 @@ namespace Marquee.Core.Tests;
 /// What the theme editor's uniform list reads from a shader: its own uniforms with their sizes, not Marquee's.
 public class ShaderUniformsTests
 {
+    [Fact]
+    public void A_uniforms_trailing_comment_is_its_hint()
+    {
+        using var folder = new TempFolder();
+        var path = folder.File("glow.sksl");
+        const string source = "uniform float heat; // 0 calm … 1 busy\nuniform float2 drift;\nhalf4 main(float2 p) { return half4(heat, drift, 1); }";
+        File.WriteAllText(path, source);
+        using var shader = ShaderUniforms.Compile(path);
+
+        var uniforms = ShaderUniforms.Read(shader.Effect!, source);
+
+        Assert.Equal("0 calm … 1 busy", uniforms.Single(u => u.Name == "heat").Hint);
+        Assert.Null(uniforms.Single(u => u.Name == "drift").Hint);
+    }
+
     const string Source = """
         uniform float time;
         uniform float2 resolution;
@@ -15,6 +30,21 @@ public class ShaderUniformsTests
         uniform int count;
         half4 main(float2 p) { return half4(heat, tint.x, float(count), 1); }
         """;
+
+    [Fact]
+    public void Hints_come_only_from_real_declarations_and_are_trimmed()
+    {
+        using var folder = new TempFolder();
+        var path = folder.File("glow.sksl");
+        const string source = "/*\nuniform float heat; // wrong\n*/\n  uniform float heat; //  warm  \r\n" +
+            "// uniform float heat; // also wrong\n" +
+            "half4 main(float2 p) { return half4(heat); }";
+        File.WriteAllText(path, source);
+        using var shader = ShaderUniforms.Compile(path);
+
+        Assert.Equal("warm", Assert.Single(ShaderUniforms.Read(shader.Effect!, source)).Hint);
+        Assert.Null(Assert.Single(ShaderUniforms.Read(shader.Effect!)).Hint);
+    }
 
     [Fact]
     public void A_shader_lists_its_own_uniforms_with_their_sizes_and_not_marquees()

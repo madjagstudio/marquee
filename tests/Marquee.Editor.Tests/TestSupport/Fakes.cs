@@ -35,6 +35,15 @@ sealed class NoReadings : ILocalReadings
 /// Dialogs that answer as the test says, and remember what they were asked.
 sealed class FakeDialogs : IEditorDialogs
 {
+    public string? StyleNameAnswer { get; set; }
+    public List<string?> StyleNameChecks { get; } = [];
+    public string? AskStyleName(string suggested, Func<string, string?> problem)
+    {
+        StyleNameChecks.Add(problem(suggested));
+        if (StyleNameAnswer is { } name) StyleNameChecks.Add(problem(name));
+        return StyleNameAnswer;
+    }
+
     public bool? RearrangeAnswer { get; set; }
     public List<string> RearrangeQuestions { get; } = [];
     public Dictionary<LayerKindChoice, string?> LayerFileAnswers { get; } = [];

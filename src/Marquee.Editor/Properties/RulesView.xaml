@@ -1,0 +1,55 @@
+<UserControl x:Class="Marquee.Editor.Properties.RulesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Marquee.Editor.Properties"
+             xmlns:res="clr-namespace:Marquee.Editor.Resources">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="Visible" />
+        <local:PropertyTemplateSelector x:Key="Templates" />
+    </UserControl.Resources>
+    <StackPanel IsEnabled="{Binding CanEdit}">
+        <TextBlock Text="{x:Static res:Strings.RulesSection}" FontWeight="SemiBold" Margin="0,8,0,4" />
+        <TextBlock Text="{x:Static res:Strings.RulesTip}" TextWrapping="Wrap" Margin="0,0,0,4" />
+        <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border BorderBrush="#FFDADCE0" BorderThickness="0,0,0,1" Padding="0,4" AllowDrop="True" Drop="OnDrop">
+                        <StackPanel>
+                            <WrapPanel>
+                                <TextBlock Text="☰" Padding="4" Cursor="SizeAll" ToolTip="{x:Static res:Strings.RuleDrag}"
+                                           PreviewMouseLeftButtonDown="OnDragStart" PreviewMouseMove="OnDragMove" />
+                                <TextBlock Text="{x:Static res:Strings.RuleWhen}" VerticalAlignment="Center" Margin="2" />
+                                <ComboBox ItemsSource="{Binding Conditions}" SelectedItem="{Binding Condition}" MinWidth="65" Margin="2" />
+                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="65" Margin="2"
+                                         Visibility="{Binding NeedsValue, Converter={StaticResource Visible}}"
+                                         KeyDown="OnValueKey" LostKeyboardFocus="OnValueLostFocus" />
+                                <TextBlock Text="{x:Static res:Strings.RuleUse}" VerticalAlignment="Center" Margin="2"
+                                           Visibility="{Binding IsWidget, Converter={StaticResource Visible}}" />
+                                <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding SelectedStyle}" DisplayMemberPath="Label" MinWidth="90" Margin="2"
+                                          Visibility="{Binding IsWidget, Converter={StaticResource Visible}}" />
+                                <TextBlock Text="{x:Static res:Strings.RuleSet}" VerticalAlignment="Center" Margin="2"
+                                           Visibility="{Binding IsRing, Converter={StaticResource Visible}}" />
+                                <TextBlock Text="{x:Static res:Strings.RuleOn}" Foreground="#FF188038" FontWeight="Bold" Margin="4"
+                                           Visibility="{Binding IsMatching, Converter={StaticResource Visible}}" />
+                                <Button Content="{x:Static res:Strings.RuleDelete}" Command="{Binding DeleteCommand}" Margin="2" />
+                            </WrapPanel>
+                            <TextBlock Text="{Binding Error}" Foreground="#FFB3261E" TextWrapping="Wrap" />
+                            <ItemsControl ItemsSource="{Binding RingRows}" ItemTemplateSelector="{StaticResource Templates}"
+                                          Visibility="{Binding IsRing, Converter={StaticResource Visible}}" />
+                            <ItemsControl ItemsSource="{Binding Properties.Sections}" Visibility="{Binding IsCustom, Converter={StaticResource Visible}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Expander Header="{Binding Title}" IsExpanded="True">
+                                            <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Margin="4,0,0,0" />
+                                        </Expander>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Content="{x:Static res:Strings.AddRule}" Command="{Binding AddCommand}" HorizontalAlignment="Left" Margin="0,4" />
+    </StackPanel>
+</UserControl>

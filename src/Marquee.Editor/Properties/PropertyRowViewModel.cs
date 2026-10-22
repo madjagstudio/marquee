@@ -30,7 +30,8 @@ public sealed partial class PropertyRowViewModel : ObservableObject
     {
         _owner = owner;
         _row = row;
-        Editor = row.Kind == SchemaKind.List && row.Key.Of is null ? PropertyEditor.ReadOnly : PropertyEditors.For(row.Kind);
+        Editor = row.Key.Name == "source" && row.Kind is SchemaKind.Expression or SchemaKind.SensorKey ? PropertyEditor.ValuePicker
+            : row.Kind == SchemaKind.List && row.Key.Of is null ? PropertyEditor.ReadOnly : PropertyEditors.For(row.Kind);
         Children = row.Children.Select(child => new PropertyRowViewModel(owner, child)).ToList();
         Items = row.Items.Select(item => new PropertyItemViewModel(this, item)).ToList();
         ResetCommand = new RelayCommand(Reset, () => CanReset);

@@ -7,7 +7,7 @@ using SkiaSharp;
 namespace Marquee.Editor.Model;
 
 /// Component text without YAML quoting. An empty Values list means the uniform is unbound and reads as zero.
-public sealed record UniformRow(string Name, int Components, IReadOnlyList<string> Values, bool Declared);
+public sealed record UniformRow(string Name, int Components, IReadOnlyList<string> Values, bool Declared, string? Hint = null);
 
 /// A snapshot of a shader's declarations, bindings and scale. Compiled effects never outlive a read or cost probe.
 public sealed class ShaderLayerModel
@@ -41,11 +41,18 @@ public sealed class ShaderLayerModel
         using var file = ShaderUniforms.Compile(path);
         if (file.Effect is null) return new(path, scale, file.Problem, []);
 
-        var declared = ShaderUniforms.Read(file.Effect);
+        string source;
+        try { source = File.ReadAllText(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // A watcher may replace or remove the file between compilation and reading its hints.
+            return new(path, scale, ex.Message, []);
+        }
+        var declared = ShaderUniforms.Read(file.Effect, source);
         var bindings = layer.Child("uniforms");
         var names = document.GetNode(bindings)?.Keys ?? [];
         var rows = declared.Select(uniform => new UniformRow(uniform.Name, uniform.Components,
-            Values(document, bindings.Child(uniform.Name)), Declared: true)).ToList();
+            Values(document, bindings.Child(uniform.Name)), Declared: true, uniform.Hint)).ToList();
         foreach (var name in names.Except(declared.Select(uniform => uniform.Name), StringComparer.Ordinal))
         {
             var values = Values(document, bindings.Child(name));
