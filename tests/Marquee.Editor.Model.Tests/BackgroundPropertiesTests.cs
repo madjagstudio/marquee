@@ -26,6 +26,21 @@ public class BackgroundPropertiesTests
     }
 
     [Fact]
+    public void A_layer_without_a_kind_lists_only_common_rows()
+    {
+        var document = LayoutDocument.Open("background: [ { name: Sky } ]\n");
+
+        var model = PropertyModel.ForLayer(document, YamlPath.Parse("background[0]"));
+
+        Assert.Equal(PropertyTargetKind.Layer, model.Target);
+        Assert.Null(model.Type);
+        Assert.Equal(["opacity", "blend", "hidden", "locked", "name"], model.Rows.Select(row => row.Name));
+        Assert.Empty(model.Style);
+        Assert.Null(model.StyleUse);
+        Assert.Empty(model.Rules);
+    }
+
+    [Fact]
     public void Setting_a_layers_fill_writes_only_that_key()
     {
         const string layout = "canvas: { orientation: landscape }\nbackground:\n  - fill: \"#102030\" # night\nwidgets: []\n";

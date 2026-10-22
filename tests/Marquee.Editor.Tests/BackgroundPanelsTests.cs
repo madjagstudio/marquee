@@ -23,6 +23,29 @@ public class BackgroundPanelsTests
     });
 
     [Fact]
+    public void A_hand_edit_removing_the_selected_layers_kind_keeps_common_properties() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        const string layout = "canvas: { orientation: landscape }\nbackground: [{ name: Sky, fill: '#102030' }]\nwidgets: []\n";
+        var folder = environment.AddTheme("mine", layout);
+        using var editor = new OpenEditor(environment, folder);
+        editor.Model.Layers.SelectBackground(0);
+        Assert.NotNull(editor.Model.Properties.Row("fill"));
+
+        var handEdit = layout.Replace(", fill: '#102030'", "");
+        File.WriteAllText(editor.Session.LayoutPath, handEdit);
+        Assert.True(Sta.PumpUntil(() => editor.Session.Document.Text == handEdit));
+
+        Assert.Equal(OpenEditor.P("background[0]"), editor.Session.SelectedLayer);
+        Assert.Equal(PropertyTargetKind.Layer, editor.Model.Properties.Target);
+        Assert.Null(editor.Model.Properties.Model!.Type);
+        Assert.Null(editor.Model.Properties.Kind);
+        Assert.Equal("Sky", editor.Model.Properties.Heading);
+        Assert.Equal(["opacity", "blend", "hidden", "locked", "name"], editor.Model.Properties.Rows.Select(row => row.Name));
+        Assert.Null(editor.Model.Properties.Shader);
+    });
+
+    [Fact]
     public void Add_layer_fill_adds_one_above_the_selected_and_delete_removes_it() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();

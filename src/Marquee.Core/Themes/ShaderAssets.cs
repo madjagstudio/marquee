@@ -74,12 +74,8 @@ static class ShaderAssets
 
     /// What a frame of the layer costs. A slow test frame is measured again, and the faster of the two counts, so a
     /// hiccup elsewhere on the PC doesn't cost a theme its background.
-    static TimeSpan Cost(SKRuntimeEffect effect, ShaderLayer layer, SKSizeI canvas, int fps, ShaderProbe probe)
-    {
-        var budget = TimeSpan.FromSeconds(1.0 / fps);
-        var cost = probe(effect, layer, canvas);
-        return cost > budget ? Min(cost, probe(effect, layer, canvas)) : cost;
-    }
+    static TimeSpan Cost(SKRuntimeEffect effect, ShaderLayer layer, SKSizeI canvas, int fps, ShaderProbe probe) =>
+        ShaderCost.Measure(fps, () => probe(effect, layer, canvas));
 
     /// Why a layer that costs `cost` a frame is too slow for the frame rate, or null.
     static string? TooSlow(TimeSpan cost, int fps)
@@ -91,8 +87,6 @@ static class ShaderAssets
         return $"would take about {cost.TotalMilliseconds.ToString("N0", invariant)} ms to render a frame, " +
             $"over the {budget.TotalMilliseconds.ToString("0", invariant)} ms budget at {fps} fps (lower its scale or the fps, or simplify it)";
     }
-
-    static TimeSpan Min(TimeSpan a, TimeSpan b) => a < b ? a : b;
 
     /// Why the layer can't run, or null. Bindings the shader doesn't use, and uniforms nothing binds, are warnings only.
     static string? Problem(SKRuntimeEffect effect, ShaderLayer layer, List<ThemeWarning> warnings)

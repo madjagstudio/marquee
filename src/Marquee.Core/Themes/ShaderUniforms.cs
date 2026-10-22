@@ -38,5 +38,6 @@ public static class ShaderUniforms
     }
 
     /// A frame's cost at the layer's scale on `canvas`, as the screen measures it when the theme loads.
-    public static TimeSpan Cost(SKRuntimeEffect effect, ShaderLayer layer, SKSizeI canvas) => ShaderCost.Estimate(effect, layer, canvas);
+    public static TimeSpan Cost(SKRuntimeEffect effect, ShaderLayer layer, SKSizeI canvas, int fps) =>
+        ShaderCost.Measure(fps, () => ShaderCost.Estimate(effect, layer, canvas));
 }

@@ -20,6 +20,16 @@ public sealed record SetUniform(YamlPath Layer, string Name, IReadOnlyList<strin
         var document = context.Document;
         var uniforms = Layer.Child("uniforms");
         var binding = uniforms.Child(Name);
+        if (document.GetNode(binding) is { Kind: LayoutNodeKind.List } list && list.Count == Values.Count)
+        {
+            for (var i = 0; i < Values.Count; i++)
+            {
+                var item = binding.Item(i);
+                if (!document.TryGetScalar(item, out var value) || value != Values[i])
+                    document = document.SetScalar(item, Values[i]);
+            }
+            return document;
+        }
         if (document.Exists(binding)) return document.ReplaceValue(binding, yaml);
         if (!document.Exists(uniforms)) document = document.AddKey(Layer, "uniforms", "{ }");
         return document.AddKey(uniforms, Name, yaml);

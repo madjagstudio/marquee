@@ -150,6 +150,21 @@ public class ShaderLayerModelTests
     }
 
     [Fact]
+    public void Editing_one_vector_component_preserves_the_other_text_and_both_comments()
+    {
+        using var theme = Theme("    uniforms:\n      drift:\n        - '0.50'  # horizontal\n        - 'gpu.load / 100' # vertical\n");
+        using var session = theme.Open();
+        var before = session.Document.Text;
+
+        session.Apply(new SetUniform(Layer, "drift", ["0.50", "gpu.load / 50"]));
+
+        Assert.Equal(before.Replace("gpu.load / 100", "gpu.load / 50"), session.Document.Text);
+        Assert.Equal(1, session.History.Count);
+        Assert.True(session.Undo());
+        Assert.Equal(before, session.Document.Text);
+    }
+
+    [Fact]
     public void A_broken_shader_reports_its_problem_without_listing_bindings_as_unused()
     {
         using var theme = Theme("    uniforms: { heat: 1 }\n");

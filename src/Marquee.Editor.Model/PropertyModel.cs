@@ -46,7 +46,7 @@ public sealed partial class PropertyModel
         : this(document, [])
     {
         Target = target;
-        Type = owner.Type;
+        Type = owner.Type.Length == 0 ? null : owner.Type;
         var keys = blocks.SelectMany(block => block.Keys).ToList();
         Rows = blocks.SelectMany(block => block.Keys.Select(key =>
             Row(target == PropertyTargetKind.Canvas ? $"canvas.{key.Name}" : key.Name,
@@ -63,10 +63,10 @@ public sealed partial class PropertyModel
     /// The common layer keys followed by the keys of its kind, in catalog order.
     public static PropertyModel ForLayer(LayoutDocument document, YamlPath layer)
     {
-        var kind = new[] { "fill", "image", "shader", "video" }.FirstOrDefault(kind => document.Exists(layer.Child(kind)))
-            ?? throw new ArgumentException($"There is no background layer kind at {layer}.", nameof(layer));
-        return new(document, WidgetRef.Owner(layer, kind), PropertyTargetKind.Layer,
-            [ThemeSchema.Block("layer.common")!, ThemeSchema.Block($"layer.{kind}")!]);
+        var kind = new[] { "fill", "image", "shader", "video" }.FirstOrDefault(kind => document.Exists(layer.Child(kind)));
+        List<SchemaBlock> blocks = [ThemeSchema.Block("layer.common")!];
+        if (kind is not null) blocks.Add(ThemeSchema.Block($"layer.{kind}")!);
+        return new(document, WidgetRef.Owner(layer, kind ?? ""), PropertyTargetKind.Layer, blocks);
     }
 
     /// The canvas's orientation and frame rate, at canvas.*.
@@ -81,7 +81,7 @@ public sealed partial class PropertyModel
 
     public PropertyTargetKind Target { get; }
 
-    /// The selected widgets' shared type, a layer's kind, or "canvas"; null for mixed types or no widgets in Build.
+    /// The selected widgets' shared type, a layer's kind, or "canvas"; null for a missing kind, mixed types or no widgets in Build.
     public string? Type { get; }
 
     public IReadOnlyList<PropertyRow> Rows { get; } = [];

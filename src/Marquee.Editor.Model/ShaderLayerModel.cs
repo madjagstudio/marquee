@@ -87,7 +87,7 @@ public sealed class ShaderLayerModel
         using var file = ShaderUniforms.Compile(_path);
         if (file.Effect is null) throw new InvalidOperationException(file.Problem);
         var layer = new ShaderLayer(_path, [], _scale, 1, SKBlendMode.SrcOver);
-        return new CostHint(ShaderUniforms.Cost(file.Effect, layer, canvas), TimeSpan.FromSeconds(1.0 / fps));
+        return new CostHint(ShaderUniforms.Cost(file.Effect, layer, canvas, fps), TimeSpan.FromSeconds(1.0 / fps));
     }
 }
 
