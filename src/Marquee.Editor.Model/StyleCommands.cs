@@ -84,13 +84,37 @@ public sealed record DeleteStyle(string Name) : EditorCommand
     {
         var doc = context.Document;
         StyleCommands.RequireStyle(doc, Name);
-        var users = StyleUsers.Of(doc, Name);
+        var users = StyleUsers.References(doc, Name);
         var inherited = StyleValues.Named(doc, Name);
-        foreach (var path in users)
-            doc = doc.ReplaceValue(path, YamlWriter.Flow(StyleValues.Merge(inherited, StyleValues.Own(doc, path))));
+        foreach (var user in users)
+        {
+            var allowed = new YamlMap(inherited.Entries
+                .Where(entry => user.StyleKeys.Count == 0 || user.StyleKeys.Contains(entry.Key)).ToList());
+            if (doc.GetNode(user.Path) is { Kind: LayoutNodeKind.Mapping })
+            {
+                doc = CopyMissing(doc, user.Path, allowed);
+                doc = doc.RemoveKey(user.Path.Child("extends"));
+            }
+            else doc = doc.ReplaceValue(user.Path, YamlWriter.Flow(allowed));
+        }
         doc = doc.RemoveKey(StyleCommands.Styles.Child(Name));
         if (doc.GetNode(StyleCommands.Styles) is { Count: 0 }) doc = doc.RemoveKey(StyleCommands.Styles);
         Copied = users.Count;
+        return doc;
+    }
+
+    // Merge only style blocks (stroke, shadow, ...). Paint mappings replace as a whole.
+    // Add missing entries in place so existing overrides retain their spelling and comments.
+    static LayoutDocument CopyMissing(LayoutDocument doc, YamlPath path, YamlMap inherited, bool inBlock = false)
+    {
+        foreach (var (key, value) in inherited.Entries)
+        {
+            var child = path.Child(key);
+            if (!doc.Exists(child)) doc = doc.AddKey(path, key, YamlWriter.Flow(value));
+            else if (!inBlock && StyleValues.IsBlock(key) && value is YamlMap block
+                && doc.GetNode(child) is { Kind: LayoutNodeKind.Mapping })
+                doc = CopyMissing(doc, child, block, inBlock: true);
+        }
         return doc;
     }
 }

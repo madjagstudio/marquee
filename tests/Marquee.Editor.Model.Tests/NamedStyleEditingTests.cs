@@ -1,5 +1,6 @@
 // tests/Marquee.Editor.Model.Tests/NamedStyleEditingTests.cs
 using Marquee.Core.Themes.Editing;
+using Marquee.Core.Themes;
 using Marquee.Core.Themes.Schema;
 using Marquee.Editor.Model.Tests.TestSupport;
 
@@ -8,6 +9,95 @@ namespace Marquee.Editor.Model.Tests;
 /// Named styles: renamed everywhere they're named, deleted without changing a widget's look, and made from a widget.
 public class NamedStyleEditingTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Showcase_list_styles_rename_and_delete_without_changing_the_loaded_styles(bool overrides)
+    {
+        using var theme = TempTheme.Example("example-showcase");
+        var doc = LayoutDocument.Open(theme.Text);
+        var paths = new List<YamlPath>();
+        void Find(YamlPath path)
+        {
+            var node = doc.GetNode(path);
+            if (node is { Kind: LayoutNodeKind.List })
+                for (var i = 0; i < node.Count; i++) Find(path.Item(i));
+            else if (node is { Kind: LayoutNodeKind.Mapping })
+                foreach (var key in node.Keys)
+                {
+                    var child = path.Child(key);
+                    if (key is "spans" or "series" or "slices")
+                        for (var i = 0; i < doc.GetNode(child)!.Count; i++) paths.Add(child.Item(i).Child("style"));
+                    else Find(child);
+                }
+        }
+        Find(YamlPath.Root.Child("widgets"));
+        Assert.Contains(paths, p => p.ToString().Contains(".spans["));
+        Assert.Contains(paths, p => p.ToString().Contains(".series["));
+        Assert.Contains(paths, p => p.ToString().Contains(".slices["));
+        // Give the showcase's real list items a shared style with box keys that spans must not copy.
+        doc = doc.AddKey(YamlPath.Root.Child("styles"), "qa", "{ color: \"#123456\", size: 22, fill: \"#654321\", stroke: { width: 2, color: \"#ABCDEF\" } }");
+        foreach (var path in paths)
+            doc = EditDocument.Set(doc, path, overrides
+                ? YamlValue.Parse("{ extends: qa, color: \"#FEDCBA\" }") : new YamlText("qa"));
+        File.WriteAllText(theme.LayoutPath, doc.Text);
+        using var session = theme.Open();
+        Assert.Null(session.LoadError);
+        var before = ListStyles(session.Theme!.Spec.Widgets).ToList();
+        Assert.Equal(paths.Count, StyleUsers.Count(session.Document, "qa"));
+
+        session.Apply(new RenameStyle("qa", "renamed"));
+        Assert.Null(session.LoadError);
+        Assert.Equal(paths.Count, StyleUsers.Count(session.Document, "renamed"));
+        Assert.Equivalent(before, ListStyles(session.Theme!.Spec.Widgets).ToList(), strict: true);
+        var delete = new DeleteStyle("renamed");
+        session.Apply(delete);
+        Assert.Null(session.LoadError);
+        Assert.Equal(paths.Count, delete.Copied);
+        Assert.Equal(0, StyleUsers.Count(session.Document, "renamed"));
+        Assert.Equivalent(before, ListStyles(session.Theme!.Spec.Widgets).ToList(), strict: true);
+    }
+
+    static IEnumerable<StyleSpec> ListStyles(IEnumerable<WidgetSpec> widgets)
+    {
+        foreach (var widget in widgets)
+        {
+            var styles = widget switch
+            {
+                GroupWidget group => ListStyles(group.Children),
+                SpansWidget text => text.Spans.Select(span => span.Style),
+                ValueWidget value => (value.Spans ?? []).Select(span => span.Style),
+                GraphWidget graph => graph.Series.Select(series => series.Style),
+                DonutWidget donut => donut.Slices.Select(slice => slice.Style),
+                _ => [],
+            };
+            foreach (var style in styles) yield return style;
+        }
+    }
+
+    [Fact]
+    public void Delete_keeps_override_lines_and_comments_byte_for_byte()
+    {
+        const string color = "      color: '#00ff00'   # my own color\n";
+        const string width = "        width: 4.0  # my own width\n";
+        const string layout = "canvas: { orientation: landscape }\n" +
+            "styles: { meter: { size: 20, color: \"#FF0000\", stroke: { width: 2, color: \"#123456\" } } }\n" +
+            "widgets:\n  - type: text\n    at: [0, 0]\n    size: [100, 40]\n    text: a\n" +
+            "    style:\n      extends: meter\n" + color + "      stroke:\n" + width;
+        using var theme = TempTheme.With(layout);
+        using var session = theme.Open();
+        Assert.Null(session.LoadError);
+        var before = session.Theme!.Spec.Widgets[0].Style;
+
+        session.Apply(new DeleteStyle("meter"));
+
+        Assert.Null(session.LoadError);
+        Assert.Contains(color, session.Document.Text);
+        Assert.Contains(width, session.Document.Text);
+        Assert.DoesNotContain("extends:", session.Document.Text);
+        Assert.Equal(before, session.Theme!.Spec.Widgets[0].Style);
+    }
+
     const string Layout =
         "canvas: { orientation: landscape }\n" +
         "styles:\n" +
@@ -42,14 +132,14 @@ public class NamedStyleEditingTests
         var widgets = new[] { YamlPath.Parse("widgets[0]"), YamlPath.Parse("widgets[1]") };
         var before = widgets.Select(w => YamlWriter.Flow(StyleValues.Drawn(session.Document, w))).ToList();
         var rule = YamlWriter.Flow(StyleValues.Effective(session.Document, YamlPath.Parse("widgets[1].when[0].style")));
-        var big = YamlWriter.Flow(StyleValues.Named(session.Document, "big"));
+        var big = StyleValues.Named(session.Document, "big");
         var delete = new DeleteStyle("meter");
 
         session.Apply(delete);
 
         Assert.Equal(before, widgets.Select(w => YamlWriter.Flow(StyleValues.Drawn(session.Document, w))).ToList());
         Assert.Equal(rule, YamlWriter.Flow(StyleValues.Effective(session.Document, YamlPath.Parse("widgets[1].when[0].style"))));
-        Assert.Equal(big, YamlWriter.Flow(StyleValues.Named(session.Document, "big")));
+        Assert.Equivalent(big, StyleValues.Named(session.Document, "big"), strict: true);
         Assert.Equal(4, delete.Copied);   // widget 0, widget 1, its rule, and `big`
         Assert.DoesNotContain("meter", session.Document.Text);
     }
@@ -251,7 +341,7 @@ public class NamedStyleEditingTests
         var users = StyleUsers.Of(session.Document, "base");
         Assert.Equal(new[] { "widgets[0].style", "widgets[0].children[0].children[0].style",
             "widgets[0].children[0].children[0].when[0].style", "styles.child" }, users.Select(p => p.ToString()));
-        var before = users.Select(p => YamlWriter.Flow(StyleValues.Effective(session.Document, p))).ToList();
+        var before = users.Select(p => StyleValues.Effective(session.Document, p)).ToList();
         session.Apply(new RenameStyle("base", "renamed"));
         Assert.Equal(4, StyleUsers.Count(session.Document, "renamed"));
         Assert.DoesNotContain("base", session.Document.Text);
@@ -259,7 +349,8 @@ public class NamedStyleEditingTests
         var delete = new DeleteStyle("base");
         session.Apply(delete);
         Assert.Equal(4, delete.Copied);
-        Assert.Equal(before, users.Select(p => YamlWriter.Flow(StyleValues.Effective(session.Document, p))).ToList());
+        foreach (var (path, style) in users.Zip(before))
+            Assert.Equivalent(style, StyleValues.Effective(session.Document, path), strict: true);
         Assert.True(session.Undo());
         Assert.Equal(layout, session.Document.Text);
         Assert.False(session.CanUndo);

@@ -16,13 +16,15 @@ public class ValuePickerViewTests
     public void Picking_cpu_load_for_heat_writes_a_ranged_expression_without_typing() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();
-        var folder = environment.AddTheme("glow", "canvas: { orientation: landscape }\nbackground:\n  - shader: shaders/aurora.sksl\n    uniforms: { heat: \"cpu.load / 100\" }\nwidgets: []\n");
+        var folder = environment.AddTheme("glow", "canvas: { orientation: landscape }\nbackground:\n  - shader: shaders/aurora.sksl\n    uniforms: { heat: \"cpu.temp / 100\" }\nwidgets: []\n");
         Directory.CreateDirectory(Path.Combine(folder, "shaders"));
         File.Copy(Path.Combine(Repository(), "themes", "example-agents", "shaders", "aurora.sksl"), Path.Combine(folder, "shaders", "aurora.sksl"));
         using var editor = new OpenEditor(environment, folder);
         editor.Model.Layers.SelectBackground(0);
         var row = editor.Model.Properties.Shader!.Uniforms.Single(u => u.Name == "heat");
         var picker = row.Components[0].Picker;
+        Assert.Contains(picker.Keys, key => key.Key == "cpu.load");
+        Assert.DoesNotContain(picker.Keys, key => key.Key.Contains('*'));
         Assert.Equal("0 calm … 1 busy: warmer, brighter, taller bands", row.Hint);
 
         picker.Mode = ValuePickerMode.Sensor;
@@ -31,7 +33,7 @@ public class ValuePickerViewTests
         Assert.Equal("clamp(cpu.load / 100, 0, 1)", picker.Text);
         Assert.Contains("heat: \"clamp(cpu.load / 100, 0, 1)\"", editor.Session.Document.Text);
         Assert.True(editor.Session.Undo());
-        Assert.Equal("cpu.load / 100", picker.AdvancedText);
+        Assert.Equal("cpu.temp / 100", picker.AdvancedText);
         Assert.Equal(ValuePickerMode.Advanced, picker.Mode);
         Assert.True(editor.Session.Redo());
         Assert.Equal("clamp(cpu.load / 100, 0, 1)", picker.Text);

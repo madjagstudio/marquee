@@ -75,7 +75,7 @@ public static class ValuePicker
     };
 
     public static IReadOnlyList<string> Keys(ValueSources sources, IEnumerable<string> themeKeys) =>
-        themeKeys.Concat(sources.Rows().Select(row => row.Key)).Concat(Samples.Keys)
+        themeKeys.Concat(sources.KnownKeys()).Concat(Samples.Keys)
             .Where(key => !key.Contains('*')).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
 
     static bool TryNumber(string text, out double value) =>

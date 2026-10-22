@@ -3,6 +3,7 @@ using System.Globalization;
 using Marquee.Core.Themes.Parsing;
 using Marquee.Editor.Model.Tests.TestSupport;
 using Marquee.Editor.Model.Values;
+using Marquee.Host.SensorFeed;
 
 namespace Marquee.Editor.Model.Tests.Values;
 
@@ -91,18 +92,33 @@ public class ValuePickerTests
         Assert.Equal((low, high), ValuePicker.DefaultRange(key));
 
     [Fact]
-    public void Keys_combine_sources_theme_and_samples_without_duplicates_or_patterns()
+    public Task Keys_combine_sources_theme_and_samples_without_duplicates_or_patterns() => Task.Run(async () =>
     {
-        using var sources = new ValueSources(new FakeFeed(), new FakeLocal());
+        var feed = new FakeFeed { Status = SensorFeedStatus.Ok };
+        var local = new FakeLocal();
+        feed.Set("custom.tray", 12);
+        local.Store.Set("custom.local", 34);
+        using var sources = new ValueSources(feed, local);
         sources.SetTheme(LayoutParser.Parse("canvas: { orientation: landscape }\nwidgets: [{ type: value, at: [0, 0], size: [100, 40], source: custom.source }]"));
+        await sources.PollAsync();
 
         var keys = ValuePicker.Keys(sources, ["custom.theme", "cpu.temp", "custom.*"]);
 
         Assert.Contains("custom.source", keys);
         Assert.Contains("custom.theme", keys);
         Assert.Contains("cpu.temp", keys);
+        Assert.Contains("cpu.load", keys);
+        Assert.Contains("custom.tray", keys);
+        Assert.Contains("custom.local", keys);
         Assert.Contains("fps", keys);
         Assert.DoesNotContain(keys, key => key.Contains('*'));
         Assert.Equal(keys.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal), keys);
-    }
+
+        var updates = 0;
+        sources.Updated += (_, _) => updates++;
+        feed.Set("custom.new", 56);
+        await sources.PollAsync();
+        Assert.Equal(1, updates);
+        Assert.Contains("custom.new", ValuePicker.Keys(sources, []));
+    });
 }
