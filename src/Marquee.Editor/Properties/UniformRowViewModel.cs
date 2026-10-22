@@ -31,7 +31,7 @@ public sealed class UniformRowViewModel : ObservableObject
 
     public bool Commit()
     {
-        if (!IsEditable || Components.Any(component => component.HasError)) return false;
+        if (!IsEditable || Components.Any(component => component.Picker.Text is null)) return false;
         var values = Components.Select(component => component.Text.Trim()).ToArray();
         if (values.SequenceEqual(_saved)) return true;
         if (!_owner.Set(Name, values)) return false;

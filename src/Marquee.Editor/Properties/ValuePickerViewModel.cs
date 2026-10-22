@@ -28,14 +28,15 @@ public sealed class ValuePickerViewModel : ObservableObject
     string _search = "";
     string _fromLow = "0", _fromHigh = "100", _toLow = "0", _toHigh = "1", _number = "0", _advancedText = "";
     bool _ranged;
+    bool _advancedEdited;
     IReadOnlyList<ValuePickerKey> _keys = [];
 
-    public ValuePickerViewModel(ValueSources sources, string text, bool showRange, string? hint = null)
+    public ValuePickerViewModel(ValueSources sources, string? text, bool showRange, string? hint = null)
     {
         _sources = sources;
         ShowRange = showRange;
         Hint = hint;
-        Read(text);
+        Read(text, isDraft: false);
         // Rows can be replaced on selection changes; the sources must not retain old editors.
         WeakEventManager<ValueSources, EventArgs>.AddHandler(sources, nameof(ValueSources.Updated), OnValuesUpdated);
     }
@@ -49,7 +50,11 @@ public sealed class ValuePickerViewModel : ObservableObject
         set
         {
             if (_mode == value) return;
-            if (value == ValuePickerMode.Advanced && Text is { } text) _advancedText = text;
+            if (value == ValuePickerMode.Advanced && Text is { } text)
+            {
+                _advancedText = text;
+                _advancedEdited = false;
+            }
             _mode = value;
             Raise(null);
         }
@@ -85,9 +90,9 @@ public sealed class ValuePickerViewModel : ObservableObject
     public string ToLow { get => _toLow; set { if (Set(ref _toLow, value)) RangeChanged(); } }
     public string ToHigh { get => _toHigh; set { if (Set(ref _toHigh, value)) RangeChanged(); } }
     public string Number { get => _number; set { if (Set(ref _number, value)) Changed(); } }
-    public string AdvancedText { get => _advancedText; set { if (Set(ref _advancedText, value)) Changed(); } }
+    public string AdvancedText { get => _advancedText; set { if (Set(ref _advancedText, value)) { _advancedEdited = true; Changed(); } } }
     public string? Text => Validate(out var text) is null ? text : null;
-    public string? Problem => Validate(out _);
+    public string? Problem => IsAdvanced && _advancedEdited ? Validate(out _) : null;
     public bool HasProblem => Problem is not null;
     public event EventHandler? Committed;
 
@@ -103,17 +108,22 @@ public sealed class ValuePickerViewModel : ObservableObject
     {
         if (text == _saved) return;
         if (text == Text) _saved = text;
-        else Read(text);
+        else Read(text, isDraft: false);
     }
 
-    internal void Read(string text)
+    internal void Read(string? text, bool isDraft = true)
     {
+        text ??= "";
         _saved = text;
         _advancedText = text;
+        _advancedEdited = isDraft;
         _selectedKey = null;
         _ranged = false;
         switch (ValuePicker.Read(text))
         {
+            case PickedValue.Unset:
+                _mode = ValuePickerMode.Sensor;
+                break;
             case PickedValue.Sensor sensor:
                 _mode = ValuePickerMode.Sensor;
                 _selectedKey = sensor.Key;
@@ -143,7 +153,7 @@ public sealed class ValuePickerViewModel : ObservableObject
         switch (Mode)
         {
             case ValuePickerMode.Sensor:
-                if (SelectedKey is null) return Strings.PickerChooseSensor;
+                if (SelectedKey is null) return null;
                 if (_ranged)
                 {
                     if (!TryNumber(FromLow, out var low) || !TryNumber(FromHigh, out var high) ||
@@ -158,6 +168,7 @@ public sealed class ValuePickerViewModel : ObservableObject
                 text = ValuePicker.Write(new PickedValue.Number(number));
                 break;
             case ValuePickerMode.Advanced:
+                if (string.IsNullOrWhiteSpace(AdvancedText)) return null;
                 text = AdvancedText;
                 break;
         }

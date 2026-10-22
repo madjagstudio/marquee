@@ -5,6 +5,7 @@ namespace Marquee.Editor.Model.Values;
 
 public abstract record PickedValue
 {
+    public sealed record Unset : PickedValue;
     public sealed record Sensor(string Key) : PickedValue;
     public sealed record Ranged(string Key, double FromLow, double FromHigh, double ToLow, double ToHigh) : PickedValue;
     public sealed record Number(double Value) : PickedValue;
@@ -22,8 +23,9 @@ public static class ValuePicker
     static readonly Regex UnitRange = new($@"\Aclamp\(\((?<key>{Key}) - (?<low>{Number})\) / (?<width>{Number}), 0, 1\)\z");
     static readonly Regex FullRange = new($@"\Aclamp\(\((?<key>{Key}) - (?<low>{Number})\) / (?<width>{Number}) \* (?<scale>{Number}) \+ (?<offset>{Number}), (?<a>{Number}), (?<b>{Number})\)\z");
 
-    public static PickedValue Read(string text)
+    public static PickedValue Read(string? text)
     {
+        if (string.IsNullOrWhiteSpace(text)) return new PickedValue.Unset();
         var normalized = Regex.Replace(text.Trim(), @"\s+", " ");
         if (Sensor.IsMatch(normalized)) return new PickedValue.Sensor(normalized);
         if (Numeric.IsMatch(normalized) && TryNumber(normalized, out var number)) return new PickedValue.Number(number);

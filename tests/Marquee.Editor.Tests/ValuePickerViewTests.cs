@@ -13,6 +13,32 @@ namespace Marquee.Editor.Tests;
 public class ValuePickerViewTests
 {
     [Fact]
+    public void An_unset_ring_source_opens_in_sensor_mode_without_changing_the_document() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        const string layout = "canvas: { orientation: landscape }\nring: { effect: static }\nwidgets: []\n";
+        using var editor = new OpenEditor(environment, environment.AddTheme("ring", layout));
+        var picker = editor.Model.Properties.Ring!.Properties.Row("source")!.Picker!;
+
+        Assert.Equal(ValuePickerMode.Sensor, picker.Mode);
+        Assert.Null(picker.SelectedKey);
+        Assert.Null(picker.Problem);
+        Assert.False(picker.HasProblem);
+        Assert.Null(picker.Text);
+        Assert.False(picker.Commit());
+        Assert.Equal(layout, editor.Session.Document.Text);
+        Assert.False(editor.Session.Document.Exists(OpenEditor.P("ring.source")));
+
+        picker.Mode = ValuePickerMode.Advanced;
+        picker.AdvancedText = " \t";
+        Assert.Null(picker.Problem);
+        Assert.False(picker.HasProblem);
+        Assert.Null(picker.Text);
+        Assert.False(picker.Commit());
+        Assert.Equal(layout, editor.Session.Document.Text);
+    });
+
+    [Fact]
     public void Picking_cpu_load_for_heat_writes_a_ranged_expression_without_typing() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();
