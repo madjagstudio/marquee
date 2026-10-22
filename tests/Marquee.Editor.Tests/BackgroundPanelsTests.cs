@@ -40,7 +40,7 @@ public class BackgroundPanelsTests
         Assert.Equal(PropertyTargetKind.Layer, editor.Model.Properties.Target);
         Assert.Null(editor.Model.Properties.Model!.Type);
         Assert.Null(editor.Model.Properties.Kind);
-        Assert.Equal("Sky", editor.Model.Properties.Heading);
+        Assert.Equal("Background: Layer", editor.Model.Properties.Heading);
         Assert.Equal(["opacity", "blend", "hidden", "locked", "name"], editor.Model.Properties.Rows.Select(row => row.Name));
         Assert.Null(editor.Model.Properties.Shader);
     });

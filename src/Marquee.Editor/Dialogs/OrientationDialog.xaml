@@ -1,15 +1,22 @@
-<Window x:Class="Marquee.Editor.Dialogs.OrientationDialog"
+<Window Style="{StaticResource {x:Type Window}}" x:Class="Marquee.Editor.Dialogs.OrientationDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:res="clr-namespace:Marquee.Editor.Resources"
         Title="{x:Static res:Strings.ThemeSettings}" Width="420" SizeToContent="Height"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
     <StackPanel Margin="16">
         <TextBlock x:Name="Prompt" TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="{x:Static res:Strings.Yes}" IsDefault="True" MinWidth="80" Padding="10,3" Click="OnYes" />
-            <Button Content="{x:Static res:Strings.No}" MinWidth="80" Padding="10,3" Margin="8,0,0,0" Click="OnNo" />
-            <Button Content="{x:Static res:Strings.Cancel}" IsCancel="True" MinWidth="80" Padding="10,3" Margin="8,0,0,0" />
+            <Button ToolTip="{x:Static res:Strings.RearrangeYesTip}" Content="{x:Static res:Strings.Yes}" IsDefault="True" MinWidth="80" Padding="10,3" Click="OnYes" />
+            <Button ToolTip="{x:Static res:Strings.RearrangeNoTip}" Content="{x:Static res:Strings.No}" MinWidth="80" Padding="10,3" Margin="8,0,0,0" Click="OnNo" />
+            <Button ToolTip="{x:Static res:Strings.CancelTip}" Content="{x:Static res:Strings.Cancel}" IsCancel="True" MinWidth="80" Padding="10,3" Margin="8,0,0,0" />
         </StackPanel>
     </StackPanel>
 </Window>

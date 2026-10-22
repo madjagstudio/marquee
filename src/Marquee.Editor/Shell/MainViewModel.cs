@@ -1,4 +1,8 @@
 using System.Windows.Input;
+using System.Windows;
+using Marquee.Core.Devices;
+using Marquee.Core.Logging;
+using Marquee.Host;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Editing;
 using Marquee.Editor.Canvas;
@@ -56,6 +60,40 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public EditorWorkspace? Workspace => _workspace;
 
     public string ThemeName => _workspace?.Name ?? "";
+    public string ThemeHeading => ThemeName.ToUpperInvariant();
+
+    bool _isLayersOpen = true;
+    GridLength _leftPanelWidth = new(260);
+    public bool IsLayersOpen
+    {
+        get => _isLayersOpen;
+        set
+        {
+            if (Set(ref _isLayersOpen, value)) Raise(nameof(LeftPanelWidth));
+        }
+    }
+
+    public GridLength LeftPanelWidth
+    {
+        get => IsLayersOpen ? _leftPanelWidth : new GridLength(0);
+        set { if (IsLayersOpen) Set(ref _leftPanelWidth, value); }
+    }
+
+    Marquee.Core.Devices.Orientation _screenOrientation;
+    bool ThemeIsPortrait => _workspace?.Session.Theme?.Spec.Canvas.Orientation == ThemeOrientation.Portrait;
+    public string ScreenTag => Strings.ScreenTag(_screenOrientation.Name(), _screenOrientation.CanvasSize().Width, _screenOrientation.CanvasSize().Height);
+    public bool ScreenMismatch => _screenOrientation.IsPortrait() != ThemeIsPortrait;
+    public string ScreenToolTip => ScreenMismatch
+        ? Strings.ScreenMismatchTip(ThemeIsPortrait ? "portrait" : "landscape", _screenOrientation.IsPortrait() ? "portrait" : "landscape")
+        : Strings.ScreenOrientationTip;
+
+    public void RefreshScreen()
+    {
+        _screenOrientation = ConfigFile.Load(_environment.ConfigFile, NullLog.Instance).Orientation ?? Marquee.Core.Devices.Orientation.Landscape;
+        Raise(nameof(ScreenTag));
+        Raise(nameof(ScreenMismatch));
+        Raise(nameof(ScreenToolTip));
+    }
 
     public string Title => Strings.WindowTitle(ThemeName);
 

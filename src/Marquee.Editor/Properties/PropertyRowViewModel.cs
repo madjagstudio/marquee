@@ -50,6 +50,8 @@ public sealed partial class PropertyRowViewModel : ObservableObject
     /// The key's name, as layout.yaml writes it.
     public string Label => _row.Key.Name;
 
+    public string PlainLabel => _row.PlainLabel;
+
     public PropertyEditor Editor { get; }
 
     /// The catalog's help, then the default, what the named style gives, and why the row is read-only.
@@ -57,7 +59,7 @@ public sealed partial class PropertyRowViewModel : ObservableObject
     {
         get
         {
-            var help = new StringBuilder(_row.Help);
+            var help = new StringBuilder(_row.Tooltip);
             if (_row.Default is { } fallback) help.Append('\n').Append(Strings.DefaultIs(fallback));
             if (!_row.IsSet && _row.Inherited is { } inherited) help.Append('\n').Append(Strings.FromNamedStyle(Show(inherited)));
             if (!_row.IsEditable) help.Append('\n').Append(Strings.KeyReadOnly);

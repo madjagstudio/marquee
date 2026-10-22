@@ -1,19 +1,26 @@
-<Window x:Class="Marquee.Editor.Dialogs.NameDialog"
+<Window Style="{StaticResource {x:Type Window}}" x:Class="Marquee.Editor.Dialogs.NameDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:res="clr-namespace:Marquee.Editor.Resources"
         Width="420" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         FocusManager.FocusedElement="{Binding ElementName=NameBox}">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
     <!-- One name, checked as it is typed: "New from an example" asks for the copy's. -->
     <StackPanel Margin="16">
         <TextBlock x:Name="Prompt" TextWrapping="Wrap" Margin="0,0,0,8" />
-        <TextBox x:Name="NameBox" Padding="4,3" TextChanged="OnTextChanged" />
-        <TextBlock x:Name="Problem" Foreground="#FFB3261E" TextWrapping="Wrap" Margin="0,6,0,0" MinHeight="18" />
+        <TextBox ToolTip="{x:Static res:Strings.NameTip}" x:Name="NameBox" Padding="4,3" TextChanged="OnTextChanged" />
+        <TextBlock x:Name="Problem" Foreground="{StaticResource Warning}" TextWrapping="Wrap" Margin="0,6,0,0" MinHeight="18" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button x:Name="OkButton" Content="{x:Static res:Strings.Create}" IsDefault="True" MinWidth="80" Padding="10,3"
+            <Button ToolTip="{x:Static res:Strings.CreateTip}" x:Name="OkButton" Style="{StaticResource PrimaryButton}" Content="{x:Static res:Strings.Create}" IsDefault="True" MinWidth="80" Padding="10,3"
                     Click="OnOk" />
-            <Button Content="{x:Static res:Strings.Cancel}" IsCancel="True" MinWidth="80" Padding="10,3" Margin="8,0,0,0" />
+            <Button ToolTip="{x:Static res:Strings.CancelTip}" Content="{x:Static res:Strings.Cancel}" IsCancel="True" MinWidth="80" Padding="10,3" Margin="8,0,0,0" />
         </StackPanel>
     </StackPanel>
 </Window>

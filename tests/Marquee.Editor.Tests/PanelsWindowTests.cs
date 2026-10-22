@@ -48,7 +48,7 @@ public class PanelsWindowTests
             }
 
             var splitters = Descendants(window).OfType<GridSplitter>().ToArray();
-            Assert.Equal(4, splitters.Length);
+            Assert.Equal(5, splitters.Length);
             Assert.Equal(3, splitters.Count(splitter => splitter.ResizeDirection == GridResizeDirection.Rows));
             foreach (var splitter in splitters)
             {

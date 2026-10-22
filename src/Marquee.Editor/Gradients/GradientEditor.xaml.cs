@@ -78,7 +78,7 @@ public partial class GradientEditor : UserControl
             {
                 Points = [new Point(0, 0), new Point(6, 7), new Point(6, 15), new Point(-6, 15), new Point(-6, 7)],
                 Fill = new SolidColorBrush(color),
-                Stroke = stop.IsSelected ? Brushes.DodgerBlue : Brushes.DimGray,
+                Stroke = (Brush)FindResource(stop.IsSelected ? "Red" : "Line"),
                 StrokeThickness = stop.IsSelected ? 2 : 1,
                 Opacity = stop.IsLeaving ? 0.35 : 1,
             };

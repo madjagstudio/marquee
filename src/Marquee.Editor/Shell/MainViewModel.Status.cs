@@ -106,12 +106,13 @@ public sealed partial class MainViewModel
         private set => Set(ref _trayNotRunning, value);
     }
 
-    public string UndoToolTip => _workspace?.Session.History.NextUndo is { } step ? Strings.UndoStep(step.Label) : Strings.Undo;
+    public string UndoToolTip => _workspace?.Session.History.NextUndo is { } step ? Strings.UndoStep(step.Label) : Strings.UndoTip;
 
-    public string RedoToolTip => _workspace?.Session.History.NextRedo is { } step ? Strings.RedoStep(step.Label) : Strings.Redo;
+    public string RedoToolTip => _workspace?.Session.History.NextRedo is { } step ? Strings.RedoStep(step.Label) : Strings.RedoTip;
 
     void RefreshStatus()
     {
+        RefreshScreen();
         RefreshSaveState();
         RefreshTray();
         RefreshRecovery();

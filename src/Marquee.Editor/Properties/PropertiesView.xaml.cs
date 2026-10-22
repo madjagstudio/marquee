@@ -13,6 +13,13 @@ namespace Marquee.Editor.Properties;
 /// one undo step per drag; the colour picker writes as it drags, one step per drag.
 public partial class PropertiesView : UserControl
 {
+    // Inherited through nested blocks and lists so Raw keeps YAML keys with the same editing templates.
+    public static readonly DependencyProperty RawLabelsProperty = DependencyProperty.RegisterAttached(
+        "RawLabels", typeof(bool), typeof(PropertiesView), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+
+    public static bool GetRawLabels(DependencyObject element) => (bool)element.GetValue(RawLabelsProperty);
+    public static void SetRawLabels(DependencyObject element, bool value) => element.SetValue(RawLabelsProperty, value);
+
     /// The slider being dragged, whose moves are merged until it is let go.
     Slider? _sliding;
 

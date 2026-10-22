@@ -10,7 +10,16 @@ static class Sta
 {
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
 
+    // WPF shares a non-thread-safe pack-resource cache across dispatchers. Loading the theme in parallel windows
+    // can race in PackagePart.GetStream even though each individual window has its own STA thread.
+    static readonly object Gate = new();
+
     public static void Run(Action test)
+    {
+        lock (Gate) RunOnThread(test);
+    }
+
+    static void RunOnThread(Action test)
     {
         ExceptionDispatchInfo? failure = null;
         var thread = new Thread(() =>

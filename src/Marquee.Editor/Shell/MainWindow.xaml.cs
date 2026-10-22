@@ -14,8 +14,8 @@ using Marquee.Editor.Styles;
 
 namespace Marquee.Editor.Shell;
 
-/// The editor's window: a toolbar, the canvas, the panel area on the right (LayersPanel, PropertiesPanel and
-/// TestValuesPanel, each its own view) and a status bar, bound to a MainViewModel. Keys reach the model from here,
+/// The editor's window: a window bar, Layers/Background/Styles on the left, the central canvas, Properties and
+/// TestValues on the right, and a status bar, bound to a MainViewModel. Keys reach the model from here,
 /// after the control with focus has had them, so text boxes and menus keep theirs.
 public partial class MainWindow : Window
 {
@@ -44,6 +44,7 @@ public partial class MainWindow : Window
             CanvasArea.Focus();
         };
         StateChanged += (_, _) => model.Canvas.SetVisible(WindowState != WindowState.Minimized);
+        Activated += (_, _) => model.RefreshScreen();
         KeyDown += OnKeyDown;
         KeyUp += OnKeyUp;
         Closing += OnClosing;
@@ -100,7 +101,7 @@ public partial class MainWindow : Window
     }
 
     /// A problem's line in the list: an error's or a warning's mark, then "layout.yaml line 12: …".
-    static StackPanel ProblemLine(LayoutProblem problem)
+    StackPanel ProblemLine(LayoutProblem problem)
     {
         var error = problem.Severity == IssueSeverity.Error;
         var line = new StackPanel { Orientation = Orientation.Horizontal };
@@ -108,7 +109,7 @@ public partial class MainWindow : Window
         {
             Text = error ? "" : "",
             FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
-            Foreground = error ? Brushes.Firebrick : Brushes.DarkGoldenrod,
+            Foreground = (Brush)FindResource("Warning"),
             Margin = new Thickness(0, 2, 8, 0),
             ToolTip = error ? Strings.ProblemError : Strings.ProblemWarning,
         });

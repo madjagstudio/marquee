@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Marquee.Editor.Resources;
 
 namespace Marquee.Editor.Values;
 
@@ -9,6 +10,28 @@ namespace Marquee.Editor.Values;
 public partial class TestValuesView : UserControl
 {
     public TestValuesView() => InitializeComponent();
+
+    // These buttons live inside WPF's system templates, so keep those templates and name their parts here.
+    void OnDatePickerLoaded(object sender, RoutedEventArgs e)
+    {
+        var picker = (DatePicker)sender;
+        SetPartTip(picker, "PART_TextBox", Strings.TestDateTip);
+        SetPartTip(picker, "PART_Button", Strings.OpenCalendarTip);
+    }
+
+    void OnCalendarItemLoaded(object sender, RoutedEventArgs e)
+    {
+        var calendar = (Control)sender;
+        SetPartTip(calendar, "PART_PreviousButton", Strings.PreviousPeriodTip);
+        SetPartTip(calendar, "PART_NextButton", Strings.NextPeriodTip);
+        SetPartTip(calendar, "PART_HeaderButton", Strings.CalendarViewTip);
+    }
+
+    static void SetPartTip(Control owner, string name, string tip)
+    {
+        owner.ApplyTemplate();
+        if (owner.Template.FindName(name, owner) is FrameworkElement part) part.ToolTip = tip;
+    }
 
     static TestValueRowViewModel? RowOf(object sender) => (sender as FrameworkElement)?.DataContext as TestValueRowViewModel;
 

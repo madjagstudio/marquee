@@ -4,49 +4,54 @@
              xmlns:res="clr-namespace:Marquee.Editor.Resources"
              Width="232">
     <UserControl.Resources>
-        <!-- Squares of light and mid grey behind what can be see-through. -->
-        <DrawingBrush x:Key="Checks" TileMode="Tile" Viewport="0,0,8,8" ViewportUnits="Absolute">
-            <DrawingBrush.Drawing>
-                <DrawingGroup>
-                    <GeometryDrawing Brush="White" Geometry="M0,0 H2 V2 H0Z" />
-                    <GeometryDrawing Brush="#FFCCCCCC" Geometry="M0,0 H1 V1 H0Z M1,1 H2 V2 H1Z" />
-                </DrawingGroup>
-            </DrawingBrush.Drawing>
-        </DrawingBrush>
-        <LinearGradientBrush x:Key="Hues" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#FFFF0000" Offset="0" />
-            <GradientStop Color="#FFFFFF00" Offset="0.1667" />
-            <GradientStop Color="#FF00FF00" Offset="0.3333" />
-            <GradientStop Color="#FF00FFFF" Offset="0.5" />
-            <GradientStop Color="#FF0000FF" Offset="0.6667" />
-            <GradientStop Color="#FFFF00FF" Offset="0.8333" />
-            <GradientStop Color="#FFFF0000" Offset="1" />
-        </LinearGradientBrush>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Squares of light and mid grey behind what can be see-through. -->
+            <DrawingBrush x:Key="Checks" TileMode="Tile" Viewport="0,0,8,8" ViewportUnits="Absolute">
+                <DrawingBrush.Drawing>
+                    <DrawingGroup>
+                        <GeometryDrawing Brush="{StaticResource CheckerLight}" Geometry="M0,0 H2 V2 H0Z" />
+                        <GeometryDrawing Brush="{StaticResource CheckerDark}" Geometry="M0,0 H1 V1 H0Z M1,1 H2 V2 H1Z" />
+                    </DrawingGroup>
+                </DrawingBrush.Drawing>
+            </DrawingBrush>
+            <LinearGradientBrush x:Key="Hues" StartPoint="0,0" EndPoint="1,0">
+                <GradientStop Color="{StaticResource PickerRedColor}" Offset="0" />
+                <GradientStop Color="{StaticResource PickerYellowColor}" Offset="0.1667" />
+                <GradientStop Color="{StaticResource PickerGreenColor}" Offset="0.3333" />
+                <GradientStop Color="{StaticResource PickerCyanColor}" Offset="0.5" />
+                <GradientStop Color="{StaticResource PickerBlueColor}" Offset="0.6667" />
+                <GradientStop Color="{StaticResource PickerMagentaColor}" Offset="0.8333" />
+                <GradientStop Color="{StaticResource PickerRedColor}" Offset="1" />
+            </LinearGradientBrush>
+        </ResourceDictionary>
     </UserControl.Resources>
     <!-- An HSV square (saturation across, value down) in the hue chosen on the strip below it, then the alpha strip, the
          hex box and the recent colours. Each area takes the mouse down and drags (ColorPicker.xaml.cs). -->
     <StackPanel Margin="8">
-        <Grid x:Name="Square" Height="148" Cursor="Cross" ClipToBounds="True" Background="Transparent"
+        <Grid x:Name="Square" Height="148" Cursor="Cross" ClipToBounds="True" Background="{StaticResource Clear}"
               MouseLeftButtonDown="OnAreaDown" MouseMove="OnAreaMove" MouseLeftButtonUp="OnAreaUp" LostMouseCapture="OnAreaLost">
             <Rectangle x:Name="HueFill" />
             <Rectangle>
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Color="#FFFFFFFF" Offset="0" />
-                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                        <GradientStop Color="{StaticResource PickerWhiteColor}" Offset="0" />
+                        <GradientStop Color="{StaticResource PickerTransparentWhiteColor}" Offset="1" />
                     </LinearGradientBrush>
                 </Rectangle.Fill>
             </Rectangle>
             <Rectangle>
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#00000000" Offset="0" />
-                        <GradientStop Color="#FF000000" Offset="1" />
+                        <GradientStop Color="{StaticResource ClearColor}" Offset="0" />
+                        <GradientStop Color="{StaticResource PickerBlackColor}" Offset="1" />
                     </LinearGradientBrush>
                 </Rectangle.Fill>
             </Rectangle>
             <Canvas IsHitTestVisible="False">
-                <Ellipse x:Name="SquareThumb" Width="12" Height="12" Stroke="White" StrokeThickness="2">
+                <Ellipse x:Name="SquareThumb" Width="12" Height="12" Stroke="{StaticResource PickerWhite}" StrokeThickness="2">
                     <Ellipse.Effect>
                         <DropShadowEffect BlurRadius="2" ShadowDepth="0" Opacity="0.8" />
                     </Ellipse.Effect>
@@ -57,7 +62,7 @@
               ToolTip="{x:Static res:Strings.HueTip}"
               MouseLeftButtonDown="OnAreaDown" MouseMove="OnAreaMove" MouseLeftButtonUp="OnAreaUp" LostMouseCapture="OnAreaLost">
             <Canvas IsHitTestVisible="False">
-                <Rectangle x:Name="HueThumb" Width="6" Height="14" Stroke="White" StrokeThickness="2" />
+                <Rectangle x:Name="HueThumb" Width="6" Height="14" Stroke="{StaticResource PickerWhite}" StrokeThickness="2" />
             </Canvas>
         </Grid>
         <Grid x:Name="AlphaStrip" Height="14" Margin="0,8,0,0" Cursor="Hand" Background="{StaticResource Checks}"
@@ -65,7 +70,7 @@
               MouseLeftButtonDown="OnAreaDown" MouseMove="OnAreaMove" MouseLeftButtonUp="OnAreaUp" LostMouseCapture="OnAreaLost">
             <Rectangle x:Name="AlphaFill" />
             <Canvas IsHitTestVisible="False">
-                <Rectangle x:Name="AlphaThumb" Width="6" Height="14" Stroke="White" StrokeThickness="2">
+                <Rectangle x:Name="AlphaThumb" Width="6" Height="14" Stroke="{StaticResource PickerWhite}" StrokeThickness="2">
                     <Rectangle.Effect>
                         <DropShadowEffect BlurRadius="2" ShadowDepth="0" Opacity="0.8" />
                     </Rectangle.Effect>
@@ -73,15 +78,15 @@
             </Canvas>
         </Grid>
         <DockPanel Margin="0,8,0,0">
-            <Border DockPanel.Dock="Left" Width="28" Height="22" BorderBrush="#FFDADCE0" BorderThickness="1"
+            <Border DockPanel.Dock="Left" Width="28" Height="22" BorderBrush="{StaticResource Line}" BorderThickness="1"
                     Background="{StaticResource Checks}">
                 <Rectangle x:Name="Swatch" />
             </Border>
-            <TextBox x:Name="HexBox" Margin="6,0,0,0" Padding="3,2" FontFamily="Consolas" VerticalContentAlignment="Center"
+            <TextBox x:Name="HexBox" Margin="6,0,0,0" Padding="3,2" FontFamily="{StaticResource LabelFont}" VerticalContentAlignment="Center"
                      ToolTip="{x:Static res:Strings.HexTip}" AutomationProperties.Name="{x:Static res:Strings.HexTip}"
                      KeyDown="OnHexKeyDown" LostKeyboardFocus="OnHexLostFocus" />
         </DockPanel>
-        <TextBlock Text="{x:Static res:Strings.RecentColors}" Foreground="#FF5F6368" Margin="0,8,0,2" />
+        <TextBlock Text="{x:Static res:Strings.RecentColors}" Foreground="{StaticResource TextMuted}" Margin="0,8,0,2" />
         <ItemsControl x:Name="Recent">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -90,8 +95,8 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Button Width="20" Height="20" Margin="0,0,3,3" Padding="0" ToolTip="{Binding Hex}" Click="OnRecentClick"
-                            Background="{StaticResource Checks}" BorderBrush="#FFDADCE0">
+                    <Button Width="20" Height="20" Margin="0,0,3,3" Padding="0" ToolTip="{x:Static res:Strings.RecentColorTip}" Click="OnRecentClick"
+                            Background="{StaticResource Checks}" BorderBrush="{StaticResource Line}">
                         <Rectangle Fill="{Binding Brush}" Width="18" Height="18" />
                     </Button>
                 </DataTemplate>

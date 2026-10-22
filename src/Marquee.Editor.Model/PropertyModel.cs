@@ -40,6 +40,8 @@ public sealed partial class PropertyModel
             StyleUse = new StyleUse(StyleValues.NameOf(document, style), StyleValues.Leaves(StyleValues.Own(document, style)));
             Rules = RuleSummaries.Of(document, widgets[0].Path);
         }
+        Heading = WidgetHeading();
+        BuildLayers();
     }
 
     PropertyModel(LayoutDocument document, WidgetRef owner, PropertyTargetKind target, IReadOnlyList<SchemaBlock> blocks)
@@ -60,6 +62,14 @@ public sealed partial class PropertyModel
             Style = Sections(StyleRows([(widget, style)], [owner.Type], "style", []), [owner.Type]);
             StyleUse = new StyleUse(StyleValues.NameOf(document, style), StyleValues.Leaves(StyleValues.Own(document, style)));
         }
+        Heading = target switch
+        {
+            PropertyTargetKind.Layer => $"Background: {PlainType(Type ?? "layer")}",
+            PropertyTargetKind.Rule => owner.Type == "ring" ? "Ring warning" : "Warning",
+            PropertyTargetKind.Ring => "Ring",
+            _ => "Theme settings",
+        };
+        BuildLayers();
     }
 
     PropertyModel(LayoutDocument document, string name) : this(document, [])
@@ -76,6 +86,8 @@ public sealed partial class PropertyModel
         }];
         var allTypes = ThemeSchema.Widgets.Names.ToList();
         Style = Sections(StyleRows([(owner, path)], allTypes, "style", []), allTypes);
+        Heading = $"Style: {name}";
+        BuildLayers();
     }
 
     /// The properties of the selected widgets, background layer or named style, or the canvas when nothing is selected.
@@ -179,6 +191,8 @@ public sealed partial class PropertyModel
 
         var row = new PropertyRow(name, key)
         {
+            PlainLabel = Words(targets[0], name)?.Label ?? key.Name,
+            Tooltip = Words(targets[0], name)?.Tooltip ?? key.Help,
             Min = mins.Count == 1 ? mins[0] : mins.Max(),
             Max = key.Max,
             Step = Step(key),

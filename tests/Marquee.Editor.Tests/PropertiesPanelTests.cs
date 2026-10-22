@@ -294,7 +294,7 @@ public class PropertiesPanelTests
         using var editor = Open(environment);
         var panel = Select(editor, "widgets[3]", "widgets[4]");
 
-        Assert.Equal(Strings.WidgetsSelected(2), panel.Heading);
+        Assert.Equal("2 widgets", panel.Heading);
         var at = Row(editor, "at");
         Assert.True(at.IsMixed);
         Assert.Equal(Strings.Mixed, at.Placeholder);

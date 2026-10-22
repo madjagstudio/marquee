@@ -26,7 +26,7 @@ public class StylesPanelTests
         editor.Model.Styles.Select("child");
         var properties = editor.Model.Properties;
         Assert.Equal(PropertyTargetKind.Style, properties.Target);
-        Assert.Equal("child", properties.Heading);
+        Assert.Equal("Style: child", properties.Heading);
         Assert.Equal("base", properties.Row("extends")!.Choice);
         Assert.NotEmpty(properties.Sections);
         Assert.False(properties.HasSelection);
@@ -151,7 +151,11 @@ public class StylesPanelTests
             Assert.True(panel.IsVisible);
             var properties = Assert.IsType<PropertiesView>(((ContentControl)window.FindName("PropertiesPanel")).Content);
             Assert.Contains(Descendants(properties).OfType<Expander>(), section => section.IsVisible && Equals(section.Header, Strings.SectionText));
-            var extends = Descendants(properties).OfType<ComboBox>().Single(box => box.DataContext is PropertyRowViewModel { Name: "extends" });
+            var styling = (ItemsControl)properties.FindName("MoreStylingSections");
+            Descendants(styling).OfType<Expander>().Single(section =>
+                section.DataContext is PropertySectionViewModel group && group.Rows.Any(row => row.Name == "extends")).IsExpanded = true;
+            Sta.Pump();
+            var extends = Descendants(styling).OfType<ComboBox>().Single(box => box.DataContext is PropertyRowViewModel { Name: "extends" });
             extends.SelectedItem = "child";
             Sta.Pump();
             var reason = editor.Model.Properties.Row("extends")!.Error;
@@ -183,7 +187,7 @@ public class StylesPanelTests
         environment.Dialogs.CopyAnswer = Marquee.Editor.Session.CopyChoice.ViewOnly;
         using var editor = new OpenEditor(environment, environment.AddTheme("example", Layout, installed: true));
         editor.Model.Styles.Select("base");
-        Assert.Equal("base", editor.Model.Properties.Heading);
+        Assert.Equal("Style: base", editor.Model.Properties.Heading);
         Assert.False(editor.Model.Styles.NewCommand.CanExecute(null));
         Assert.False(editor.Model.Styles.RenameCommand.CanExecute(null));
         Assert.False(editor.Model.Styles.DeleteCommand.CanExecute(null));

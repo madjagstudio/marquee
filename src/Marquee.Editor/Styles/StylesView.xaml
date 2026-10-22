@@ -4,44 +4,49 @@
              xmlns:res="clr-namespace:Marquee.Editor.Resources"
              Focusable="True" KeyDown="OnKeyDown">
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="Visible" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="Visible" />
+        </ResourceDictionary>
     </UserControl.Resources>
     <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="10,4">
-            <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.NewStyle}" Command="{Binding NewCommand}" Padding="8,1" />
-            <TextBlock Text="{x:Static res:Strings.StylesSection}" FontWeight="SemiBold" Foreground="#FF5F6368" VerticalAlignment="Center" />
+            <Button ToolTip="{x:Static res:Strings.NewStyleTip}" DockPanel.Dock="Right" Content="{x:Static res:Strings.NewStyle}" Command="{Binding NewCommand}" Padding="8,1" />
+            <TextBlock Text="{x:Static res:Strings.StylesSection}" FontWeight="SemiBold" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" />
         </DockPanel>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
             <ItemsControl ItemsSource="{Binding Items}" Margin="6,0,6,4">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border x:Name="Row" Background="Transparent" Padding="4,3"
+                        <Border x:Name="Row" Background="{StaticResource Clear}" Padding="4,3"
                                 MouseLeftButtonDown="OnRowDown" MouseRightButtonDown="OnRowRightDown">
                             <StackPanel>
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Right" Text="{Binding UsedBy}" Foreground="#FF5F6368" Margin="6,0,0,0" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding UsedBy}" Foreground="{StaticResource TextMuted}" Margin="6,0,0,0" />
                                     <Grid>
                                         <TextBlock x:Name="Name" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" />
-                                        <TextBox x:Name="Rename" Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" Padding="1,0"
+                                        <TextBox ToolTip="{x:Static res:Strings.RenameStyleTip}" x:Name="Rename" Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" Padding="1,0"
                                                  Visibility="{Binding IsRenaming, Converter={StaticResource Visible}}"
                                                  IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                  IsVisibleChanged="OnRenameShown" KeyDown="OnRenameKeyDown" LostKeyboardFocus="OnRenameLostFocus" />
                                     </Grid>
                                 </DockPanel>
-                                <TextBlock x:Name="Problem" Text="{Binding Problem}" Foreground="#FFB3261E" TextWrapping="Wrap" Visibility="Collapsed" />
+                                <TextBlock x:Name="Problem" Text="{Binding Problem}" Foreground="{StaticResource Warning}" TextWrapping="Wrap" Visibility="Collapsed" />
                             </StackPanel>
                         </Border>
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                <Setter TargetName="Row" Property="Background" Value="#FFD2E3FC" />
+                                <Setter TargetName="Row" Property="Background" Value="{StaticResource RedDeep}" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsRenaming}" Value="True">
                                 <Setter TargetName="Name" Property="Visibility" Value="Hidden" />
                                 <Setter TargetName="Problem" Property="Visibility" Value="Visible" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding HasProblem}" Value="True">
-                                <Setter TargetName="Rename" Property="BorderBrush" Value="#FFB3261E" />
-                                <Setter TargetName="Rename" Property="Foreground" Value="#FFB3261E" />
+                                <Setter TargetName="Rename" Property="BorderBrush" Value="{StaticResource Warning}" />
+                                <Setter TargetName="Rename" Property="Foreground" Value="{StaticResource Warning}" />
                             </DataTrigger>
                         </DataTemplate.Triggers>
                     </DataTemplate>

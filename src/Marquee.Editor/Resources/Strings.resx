@@ -98,11 +98,11 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   </data>
   <data name="Undo" xml:space="preserve">
     <value>Undo</value>
-    <comment>The toolbar's undo button, for screen readers, and its tooltip when there is nothing to undo.</comment>
+    <comment>The toolbar's undo button label for screen readers.</comment>
   </data>
   <data name="Redo" xml:space="preserve">
     <value>Redo</value>
-    <comment>The toolbar's redo button, for screen readers, and its tooltip when there is nothing to redo.</comment>
+    <comment>The toolbar's redo button label for screen readers.</comment>
   </data>
   <data name="UndoStep" xml:space="preserve">
     <value>Undo {0} (Ctrl+Z)</value>
@@ -473,19 +473,19 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
     <comment>The layers menu: edits the widget's name in place.</comment>
   </data>
   <data name="HideTip" xml:space="preserve">
-    <value>Hide</value>
+    <value>Hide this layer from the theme.</value>
     <comment>The eye button on a layer that shows.</comment>
   </data>
   <data name="ShowTip" xml:space="preserve">
-    <value>Show</value>
+    <value>Show this layer in the theme.</value>
     <comment>The eye button on a hidden layer.</comment>
   </data>
   <data name="LockTip" xml:space="preserve">
-    <value>Lock, so the canvas can't move it</value>
+    <value>Prevent this layer from being moved on the canvas.</value>
     <comment>The lock button on an unlocked layer.</comment>
   </data>
   <data name="UnlockTip" xml:space="preserve">
-    <value>Unlock</value>
+    <value>Allow this layer to be moved on the canvas.</value>
     <comment>The lock button on a locked layer.</comment>
   </data>
   <data name="ReadOnlyLayer" xml:space="preserve">
@@ -517,7 +517,7 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
     <comment>A value box while the selected widgets have different values.</comment>
   </data>
   <data name="DefaultIs" xml:space="preserve">
-    <value>Left out, it is {0}.</value>
+    <value>Default: {0}</value>
     <comment>A row's tooltip: the key's default. {0} is the default as layout.yaml writes it.</comment>
   </data>
   <data name="FromNamedStyle" xml:space="preserve">
@@ -549,15 +549,15 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
     <comment>A list row's button: adds an item.</comment>
   </data>
   <data name="RemoveItem" xml:space="preserve">
-    <value>Remove</value>
+    <value>Remove this item from the list.</value>
     <comment>A list item's button.</comment>
   </data>
   <data name="MoveItemUp" xml:space="preserve">
-    <value>Move up</value>
+    <value>Move this item earlier in the list.</value>
     <comment>A list item's button.</comment>
   </data>
   <data name="MoveItemDown" xml:space="preserve">
-    <value>Move down</value>
+    <value>Move this item later in the list.</value>
     <comment>A list item's button.</comment>
   </data>
   <data name="PickColorTip" xml:space="preserve">
@@ -597,7 +597,7 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
     <comment>The style dropdown's label.</comment>
   </data>
   <data name="NamedStyleTip" xml:space="preserve">
-    <value>The style from styles: this widget starts from. Its own keys go over it.</value>
+    <value>Choose the named style this widget starts from before applying its own overrides.</value>
     <comment>The named style dropdown's tooltip.</comment>
   </data>
   <data name="NoNamedStyle" xml:space="preserve">
@@ -661,15 +661,15 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
     <comment>The rules section's tooltip.</comment>
   </data>
   <data name="HueTip" xml:space="preserve">
-    <value>Hue</value>
+    <value>Choose the base hue of this colour.</value>
     <comment>The colour picker's hue strip.</comment>
   </data>
   <data name="AlphaTip" xml:space="preserve">
-    <value>Transparency</value>
+    <value>Set how transparent this colour is.</value>
     <comment>The colour picker's alpha strip.</comment>
   </data>
   <data name="HexTip" xml:space="preserve">
-    <value>Hex colour, such as #FF5A36 or #FF5A3680</value>
+    <value>Enter a hex colour such as #FF5A36 or #FF5A3680.</value>
     <comment>The colour picker's hex box.</comment>
   </data>
   <data name="RecentColors" xml:space="preserve">
@@ -757,11 +757,11 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
     <comment>Ends every pin.</comment>
   </data>
   <data name="PatternTip" xml:space="preserve">
-    <value>How a graph's history fills</value>
+    <value>Choose the sample history shown by this graph.</value>
     <comment>The pattern dropdown.</comment>
   </data>
   <data name="TimeTip" xml:space="preserve">
-    <value>The time of day, such as 21:45:00</value>
+    <value>Enter the preview time of day, such as 21:45:00.</value>
     <comment>The clock pin's time box.</comment>
   </data>
   <data name="NotANumber" xml:space="preserve">
@@ -829,4 +829,88 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="RuleDrag" xml:space="preserve"><value>Drag to reorder</value></data>
   <data name="RingSection" xml:space="preserve"><value>LED ring</value></data>
   <data name="RingOverridden" xml:space="preserve"><value>config.yaml overrides this theme's LED ring.</value></data>
+  <data name="BasicsSection" xml:space="preserve"><value>Basics</value></data>
+  <data name="MoreStylingSection" xml:space="preserve"><value>More styling</value></data>
+  <data name="RawSection" xml:space="preserve"><value>Every setting as written in layout.yaml</value></data>
+  <data name="LayersToggleTip" xml:space="preserve"><value>Show or hide Layers, Background and Styles</value></data>
+  <data name="ScreenTag" xml:space="preserve">
+    <value>Screen: {0} · {1} × {2}</value>
+    <comment>{0} is the orientation; {1} and {2} are the screen width and height.</comment>
+  </data>
+  <data name="ScreenMismatchTip" xml:space="preserve">
+    <value>This theme is {0} but your screen is set to {1} in the tray, so it will show small</value>
+    <comment>{0} is the theme orientation; {1} is the screen orientation.</comment>
+  </data>
+  <data name="ScreenOrientationTip" xml:space="preserve"><value>The screen orientation set in the tray</value></data>
+  <data name="ZoomFitTip" xml:space="preserve"><value>Fit the whole canvas in the available space.</value></data>
+  <data name="ZoomActualTip" xml:space="preserve"><value>Show the canvas at its actual pixel size.</value></data>
+  <data name="ZoomDoubleTip" xml:space="preserve"><value>Enlarge the canvas to twice its actual pixel size.</value></data>
+  <data name="KeepEditingTip" xml:space="preserve"><value>Keep editing the last valid version of this theme.</value></data>
+  <data name="RevertTip" xml:space="preserve"><value>Restore the theme to the version opened in this session.</value></data>
+  <data name="MakeCopyTip" xml:space="preserve"><value>Create an editable copy of this read-only theme.</value></data>
+  <data name="AddWidgetTip" xml:space="preserve"><value>Choose a widget to add to the canvas.</value></data>
+  <data name="ArrangeTip" xml:space="preserve"><value>Align or distribute the selected widgets.</value></data>
+  <data name="ProblemsTip" xml:space="preserve"><value>Show problems found in this theme.</value></data>
+  <data name="UndoTip" xml:space="preserve"><value>Undo the last change (Ctrl+Z).</value></data>
+  <data name="RedoTip" xml:space="preserve"><value>Redo the last undone change (Ctrl+Y or Ctrl+Shift+Z).</value></data>
+  <data name="NameTip" xml:space="preserve"><value>Enter a name for the new theme or style.</value></data>
+  <data name="CreateTip" xml:space="preserve"><value>Create the theme or style with this name.</value></data>
+  <data name="CancelTip" xml:space="preserve"><value>Close this dialog without applying changes.</value></data>
+  <data name="RearrangeYesTip" xml:space="preserve"><value>Change the orientation and rearrange widgets to fit.</value></data>
+  <data name="RearrangeNoTip" xml:space="preserve"><value>Change the orientation while keeping widgets in their current positions.</value></data>
+  <data name="SelectAllFilesTip" xml:space="preserve"><value>Select every unused file for deletion.</value></data>
+  <data name="SelectNoFilesTip" xml:space="preserve"><value>Clear the selection of unused files.</value></data>
+  <data name="SelectFileTip" xml:space="preserve"><value>Include this unused file in the files to delete.</value></data>
+  <data name="DeleteFilesTip" xml:space="preserve"><value>Confirm and permanently delete the selected unused files.</value></data>
+  <data name="FoldLayerTip" xml:space="preserve"><value>Show or hide the widgets inside this group.</value></data>
+  <data name="RenameLayerTip" xml:space="preserve"><value>Change the name shown for this layer (F2).</value></data>
+  <data name="NewStyleTip" xml:space="preserve"><value>Create a reusable named style.</value></data>
+  <data name="RenameStyleTip" xml:space="preserve"><value>Change the name of this reusable style (F2).</value></data>
+  <data name="EditGradientTip" xml:space="preserve"><value>Show or hide the gradient colour and position controls.</value></data>
+  <data name="LinearGradientTip" xml:space="preserve"><value>Blend the colours along a straight line.</value></data>
+  <data name="RadialGradientTip" xml:space="preserve"><value>Blend the colours outward from a centre point.</value></data>
+  <data name="RecentColorTip" xml:space="preserve"><value>Use this recently chosen colour.</value></data>
+  <data name="AddItemTip" xml:space="preserve"><value>Add an item to this list.</value></data>
+  <data name="ItemSectionTip" xml:space="preserve"><value>Show or hide the properties of this list item.</value></data>
+  <data name="StylingSectionTip" xml:space="preserve"><value>Show or hide the properties in this styling section.</value></data>
+  <data name="RawSectionTip" xml:space="preserve"><value>Show or hide all properties using their layout.yaml names.</value></data>
+  <data name="RingSectionTip" xml:space="preserve"><value>Show or hide the lighting ring controls.</value></data>
+  <data name="LayerKindTip" xml:space="preserve"><value>Choose whether this background layer uses a fill, image, video, or shader.</value></data>
+  <data name="RemoveUniformTip" xml:space="preserve"><value>Remove this unused shader input from the theme.</value></data>
+  <data name="SaveAsStyleTip" xml:space="preserve"><value>Save the selected widget styling as a reusable named style.</value></data>
+  <data name="CopyStyleTip" xml:space="preserve"><value>Copy the selected widget styling (Ctrl+Shift+C).</value></data>
+  <data name="PasteStyleTip" xml:space="preserve"><value>Apply the copied styling to the selected widgets (Ctrl+Shift+V).</value></data>
+  <data name="RuleConditionTip" xml:space="preserve"><value>Choose the comparison that activates this rule.</value></data>
+  <data name="RuleValueTip" xml:space="preserve"><value>Enter the value to compare with the sensor reading.</value></data>
+  <data name="RuleStyleTip" xml:space="preserve"><value>Choose the styling to apply when this rule matches.</value></data>
+  <data name="DeleteRuleTip" xml:space="preserve"><value>Remove this conditional styling rule.</value></data>
+  <data name="RuleSectionTip" xml:space="preserve"><value>Show or hide the styling applied by this rule.</value></data>
+  <data name="AddRuleTip" xml:space="preserve"><value>Add a rule that changes styling when a condition matches.</value></data>
+  <data name="PickerModeTip" xml:space="preserve"><value>Choose a sensor reading, fixed number, or expression as the value source.</value></data>
+  <data name="PickerSearchTip" xml:space="preserve"><value>Filter the available sensors by name.</value></data>
+  <data name="PickerFromLowTip" xml:space="preserve"><value>Set the lowest sensor reading to map.</value></data>
+  <data name="PickerFromHighTip" xml:space="preserve"><value>Set the highest sensor reading to map.</value></data>
+  <data name="PickerToLowTip" xml:space="preserve"><value>Set the output value for the lowest sensor reading.</value></data>
+  <data name="PickerToHighTip" xml:space="preserve"><value>Set the output value for the highest sensor reading.</value></data>
+  <data name="PickerNumberTip" xml:space="preserve"><value>Enter a fixed number to use as the value.</value></data>
+  <data name="PickerAdvancedTip" xml:space="preserve"><value>Enter an expression that calculates the value.</value></data>
+  <data name="UnpinAllTip" xml:space="preserve"><value>Return all preview values to live readings.</value></data>
+  <data name="TestNumberTip" xml:space="preserve"><value>Set a simulated sensor reading for the preview.</value></data>
+  <data name="PinStaleTip" xml:space="preserve"><value>Preview this sensor as an old reading that has stopped updating.</value></data>
+  <data name="PinMissingTip" xml:space="preserve"><value>Preview this sensor as unavailable.</value></data>
+  <data name="UnpinTip" xml:space="preserve"><value>Return this preview value to its live reading.</value></data>
+  <data name="PinTimeTip" xml:space="preserve"><value>Freeze the preview clock at the entered time.</value></data>
+  <data name="DecreaseValueTip" xml:space="preserve"><value>Decrease this value by one large step.</value></data>
+  <data name="IncreaseValueTip" xml:space="preserve"><value>Increase this value by one large step.</value></data>
+  <data name="ScrollBackTip" xml:space="preserve"><value>Scroll toward the start of this panel.</value></data>
+  <data name="ScrollForwardTip" xml:space="preserve"><value>Scroll toward the end of this panel.</value></data>
+  <data name="ExpandTreeTip" xml:space="preserve"><value>Show or hide the items inside this group.</value></data>
+  <data name="TestDateTip" xml:space="preserve"><value>Enter the date to use for the preview clock.</value></data>
+  <data name="OpenCalendarTip" xml:space="preserve"><value>Open the calendar to choose a preview date.</value></data>
+  <data name="ChooseDateTip" xml:space="preserve"><value>Use this day for the preview clock.</value></data>
+  <data name="ChoosePeriodTip" xml:space="preserve"><value>Choose this month or year in the calendar.</value></data>
+  <data name="PreviousPeriodTip" xml:space="preserve"><value>Show the previous calendar period.</value></data>
+  <data name="NextPeriodTip" xml:space="preserve"><value>Show the next calendar period.</value></data>
+  <data name="CalendarViewTip" xml:space="preserve"><value>Show months or years to choose a different calendar period.</value></data>
+  <data name="GradientAngleTip" xml:space="preserve"><value>Set the direction of the gradient in degrees.</value></data>
 </root>

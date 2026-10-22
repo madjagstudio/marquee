@@ -1,9 +1,16 @@
 <UserControl x:Class="Marquee.Editor.Canvas.CanvasView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="#FF26282C"
-             Focusable="True"
-             FocusVisualStyle="{x:Null}">
+             Focusable="True">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <UserControl.Background><StaticResource ResourceKey="Ink" /></UserControl.Background>
+    <UserControl.FocusVisualStyle><StaticResource ResourceKey="KeyboardFocus" /></UserControl.FocusVisualStyle>
     <!-- The frame, at the canvas's size in the view (CanvasTransform), centred, scrolling when the zoom makes it larger
          than the window. The overlay sits exactly over it, so both share the view's coordinates. The margin is
          CanvasView.Gutter on each side. -->

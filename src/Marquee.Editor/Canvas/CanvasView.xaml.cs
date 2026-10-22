@@ -18,11 +18,11 @@ public partial class CanvasView : UserControl
     const double HandleSize = 8;
     const double RotateHandleSize = 10;
 
-    static readonly Brush SelectionBrush = Frozen(Color.FromRgb(0x2D, 0x8C, 0xFF));
-    static readonly Brush GuideBrush = Frozen(Color.FromRgb(0xFF, 0x00, 0xFF));
-    static readonly Brush GroupBrush = Frozen(Color.FromRgb(0xFF, 0xB0, 0x20));
-    static readonly Brush HandleFill = Frozen(Colors.White);
-    static readonly Brush MarqueeFill = Frozen(Color.FromArgb(0x33, 0x2D, 0x8C, 0xFF));
+    Brush SelectionBrush => (Brush)FindResource("Red");
+    Brush GuideBrush => (Brush)FindResource("RedGlow");
+    Brush GroupBrush => (Brush)FindResource("TextMuted");
+    Brush HandleFill => (Brush)FindResource("Red");
+    Brush MarqueeFill => (Brush)FindResource("SelectionFill");
     static readonly DoubleCollection Dashes = FrozenDashes(4, 3);
 
     CanvasViewModel? _model;
@@ -155,13 +155,6 @@ public partial class CanvasView : UserControl
 
     static Line LineBetween(Point from, Point to, Brush brush) =>
         new() { X1 = from.X, Y1 = from.Y, X2 = to.X, Y2 = to.Y, Stroke = brush, StrokeThickness = 1 };
-
-    static Brush Frozen(Color color)
-    {
-        var brush = new SolidColorBrush(color);
-        brush.Freeze();
-        return brush;
-    }
 
     static DoubleCollection FrozenDashes(params double[] dashes)
     {

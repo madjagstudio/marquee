@@ -192,10 +192,15 @@ foreach ($package in $shipped.Values | Sort-Object { $_.Id }) {
 }
 New-Item -ItemType Directory -Force (Join-Path $licenses 'Inter') | Out-Null
 Copy-Item (Join-Path $root 'src\Marquee.Core\Fonts\OFL.txt') (Join-Path $licenses 'Inter')
+foreach ($font in 'Rajdhani', 'JetBrainsMono') {
+    New-Item -ItemType Directory -Force (Join-Path $licenses $font) | Out-Null
+    Copy-Item (Join-Path $root "src\Marquee.Editor\Fonts\$font\OFL.txt") (Join-Path $licenses $font)
+}
 Write-Host "Notices: $($presentMonExe.Name) is named; licenses\Inter has OFL.txt"
 
 foreach ($required in 'marquee.exe', 'MarqueeTray.exe', 'MarqueeEditor.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
     'licenses\Microsoft.NETCore.App.Runtime.win-x64\THIRD-PARTY-NOTICES.TXT', 'licenses\Inter\OFL.txt',
+    'licenses\Rajdhani\OFL.txt', 'licenses\JetBrainsMono\OFL.txt',
     'themes\example-landscape\layout.yaml', 'themes\example-portrait\layout.yaml', 'themes\example-agents\layout.yaml',
     'themes\example-showcase\layout.yaml', 'themes\example-showcase\video\radar.mp4') {
     if (-not (Test-Path (Join-Path $staging $required))) { throw "The staging folder has no $required." }

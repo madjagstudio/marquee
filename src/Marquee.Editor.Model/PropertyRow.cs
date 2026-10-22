@@ -26,6 +26,10 @@ public sealed record PropertyRow(string Name, SchemaKey Key)
 
     public string Help => Key.Help;
 
+    public string PlainLabel { get; init; } = Key.Name;
+
+    public string Tooltip { get; init; } = Key.Help;
+
     public double? Min { get; init; }
 
     public double? Max { get; init; }

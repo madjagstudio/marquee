@@ -22,6 +22,10 @@
     <InternalsVisibleTo Include="Marquee.Editor.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Fonts\**\*.ttf" />
+    <Resource Include="..\Marquee.Core\Fonts\Inter-*.ttf" Link="Fonts\Inter\%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- WPF projects leave System.IO out of the implicit usings, for its Path beside System.Windows.Shapes.Path; the
          editor works with files throughout, and draws no Path shapes. -->
     <Using Include="System.IO" />

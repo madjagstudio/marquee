@@ -186,7 +186,7 @@ public class ValuePickerViewTests
             var advanced = Descendants(control).OfType<TextBox>().Single(box => box.IsVisible);
             advanced.Text = "cpu.temp +";
             Sta.Pump();
-            Assert.Equal(Color.FromRgb(179, 38, 30), ((SolidColorBrush)advanced.Foreground).Color);
+            Assert.Equal(((SolidColorBrush)control.FindResource("Warning")).Color, ((SolidColorBrush)advanced.Foreground).Color);
             var before = editor.Session.Document.Text;
             advanced.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice, 0, advanced, search)
                 { RoutedEvent = Keyboard.LostKeyboardFocusEvent });
