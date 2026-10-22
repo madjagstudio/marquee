@@ -8,11 +8,12 @@ public class ForegroundProcessTests
     [Fact]
     public void The_foreground_is_a_running_process_or_none()
     {
-        // A CI service session may have no foreground window at all; a desktop always has one.
+        // A CI service session may have no foreground window at all; a desktop always has one. The process is checked by
+        // name, as the provider reads it, not through a handle: the lock screen or another protected window in front
+        // refuses a handle to a normal user ("Access is denied"), and the provider never needs one.
         if (ForegroundProcess.Id() is not { } id) return;
 
-        using var process = Process.GetProcessById(id);
-        Assert.False(process.HasExited);
+        Assert.False(string.IsNullOrEmpty(ForegroundProcess.Name(id)));
     }
 
     [Fact]
