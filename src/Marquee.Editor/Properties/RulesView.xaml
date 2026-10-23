@@ -18,7 +18,7 @@
         <StackPanel Visibility="{Binding HasTryValue, Converter={StaticResource Visible}}" Margin="0,4">
             <DockPanel>
                 <TextBlock Text="{x:Static res:Strings.TryValue}" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding TrySource}" Margin="8,0,0,0" />
+                <TextBlock Text="{Binding TrySourceName}" TextWrapping="Wrap" Margin="8,0,0,0" />
             </DockPanel>
             <DockPanel>
                 <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Unpin}" ToolTip="{x:Static res:Strings.UnpinTip}"

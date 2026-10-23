@@ -110,7 +110,7 @@
                            Visibility="{Binding TrayNotRunning, Converter={StaticResource Visible}}" />
                 <TextBlock DockPanel.Dock="Right" Text="{Binding RecoveryProblem}" Foreground="{StaticResource Warning}" Margin="0,0,12,0"
                            MaxWidth="480" TextTrimming="CharacterEllipsis" ToolTip="{Binding RecoveryProblem}" />
-                <TextBlock Text="{Binding Message}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Message}" />
+                <TextBlock Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" ToolTip="{Binding StatusMessage}" />
             </DockPanel>
         </Border>
 

@@ -15,10 +15,114 @@ namespace Marquee.Editor.Tests;
 
 public class TooltipTests
 {
+    [Theory]
+    [InlineData("landscape", 1920, 480)]
+    [InlineData("portrait", 480, 1920)]
+    public void Size_sliders_follow_canvas_axes_and_preserve_typed_sizes(string orientation, double width, double height) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("sizes",
+            PropertiesPanelTests.Layout.Replace("landscape", orientation).Replace("type: image", "type: shape, shape: rect").Replace(", src: images/a.png", "")));
+        editor.Session.Select([OpenEditor.P("widgets[0]")]);
+        var before = editor.Session.Document.Text;
+        var window = new MainWindow(editor.Model);
+        Show(window);
+        try
+        {
+            Inspect(window, []);
+            Assert.Equal(before, editor.Session.Document.Text);
+            var row = editor.Model.Properties.Row("size")!;
+            var sliders = Walk(window).Select(item => item.Node).OfType<Slider>()
+                .Where(slider => slider.IsVisible && !PropertiesView.GetRawLabels(slider) && ReferenceEquals(slider.DataContext, row)).ToList();
+            Assert.Equal(2, sliders.Count);
+            Assert.All(sliders, slider => Assert.Equal(8, slider.Minimum));
+            Assert.Equal(width, sliders[0].Maximum);
+            Assert.Equal(height, sliders[1].Maximum);
+            sliders[0].Value = 8;
+            Sta.Pump();
+            Assert.Equal("8", row.X);
+            Assert.Equal("60", row.Y);
+            sliders[1].Value = height;
+            Sta.Pump();
+            Assert.Equal(height.ToString(System.Globalization.CultureInfo.InvariantCulture), row.Y);
+            row.X = "2400";
+            row.Y = "2";
+            Assert.True(row.CommitPair());
+            Sta.Pump();
+            Assert.Equal("2400", row.X);
+            Assert.Equal("2", row.Y);
+            Assert.Contains("size: [2400, 2]", editor.Session.Document.Text);
+            Assert.Equal(width, sliders[0].Maximum);
+            Assert.Equal(height, sliders[1].Maximum);
+        }
+        finally { window.Close(); }
+    });
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("160")]
+    public void Rendering_a_text_size_outside_the_slider_range_does_not_rewrite_it(string value) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = PropertiesPanelTests.Open(environment);
+        editor.Session.Select([OpenEditor.P("widgets[0]")]);
+        var row = editor.Model.Properties.Row("style.size")!;
+        row.Text = value;
+        Assert.True(row.Commit());
+        var before = editor.Session.Document.Text;
+        var window = new MainWindow(editor.Model);
+        Show(window);
+        try
+        {
+            Inspect(window, []);
+            var slider = Walk(window).Select(item => item.Node).OfType<Slider>()
+                .First(slider => slider.IsVisible && ReferenceEquals(slider.DataContext, row));
+            Assert.Equal(8, slider.Minimum);
+            Assert.Equal(120, slider.Maximum);
+            Assert.Equal(before, editor.Session.Document.Text);
+            row.Text = value == "1" ? "160" : "1";
+            Assert.True(row.Commit());
+            Sta.Pump();
+            Assert.Equal(value == "1" ? "160" : "1", row.Text);
+        }
+        finally { window.Close(); }
+    });
+
+    [Fact]
+    public void Add_widget_menu_explains_every_type_with_a_distinct_tooltip() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = PropertiesPanelTests.Open(environment);
+        var window = new MainWindow(editor.Model);
+        Show(window);
+        try
+        {
+            var menu = (MenuItem)window.FindName("AddWidgetMenu");
+            menu.IsSubmenuOpen = true;
+            Sta.Pump();
+            var items = menu.Items.OfType<MenuItem>().ToList();
+            var tips = items.Select(item => item.ToolTip?.ToString()).ToList();
+            Assert.Equal(tips.Count, tips.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            foreach (var type in Marquee.Core.Themes.Schema.ThemeSchema.Widgets.Names)
+            {
+                var item = Assert.Single(items, item => Equals(item.CommandParameter, type));
+                var tip = Assert.IsType<string>(item.ToolTip);
+                Assert.StartsWith(type + ":", tip, StringComparison.OrdinalIgnoreCase);
+                Assert.EndsWith(".", tip);
+            }
+            Assert.Contains("Value: a live reading such as a temperature, with its unit.", tips);
+            Assert.Contains("Gauge: a dial or arc that fills with a reading.", tips);
+        }
+        finally { window.Close(); }
+    });
+
     [Fact]
     public void Every_visible_control_in_the_editor_has_a_tooltip() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();
+        environment.AddTheme("second-theme");
+        environment.AddTheme("first-example", installed: true);
+        environment.AddTheme("second-example", installed: true);
         using var editor = PropertiesPanelTests.Open(environment);
         var window = new MainWindow(editor.Model);
         var missing = new HashSet<string>();
@@ -161,6 +265,9 @@ public class TooltipTests
 
     static void InspectItems(ItemsControl menu, HashSet<string> missing, string path)
     {
+        var duplicates = menu.Items.OfType<MenuItem>().GroupBy(item => item.ToolTip?.ToString(), StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1).Select(group => $"{path}: {group.Key}").ToList();
+        Assert.True(duplicates.Count == 0, "Menu items share tooltips:\n" + string.Join("\n", duplicates));
         foreach (var item in menu.Items.OfType<MenuItem>().ToList())
         {
             var name = item.Header is TextBlock text ? text.Text : item.Header?.ToString() ?? item.Name;

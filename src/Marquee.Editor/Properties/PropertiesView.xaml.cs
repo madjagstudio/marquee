@@ -80,6 +80,14 @@ public partial class PropertiesView : UserControl
 
     void OnSlideStarted(object sender, DragStartedEventArgs e) => _sliding = sender as Slider;
 
+    void OnSizeSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (sender is not Slider slider || RowOf(sender) is not { HasSizeSliders: true } row) return;
+        var width = Equals(slider.Tag, "Width");
+        if (Math.Abs(e.NewValue - (width ? row.WidthNumber : row.HeightNumber)) < 0.001) return;
+        row.SlideSizeTo(e.NewValue, width, final: !ReferenceEquals(_sliding, sender));
+    }
+
     void OnSlideCompleted(object sender, DragCompletedEventArgs e)
     {
         _sliding = null;

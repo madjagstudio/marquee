@@ -8,6 +8,11 @@
                 <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="Visible" />
+            <CollectionViewSource x:Key="SensorGroups" Source="{Binding Rows}">
+                <CollectionViewSource.GroupDescriptions>
+                    <PropertyGroupDescription PropertyName="CategoryName" />
+                </CollectionViewSource.GroupDescriptions>
+            </CollectionViewSource>
             <!-- Why a pin was refused; nothing, and no room taken, while there is nothing to say. -->
             <Style x:Key="ErrorText" TargetType="TextBlock">
                 <Setter Property="Text" Value="{Binding Error}" />
@@ -36,7 +41,14 @@
                     Style="{StaticResource Small}" Margin="0" />
         </DockPanel>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <ItemsControl ItemsSource="{Binding Rows}" Margin="6,0">
+            <ItemsControl ItemsSource="{Binding Source={StaticResource SensorGroups}}" Margin="6,0">
+                <ItemsControl.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.HeaderTemplate>
+                            <DataTemplate><TextBlock Text="{Binding Name}" FontWeight="Bold" Margin="4,10,4,4" /></DataTemplate>
+                        </GroupStyle.HeaderTemplate>
+                    </GroupStyle>
+                </ItemsControl.GroupStyle>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel>
@@ -49,7 +61,7 @@
                                         <TextBlock Text="{Binding SourceText}" FontSize="10" />
                                     </Border>
                                     <TextBlock DockPanel.Dock="Right" Text="{Binding ValueText}" Foreground="{StaticResource Text}" Margin="8,0,0,0" />
-                                    <TextBlock Text="{Binding Key}" FontFamily="{StaticResource LabelFont}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" VerticalAlignment="Center" />
                                 </DockPanel>
                             </Border>
                             <!-- The pin: a number on the key's range, stale, missing, unpin; a pattern for a graph's key. -->

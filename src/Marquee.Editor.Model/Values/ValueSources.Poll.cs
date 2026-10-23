@@ -35,6 +35,8 @@ public sealed partial class ValueSources
 
     // The poll's last catalog, so a new unused sensor also refreshes an open picker.
     IReadOnlyList<string> _knownKeys = [];
+    (SensorValue Value, bool Stale)?[] _knownReadings = [];
+    long? _knownSecond;
 
     /// The bound on one values read. A read that finds no tray returns at once (SensorFeedClient), so this only bounds
     /// a busy or stuck one. A setting only for tests.
@@ -147,8 +149,15 @@ public sealed partial class ValueSources
         var graphMoves = values.Message is not null && keys.Any(TestValues.IsGraphKey);
         var knownKeys = KnownKeys();
         var keysChanged = !knownKeys.SequenceEqual(_knownKeys);
+        var view = View();
+        var readings = knownKeys.Select(view.Fed).ToArray();
+        var readingsChanged = !readings.SequenceEqual(_knownReadings);
+        var second = view.Now.ToUnixTimeSeconds();
+        var clockChanged = second != _knownSecond;
         _knownKeys = knownKeys;
-        if (NoteChanges(keys, now) || statusChanged || ticks || graphMoves || keysChanged) RaiseUpdated();
+        _knownReadings = readings;
+        _knownSecond = second;
+        if (NoteChanges(keys, now) || statusChanged || ticks || graphMoves || keysChanged || readingsChanged || clockChanged) RaiseUpdated();
     }
 
     /// The ask a history read would answer; null when none is waiting.

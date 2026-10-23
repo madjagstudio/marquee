@@ -1,4 +1,5 @@
 using System.Windows;
+using Visibility = System.Windows.Visibility;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;

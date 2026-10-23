@@ -1,11 +1,11 @@
 using System.Globalization;
 using System.Text;
 using Marquee.Core.Themes.Editing;
+using Marquee.Editor.Model.Values;
 
 namespace Marquee.Editor.Model;
 
-/// What the layers panel calls a widget that has no `name:`: its type and what it shows, as the file writes it, such as
-/// "Gauge · cpu.temp", "Text · CPU {cpu.load:0}%" or "Image · images/art.png"; a group is just "Group".
+/// What the layers panel calls an unnamed widget: its type and plain reading, text or asset; a group is just "Group".
 static class WidgetNames
 {
     /// Longest the shown part runs before it is cut, at a word where it can be.
@@ -14,14 +14,14 @@ static class WidgetNames
     public static string Of(LayoutDocument document, YamlPath widget, string type)
     {
         var title = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(type);
-        return Detail(document, widget, type) is { Length: > 0 } detail ? $"{title} · {Shortened(detail)}" : title;
+        return Detail(document, widget, type) is { Length: > 0 } detail ? $"{title} · {detail}" : title;
     }
 
     /// What the widget shows: its source, else its text, file, shape, or first series' or slice's source.
     static string? Detail(LayoutDocument document, YamlPath widget, string type)
     {
-        if (Text(document, widget.Child("source")) is { } source) return source;
-        return type switch
+        if (Text(document, widget.Child("source")) is { } source) return SensorNames.InText(source);
+        var detail = type switch
         {
             "text" => Text(document, widget.Child("text")) ?? Spans(document, widget.Child("spans")),
             "image" or "video" => Text(document, widget.Child("src")),
@@ -30,6 +30,10 @@ static class WidgetNames
             "donut" => Text(document, widget.Child("slices").Item(0).Child("source")),
             _ => null,
         };
+        if (detail is null) return null;
+        var plain = type == "text" ? SensorNames.InTemplate(detail)
+            : type is "image" or "video" or "shape" ? detail : SensorNames.InText(detail);
+        return plain == detail ? Shortened(detail) : plain;
     }
 
     /// The spans' texts run together, as they read on screen.

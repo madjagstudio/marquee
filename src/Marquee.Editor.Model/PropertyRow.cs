@@ -7,7 +7,8 @@ namespace Marquee.Editor.Model;
 /// needs to draw its control.
 /// - Name: where it is, from the widget: `size`, `needle.width`, `style.stroke.width`, `series[1].style.fill`.
 /// - Key: the catalog's key, with its kind, unit, help, choices, OnlyFor, MinFor, TakesFalse, MaxLength and StyleKeys.
-/// - Min, Max and Step: the slider's range, with a MinFor's lower bound when the widget is in that form.
+/// - Min and Max: schema bounds, with a MinFor's lower bound when the widget is in that form.
+/// - SliderMin, SliderMax, Minimum and Step: the authored UI range, floor and increment.
 /// - Default: what the key is when left out, for this widget type (DefaultFor), as layout.yaml writes it; null when
 ///   leaving it out turns the feature off, or when the selected types' defaults differ.
 /// - Value and IsSet: the value written in the file, the same on every selected widget; null with IsSet false when no
@@ -33,6 +34,12 @@ public sealed record PropertyRow(string Name, SchemaKey Key)
     public double? Min { get; init; }
 
     public double? Max { get; init; }
+
+    public double? SliderMin { get; init; }
+
+    public double? SliderMax { get; init; }
+
+    public double? Minimum { get; init; }
 
     public double Step { get; init; } = 1;
 

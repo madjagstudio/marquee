@@ -32,6 +32,6 @@ public sealed partial record MoveLayer(YamlPath Widget, YamlPath? Group, int Ind
             document = PlaceWidgets.Place(document, moved, widget.LocalBounds, widget.Rotate, bounds, rotate);
         }
 
-        return new CommandResult(document, [moved]);
+        return new CommandResult(GroupFit.Around(document, [moved]), [moved]);
     }
 }

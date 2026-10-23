@@ -62,7 +62,8 @@ public static partial class ThemeSchema
             + "{key|duration} and {key|bytes} use a helper, {now|time:HH:mm} writes Unix seconds as a local time (the "
             + "PC's short time without a pattern), and {{ and }} are braces. Letters in a time pattern are pattern letters: "
             + "quote words, as in {now|time:'Today is' dddd}, and write a letter alone as %H. The pattern runs to the "
-            + "closing brace, so spaces before it are kept.",
+            + "closing brace, so spaces before it are kept. {now|date:D} uses the same date and time patterns, defaulting "
+            + "to the PC's short date without a pattern; D is a long date, d a short date, M the month and day, and dddd the weekday.",
         SchemaKind.Format => "A .NET format that includes {0}, such as \"{0:0.0}°C\", or a helper: duration, bytes, or "
             + "time with an optional date and time pattern, such as \"time:HH:mm\". Letters in the pattern are pattern "
             + "letters: quote words, as in \"time:'at' HH:mm\", and write a letter alone as \"time:%H\". Spaces in it are "

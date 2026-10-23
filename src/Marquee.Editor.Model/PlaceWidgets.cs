@@ -28,7 +28,7 @@ public sealed record PlaceWidgets(IReadOnlyList<WidgetPlacement> Placements) : E
             document = Place(document, widget.Path, widget.LocalBounds, widget.Rotate, placement.Bounds, placement.Rotate);
         }
 
-        return document;
+        return GroupFit.Around(document, Placements.Select(p => p.Widget));
     }
 
     /// Writes the widget at `path`, whose file has it at `from` turned `fromRotate`, at `to` turned `toRotate`: only

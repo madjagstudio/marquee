@@ -75,7 +75,8 @@ public sealed class TestValuesViewModel : ObservableObject
     public void Refresh()
     {
         if (_values is not { } values) return;
-        var rows = values.Rows();
+        var byKey = values.Rows().ToDictionary(row => row.Key);
+        var rows = SensorNames.Grouped(byKey.Keys).SelectMany(group => group).Select(name => byKey[name.Key]).ToList();
         if (rows.Select(row => row.Key).SequenceEqual(Rows.Select(row => row.Key)))
         {
             for (var i = 0; i < rows.Count; i++) Rows[i].Update(rows[i], values.TestValues.PinnedNow);

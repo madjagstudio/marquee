@@ -10,6 +10,17 @@ namespace Marquee.Editor.Tests;
 /// one, and a group holding a green one, over a black background.
 public class LayersPanelTests
 {
+    [Fact]
+    public void A_bar_row_uses_the_full_plain_sensor_name() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("bar", "canvas: { orientation: landscape }\nwidgets:\n  - { type: bar, at: [0, 0], size: [100, 20], source: claude.seven_day.pct }\n"));
+        Assert.Equal("Bar · Claude Code: weekly limit used", Assert.Single(editor.Model.Layers.Widgets).Name);
+        editor.Session.Select([P("widgets[0]")]);
+        Assert.Equal("Bar: Claude Code: weekly limit used", editor.Model.Properties.Heading);
+        Assert.Equal("Claude Code: weekly limit used", editor.Model.Properties.RulesList!.TrySourceName);
+    });
+
     static LayerItem Row(OpenEditor editor, string path) => editor.Model.Layers.Find(P(path)) ?? throw new InvalidOperationException(path);
 
     static string Text(OpenEditor editor) => editor.Session.Document.Text;
@@ -83,7 +94,9 @@ public class LayersPanelTests
         Assert.True(layers.Drop(Row(editor, "widgets[1]"), Row(editor, "widgets[2]"), DropPlace.Into));
         Assert.Equal(2, editor.Session.Widgets.Count);
         Assert.Equal(2, editor.Session.Widgets[1].Children.Count);
-        Assert.Contains("at: [-900, 0]", Text(editor));
+        Assert.Equal(100, editor.Session.Widgets[1].LocalBounds.Left);
+        Assert.Equal(1200, editor.Session.Widgets[1].LocalBounds.Width);
+        Assert.Equal(0, editor.Session.Widgets[1].Children[1].LocalBounds.Left);
 
         // And back out, below the blue box.
         Assert.True(layers.Drop(Row(editor, "widgets[1].children[1]"), Row(editor, "widgets[0]"), DropPlace.Below));

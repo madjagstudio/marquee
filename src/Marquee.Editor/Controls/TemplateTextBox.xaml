@@ -1,0 +1,56 @@
+<UserControl x:Class="Marquee.Editor.Controls.TemplateTextBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Marquee.Editor.Controls">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <StackPanel>
+        <StackPanel x:Name="ClockPanel" Visibility="Collapsed">
+            <StackPanel x:Name="TimePanel">
+                <TextBlock Text="Time format" />
+                <ComboBox x:Name="TimeChoice" DisplayMemberPath="Label" SelectedValuePath="Pattern"
+                          ToolTip="Choose 12-hour or 24-hour time, with or without seconds."
+                          AutomationProperties.Name="Time format" SelectionChanged="OnClockFormatChanged" />
+            </StackPanel>
+            <StackPanel x:Name="DatePanel">
+                <TextBlock Text="Date format" />
+                <ComboBox x:Name="DateChoice" DisplayMemberPath="Label" SelectedValuePath="Pattern"
+                          ToolTip="Choose a long date, short date, month and day, or weekday."
+                          AutomationProperties.Name="Date format" SelectionChanged="OnClockFormatChanged" />
+            </StackPanel>
+        </StackPanel>
+        <StackPanel x:Name="TextPanel">
+            <RichTextBox x:Name="Input" MinHeight="64" Padding="4" Background="{StaticResource Tile}"
+                         Foreground="{StaticResource Text}" BorderBrush="{StaticResource Line}"
+                         VerticalScrollBarVisibility="Auto" AcceptsReturn="True" IsUndoEnabled="False"
+                         ToolTip="Type text and insert values. Select a chip to change its format; Backspace removes it."
+                         AutomationProperties.Name="Text with values"
+                         TextChanged="OnTextChanged" PreviewKeyDown="OnInputKeyDown" LostKeyboardFocus="OnInputLostFocus" />
+        </StackPanel>
+        <Button x:Name="InsertButton" Content="Insert value" Click="OnInsertClick" HorizontalAlignment="Left" Margin="0,4,0,0"
+                ToolTip="Insert a reading, the time, or the date at the cursor." />
+        <Popup x:Name="InsertPopup" PlacementTarget="{Binding ElementName=InsertButton}" Placement="Bottom" StaysOpen="False"
+               Opened="OnPopupOpened" Closed="OnPopupClosed">
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="10" Width="320">
+                <StackPanel>
+                    <StackPanel x:Name="PickPanel">
+                        <Button Content="Time" Click="OnPickTime" ToolTip="Choose a time format and insert the current time." Margin="0,0,0,3" />
+                        <Button Content="Date" Click="OnPickDate" ToolTip="Choose a date style and insert today's date." Margin="0,0,0,6" />
+                        <local:ValuePickerControl x:Name="ReadingPicker" DataContext="{x:Null}" />
+                    </StackPanel>
+                    <StackPanel x:Name="FormatPanel" Visibility="Collapsed">
+                        <TextBlock x:Name="FormatHeading" />
+                        <ListBox x:Name="FormatChoices" DisplayMemberPath="Label" SelectionChanged="OnInsertFormat"
+                                 ToolTip="Choose a format using its live preview." AutomationProperties.Name="Format choices" />
+                        <Button Content="Back" Click="OnFormatBack" ToolTip="Return to readings, time and date." Margin="0,6,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </StackPanel>
+</UserControl>

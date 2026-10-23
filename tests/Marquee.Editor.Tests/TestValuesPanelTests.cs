@@ -1,6 +1,10 @@
 using Marquee.Editor.Model.Values;
 using Marquee.Editor.Resources;
 using Marquee.Editor.Tests.TestSupport;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using Marquee.Editor.Values;
 
 namespace Marquee.Editor.Tests;
 
@@ -8,6 +12,40 @@ namespace Marquee.Editor.Tests;
 /// draws with (ValueSources.Snapshot), with no tray and no sensors, so every key starts as a sample.
 public class TestValuesPanelTests
 {
+    [Fact]
+    public void Rendered_test_values_show_category_headers_and_plain_names() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("values", Layout));
+        var view = new TestValuesView { DataContext = editor.Model.TestValues };
+        var window = new Window { Content = view, Width = 360, Height = 500, Left = -20000, Top = -20000,
+            WindowStartupLocation = WindowStartupLocation.Manual, ShowActivated = false, ShowInTaskbar = false };
+        try
+        {
+            window.Show();
+            Sta.Pump();
+            var text = Descendants(view).OfType<TextBlock>().Where(block => block.IsVisible).Select(block => block.Text).ToList();
+            Assert.Contains("CPU usage", text);
+            Assert.Contains("GPU usage", text);
+            Assert.Contains("Current date and time", text);
+            Assert.True(text.IndexOf("CPU") < text.IndexOf("GPU"));
+            Assert.True(text.IndexOf("GPU") < text.IndexOf("Time and date"));
+            Assert.DoesNotContain("cpu.load", text);
+            Assert.DoesNotContain("gpu.load", text);
+        }
+        finally { window.Close(); }
+    });
+
+    static IEnumerable<DependencyObject> Descendants(DependencyObject root)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            yield return child;
+            foreach (var inner in Descendants(child)) yield return inner;
+        }
+    }
+
     const string Layout =
         "canvas: { orientation: landscape }\n" +
         "widgets:\n" +
@@ -22,7 +60,9 @@ public class TestValuesPanelTests
         using var editor = new OpenEditor(environment, environment.AddTheme("values", Layout));
         var panel = editor.Model.TestValues;
 
-        Assert.Equal(["gpu.load", "cpu.load", "now"], panel.Rows.Select(row => row.Key));
+        Assert.Equal(["cpu.load", "gpu.load", "now"], panel.Rows.Select(row => row.Key));
+        Assert.Equal(["CPU usage", "GPU usage", "Current date and time"], panel.Rows.Select(row => row.Name));
+        Assert.Equal(["CPU", "GPU", "Time and date"], panel.Rows.Select(row => row.CategoryName));
         var gpu = panel.Row("gpu.load")!;
         Assert.Equal(Strings.SourceSample, gpu.SourceText);
         Assert.Equal("30", gpu.ValueText);

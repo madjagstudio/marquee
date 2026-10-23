@@ -322,8 +322,26 @@
                 </StackPanel>
             </DataTemplate>
 
-            <!-- Template, format: the text, and what it shows now. -->
+            <!-- Text templates share their reading with What it shows; all values are atomic chips. -->
             <DataTemplate x:Key="TemplateRow">
+                <StackPanel Margin="0,2" IsEnabled="{Binding IsEditable}">
+                    <Expander Header="What it shows" ToolTip="Choose the reading in this text."
+                              Visibility="{Binding ShowTextPicker, Converter={StaticResource Visible}}">
+                        <controls:ValuePickerControl DataContext="{Binding TextPicker}" />
+                    </Expander>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
+                        <TextBlock Style="{StaticResource Label}" />
+                    </DockPanel>
+                    <controls:TemplateTextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                              Sources="{Binding TemplateSources}" Locale="{Binding TemplateLocale}" ValueSource="{Binding TemplateValueSource}"
+                                              ShowClockFormats="{Binding IsTextWidget}" />
+                    <TextBlock Style="{StaticResource ErrorText}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <!-- Exact syntax stays available under Every setting as written. -->
+            <DataTemplate x:Key="RawTemplateRow">
                 <StackPanel Margin="0,2">
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
@@ -382,7 +400,7 @@
                 </StackPanel>
             </DataTemplate>
 
-            <!-- Point, size: two boxes. -->
+            <!-- Point, size: two boxes; sizes also have sliders capped to the canvas axes. -->
             <DataTemplate x:Key="PairRow">
                 <StackPanel Margin="0,2">
                     <DockPanel>
@@ -408,6 +426,14 @@
                             </DockPanel>
                         </UniformGrid>
                     </DockPanel>
+                    <UniformGrid Columns="2" Visibility="{Binding HasSizeSliders, Converter={StaticResource Visible}}">
+                        <Slider ToolTip="{Binding XLabel}" Tag="Width" Minimum="{Binding SizeSliderMin}" Maximum="{Binding WidthSliderMax}"
+                                Value="{Binding WidthNumber, Mode=OneWay}" SmallChange="1" IsEnabled="{Binding IsEditable}" Margin="0,0,4,0"
+                                ValueChanged="OnSizeSliderChanged" Thumb.DragStarted="OnSlideStarted" Thumb.DragCompleted="OnSlideCompleted" />
+                        <Slider ToolTip="{Binding YLabel}" Tag="Height" Minimum="{Binding SizeSliderMin}" Maximum="{Binding HeightSliderMax}"
+                                Value="{Binding HeightNumber, Mode=OneWay}" SmallChange="1" IsEnabled="{Binding IsEditable}"
+                                ValueChanged="OnSizeSliderChanged" Thumb.DragStarted="OnSlideStarted" Thumb.DragCompleted="OnSlideCompleted" />
+                    </UniformGrid>
                     <TextBlock Style="{StaticResource ErrorText}" />
                 </StackPanel>
             </DataTemplate>

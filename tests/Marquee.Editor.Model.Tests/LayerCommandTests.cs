@@ -327,7 +327,8 @@ public class LayerCommandTests
 
         session.Apply(new PasteWidgets(WidgetClipboard.Copy(session.Document, [P("widgets[1]")]), P("widgets[2]")));
 
-        Assert.Equal(Layout + "      - { type: shape, shape: rect, at: [470, 170], size: [40, 40] }\n", session.Document.Text);
+        Assert.Equal(Layout.Replace("size: [300, 200]", "size: [510, 210]") +
+            "      - { type: shape, shape: rect, at: [470, 170], size: [40, 40] }\n", session.Document.Text);
         Assert.Equal([P("widgets[2].children[2]")], session.Selection);
     }
 

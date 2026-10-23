@@ -32,6 +32,8 @@ public sealed partial class PropertyRowViewModel
 
     public double Step => _row.Step * (IsPercentage ? 100 : 1);
 
+    public double? Minimum => _row.Minimum * (IsPercentage ? 100 : 1);
+
     /// The slider's value: the number shown, or the slider's low end when the text isn't one.
     public double Number
     {
@@ -44,7 +46,7 @@ public sealed partial class PropertyRowViewModel
     /// closed, as EndSlide does when a drag is let go.
     public void SlideTo(double value, bool final)
     {
-        var stepped = Math.Clamp(Math.Round(value / Step) * Step, SliderMin, SliderMax);
+        var stepped = Math.Clamp(Math.Round(value / Step) * Step, Math.Max(SliderMin, Minimum ?? SliderMin), SliderMax);
         var text = NumberText(stepped, Step);
         if (text != Text || !_row.IsSet)
         {
@@ -200,6 +202,25 @@ public sealed partial class PropertyRowViewModel
 
     public string YLabel => _row.Kind == SchemaKind.Size ? Strings.Height : "Y";
 
+    public bool HasSizeSliders => _row.Kind == SchemaKind.Size;
+    public double SizeSliderMin => Math.Max(_row.SliderMin ?? 8, Math.Max(_row.Minimum ?? 0, _row.Min ?? 1));
+    public double WidthSliderMax => Math.Min(_row.SliderMax ?? 1920, _owner.Session?.CanvasSize.Width ?? 1920);
+    public double HeightSliderMax => Math.Min(_row.SliderMax ?? 1920, _owner.Session?.CanvasSize.Height ?? 480);
+    public double WidthNumber => PairNumber(X, WidthSliderMax);
+    public double HeightNumber => PairNumber(Y, HeightSliderMax);
+
+    double PairNumber(string text, double max) => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
+        ? Math.Clamp(value, SizeSliderMin, max) : SizeSliderMin;
+
+    public void SlideSizeTo(double value, bool width, bool final)
+    {
+        var text = NumberText(Math.Clamp(Math.Round(value), SizeSliderMin, width ? WidthSliderMax : HeightSliderMax), 1);
+        var x = width ? text : X;
+        var y = width ? Y : text;
+        Write(new YamlList([new YamlText(x), new YamlText(y)]), merge: true);
+        if (final) EndSlide();
+    }
+
     /// Writes the two boxes as `[x, y]`.
     public bool CommitPair()
     {
@@ -270,6 +291,7 @@ public sealed partial class PropertyRowViewModel
 
     void LoadKinds()
     {
+        LoadTextPicker();
         if (Editor == PropertyEditor.ValuePicker && _owner.Workspace is { } workspace)
         {
             if (Picker is null)
@@ -303,6 +325,7 @@ public sealed partial class PropertyRowViewModel
 
     void TextChanged()
     {
+        LoadTextPicker();
         if (Editor == PropertyEditor.Number && double.TryParse(Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
             Number = Math.Clamp(number, SliderMin, SliderMax);
         if (Editor is PropertyEditor.Color or PropertyEditor.Paint)
@@ -318,25 +341,19 @@ public sealed partial class PropertyRowViewModel
         _dirty = true;
         var value = new YamlList([new YamlText(X.Trim()), new YamlText(Y.Trim())]);
         Error = _owner.Model?.Validate(_row, value);
+        Raise(nameof(WidthNumber));
+        Raise(nameof(HeightNumber));
     }
 
-    /// The slider's ends: the key's range where the catalog gives it, otherwise a range fit for the unit that takes in
-    /// the value.
+    /// Authored slider ranges stay fixed even when a typed or inherited value lies outside them.
     void LoadNumber()
     {
         double.TryParse(_text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value);
-        var min = _row.Min * (IsPercentage ? 100 : 1) ?? (_row.Unit == SchemaUnit.Degrees ? -360 : Math.Min(0, Math.Floor(value)));
-        var max = _row.Max * (IsPercentage ? 100 : 1) ?? _row.Unit switch
-        {
-            SchemaUnit.Degrees => 360,
-            SchemaUnit.Fraction => IsPercentage ? 100 : 1,
-            SchemaUnit.Percent => 100,
-            SchemaUnit.Ms => Math.Max(5000, value),
-            SchemaUnit.Multiplier => Math.Max(4, value),
-            _ => Math.Max(Math.Max(100, min + 100), Math.Ceiling(Math.Abs(value) * 2 / 10) * 10),
-        };
-        SliderMin = min;
-        SliderMax = max > min ? max : min + 100;
+        var scale = IsPercentage ? 100 : 1;
+        SliderMin = Math.Max(_row.SliderMin ?? throw new InvalidOperationException($"No slider range for {Name}."),
+            Math.Max(_row.Min ?? double.NegativeInfinity, _row.Minimum ?? double.NegativeInfinity)) * scale;
+        SliderMax = Math.Min(_row.SliderMax ?? throw new InvalidOperationException($"No slider range for {Name}."),
+            _row.Max ?? double.PositiveInfinity) * scale;
         _number = Math.Clamp(value, SliderMin, SliderMax);
     }
 

@@ -116,8 +116,8 @@ public class CanvasInputTests
         canvas.PointerUp(editor.View(550, 150), ModifierKeys.Shift);
         Assert.Equal([P("widgets[0]")], editor.Session.Selection);
 
-        canvas.PointerDown(editor.View(1100, 200), ModifierKeys.Control, 1);
-        canvas.PointerUp(editor.View(1100, 200), ModifierKeys.Control);
+        canvas.PointerDown(editor.View(1100, 200), ModifierKeys.Shift, 1);
+        canvas.PointerUp(editor.View(1100, 200), ModifierKeys.Shift);
         Assert.Equal([P("widgets[0]"), P("widgets[2]")], editor.Session.Selection);
 
         Assert.True(editor.Model.KeyDown(Key.Escape, ModifierKeys.None));

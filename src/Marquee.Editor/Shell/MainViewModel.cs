@@ -36,6 +36,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _ui = ui;
         _screen = new ScreenTheme(environment.ConfigFile, environment.Locator);
         Canvas = new CanvasViewModel(Run, environment.Clipboard, Report, environment.Time);
+        Canvas.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(CanvasViewModel.VisibilityWarning)) Raise(nameof(StatusMessage));
+        };
         Layers = new LayersViewModel(Run, Canvas, Report, AddBackground, DeleteSelection);
         Styles = new StylesViewModel(Run, Canvas, Report);
         Properties = new PropertiesViewModel(Run, Report, Canvas, environment.Dialogs, ChangeOrientation, ChangeBackgroundKind, environment.ConfigFile);
@@ -103,8 +107,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string? Message
     {
         get => _message;
-        private set => Set(ref _message, value);
+        private set
+        {
+            if (Set(ref _message, value)) Raise(nameof(StatusMessage));
+        }
     }
+
+    public string? StatusMessage => Canvas.VisibilityWarning ?? Message;
 
     /// Raised when another editor asked for this theme: the window comes forward.
     public event EventHandler? ShowRequested;

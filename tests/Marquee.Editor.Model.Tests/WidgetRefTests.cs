@@ -82,7 +82,7 @@ public class WidgetRefTests
         Assert.IsType<ValueWidget>(temperature.Spec);
         var hidden = Assert.Single(all, w => w.Hidden);
         Assert.Equal("Shape · rect", hidden.Name);
-        Assert.Contains(all, w => w.Name == "Bar · gpu.load" && w.Spec.Name is null);
+        Assert.Contains(all, w => w.Name == "Bar · GPU usage" && w.Spec.Name is null);
     }
 
     [Fact]
@@ -106,12 +106,12 @@ public class WidgetRefTests
         Assert.IsType<SpansWidget>(widgets[0].Spec);
         Assert.Equal(
         [
-            "Text · {cpu.temp:0}°C",
+            "Text · {CPU temperature:0}°C",
             "Text · Load is high and climbing past…",
-            "Gauge · cpu.temp",
+            "Gauge · CPU temperature",
             "Image · images/art.png",
-            "Graph · gpu.load",
-            "Donut · ram.used_pct",
+            "Graph · GPU usage",
+            "Donut · Memory used (%)",
             "Group",
             "Clock",
         ], widgets.Select(w => w.Name));

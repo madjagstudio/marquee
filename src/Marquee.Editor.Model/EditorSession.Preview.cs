@@ -26,6 +26,11 @@ public sealed partial class EditorSession
     /// moved anything yet.
     public IReadOnlyList<WidgetPlacement> PreviewPlacements => _preview?.Placements ?? [];
 
+    /// The same fitted geometry the renderer shows, for visibility feedback before a drag is committed.
+    internal IReadOnlyList<WidgetRef> DrawnWidgets => _preview is { } preview && Theme is { } theme
+        ? WidgetTree.Build(Document, theme.Spec with { Widgets = preview.Widgets(theme.Spec.Widgets) }).Roots
+        : Widgets;
+
     /// Starts a drag. Throws InvalidOperationException during another one, or while editing is paused.
     public void BeginPreview()
     {

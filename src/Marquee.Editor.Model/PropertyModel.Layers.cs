@@ -1,5 +1,5 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
+using Marquee.Editor.Model.Values;
 
 namespace Marquee.Editor.Model;
 
@@ -72,19 +72,11 @@ public sealed partial class PropertyModel
         string? Text(string key) => _document.TryGetScalar(widget.Path.Child(key), out var value) && !string.IsNullOrWhiteSpace(value)
             ? value : null;
         if (Text("name") is { } name) return name;
-        var detail = Text("source") is { } source ? PlainSource(source)
-            : Text("text") ?? Text("src") ?? Text("shape");
+        var detail = Text("source") is { } source ? SensorNames.InText(source)
+            : Text("text") is { } text ? SensorNames.InTemplate(text) : Text("src") ?? Text("shape");
         return detail is null ? PlainType(widget.Type) : $"{PlainType(widget.Type)}: {detail}";
     }
 
     static string PlainType(string type) => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(type);
 
-    // Expand familiar sensor words for a single key; preserve expressions and custom keys verbatim.
-    static string PlainSource(string source)
-    {
-        if (!Regex.IsMatch(source, @"^(cpu|gpu)\.(temp|load|clock|power|voltage)$", RegexOptions.CultureInvariant)) return source;
-        var parts = source.Split('.');
-        var reading = parts[1] == "temp" ? "temperature" : parts[1];
-        return $"{parts[0].ToUpperInvariant()} {reading}";
-    }
 }

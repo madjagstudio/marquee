@@ -832,6 +832,7 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="BasicsSection" xml:space="preserve"><value>Basics</value></data>
   <data name="MoreStylingSection" xml:space="preserve"><value>More styling</value></data>
   <data name="RawSection" xml:space="preserve"><value>Every setting as written in layout.yaml</value></data>
+  <data name="SensorGroupTip" xml:space="preserve"><value>Show or hide readings in this category.</value></data>
   <data name="LayersToggleTip" xml:space="preserve"><value>Show or hide Layers, Background and Styles</value></data>
   <data name="ScreenTag" xml:space="preserve">
     <value>Screen: {0} · {1} × {2}</value>
@@ -929,10 +930,31 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="DeleteStyleTip" xml:space="preserve"><value>Remove this named style while preserving the appearance of widgets that use it.</value></data>
   <data name="NewFromExampleTip" xml:space="preserve"><value>Create an editable copy of an installed example.</value></data>
   <data name="NoExamplesTip" xml:space="preserve"><value>No installed examples are available to copy.</value></data>
-  <data name="OpenThemeTip" xml:space="preserve"><value>Open this theme in the editor.</value></data>
-  <data name="AddWidgetItemTip" xml:space="preserve"><value>Add this kind of widget to the canvas.</value></data>
+  <data name="OpenThemeTip" xml:space="preserve"><value>Open the theme “{0}” in the editor.</value></data>
+  <data name="CopyExampleTip" xml:space="preserve"><value>Create an editable copy of the example “{0}”.</value></data>
+  <data name="AlignLeftTip" xml:space="preserve"><value>Line up the selected widgets' left edges.</value></data>
+  <data name="AlignCenterTip" xml:space="preserve"><value>Line up the selected widgets' horizontal centres.</value></data>
+  <data name="AlignRightTip" xml:space="preserve"><value>Line up the selected widgets' right edges.</value></data>
+  <data name="AlignTopTip" xml:space="preserve"><value>Line up the selected widgets' top edges.</value></data>
+  <data name="AlignMiddleTip" xml:space="preserve"><value>Line up the selected widgets' vertical centres.</value></data>
+  <data name="AlignBottomTip" xml:space="preserve"><value>Line up the selected widgets' bottom edges.</value></data>
+  <data name="DistributeHorizontallyTip" xml:space="preserve"><value>Space the selected widgets evenly from left to right.</value></data>
+  <data name="DistributeVerticallyTip" xml:space="preserve"><value>Space the selected widgets evenly from top to bottom.</value></data>
+  <data name="AddTextWidgetTip" xml:space="preserve"><value>Text: words that can include live readings, the time and the date.</value></data>
+  <data name="AddValueWidgetTip" xml:space="preserve"><value>Value: a live reading such as a temperature, with its unit.</value></data>
+  <data name="AddBarWidgetTip" xml:space="preserve"><value>Bar: a horizontal or vertical meter that fills with a reading.</value></data>
+  <data name="AddGaugeWidgetTip" xml:space="preserve"><value>Gauge: a dial or arc that fills with a reading.</value></data>
+  <data name="AddGraphWidgetTip" xml:space="preserve"><value>Graph: recent readings plotted over time as lines, areas or columns.</value></data>
+  <data name="AddImageWidgetTip" xml:space="preserve"><value>Image: a picture from a file in your theme.</value></data>
+  <data name="AddVideoWidgetTip" xml:space="preserve"><value>Video: a clip that plays repeatedly inside a box.</value></data>
+  <data name="AddShapeWidgetTip" xml:space="preserve"><value>Shape: a rectangle, ellipse, line or arc for decoration.</value></data>
+  <data name="AddDonutWidgetTip" xml:space="preserve"><value>Donut: a ring or pie whose slices compare readings as parts of a whole.</value></data>
+  <data name="AddGroupWidgetTip" xml:space="preserve"><value>Group: a container for moving and styling several widgets together.</value></data>
   <data name="CleanUpTip" xml:space="preserve"><value>Review unused theme files and choose which to remove.</value></data>
   <data name="SaveToFolderTip" xml:space="preserve"><value>Choose a folder in which to save this theme.</value></data>
   <data name="SaveDetailsTip" xml:space="preserve"><value>Read the details of the last save attempt.</value></data>
   <data name="SelectProblemTip" xml:space="preserve"><value>Select the widget associated with this theme problem.</value></data>
+  <data name="GroupPickHint" xml:space="preserve">
+    <value>Double-click, or Ctrl+click, to pick something inside this group.</value>
+  </data>
 </root>

@@ -139,7 +139,7 @@ public sealed partial class PropertyRowViewModel : ObservableObject
     public bool Commit()
     {
         if (!_dirty) return true;
-        var text = Text.Trim();
+        var text = _row.Kind == SchemaKind.Template ? Text : Text.Trim();
         if (text == Shown() && (_row.IsSet || _row.IsMixed))
         {
             // Typed back to what the file has: nothing to write.

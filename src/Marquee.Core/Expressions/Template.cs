@@ -13,7 +13,8 @@ public sealed class Template
     // TimePattern is set for the time helper, which writes in the renderer's zone and culture, so it is kept as data
     // rather than as a Func like the other helpers.
     // IsValue is set for `{0}` in a template that has a value of its own (Parse's withValue), which Render is given.
-    sealed record Placeholder(Expression Expression, string? Format, Func<double, string>? Helper, string? TimePattern, bool IsValue) : Part;
+    sealed record Placeholder(Expression Expression, string? Format, Func<double, string>? Helper, string? TimePattern, bool IsValue,
+        TemplateSyntaxPart Syntax) : Part;
 
     readonly IReadOnlyList<Part> _parts;
 
@@ -29,6 +30,14 @@ public sealed class Template
     /// The sensor keys its placeholders read, each once, in the order they first appear, without `now`. In a value
     /// widget's spans `{0}` reads no key of its own: it is the widget's value, whose key is the widget's source.
     public IReadOnlyList<string> Keys { get; }
+
+    /// Lossless syntax for editors, produced by the same parser that renders templates.
+    public IReadOnlyList<TemplateSyntaxPart> Syntax => _parts.Select(part => part switch
+    {
+        Literal literal => new TemplateSyntaxPart(literal.Text.Replace("{", "{{").Replace("}", "}}"), literal.Text, null, null, null, 0, 0, -1),
+        Placeholder placeholder => placeholder.Syntax,
+        _ => throw new InvalidOperationException(),
+    }).ToList().AsReadOnly();
 
     /// Adds the keys it reads that `keys` doesn't hold yet, in order, and, to a KeyList, whether it reads `now`.
     internal void AddKeys(List<string> keys)
@@ -140,7 +149,7 @@ public sealed class Template
         var name = pipe >= 0 ? content[(pipe + 1)..(colon > pipe ? colon : content.Length)].Trim() : null;
         // A colon after `|time` starts the helper's own date and time pattern, not a number format. A misspelt `time`
         // with a pattern, such as `|Time:HH`, is reported as the unknown helper it is.
-        if (name is not null && colon >= 0 && (colon < pipe || name != Formatting.TimeHelper))
+        if (name is not null && colon >= 0 && (colon < pipe || name is not (Formatting.TimeHelper or "date")))
         {
             if (colon > pipe && Formatting.Helper(name) is null) throw UnknownHelper(name, start + pipe + 1);
             throw new ExpressionException("A placeholder takes a format after ':' or a helper after '|', not both", start + Math.Min(pipe, colon));
@@ -154,8 +163,8 @@ public sealed class Template
         if (name is not null)
         {
             expressionText = content[..pipe];
-            if (name == Formatting.TimeHelper)
-                timePattern = colon > pipe ? TimePattern(content[(colon + 1)..], start + colon) : Formatting.DefaultTimePattern;
+            if (name is Formatting.TimeHelper or "date")
+                timePattern = colon > pipe ? TimePattern(content[(colon + 1)..], start + colon) : name == "date" ? "d" : Formatting.DefaultTimePattern;
             else
                 helper = Formatting.Helper(name) ?? throw UnknownHelper(name, start + pipe + 1);
         }
@@ -170,7 +179,11 @@ public sealed class Template
 
         try
         {
-            return new Placeholder(Expression.Parse(expressionText), format, helper, timePattern, withValue && expressionText.Trim() == "0");
+            var key = expressionText.Trim();
+            var syntax = new TemplateSyntaxPart(text[(start - 1)..(end + 1)], null, key,
+                colon >= 0 ? content[(colon + 1)..] : null, name,
+                1 + expressionText.Length - expressionText.TrimStart().Length, key.Length, colon >= 0 ? colon + 2 : -1);
+            return new Placeholder(Expression.Parse(expressionText), format, helper, timePattern, withValue && key == "0", syntax);
         }
         catch (ExpressionException ex)
         {
@@ -179,7 +192,7 @@ public sealed class Template
     }
 
     static ExpressionException UnknownHelper(string name, int position) =>
-        new($"Unknown helper '{name}' (use duration, bytes or time)", position);
+        new($"Unknown helper '{name}' (use duration, bytes, time or date)", position);
 
     /// The date and time pattern after `|time:`, whose colon is at `colon`. It runs to the closing brace, colons included.
     static string TimePattern(string pattern, int colon) =>
@@ -189,3 +202,6 @@ public sealed class Template
 }
 
 public readonly record struct TemplateResult(string Text, bool Stale);
+
+public sealed record TemplateSyntaxPart(string Source, string? Literal, string? Key, string? Format, string? Helper,
+    int KeyStart, int KeyLength, int FormatStart);

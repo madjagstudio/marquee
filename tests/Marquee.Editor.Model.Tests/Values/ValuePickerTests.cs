@@ -10,6 +10,43 @@ namespace Marquee.Editor.Model.Tests.Values;
 /// The value picker reads back what it writes, and anything else stays as written, in Advanced.
 public class ValuePickerTests
 {
+    [Fact]
+    public Task The_pickers_clock_updates_even_when_the_theme_has_no_clock() => Task.Run(async () =>
+    {
+        var clock = new FakeClock();
+        using var sources = new ValueSources(new FakeFeed(), new FakeLocal(), clock);
+        await sources.PollAsync();
+        var updated = 0;
+        sources.Updated += (_, _) => updated++;
+        clock.Advance(TimeSpan.FromMinutes(1));
+        await sources.PollAsync();
+        Assert.Equal(1, updated);
+        Assert.Equal(clock.GetUtcNow().ToUnixTimeSeconds(), sources.Rows(["now"])[0].Value!.Value.Number);
+    });
+
+    [Fact]
+    public Task Picker_readings_include_unused_live_keys_and_distinguish_samples_and_stale_values() => Task.Run(async () =>
+    {
+        var local = new FakeLocal();
+        var feed = new FakeFeed { Status = SensorFeedStatus.Ok };
+        local.Store.Set("cpu.temp", 52);
+        feed.Set("gpu.temp", 58);
+        using var sources = new ValueSources(feed, local);
+        await sources.PollAsync();
+        var rows = sources.Rows(["cpu.temp", "gpu.temp", "fps"]);
+        Assert.Equal(52, rows[0].Value!.Value.Number);
+        Assert.Equal(ValueSourceKind.Local, rows[0].Source);
+        Assert.Equal(58, rows[1].Value!.Value.Number);
+        Assert.Equal(ValueSourceKind.Tray, rows[1].Source);
+        Assert.Equal(ValueSourceKind.Sample, rows[2].Source);
+        var updates = 0;
+        sources.Updated += (_, _) => updates++;
+        feed.Set("gpu.temp", 60, stale: true);
+        await sources.PollAsync();
+        Assert.Equal(1, updates);
+        Assert.True(sources.Rows(["gpu.temp"])[0].Stale);
+    });
+
     [Theory]
     [InlineData("cpu.temp")]
     [InlineData("clamp(cpu.load / 100, 0, 1)")]

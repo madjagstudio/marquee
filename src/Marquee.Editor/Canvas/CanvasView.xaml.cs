@@ -21,9 +21,11 @@ public partial class CanvasView : UserControl
     Brush SelectionBrush => (Brush)FindResource("Red");
     Brush GuideBrush => (Brush)FindResource("RedGlow");
     Brush GroupBrush => (Brush)FindResource("TextMuted");
+    Brush WarningBrush => (Brush)FindResource("Warning");
     Brush HandleFill => (Brush)FindResource("Red");
     Brush MarqueeFill => (Brush)FindResource("SelectionFill");
     static readonly DoubleCollection Dashes = FrozenDashes(4, 3);
+    static readonly DoubleCollection Solid = FrozenDashes();
 
     CanvasViewModel? _model;
 
@@ -112,8 +114,29 @@ public partial class CanvasView : UserControl
 
         if (overlay.Group is { } group)
             Overlay.Children.Add(new Polygon { Points = new PointCollection(group), Stroke = GroupBrush, StrokeThickness = 1, StrokeDashArray = Dashes });
-        foreach (var outline in overlay.Outlines)
-            Overlay.Children.Add(new Polygon { Points = new PointCollection(outline), Stroke = SelectionBrush, StrokeThickness = 1 });
+        for (var i = 0; i < overlay.Outlines.Count; i++)
+        {
+            var outline = overlay.Outlines[i];
+            var warning = overlay.Warnings.FirstOrDefault(w => w.OutlineIndex == i);
+            Overlay.Children.Add(new Polygon
+            {
+                Points = new PointCollection(outline), Stroke = warning is null ? SelectionBrush : WarningBrush,
+                StrokeThickness = 1, StrokeDashArray = warning is null ? Solid : Dashes,
+            });
+            if (warning is not null)
+            {
+                var label = new TextBlock
+                {
+                    Text = warning.Text, Foreground = WarningBrush, Background = (Brush)FindResource("Ink"),
+                    Padding = new Thickness(4, 2, 4, 2), TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = Math.Max(1, Math.Min(340, _model.SurfaceSize.Width)),
+                };
+                label.Measure(new Size(label.MaxWidth, double.PositiveInfinity));
+                // Keep the explanation on the screen even when the selected box itself is wholly outside it.
+                Place(label, Math.Clamp(outline.Min(p => p.X), 0, Math.Max(0, _model.SurfaceSize.Width - label.DesiredSize.Width)),
+                    Math.Clamp(outline.Max(p => p.Y) + 6, 0, Math.Max(0, _model.SurfaceSize.Height - label.DesiredSize.Height)));
+            }
+        }
         foreach (var guide in overlay.Guides)
             Overlay.Children.Add(LineBetween(guide.From, guide.To, GuideBrush));
 

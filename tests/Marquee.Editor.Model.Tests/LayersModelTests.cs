@@ -7,6 +7,29 @@ namespace Marquee.Editor.Model.Tests;
 /// with their children, and the background layers in a section of their own; and where a dragged layer lands.
 public class LayersModelTests
 {
+    [Theory]
+    [InlineData("Install now", "Text · Install now", "Text: Install now")]
+    [InlineData("{{cpu.temp}}", "Text · {{cpu.temp}}", "Text: {{cpu.temp}}")]
+    [InlineData("{cpu.temp:0} °C", "Text · {CPU temperature:0} °C", "Text: {CPU temperature:0} °C")]
+    public void Text_names_expand_readings_but_preserve_literal_words(string text, string layerName, string heading)
+    {
+        using var folder = TempTheme.With($"canvas: {{ orientation: landscape }}\nwidgets:\n  - {{ type: text, at: [0, 0], size: [200, 30], text: '{text}' }}\n");
+        using var session = folder.Open();
+        Assert.Equal(layerName, Assert.Single(LayersModel.Of(session).Widgets).Name);
+        session.Select([P("widgets[0]")]);
+        Assert.Equal(heading, PropertyModel.For(session).Heading);
+    }
+
+    [Fact]
+    public void Agent_bar_names_and_property_headings_use_the_plain_sensor_name()
+    {
+        using var folder = TempTheme.With("canvas: { orientation: landscape }\nwidgets:\n  - { type: bar, at: [0, 0], size: [200, 30], source: claude.seven_day.pct }\n");
+        using var session = folder.Open();
+        Assert.Equal("Bar · Claude Code: weekly limit used", Assert.Single(LayersModel.Of(session).Widgets).Name);
+        session.Select([P("widgets[0]")]);
+        Assert.Equal("Bar: Claude Code: weekly limit used", PropertyModel.For(session).Heading);
+    }
+
     static YamlPath P(string path) => YamlPath.Parse(path);
 
     [Fact]
@@ -19,7 +42,7 @@ public class LayersModelTests
 
         Assert.Equal(10, layers.Widgets.Count);
         Assert.Equal(P("widgets[9]"), layers.Widgets[0].Path);
-        Assert.Equal("Value · cpu.load", layers.Widgets[0].Name);
+        Assert.Equal("Value · CPU usage", layers.Widgets[0].Name);
         Assert.False(layers.Widgets[0].IsNamed);
         var group = layers.Widgets[^1];
         Assert.Equal(P("widgets[0]"), group.Path);
@@ -27,7 +50,7 @@ public class LayersModelTests
         Assert.Equal(
             [P("widgets[0].children[3]"), P("widgets[0].children[2]"), P("widgets[0].children[1]"), P("widgets[0].children[0]")],
             group.Children.Select(c => c.Path));
-        Assert.Equal("Gauge · cpu.temp", group.Children[2].Name);
+        Assert.Equal("Gauge · CPU temperature", group.Children[2].Name);
 
         Assert.Equal([P("background[1]"), P("background[0]")], layers.Background.Select(b => b.Path));
         Assert.All(layers.Background, b => Assert.Equal(LayerKind.Background, b.Kind));

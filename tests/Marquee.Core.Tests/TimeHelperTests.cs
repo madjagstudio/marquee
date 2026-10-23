@@ -128,10 +128,10 @@ public class TimeHelperTests
     [InlineData("{now:0|time}", "A placeholder takes a format after ':' or a helper after '|', not both", 5)]
     [InlineData("{now:0|time:HH:mm}", "A placeholder takes a format after ':' or a helper after '|', not both", 5)]
     [InlineData("{gpu.vram_used|bytes:0}", "A placeholder takes a format after ':' or a helper after '|', not both", 15)]
-    [InlineData("{now|times:HH}", "Unknown helper 'times' (use duration, bytes or time)", 6)]
-    [InlineData("{now|Time:HH}", "Unknown helper 'Time' (use duration, bytes or time)", 6)]
-    [InlineData("{now| clock :HH}", "Unknown helper 'clock' (use duration, bytes or time)", 6)]
-    [InlineData("{now|clock}", "Unknown helper 'clock' (use duration, bytes or time)", 6)]
+    [InlineData("{now|times:HH}", "Unknown helper 'times' (use duration, bytes, time or date)", 6)]
+    [InlineData("{now|Time:HH}", "Unknown helper 'Time' (use duration, bytes, time or date)", 6)]
+    [InlineData("{now| clock :HH}", "Unknown helper 'clock' (use duration, bytes, time or date)", 6)]
+    [InlineData("{now|clock}", "Unknown helper 'clock' (use duration, bytes, time or date)", 6)]
     public void Malformed_time_placeholders_report_the_character(string template, string reason, int character)
     {
         var ex = Assert.Throws<ExpressionException>(() => Template.Parse(template));

@@ -119,7 +119,9 @@ public class EditorCommandTests
     [Fact]
     public void Placing_a_turned_widget_adds_its_rotate() =>
         AssertStep(new PlaceWidgets([new WidgetPlacement(P("widgets[2].children[1]"), SKRect.Create(0, 30, 100, 20), -45)]) { Description = "Rotate" },
-            Layout.Replace("text: B }", "text: B, rotate: -45 }"));
+            Layout.Replace("text: B }", "text: B, rotate: -45 }")
+                .Replace("at: [400, 100]", "at: [400, 97]").Replace("size: [300, 200]", "size: [300, 203]")
+                .Replace("at: [0, 0]", "at: [0, 3]").Replace("at: [0, 30]", "at: [0, 33]"));
 
     [Fact]
     public void A_widget_turned_back_upright_loses_its_rotate()
