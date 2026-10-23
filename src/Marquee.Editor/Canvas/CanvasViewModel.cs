@@ -185,7 +185,11 @@ public sealed partial class CanvasViewModel : ObservableObject, IDisposable
         _redraw.Request();
     }
 
-    void OnValuesUpdated(object? sender, EventArgs e) => _redraw.Request();
+    void OnValuesUpdated(object? sender, EventArgs e)
+    {
+        UpdateOverlay();
+        _redraw.Request();
+    }
 
     void UpdateZoom()
     {

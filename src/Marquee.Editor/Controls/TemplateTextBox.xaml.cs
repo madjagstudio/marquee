@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Text;
 using Visibility = System.Windows.Visibility;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -36,8 +37,9 @@ public partial class TemplateTextBox : UserControl
     public TemplateTextBox()
     {
         InitializeComponent();
+        DataObject.AddCopyingHandler(Input, OnCopy);
         DataObject.AddPastingHandler(Input, OnPaste);
-        // Clipboard text is literal, never executable template syntax or foreign rich-text UI.
+        // Clipboard data travels as template text, never foreign rich-text UI.
         Input.AllowDrop = false;
         _times.AddRange(Enum.GetValues<TimeFormat>().Select(format => new FormatChoice(TextTemplate.Pattern(format), format switch
         {
@@ -246,10 +248,92 @@ public partial class TemplateTextBox : UserControl
         if (e.Key == Key.Escape && DataContext is PropertyRowViewModel row) { row.Revert(); e.Handled = true; }
     }
 
+    void OnCopy(object sender, DataObjectCopyingEventArgs e) =>
+        e.DataObject.SetData(DataFormats.UnicodeText, TextTemplate.Write(ReadSelection()));
+
+    IEnumerable<TemplatePart> ReadSelection()
+    {
+        var end = Input.Selection.End;
+        for (var cursor = Input.Selection.Start; cursor is not null && cursor.CompareTo(end) < 0;)
+        {
+            var context = cursor.GetPointerContext(LogicalDirection.Forward);
+            if (context == TextPointerContext.Text)
+            {
+                var text = cursor.GetTextInRun(LogicalDirection.Forward);
+                var length = Math.Min(text.Length, cursor.GetOffsetToPosition(end));
+                yield return new TemplatePart.Literal(text[..length]);
+                cursor = cursor.GetPositionAtOffset(length);
+                continue;
+            }
+            if (context == TextPointerContext.EmbeddedElement
+                && cursor.GetAdjacentElement(LogicalDirection.Forward) is FrameworkElement { Tag: TemplatePart.Token token })
+                yield return token;
+            else if (context == TextPointerContext.ElementStart
+                && cursor.GetAdjacentElement(LogicalDirection.Forward) is LineBreak)
+                yield return new TemplatePart.Literal("\n");
+            else if (context == TextPointerContext.ElementEnd && cursor.Parent is Paragraph { NextBlock: Paragraph })
+                yield return new TemplatePart.Literal("\n");
+            cursor = cursor.GetNextContextPosition(LogicalDirection.Forward);
+        }
+    }
+
     void OnPaste(object sender, DataObjectPastingEventArgs e)
     {
-        if (e.DataObject.GetData(DataFormats.UnicodeText) is string text) Input.Selection.Text = text;
         e.CancelCommand();
+        if (e.DataObject.GetData(DataFormats.UnicodeText) is not string text) return;
+        _updating = true;
+        Input.BeginChange();
+        try
+        {
+            Input.Selection.Text = "";
+            foreach (var part in ClipboardParts(text))
+            {
+                var at = Input.CaretPosition.GetInsertionPosition(LogicalDirection.Forward);
+                Inline inline = part is TemplatePart.Literal literal ? new Run(literal.Text, at) : Chip((TemplatePart.Token)part, at);
+                Input.CaretPosition = inline.ElementEnd;
+            }
+        }
+        finally { Input.EndChange(); _updating = false; }
+        Publish();
+        Commit();
+    }
+
+    static IReadOnlyList<TemplatePart> ClipboardParts(string text)
+    {
+        try { return TextTemplate.Parse(text); }
+        catch (ExpressionException)
+        {
+            // Keep non-token braces literal even in text that also contains valid tokens.
+            var parts = new List<TemplatePart>();
+            var literal = new StringBuilder();
+            for (var i = 0; i < text.Length; i++)
+            {
+                var c = text[i];
+                if (c is '{' or '}' && i + 1 < text.Length && text[i + 1] == c)
+                {
+                    literal.Append(c);
+                    i++;
+                    continue;
+                }
+                if (c == '{' && text.IndexOf('}', i + 1) is var close && close >= 0)
+                {
+                    IReadOnlyList<TemplatePart>? token = null;
+                    try { token = TextTemplate.Parse(text[i..(close + 1)]); }
+                    catch (ExpressionException) { }
+                    if (token is not null)
+                    {
+                        if (literal.Length > 0) parts.Add(new TemplatePart.Literal(literal.ToString()));
+                        literal.Clear();
+                        parts.AddRange(token);
+                        i = close;
+                        continue;
+                    }
+                }
+                literal.Append(c);
+            }
+            if (literal.Length > 0) parts.Add(new TemplatePart.Literal(literal.ToString()));
+            return parts;
+        }
     }
 
     public void InsertReading(string key) => Insert(new TemplatePart.Token(key, "0", TokenKind.Reading));

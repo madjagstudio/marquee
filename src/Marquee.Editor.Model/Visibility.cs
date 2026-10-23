@@ -1,4 +1,5 @@
 using System.Globalization;
+using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Editing;
 using SkiaSharp;
@@ -16,20 +17,25 @@ public static class Visibility
         for (var parent = CanvasGeometry.GroupOf(widget); parent is not null; parent = CanvasGeometry.GroupOf(parent))
             if (geometry.Widget(parent) is { } group) ancestors.Add(group);
 
-        var style = StyleSpec.Empty;
+        var snapshot = session.Values();
+        var inherited = StyleSpec.Empty;
+        var groupOpacity = 1f;
         foreach (var group in ancestors.AsEnumerable().Reverse())
-            style = StyleSpec.Merge(style, group.Spec.Style).Inherited();
-        style = StyleSpec.Merge(style, selected.Spec.Style);
+        {
+            var groupStyle = Effective(group.Spec, inherited, snapshot);
+            groupOpacity *= groupStyle.Opacity ?? StyleDefaults.Opacity;
+            inherited = groupStyle.Inherited();
+        }
+        var style = Effective(selected.Spec, inherited, snapshot);
 
         var problems = new List<string>();
         var size = style.Size ?? StyleDefaults.Size;
         var spans = selected.Spec switch { SpansWidget text => text.Spans, ValueWidget value => value.Spans, _ => null };
-        if (spans is { Count: > 0 }) size = spans.Min(span => span.Style.Size ?? size);
+        if (spans is { Count: > 0 }) size = spans.Min(span => Effective(selected.Spec, inherited, snapshot, span.Style).Size ?? size);
         if (selected.Spec is TextWidget or ValueWidget or SpansWidget && size < 6)
             problems.Add($"This text is {size.ToString("0.###", CultureInfo.InvariantCulture)}px, too small to see");
 
-        var opacity = style.Opacity ?? StyleDefaults.Opacity;
-        foreach (var group in ancestors) opacity *= group.Spec.Style.Opacity ?? StyleDefaults.Opacity;
+        var opacity = (style.Opacity ?? StyleDefaults.Opacity) * groupOpacity;
         if (opacity < 0.05f) problems.Add("This is fully transparent");
 
         var corners = geometry.CornersOf(widget);
@@ -48,6 +54,26 @@ public static class Visibility
             problems.Add(screenClipping == 2 ? "This is outside the screen" : "This is partly outside the screen");
         if (geometry.IsHidden(widget)) problems.Add("This is hidden. Show it in Layers.");
         return problems;
+    }
+
+    // Match the renderer's rule subjects and order, including missing readings in text/spans. Group opacity
+    // is composited separately; Inherited deliberately excludes it from the style passed to children.
+    static StyleSpec Effective(WidgetSpec widget, StyleSpec inherited, SensorSnapshot snapshot, StyleSpec? part = null)
+    {
+        var subject = widget.Source?.Evaluate(snapshot);
+        var stale = widget.Source is not null && subject is null;
+        stale |= widget switch
+        {
+            TextWidget text => text.Text.Render(snapshot).Stale,
+            SpansWidget text => text.Spans.Any(span => span.Text.Render(snapshot).Stale),
+            ValueWidget { Spans: { } spans } => subject is null || spans.Any(span => span.Text.Render(snapshot, value: subject).Stale),
+            _ => false,
+        };
+        var style = StyleSpec.Merge(inherited, widget.Style);
+        if (part is not null) style = StyleSpec.Merge(style, part);
+        foreach (var rule in widget.When)
+            if (rule.Matches(subject, stale)) style = StyleSpec.Merge(style, rule.Style);
+        return style;
     }
 
     // 0: contained, 1: partly outside, 2: wholly outside. Test both rectangles' separating axes, not just the

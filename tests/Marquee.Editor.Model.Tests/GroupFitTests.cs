@@ -20,6 +20,28 @@ public class GroupFitTests
     static readonly YamlPath Group = YamlPath.Parse("widgets[0]");
     static readonly YamlPath Child = Group.Child("children").Item(0);
 
+    [Fact]
+    public void Property_Y_edit_fits_the_group_without_moving_siblings_and_undoes_together()
+    {
+        using var folder = TempTheme.With(Layout);
+        using var session = folder.Open();
+        session.Select([Child]);
+        var sibling = Group.Child("children").Item(1);
+        var before = CanvasGeometry.Of(session);
+        var siblingCorners = before.CornersOf(sibling);
+        var childCorners = before.CornersOf(Child).Select(p => p + new SKPoint(0, 120)).ToArray();
+        var properties = PropertyModel.For(session);
+        session.Apply(properties.Set(properties.Row("at")!, new YamlList(["10", "130"])));
+
+        Assert.Equal(160, session.Widget(Group)!.LocalBounds.Height);
+        AssertCorners(siblingCorners, CanvasGeometry.Of(session).CornersOf(sibling));
+        AssertCorners(childCorners, CanvasGeometry.Of(session).CornersOf(Child));
+        AssertGreen(session, 120, 240);
+        Assert.Equal(1, session.History.Count);
+        session.Undo();
+        Assert.Equal(Layout, session.Document.Text);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

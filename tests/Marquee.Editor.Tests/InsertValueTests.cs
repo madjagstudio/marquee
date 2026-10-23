@@ -13,6 +13,45 @@ namespace Marquee.Editor.Tests;
 public class InsertValueTests
 {
     [Fact]
+    public void Cutting_and_pasting_a_chip_preserves_the_template() => Sta.Run(() =>
+    {
+        const string template = "CPU {cpu.temp:0} end";
+        var box = new TemplateTextBox { Text = template };
+        WithWindow(box, () =>
+        {
+            var input = (RichTextBox)box.FindName("Input");
+            var chip = Assert.Single(((Paragraph)input.Document.Blocks.FirstBlock).Inlines.OfType<InlineUIContainer>());
+            input.Selection.Select(chip.ElementStart, chip.ElementEnd);
+            input.Copy();
+            Assert.Equal("{cpu.temp:0}", Clipboard.GetText());
+            Assert.Equal(template, box.Text);
+            input.Cut();
+            Assert.Equal("{cpu.temp:0}", Clipboard.GetText());
+            Assert.Equal("CPU  end", box.Text);
+            input.Paste();
+            Assert.Equal(template, box.Text);
+            Assert.Single(((Paragraph)input.Document.Blocks.FirstBlock).Inlines.OfType<InlineUIContainer>());
+        });
+    });
+
+    [Theory]
+    [InlineData("CPU {cpu.temp:0}°", "CPU {cpu.temp:0}°", 1)]
+    [InlineData("CPU temperature", "CPU temperature", 0)]
+    [InlineData("CPU {not a token}", "CPU {{not a token}}", 0)]
+    public void Pasting_external_text_parses_tokens_and_keeps_literal_text(string text, string expected, int chips) => Sta.Run(() =>
+    {
+        var box = new TemplateTextBox();
+        WithWindow(box, () =>
+        {
+            var input = (RichTextBox)box.FindName("Input");
+            Clipboard.SetText(text);
+            input.Paste();
+            Assert.Equal(expected, box.Text);
+            Assert.Equal(chips, ((Paragraph)input.Document.Blocks.FirstBlock).Inlines.OfType<InlineUIContainer>().Count());
+        });
+    });
+
+    [Fact]
     public void Inserting_a_reading_keeps_the_literal_and_writes_default_decimals() => Sta.Run(() =>
     {
         var box = new TemplateTextBox { Text = "CPU " };

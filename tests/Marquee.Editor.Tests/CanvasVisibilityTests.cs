@@ -21,6 +21,42 @@ public class CanvasVisibilityTests
     const string Warning = "This text is 1px, too small to see";
 
     [Fact]
+    public void Transparency_warning_follows_rules_when_pinned_values_change() => Sta.Run(() =>
+    {
+        const string layout = """
+            canvas: { orientation: landscape }
+            styles: { gone: { opacity: 0 } }
+            widgets:
+              - type: value
+                at: [50, 50]
+                size: [100, 40]
+                source: cpu.temp
+                style: gone
+                when: [{ above: 50, style: { opacity: 1 } }]
+            """;
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("mine", layout));
+        var window = Show(editor);
+        try
+        {
+            editor.Session.Select([P("widgets[0]")]);
+            var reading = editor.Model.TestValues.Row("cpu.temp")!;
+            foreach (var value in new[] { "80", "20", "80" })
+            {
+                reading.NumberText = value;
+                Assert.True(reading.CommitNumber());
+                var expected = value == "20" ? "This is fully transparent" : null;
+                Assert.True(Sta.PumpUntil(() => editor.Canvas.VisibilityWarning == expected));
+                Assert.Equal(expected, Model.Visibility.Problems(editor.Session, P("widgets[0]")).FirstOrDefault());
+                Assert.Equal(expected, editor.Model.StatusMessage);
+                Assert.Equal(expected is null ? 0 : 2,
+                    Descendants(window).OfType<TextBlock>().Count(t => t.Text == "This is fully transparent"));
+            }
+        }
+        finally { window.Close(); }
+    });
+
+    [Fact]
     public void Selection_draws_amber_dashes_and_repeats_the_first_warning_in_status() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();
