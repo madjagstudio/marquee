@@ -246,7 +246,7 @@ public class BackgroundPanelsTests
         using var editor = new OpenEditor(environment, folder);
         editor.Model.Layers.SelectBackground(0);
         var before = editor.Session.Document.Text;
-        var heat = Assert.Single(editor.Model.Properties.Shader!.Uniforms);
+        var heat = Assert.Single(editor.Model.Properties.Shader!.Uniforms, row => row.Name == "heat");
         Assert.False(heat.IsEditable);
         heat.Components[0].Text = "0.5";
         Assert.False(heat.Commit());

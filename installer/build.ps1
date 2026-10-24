@@ -123,6 +123,7 @@ if (-not $presentMonExe) { throw 'The staging folder has no PresentMon\PresentMo
 # The examples where ThemeLocator looks for installed ones (a themes folder beside the exe), and the license files.
 $themes = New-Item -ItemType Directory (Join-Path $staging 'themes')
 Get-ChildItem (Join-Path $root 'themes') -Directory -Filter 'example-*' | ForEach-Object { Copy-Item $_.FullName $themes -Recurse }
+Copy-Item (Join-Path $root 'themes\backgrounds') $themes -Recurse
 Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md') $staging
 
 # Everything else in the folder came from a NuGet package or the .NET runtime, and THIRD-PARTY-NOTICES.md must name each

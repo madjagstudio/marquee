@@ -42,7 +42,7 @@
 
       <!-- Everything else as it is laid out in the staging folder, one component per file, with GUIDs WiX derives from
            the paths: the .NET runtime and Marquee's DLLs beside the exes, PresentMon\PresentMon-<version>-x64.exe where
-           the FPS provider looks for it, themes\example-* where ThemeLocator looks for installed examples, LICENSE and
+           the FPS provider looks for it, themes\example-* and themes\backgrounds for examples and the gallery, LICENSE and
            THIRD-PARTY-NOTICES.md. A file added to the build is picked up with no change here. -->
       <Files Include="!(bindpath.Staging)**">
         <Exclude Files="!(bindpath.Staging)marquee.exe" />
