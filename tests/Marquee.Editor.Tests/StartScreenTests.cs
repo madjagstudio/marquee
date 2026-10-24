@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Marquee.Core.Themes;
 using Marquee.Editor.Start;
 using Marquee.Editor.Tests.TestSupport;
@@ -28,16 +27,6 @@ public class StartScreenTests
     });
 
     [Theory]
-    [InlineData("start-blank")]
-    [InlineData("start-gaming")]
-    [InlineData("start-monitor")]
-    public void Every_start_loads_clean(string name)
-    {
-        using var theme = ThemeLoader.Load(Folder(name));
-        Assert.Empty(theme.Warnings);
-    }
-
-    [Theory]
     [InlineData("landscape", ThemeOrientation.Landscape)]
     [InlineData("portrait", ThemeOrientation.Portrait)]
     public void Choosing_gaming_copies_the_named_theme_in_the_screens_orientation(string orientation, ThemeOrientation expected) => Sta.Run(() =>
@@ -56,6 +45,4 @@ public class StartScreenTests
         using var original = ThemeLoader.Load(Path.Combine(environment.InstalledThemes, "start-gaming"));
         Assert.Equal(ThemeOrientation.Landscape, original.Spec.Canvas.Orientation);
     });
-
-    static string Folder(string name, [CallerFilePath] string file = "") => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, "../../themes", name));
 }

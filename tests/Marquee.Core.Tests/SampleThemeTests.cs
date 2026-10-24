@@ -69,6 +69,27 @@ public class SampleThemeTests
         }
     }
 
+    /// The start screen's starting points, which New theme… copies into a user's themes.
+    public static TheoryData<string> StartThemes
+    {
+        get
+        {
+            var folders = Directory.GetDirectories(ThemeFolder(""), "start-*");
+            Assert.NotEmpty(folders);
+            return new(folders.Select(folder => Path.GetFileName(folder)).OrderBy(name => name, StringComparer.Ordinal));
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(StartThemes))]
+    public void Start_themes_load_without_warnings(string name)
+    {
+        using var theme = Load(name);
+
+        Assert.Empty(theme.Warnings);
+        Assert.Empty(Validations.Lines(Validations.Validate(ThemeFolder(name))));
+    }
+
     [Theory]
     [MemberData(nameof(ExampleThemes))]
     public void Sample_themes_explicitly_set_a_frame_rate_and_ring(string name)
