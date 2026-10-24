@@ -336,7 +336,8 @@ public sealed class PropertiesViewModel : ObservableObject
             Rows = model?.Rows.Select(Make).ToList() ?? [];
             Sections = model?.Style.Select(section => new PropertySectionViewModel(SectionTitle(section.Title), section.Rows.Select(Make).ToList())).ToList()
                 ?? [];
-            Basics = model?.Basics.Select(row => _byName[row.Name]).ToList() ?? [];
+            Basics = model?.Basics.Where(row => !(model.Type == "text" && row.Name == "source"))
+                .Select(row => _byName[row.Name]).ToList() ?? [];
             Raw = model?.Raw.Select(row => _byName[row.Name]).ToList() ?? [];
             MoreStyling = model?.MoreStyling.Select(group =>
             {

@@ -96,8 +96,9 @@ public class ArrangeTests
         session.Apply(new AlignWidgets(
             [YamlPath.Parse("widgets[0]"), YamlPath.Parse("widgets[1]"), YamlPath.Parse("widgets[2].children[0]")], Alignment.Left));
 
-        // The turned rect is drawn from x 690, so its `at` moves by 590; the child's is relative to its group at 1000.
-        Assert.Equal(layout.Replace("at: [600, 200]", "at: [10, 200]").Replace("at: [50, 50]", "at: [-900, 50]"),
+        // The turned rect moves by 590. Fitting moves the group's corner left so the aligned child remains visible.
+        Assert.Equal(layout.Replace("at: [600, 200]", "at: [10, 200]").Replace("at: [50, 50]", "at: [0, 50]")
+                .Replace("at: [1000, 100]", "at: [100, 100]").Replace("size: [200, 200]", "size: [1100, 200]"),
             session.Document.Text);
     }
 

@@ -10,6 +10,59 @@ namespace Marquee.Editor.Tests;
 /// mixed values and what can be reset.
 public class PropertiesPanelTests
 {
+    [Theory]
+    [InlineData("style.size", 8, 120)]
+    [InlineData("style.text_stroke.width", 0, 8)]
+    [InlineData("style.stroke.width", 0, 12)]
+    [InlineData("style.radius", 0, 40)]
+    [InlineData("style.shadow.blur", 0, 30)]
+    [InlineData("style.glow.radius", 0, 30)]
+    [InlineData("style.letter_spacing", -5, 20)]
+    [InlineData("style.line_height", 0.8, 2)]
+    [InlineData("rotate", -180, 180)]
+    [InlineData("smooth", 0, 2000)]
+    public void Sliders_use_the_useful_range(string name, double min, double max) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = Open(environment);
+        Select(editor, "widgets[0]");
+        var row = Row(editor, name);
+        Assert.Equal(min, row.SliderMin);
+        Assert.Equal(max, row.SliderMax);
+    });
+
+    [Fact]
+    public void Text_size_slider_left_end_writes_eight() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = Open(environment);
+        Select(editor, "widgets[0]");
+        var row = Row(editor, "style.size");
+        row.SlideTo(row.SliderMin, final: true);
+        Assert.Contains("size: 8", Text(editor));
+        Assert.Equal("8", row.Text);
+    });
+
+    [Theory]
+    [InlineData("160")]
+    [InlineData("1")]
+    [InlineData("1000")]
+    public void Typed_text_size_uses_schema_limits_without_expanding_the_slider(string value) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = Open(environment);
+        Select(editor, "widgets[0]");
+        var row = Row(editor, "style.size");
+        row.Text = value;
+        Assert.True(row.Commit());
+        Assert.Equal(value, row.Text);
+        Assert.Contains($"size: {value}", Text(editor));
+        Assert.Equal(8, row.SliderMin);
+        Assert.Equal(120, row.SliderMax);
+        row.Text = "1001";
+        Assert.False(row.Commit());
+    });
+
     /// One widget of each shape the kinds need: a text, a value, a graph with a series, a shape with a gradient, a bare
     /// shape and an image, with a named style to pick.
     public const string Layout =
@@ -451,7 +504,7 @@ public class PropertiesPanelTests
         using var editor = new OpenEditor(environment, folder);
         var panel = Select(editor, "widgets[0]");
 
-        Assert.Equal(["turns red above 85"], panel.Rules);
+        Assert.Equal(["CPU temperature: turns red above 85"], panel.Rules);
         Assert.True(panel.SplitIntoSpansCommand.CanExecute(null));
         panel.SplitIntoSpansCommand.Execute(null);
 

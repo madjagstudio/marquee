@@ -13,8 +13,12 @@ public enum ValuePickerMode { Sensor, Number, Advanced }
 public sealed class ValuePickerKey(string key) : ObservableObject
 {
     string _valueText = "";
+    bool _hasReading;
     public string Key { get; } = key;
+    public string Name => SensorNames.For(Key).Name;
+    public string CategoryName => SensorNames.CategoryName(SensorNames.For(Key).Category);
     public string ValueText { get => _valueText; internal set => Set(ref _valueText, value); }
+    public bool HasReading { get => _hasReading; internal set => Set(ref _hasReading, value); }
 }
 public sealed record ValuePickerModeChoice(ValuePickerMode Mode, string Label);
 
@@ -64,10 +68,14 @@ public sealed class ValuePickerViewModel : ObservableObject
     public bool IsNumber => Mode == ValuePickerMode.Number;
     public bool IsAdvanced => Mode == ValuePickerMode.Advanced;
     public bool ShowRange { get; }
+    public bool SensorsOnly { get; init; }
+    public bool ShowModes => !SensorsOnly;
     public string? Hint { get; internal set; }
     public string Search { get => _search; set { if (Set(ref _search, value)) Raise(nameof(Keys)); } }
 
-    public IReadOnlyList<ValuePickerKey> Keys => _keys.Where(row => row.Key.Contains(Search, StringComparison.OrdinalIgnoreCase)).ToList();
+    public IReadOnlyList<ValuePickerKey> Keys => _keys.Where(row => (!SensorsOnly || row.Key != "now") && (
+        row.Name.Contains(Search, StringComparison.OrdinalIgnoreCase) || row.CategoryName.Contains(Search, StringComparison.OrdinalIgnoreCase)
+        || row.Key.Contains(Search, StringComparison.OrdinalIgnoreCase))).ToList();
 
     public string? SelectedKey
     {
@@ -91,6 +99,7 @@ public sealed class ValuePickerViewModel : ObservableObject
     public string ToHigh { get => _toHigh; set { if (Set(ref _toHigh, value)) RangeChanged(); } }
     public string Number { get => _number; set { if (Set(ref _number, value)) Changed(); } }
     public string AdvancedText { get => _advancedText; set { if (Set(ref _advancedText, value)) { _advancedEdited = true; Changed(); } } }
+    public string AdvancedSummary => SensorNames.InText(AdvancedText);
     public string? Text => Validate(out var text) is null ? text : null;
     public string? Problem => IsAdvanced && _advancedEdited ? Validate(out _) : null;
     public bool HasProblem => Problem is not null;
@@ -184,21 +193,26 @@ public sealed class ValuePickerViewModel : ObservableObject
     }
 
     void RangeChanged() { _ranged = true; Changed(); }
-    void Changed() { Raise(nameof(Text)); Raise(nameof(Problem)); Raise(nameof(HasProblem)); }
+    void Changed() { Raise(nameof(Text)); Raise(nameof(AdvancedSummary)); Raise(nameof(Problem)); Raise(nameof(HasProblem)); }
     void OnValuesUpdated(object? sender, EventArgs e) => RefreshKeys();
 
     void RefreshKeys()
     {
-        var names = ValuePicker.Keys(_sources, _selectedKey is { } key ? [key] : []);
+        var names = SensorNames.Grouped(ValuePicker.Keys(_sources, _selectedKey is { } key ? [key] : []))
+            .SelectMany(group => group).Select(name => name.Key).ToList();
         var changed = !names.SequenceEqual(_keys.Select(row => row.Key));
         if (changed)
         {
             var existing = _keys.ToDictionary(row => row.Key);
             _keys = names.Select(name => existing.GetValueOrDefault(name) ?? new ValuePickerKey(name)).ToList();
         }
-        var snapshot = _sources.Snapshot();
+        var readings = _sources.Rows(names).ToDictionary(row => row.Key);
         foreach (var row in _keys)
-            row.ValueText = snapshot.TryGet(row.Key, out var reading) ? reading.ToString() : Strings.PickerNoReading;
+        {
+            var reading = readings[row.Key];
+            row.HasReading = reading.Source != ValueSourceKind.Sample && reading.Value is not null && !reading.Stale;
+            row.ValueText = row.HasReading ? SensorNames.Format(row.Key, reading.Value!.Value) : Strings.PickerNoReading;
+        }
         if (changed) Raise(nameof(Keys));
     }
     static string Format(double value) => value.ToString("R", CultureInfo.InvariantCulture);

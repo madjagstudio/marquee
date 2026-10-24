@@ -43,6 +43,13 @@ sealed class DragPreview
     }
 
     /// A frame of `widgets`, the loaded theme's, with the dragged ones where the drag has them.
+    public IReadOnlyList<WidgetSpec> Widgets(IReadOnlyList<WidgetSpec> widgets)
+    {
+        _frame ??= Frame(widgets);
+        return _frame.Value.Widgets;
+    }
+
+    /// Draw the same fitted widgets used to inspect visibility during a drag.
     public SKImage Render(ThemeRenderer renderer, IReadOnlyList<WidgetSpec> widgets, SensorSnapshot sensors, TimeSpan time)
     {
         _frame ??= Frame(widgets);
@@ -78,6 +85,24 @@ sealed class DragPreview
                 drawn = drawn with { Bounds = placement.Bounds, Rotate = placement.Rotate };
 
             if (ReferenceEquals(drawn, widget)) continue;
+            if (drawn is GroupWidget fitted)
+            {
+                var (bounds, offset) = GroupFit.Measure(fitted.Bounds, fitted.Rotate,
+                    fitted.Children.Select(child => (child.Bounds, child.Rotate)));
+                var shifted = fitted.Children;
+                if (offset != SKPoint.Empty)
+                {
+                    shifted = fitted.Children.Select(child =>
+                    {
+                        var box = child.Bounds;
+                        box.Offset(offset);
+                        var moved = child with { Bounds = box };
+                        standIns[moved] = standIns.GetValueOrDefault(child, child);
+                        return moved;
+                    }).ToList();
+                }
+                drawn = fitted with { Bounds = bounds, Children = shifted };
+            }
             standIns[drawn] = widget;
             copied ??= [.. widgets];
             copied[i] = drawn;

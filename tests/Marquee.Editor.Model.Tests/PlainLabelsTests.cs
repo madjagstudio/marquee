@@ -6,6 +6,58 @@ namespace Marquee.Editor.Model.Tests;
 public class PlainLabelsTests
 {
     [Fact]
+    public void Every_numeric_key_has_an_authored_slider_range_inside_its_schema_range()
+    {
+        var count = 0;
+        foreach (var (owner, path) in PlainLabels.AllKeys())
+        {
+            var key = SchemaKeyAt(owner, path);
+            if (key.Kind is not (SchemaKind.Number or SchemaKind.Integer or SchemaKind.Size or SchemaKind.Point or SchemaKind.FontWeight)
+                && key.ItemKind != SchemaKind.Number) continue;
+            count++;
+            var label = PlainLabels.For(owner, path)!;
+            var min = label.SliderMin;
+            var max = label.SliderMax;
+            Assert.True(min is not null && max is not null && min < max, $"Missing range: {owner}/{path}");
+            Assert.True(min >= (key.Min ?? double.NegativeInfinity), $"Low end: {owner}/{path}");
+            Assert.True(max <= (key.Max ?? double.PositiveInfinity), $"High end: {owner}/{path}");
+            var schemaWidth = (key.Max ?? double.PositiveInfinity) - (key.Min ?? double.NegativeInfinity);
+            if (schemaWidth > 200)
+                Assert.True(max - min < schemaWidth, $"Range must be narrower: {owner}/{path}");
+            if (label.Minimum is { } floor)
+                Assert.True(floor >= (key.Min ?? double.NegativeInfinity) && floor <= min, $"Minimum: {owner}/{path}");
+        }
+        Assert.True(count > 100); // Includes nested styles, paints, rules and list items.
+    }
+
+    [Theory]
+    [InlineData("text", "style.size")]
+    [InlineData("style", "style.size")]
+    [InlineData("when", "style.size")]
+    [InlineData("text", "spans[0].style.size")]
+    public void Text_has_a_readable_ui_floor_even_in_nested_styles(string owner, string path) =>
+        Assert.Equal(6, PlainLabels.For(owner, path)!.Minimum);
+
+    static SchemaKey SchemaKeyAt(string owner, string path)
+    {
+        IEnumerable<SchemaKey> keys = ThemeSchema.Widgets.Names.Contains(owner) ? ThemeSchema.WidgetKeys(owner)
+            : owner.StartsWith("layer.", StringComparison.Ordinal) ? ThemeSchema.Background.KeysOf(ThemeSchema.Block(owner)!)
+            : ThemeSchema.Block(owner)!.Keys;
+        if (owner == "canvas") path = path["canvas.".Length..];
+        if (owner == "style" && path.StartsWith("style.", StringComparison.Ordinal)) path = path["style.".Length..];
+        SchemaKey? result = null;
+        foreach (var part in path.Split('.'))
+        {
+            result = keys.Single(key => key.Name == part.Split('[')[0]);
+            keys = result.Kind == SchemaKind.Style ? ThemeSchema.Style.Keys
+                : result.Kind == SchemaKind.Paint ? ThemeSchema.Gradient.Variants.SelectMany(ThemeSchema.Gradient.KeysOf).DistinctBy(key => key.Name)
+                : result.Of is { } of && ThemeSchema.Block(of) is { } block ? block.Keys
+                : [];
+        }
+        return result!;
+    }
+
+    [Fact]
     public void Actual_property_rows_use_paths_the_catalog_recognises()
     {
         foreach (var example in TempTheme.Examples)

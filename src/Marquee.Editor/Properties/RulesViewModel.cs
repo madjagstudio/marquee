@@ -39,6 +39,7 @@ public sealed class RulesViewModel : ObservableObject
 
     public RelayCommand UnpinCommand { get; }
     public string? TrySource { get; private set; }
+    public string? TrySourceName => TrySource is { } key ? SensorNames.For(key).Name : null;
     public bool HasTryValue => TrySource is not null;
     public bool IsPinned => TrySource is { } key && Panel.Workspace?.Values.TestValues.PinOf(key) is not null;
     public double TryMin => TrySource is { } key ? Panel.Workspace!.Values.TestValues.RangeOf(key).Min : 0;
@@ -74,6 +75,7 @@ public sealed class RulesViewModel : ObservableObject
             catch (ExpressionException) { }
         }
         Raise(nameof(TrySource));
+        Raise(nameof(TrySourceName));
         Raise(nameof(HasTryValue));
         Raise(nameof(TryMin));
         Raise(nameof(TryMax));

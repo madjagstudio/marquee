@@ -90,6 +90,11 @@ public class BackgroundPanelsTests
             var shader = Assert.IsType<ShaderPanelViewModel>(editor.Model.Properties.Shader);
             Assert.Null(shader.Problem);
             Assert.Contains(shader.Uniforms, row => row.Name == "heat" && row.Components[0].Text == "cpu.load / 100");
+            Assert.Contains(Descendants(window).OfType<TextBlock>(), block => block.Text == "CPU usage / 100");
+            var raw = Descendants(window).OfType<Expander>().Single(group => group.Name == "RawExpression"
+                && group.DataContext is ValuePickerViewModel picker && picker.AdvancedText == "cpu.load / 100");
+            raw.IsExpanded = true;
+            Sta.Pump();
             var heat = Descendants(window).OfType<TextBox>().Single(box =>
                 box.DataContext is ValuePickerViewModel picker && picker.IsAdvanced && box.Text == "cpu.load / 100");
             heat.BringIntoView();

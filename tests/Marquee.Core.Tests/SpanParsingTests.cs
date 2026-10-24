@@ -267,7 +267,7 @@ public class SpanParsingTests
 
     [Theory]
     [InlineData("{ text: \"{cpu.temp\" }", "text: Unclosed '{' at character 1")]
-    [InlineData("{ text: \"{cpu.temp|kelvin}\" }", "text: Unknown helper 'kelvin' (use duration, bytes or time) at character 11")]
+    [InlineData("{ text: \"{cpu.temp|kelvin}\" }", "text: Unknown helper 'kelvin' (use duration, bytes, time or date) at character 11")]
     [InlineData("{ style: unit }", "text span is missing 'text'")]
     [InlineData("{ text: a, color: \"#FF0000\" }", "Unknown key 'color' in text span. Expected one of: text, style")]
     [InlineData("{ text: a, style: nope }", "Unknown style 'nope'. Defined styles: unit, boxed")]

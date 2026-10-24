@@ -27,7 +27,8 @@ public sealed partial class PropertyModel
     {
         if (Validate(row, value) is { } reason) throw new PropertyValueException(reason);
         var targets = row.Targets;
-        return new EditDocument($"Set {row.Key.Name}", document => targets.Aggregate(document, (d, target) => Write(d, target, value)))
+        return new EditDocument($"Set {row.Key.Name}", document => FitGeometry(
+            targets.Aggregate(document, (d, target) => Write(d, target, value)), targets))
         {
             MergeKey = merge ? ("property", string.Join("|", row.Paths)) : null,
         };
@@ -41,14 +42,20 @@ public sealed partial class PropertyModel
         if (!row.IsEditable) throw new PropertyValueException(NotEditable(row));
         if (!row.CanReset) throw new PropertyValueException($"{row.Key.Name} can't be left out, so it has no default to reset to");
         var targets = row.Targets;
-        return new EditDocument($"Reset {row.Key.Name}", document => targets.Aggregate(document, (d, target) =>
+        return new EditDocument($"Reset {row.Key.Name}", document => FitGeometry(targets.Aggregate(document, (d, target) =>
         {
             if (target.Style is not { } style) return EditDocument.Remove(d, target.Path);
             d = StyleValues.Remove(d, style, target.StyleKey);
             // A rule requires its style even after the last override is reset.
             return Target == PropertyTargetKind.Rule && !d.Exists(style) ? EditDocument.Set(d, style, YamlMap.Empty) : d;
-        }));
+        }), targets));
     }
+
+    // Fit only after all selected widgets are written: fitting can change their local coordinate frame.
+    static LayoutDocument FitGeometry(LayoutDocument document, IReadOnlyList<PropertyTarget> targets) =>
+        GroupFit.Around(document, targets.Where(target => target.Block == target.Widget.Path
+                && target.Key.Name is "at" or "size" or "rotate")
+            .Select(target => target.Widget.Path));
 
     /// Returns each selected widget's style to its named style alone (`style: meter`), or removes it when there is none.
     public EditorCommand ClearOverrides() => ForEachStyle("Clear overrides", (document, style) => StyleValues.Clear(document, style));

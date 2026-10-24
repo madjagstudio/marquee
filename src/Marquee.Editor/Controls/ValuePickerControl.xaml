@@ -9,6 +9,11 @@
                 <ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="Visible" />
+            <CollectionViewSource x:Key="SensorGroups" Source="{Binding Keys}">
+                <CollectionViewSource.GroupDescriptions>
+                    <PropertyGroupDescription PropertyName="CategoryName" />
+                </CollectionViewSource.GroupDescriptions>
+            </CollectionViewSource>
             <Style x:Key="ValueBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                 <Setter Property="Padding" Value="3,1" />
                 <Setter Property="MinWidth" Value="35" />
@@ -25,21 +30,55 @@
     </UserControl.Resources>
     <StackPanel>
         <ComboBox ToolTip="{x:Static res:Strings.PickerModeTip}" ItemsSource="{Binding Modes}" DisplayMemberPath="Label" SelectedValuePath="Mode"
-                  SelectedValue="{Binding Mode}" Margin="0,0,0,3"
+                  SelectedValue="{Binding Mode}" Margin="0,0,0,3" Visibility="{Binding ShowModes, Converter={StaticResource Visible}}"
                   AutomationProperties.Name="{x:Static res:Strings.PickerMode}" />
         <StackPanel Visibility="{Binding IsSensor, Converter={StaticResource Visible}}">
             <TextBlock Text="{x:Static res:Strings.PickerSearch}" />
             <TextBox ToolTip="{x:Static res:Strings.PickerSearchTip}" x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
                      AutomationProperties.Name="{x:Static res:Strings.PickerSearch}" Padding="3,1" />
-            <ListBox ItemsSource="{Binding Keys}" SelectedValuePath="Key" SelectedValue="{Binding SelectedKey}"
-                     MaxHeight="120" Margin="0,3" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            <ListBox ItemsSource="{Binding Source={StaticResource SensorGroups}}" SelectedValuePath="Key" SelectedValue="{Binding SelectedKey}"
+                     IsSynchronizedWithCurrentItem="False"
+                     Height="280" Margin="0,3" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="False"
+                     HorizontalContentAlignment="Stretch"
                      AutomationProperties.Name="{x:Static res:Strings.PickerSensor}">
+                <ListBox.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.ContainerStyle>
+                            <Style TargetType="GroupItem">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="GroupItem">
+                                            <Expander Header="{Binding Name}" IsExpanded="True" HorizontalContentAlignment="Stretch" ToolTip="{x:Static res:Strings.SensorGroupTip}">
+                                                <ItemsPresenter />
+                                            </Expander>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </GroupStyle.ContainerStyle>
+                    </GroupStyle>
+                </ListBox.GroupStyle>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasReading}" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Key}" FontFamily="{StaticResource LabelFont}" />
-                            <TextBlock Text="{Binding ValueText}" Margin="8,0,0,0" Foreground="{StaticResource TextMuted}" />
-                        </StackPanel>
+                        <Grid Margin="0,3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" MaxWidth="110" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                            <TextBlock Grid.Column="1" Text="{Binding ValueText}" Margin="8,0,0,0" TextWrapping="Wrap" />
+                        </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -69,9 +108,14 @@
         <TextBox ToolTip="{x:Static res:Strings.PickerNumberTip}" Style="{StaticResource ValueBox}" Text="{Binding Number, UpdateSourceTrigger=PropertyChanged}"
                  Visibility="{Binding IsNumber, Converter={StaticResource Visible}}"
                  AutomationProperties.Name="{x:Static res:Strings.PickerNumber}" />
-        <TextBox ToolTip="{x:Static res:Strings.PickerAdvancedTip}" Style="{StaticResource ValueBox}" Text="{Binding AdvancedText, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource LabelFont}"
-                 Visibility="{Binding IsAdvanced, Converter={StaticResource Visible}}"
-                 AutomationProperties.Name="{x:Static res:Strings.PickerAdvanced}" />
+        <StackPanel Visibility="{Binding IsAdvanced, Converter={StaticResource Visible}}">
+            <TextBlock Text="{Binding AdvancedSummary}" TextWrapping="Wrap" />
+            <Expander x:Name="RawExpression" ToolTip="{x:Static res:Strings.RawSectionTip}">
+                <Expander.Header><TextBlock Text="{x:Static res:Strings.RawSection}" TextWrapping="Wrap" /></Expander.Header>
+                <TextBox ToolTip="{x:Static res:Strings.PickerAdvancedTip}" Style="{StaticResource ValueBox}" Text="{Binding AdvancedText, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource LabelFont}"
+                         TextWrapping="Wrap" AutomationProperties.Name="{x:Static res:Strings.PickerAdvanced}" />
+            </Expander>
+        </StackPanel>
         <TextBlock Text="{Binding Problem}" Foreground="{StaticResource Warning}" TextWrapping="Wrap"
                    Visibility="{Binding HasProblem, Converter={StaticResource Visible}}" />
     </StackPanel>

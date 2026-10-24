@@ -81,10 +81,15 @@ public sealed partial class CanvasViewModel : ObservableObject, IDisposable
     public CanvasOverlay Overlay
     {
         get => _overlay;
-        private set => Set(ref _overlay, value);
+        private set
+        {
+            if (Set(ref _overlay, value)) Raise(nameof(VisibilityWarning));
+        }
     }
 
-    /// The group being worked in (double-click to enter, Esc to leave); null for the whole canvas. New and pasted widgets
+    public string? VisibilityWarning => Overlay.Warnings.FirstOrDefault()?.Text;
+
+    /// The group being worked in (double-click or Ctrl-click to enter, Esc to leave); null for the whole canvas. New and pasted widgets
     /// go into it.
     public YamlPath? Group
     {
@@ -103,6 +108,7 @@ public sealed partial class CanvasViewModel : ObservableObject, IDisposable
         _started = _time.GetTimestamp();
         _geometry = null;
         _group = null;
+        _groupHintShown = false;
         workspace.Session.Changed += OnSessionChanged;
         workspace.Values.Updated += OnValuesUpdated;
         _redraw.Fps = workspace.Session.Theme?.Spec.Canvas.Fps ?? 30;
@@ -122,6 +128,7 @@ public sealed partial class CanvasViewModel : ObservableObject, IDisposable
         workspace.Values.Updated -= OnValuesUpdated;
         _workspace = null;
         _geometry = null;
+        Overlay = CanvasOverlay.Empty;
     }
 
     /// The space the canvas has in the window, and the screen's DPI scale (VisualTreeHelper.GetDpi), for Fit and for the
@@ -170,11 +177,19 @@ public sealed partial class CanvasViewModel : ObservableObject, IDisposable
             Raise(nameof(CanEdit));
         }
 
+        if (!_selectingCanvas && changes.HasFlag(SessionChanges.Selection)
+            && Session?.Selection is { Count: 1 } selected)
+            Group = CanvasGeometry.GroupOf(selected[0]);
+
         UpdateOverlay();
         _redraw.Request();
     }
 
-    void OnValuesUpdated(object? sender, EventArgs e) => _redraw.Request();
+    void OnValuesUpdated(object? sender, EventArgs e)
+    {
+        UpdateOverlay();
+        _redraw.Request();
+    }
 
     void UpdateZoom()
     {
@@ -200,8 +215,8 @@ public sealed partial class CanvasViewModel : ObservableObject, IDisposable
         }
 
         var placements = session.PreviewPlacements.ToDictionary(placement => placement.Widget);
-        var outlines = session.Selection
-            .Where(path => geometry.Widget(path) is not null)
+        var selected = session.Selection.Where(path => geometry.Widget(path) is not null).ToList();
+        var outlines = selected
             .Select(path => placements.TryGetValue(path, out var placed)
                 ? ToView(Corners(geometry.ParentFrame(path), placed.Bounds, placed.Rotate))
                 : ToView(geometry.CornersOf(path)))
@@ -220,7 +235,10 @@ public sealed partial class CanvasViewModel : ObservableObject, IDisposable
         var guides = _guides.Select(guide => new GuideLine(ToView(guide.From), ToView(guide.To))).ToList();
         Rect? marquee = _gesture is Boxing box ? new Rect(ToView(box.Start), ToView(box.Current)) : null;
         var groupOutline = _group is { } group && geometry.Widget(group) is not null ? ToView(geometry.CornersOf(group)) : null;
-        Overlay = new CanvasOverlay(outlines, handles, rotateFrom, guides, marquee, groupOutline);
+        var warnings = selected.Select((path, index) =>
+                Model.Visibility.Problems(session, path).FirstOrDefault() is { } problem ? new CanvasWarning(index, problem) : null)
+            .OfType<CanvasWarning>().ToList();
+        Overlay = new CanvasOverlay(outlines, handles, rotateFrom, guides, marquee, groupOutline) { Warnings = warnings };
     }
 
     /// The selection's frame, following a drag of one widget; null while several are dragged (their outlines follow

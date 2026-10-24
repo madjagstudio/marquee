@@ -113,11 +113,19 @@ public class CanvasDragTests
         using var session = folder.Open();
 
         // The group is turned 90°: right on screen is up in the group's own coordinates.
+        var child = P("widgets[4].children[0]");
+        var before = CanvasGeometry.Of(session).BoundsOf(child);
         var drag = CanvasDrag.Move(session, [P("widgets[4].children[0]")], new SKPoint(0, 0))!;
         drag.Update(new SKPoint(30, 0), DragKeys.Alt, zoom: 1);
         drag.Commit();
 
-        Assert.Equal(Layout.Replace("at: [0, 0], size: [50, 50]", "at: [0, -30], size: [50, 50]"), session.Document.Text);
+        var after = CanvasGeometry.Of(session).BoundsOf(child);
+        Assert.Equal(before.Left + 30, after.Left, 3);
+        Assert.Equal(before.Top, after.Top, 3);
+        Assert.Equal(new SKPoint(0, 0), session.Widget(child)!.LocalBounds.Location);
+        Assert.Equal(new SKSize(300, 330), session.Widget(P("widgets[4]"))!.LocalBounds.Size);
+        session.Undo();
+        Assert.Equal(Layout, session.Document.Text);
     }
 
     [Fact]

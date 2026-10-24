@@ -127,7 +127,7 @@ public sealed record PasteWidgets(string Clipboard, YamlPath? Group = null) : Ed
             pasted.Add(list.Item(count++));
         }
 
-        return new CommandResult(document, pasted);
+        return new CommandResult(GroupFit.Around(document, pasted), pasted);
     }
 }
 
@@ -155,6 +155,7 @@ public sealed record DuplicateWidgets(IReadOnlyList<YamlPath> Widgets) : EditorC
             copies[path] = list.Item(index);
         }
 
-        return new CommandResult(document, widgets.Select(path => copies[path]).ToList());
+        var selected = widgets.Select(path => copies[path]).ToList();
+        return new CommandResult(GroupFit.Around(document, selected), selected);
     }
 }

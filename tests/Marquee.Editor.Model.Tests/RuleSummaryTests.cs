@@ -7,6 +7,14 @@ namespace Marquee.Editor.Model.Tests;
 public class RuleSummaryTests
 {
     [Fact]
+    public void Rule_summaries_name_the_reading()
+    {
+        using var folder = TempTheme.With("canvas: { orientation: landscape }\nwidgets:\n  - { type: bar, at: [0, 0], size: [100, 20], source: claude.seven_day.pct, when: [{ above: 80, style: { color: '#FF0000' } }] }\n");
+        using var session = folder.Open();
+        Assert.Equal("Claude Code: weekly limit used: turns red above 80", Assert.Single(RuleSummaries.Of(session.Document, YamlPath.Parse("widgets[0]"))).Text);
+    }
+
+    [Fact]
     public void Rules_read_in_plain_words()
     {
         const string layout =
@@ -35,7 +43,7 @@ public class RuleSummaryTests
         var rules = PropertyModel.For(session).Rules;
 
         Assert.Equal(
-        [
+        new[] {
             "turns red above 85",
             "turns red, glows red and pulses above 95",
             "fills with a gradient and fades to 40% below 20.5",
@@ -44,7 +52,7 @@ public class RuleSummaryTests
             "hides while stale",
             "turns grey while stale",
             "changes its stroke and changes its letter spacing below 0",
-        ], rules.Select(r => r.Text));
+        }.Select(effect => "CPU temperature: " + effect), rules.Select(r => r.Text));
         Assert.Equal("hot", rules[1].StyleName);
         Assert.Null(rules[0].StyleName);
         Assert.Equal(YamlPath.Parse("widgets[0].when[6]"), rules[6].Path);

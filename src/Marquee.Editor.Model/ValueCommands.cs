@@ -15,7 +15,14 @@ public sealed record SetValue(YamlPath Path, YamlValue Value) : EditorCommand
 
     public override CommandResult Run(CommandContext context)
     {
-        var document = context.Document;
+        var document = Write(context.Document);
+        var key = Path.Last is { IsKey: false } ? Path.Parent! : Path;
+        return key.Last?.Key is "at" or "size" or "rotate" && key.Parent is { } widget && context.Widget(widget) is not null
+            ? GroupFit.Around(document, [widget]) : document;
+    }
+
+    LayoutDocument Write(LayoutDocument document)
+    {
         if (document.GetNode(Path) is { } node)
         {
             return node.Kind == LayoutNodeKind.Scalar && Value is YamlText text

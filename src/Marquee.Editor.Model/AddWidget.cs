@@ -34,7 +34,7 @@ public sealed record AddWidget(string Type, YamlPath? Group = null) : EditorComm
         var document = context.Document.Exists(list)
             ? context.Document.InsertItem(list, count, YamlWriter.Write(widget))
             : context.Document.AddKey(list.Parent!, list.Last!.Value.Key!, YamlWriter.Write(new YamlList([widget])));
-        return new CommandResult(document, [list.Item(count)]);
+        return new CommandResult(GroupFit.Around(document, [list.Item(count)]), [list.Item(count)]);
     }
 
     /// A group's list of children, how many it has, and the size of the box they are placed in.

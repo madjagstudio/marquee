@@ -1,4 +1,5 @@
 using System.Globalization;
+using Marquee.Editor.Model.Values;
 using Marquee.Core.Sensors;
 using Marquee.Core.Themes;
 using Marquee.Core.Themes.Editing;
@@ -48,7 +49,8 @@ public static class RuleSummaries
             var style = name is not null ? StyleValues.Named(document, name) : map["style"] as YamlMap ?? YamlMap.Empty;
             if (style["extends"] is YamlText { Value: var extends })
                 style = StyleValues.Merge(StyleValues.Named(document, extends), style.Without("extends"));
-            return new RuleSummary(i, path, $"{Effects(style)} {Condition(map)}", name);
+            var reading = document.TryGetScalar(widget.Child("source"), out var source) ? SensorNames.InText(source) + ": " : "";
+            return new RuleSummary(i, path, $"{reading}{Effects(style)} {Condition(map)}", name);
         }).ToList();
     }
 

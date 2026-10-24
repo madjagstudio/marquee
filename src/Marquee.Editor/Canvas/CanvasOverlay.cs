@@ -8,6 +8,9 @@ public readonly record struct HandleMark(Point At, bool IsRotate);
 /// A guide line in the view.
 public readonly record struct GuideLine(Point From, Point To);
 
+/// The first visibility problem beside one selection outline.
+public sealed record CanvasWarning(int OutlineIndex, string Text);
+
 /// What the canvas view draws over the frame, in its own coordinates (CanvasTransform): never part of the frame.
 /// - Outlines: each selected widget's box as drawn, turned with it, as its four corners.
 /// - Handles: the selection frame's resize and rotate handles, when the selection has a frame; RotateFrom is where the
@@ -23,5 +26,6 @@ public sealed record CanvasOverlay(
     Rect? Marquee,
     IReadOnlyList<Point>? Group)
 {
+    public IReadOnlyList<CanvasWarning> Warnings { get; init; } = [];
     public static CanvasOverlay Empty { get; } = new([], [], null, [], null, null);
 }

@@ -10,6 +10,8 @@ public sealed class PropertyTemplateSelector : DataTemplateSelector
 {
     public override DataTemplate? SelectTemplate(object item, DependencyObject container) =>
         item is PropertyRowViewModel row && container is FrameworkElement element
-            ? element.TryFindResource($"{row.Editor}Row") as DataTemplate
+            ? element.TryFindResource(row.Editor == PropertyEditor.Template && (PropertiesView.GetRawLabels(element)
+                || row.Row.Kind == Core.Themes.Schema.SchemaKind.Format)
+                ? "RawTemplateRow" : $"{row.Editor}Row") as DataTemplate
             : base.SelectTemplate(item, container);
 }

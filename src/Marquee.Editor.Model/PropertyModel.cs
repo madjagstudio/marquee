@@ -188,11 +188,15 @@ public sealed partial class PropertyModel
         var isSet = values.All(value => value is not null);
         var defaults = targets.Select(target => target.Key.DefaultFor.GetValueOrDefault(target.Widget.Type) ?? target.Key.Default).Distinct().ToList();
         var mins = targets.Select(MinOf).Distinct().ToList();
+        var words = Words(targets[0], name);
 
         var row = new PropertyRow(name, key)
         {
-            PlainLabel = Words(targets[0], name)?.Label ?? key.Name,
-            Tooltip = Words(targets[0], name)?.Tooltip ?? key.Help,
+            PlainLabel = words?.Label ?? key.Name,
+            Tooltip = words?.Tooltip ?? key.Help,
+            SliderMin = words?.SliderMin,
+            SliderMax = words?.SliderMax,
+            Minimum = words?.Minimum,
             Min = mins.Count == 1 ? mins[0] : mins.Max(),
             Max = key.Max,
             Step = Step(key),

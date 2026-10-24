@@ -9,10 +9,10 @@ using SkiaSharp;
 namespace Marquee.Editor.Canvas;
 
 /// The canvas's mouse and keys (spec Part B, Canvas), each through the model:
-/// - click selects, Shift- or Ctrl-click adds or removes, and a drag on empty canvas draws a selection box;
+/// - click selects, Shift-click adds or removes (Ctrl-click too for non-groups), and empty-canvas drags select a box;
 /// - a drag on a widget moves the selection, a handle resizes or turns it (CanvasDrag); Alt places freely, and Shift
 ///   keeps a resize's proportions or snaps a turn to 15°; Esc cancels;
-/// - double-click enters a group, and Esc, or a click outside it, leaves it;
+/// - double-click or Ctrl-click picks inside a group, and Esc, or a click outside it, leaves it;
 /// - the arrow keys nudge (1 px, 10 with Shift); Delete, Ctrl+C, Ctrl+V, Ctrl+D, Ctrl+G and Ctrl+Shift+G work on the
 ///   selection, and Ctrl+Shift+C and Ctrl+Shift+V copy and paste style.
 /// Positions come in the view's coordinates (CanvasTransform), from the canvas's top-left corner.
@@ -23,6 +23,8 @@ public sealed partial class CanvasViewModel
 
     Gesture? _gesture;
     IReadOnlyList<SnapGuide> _guides = [];
+    bool _selectingCanvas;
+    bool _groupHintShown;
 
     /// True while a move, resize or turn is under way.
     public bool IsDragging => _gesture is Dragging;
@@ -35,12 +37,15 @@ public sealed partial class CanvasViewModel
         if (session.SelectedLayer is not null) Select([]);
         var point = Transform.ToTheme(at);
 
-        if (clicks >= 2)
+        if (_group is not null) Group = geometry.GroupAfterClick(point, _group);
+        var hit = geometry.HitTest(point, _group, (float)(HitSlop / Transform.Scale));
+        if (clicks >= 2 || modifiers.HasFlag(ModifierKeys.Control) && hit is { IsGroup: true })
         {
-            if (geometry.GroupToEnter(point, _group) is { } entered)
+            if (hit is { IsGroup: true })
             {
-                Group = entered;
-                Select([]);
+                Group = hit.Path;
+                var inside = geometry.HitTest(point, _group, (float)(HitSlop / Transform.Scale));
+                Select(inside is null ? [] : [inside.Path]);
             }
 
             return;
@@ -54,8 +59,21 @@ public sealed partial class CanvasViewModel
             return;
         }
 
-        if (_group is not null) Group = geometry.GroupAfterClick(point, _group);
-        var hit = geometry.HitTest(point, _group, (float)(HitSlop / Transform.Scale));
+        // A selected child wins over its enclosing group (or an overlapping sibling). Its box is tested in its own
+        // rotated frame, independently of the group the canvas is currently working in.
+        if (!additive)
+        {
+            var selected = session.Selection.LastOrDefault(path =>
+                geometry.Widget(path) is not null && !geometry.IsHidden(path) && !geometry.IsLocked(path)
+                && geometry.FrameOf(path).TryInvert(out var inverse)
+                && geometry.Widget(path)!.LocalBounds.Contains(inverse.MapPoint(point)));
+            if (selected is not null)
+            {
+                ShowGroupHint(geometry.Widget(selected)!);
+                if (CanEdit) _gesture = new Pressed(point, at);
+                return;
+            }
+        }
         if (hit is null)
         {
             _gesture = new Boxing(point, point, additive, additive ? session.Selection : []);
@@ -69,13 +87,22 @@ public sealed partial class CanvasViewModel
             Select(session.Selection.Contains(hit.Path)
                 ? session.Selection.Where(path => path != hit.Path).ToList()
                 : [.. session.Selection, hit.Path]);
+            if (session.Selection.Contains(hit.Path)) ShowGroupHint(hit);
             return;
         }
 
         if (!session.Selection.Contains(hit.Path)) Select([hit.Path]);
+        ShowGroupHint(hit);
         // A move waits until the mouse has gone as far as a handle must (CanvasDrag.StartDistance), so a click never
         // nudges the widget.
         if (CanEdit) _gesture = new Pressed(point, at);
+    }
+
+    void ShowGroupHint(WidgetRef widget)
+    {
+        if (!widget.IsGroup || _groupHintShown) return;
+        _groupHintShown = true;
+        _report(Strings.GroupPickHint);
     }
 
     /// The mouse moved to `at`, with `modifiers` held.
@@ -234,7 +261,12 @@ public sealed partial class CanvasViewModel
 
     void Select(IReadOnlyList<YamlPath> widgets)
     {
-        if (Session is { } session) Try(Strings.ActionSelect, () => session.Select(widgets));
+        _selectingCanvas = true;
+        try
+        {
+            if (Session is { } session) Try(Strings.ActionSelect, () => session.Select(widgets));
+        }
+        finally { _selectingCanvas = false; }
     }
 
     /// Runs `action`, reporting what the model refuses, as `what` failing. True when it went through.

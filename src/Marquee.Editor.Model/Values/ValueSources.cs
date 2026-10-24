@@ -147,11 +147,11 @@ public sealed partial class ValueSources : IDisposable
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
     }
 
-    /// The panel's lines, one per key in TestValues.Keys.
-    public IReadOnlyList<ValueRow> Rows()
+    /// The panel's lines, or a requested set of keys (including readings the theme does not use yet).
+    public IReadOnlyList<ValueRow> Rows(IEnumerable<string>? keys = null)
     {
         var view = View();
-        return view.Keys.Select(key =>
+        return (keys ?? view.Keys).Select(key =>
         {
             var (entry, source) = view.Resolve(key);
             var pin = key == TestValues.Now ? null : TestValues.PinOf(key);

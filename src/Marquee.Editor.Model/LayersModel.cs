@@ -12,7 +12,7 @@ public enum DropPlace { Above, Below, Into }
 /// One row of the layers panel.
 /// - Path: the widget's or background layer's place in layout.yaml.
 /// - Type: a widget's `type`, or a background layer's kind (`fill`, `image`, `shader`, `video`).
-/// - Name: its `name:`, or one made up from what it shows ("Gauge · cpu.temp", "Fill · #000000"); IsNamed says which.
+/// - Name: its `name:`, or its plain type and reading ("Gauge · CPU temperature", "Fill · #000000"); IsNamed says which.
 /// - Hidden and Locked: its own `hidden:` and `locked:`.
 /// - IsEditable: false when it uses an anchor or alias, so the panel can't change it.
 /// - Children: a group's, front to back.
