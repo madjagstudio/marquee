@@ -10,14 +10,13 @@ using Marquee.Editor.Controls;
 using Marquee.Editor.Model;
 using Marquee.Editor.Model.Values;
 using Marquee.Editor.Resources;
-using SkiaSharp;
 using Expression = Marquee.Core.Expressions.Expression;
 
 namespace Marquee.Editor.Properties;
 
 public static class ShaderCostPresentation
 {
-    public static string State(CostHint cost) => Ratio(cost) <= .5 ? "Light" : Ratio(cost) <= .9 ? "Heavy" : "TooHeavy";
+    public static string State(CostHint cost) => cost.OverBudget ? "TooHeavy" : Ratio(cost) < .5 ? "Light" : "Heavy";
     public static double Ratio(CostHint cost) => cost.Budget.TotalSeconds <= 0 ? 1 : cost.PerFrame.TotalSeconds / cost.Budget.TotalSeconds;
 }
 
@@ -78,12 +77,12 @@ public partial class ShaderControlsView : UserControl
                 var swatch = new Button { Name = "ColourSwatch", Height = 34, Width = 80, HorizontalAlignment = HorizontalAlignment.Left, ToolTip = Strings.ShaderColourTip };
                 swatch.Click += (_, _) =>
                 {
-                    var picker = new ColorPicker { Color = ReadColour(model, control.Uniform), Width = 280 };
+                    var picker = new ColorPicker { Color = ReadColour(model, control.Uniform), ShowAlpha = false, Width = 280 };
                     var popup = PopupFor(swatch, picker);
                     picker.ColorCommitted += (_, e) =>
                     {
-                        var color = SKColor.Parse(e.Hex);
-                        model.Set(control.Uniform, new[] { color.Red, color.Green, color.Blue }.Select(c => (c / 255d).ToString("R", CultureInfo.InvariantCulture)).ToArray());
+                        if (!ColorText.TryParse(e.Hex, out var color)) return;
+                        model.Set(control.Uniform, new[] { color.R, color.G, color.B }.Select(c => (c / 255d).ToString("R", CultureInfo.InvariantCulture)).ToArray());
                         popup.IsOpen = false;
                     };
                     popup.IsOpen = true;
@@ -125,12 +124,22 @@ public partial class ShaderControlsView : UserControl
             Rows.Children.Add(new TextBlock { Text = reacts.Sentence == "Warmer and brighter as it gets busy" ? Strings.ShaderReactionSentence : reacts.Sentence, TextWrapping = TextWrapping.Wrap });
             _refresh.Add(() =>
             {
-                var expression = Expression.Parse(Read(model, reacts.Uniform));
+                Expression expression;
+                try { expression = Expression.Parse(Read(model, reacts.Uniform)); }
+                catch (ExpressionException)
+                {
+                    chip.Content = Strings.ShaderMissingValue;
+                    meter.Value = 0;
+                    meter.IsIndeterminate = true;
+                    return;
+                }
                 var snapshot = model.Values.Snapshot();
                 var key = expression.Keys.FirstOrDefault();
                 chip.Content = key is null ? Strings.ShaderNothing : (key == "cpu.load" ? Strings.ShaderCpuLoad : SensorNames.For(key).Name) + "  " +
                     (snapshot.TryGet(key, out var value) ? value.ToString() : Strings.ShaderMissingValue);
-                meter.Value = Math.Clamp(expression.Evaluate(snapshot)?.Number ?? 0, 0, 1);
+                var number = expression.Evaluate(snapshot)?.Number;
+                meter.IsIndeterminate = number is null;
+                meter.Value = Math.Clamp(number ?? 0, 0, 1);
             });
         }
         var costBar = new ProgressBar { Minimum = 0, Maximum = 1, Height = 10, Margin = new Thickness(0, 12, 0, 4) };

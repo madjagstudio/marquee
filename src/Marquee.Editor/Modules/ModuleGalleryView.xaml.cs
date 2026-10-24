@@ -14,7 +14,8 @@ public partial class ModuleGalleryView : Window
     public ModuleGalleryView(ModuleGalleryViewModel model, Action<Module> add)
     {
         _add = add; DataContext = model; InitializeComponent();
-        Loaded += (_, _) => model.Start(); Closed += (_, _) => model.Dispose();
+        GalleryPlayback.Attach(this, model.Start, model.Stop);
+        Closed += (_, _) => model.Dispose();
     }
     void OnAdd(object sender, RoutedEventArgs e) { _add((Module)((LiveThemeTile)((Button)sender).DataContext).Item!); Close(); }
     void OnBlank(object sender, RoutedEventArgs e) => Close();

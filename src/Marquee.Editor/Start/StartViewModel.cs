@@ -79,7 +79,8 @@ public sealed class StartViewModel : IDisposable
         if ((session.Theme!.Spec.Canvas.Orientation == ThemeOrientation.Portrait) != portrait)
             session.Apply(new SetOrientation(portrait ? "portrait" : "landscape", true));
     }
-    public void Start() { if (!_disposed) { _values.SetActive(true); _timer.Start(); } }
+    public void Start() { if (!_disposed && !_timer.IsEnabled) { _values.SetActive(true); _timer.Start(); Refresh(); } }
+    public void Stop() { _timer.Stop(); _values.SetActive(false); }
     void Tick(object? sender, EventArgs e) => Refresh();
     public void Refresh()
     {
@@ -90,7 +91,7 @@ public sealed class StartViewModel : IDisposable
     public void Dispose()
     {
         if (_disposed) return;
-        _disposed = true; _timer.Stop(); _timer.Tick -= Tick;
+        _disposed = true; Stop(); _timer.Tick -= Tick;
         foreach (var tile in Tiles) tile.Dispose();
         _values.Dispose();
     }

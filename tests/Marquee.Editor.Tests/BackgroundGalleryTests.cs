@@ -3,6 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using Marquee.Editor.Model.Values;
 using Marquee.Editor.Controls;
 using Marquee.Editor.Resources;
 using Marquee.Editor.Backgrounds;
@@ -14,6 +16,55 @@ namespace Marquee.Editor.Tests;
 
 public class BackgroundGalleryTests
 {
+    [Fact]
+    public void An_unfinished_reaction_survives_a_values_refresh_and_shows_unknown() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("draft"));
+        BackgroundLibrary.Use(editor.Session, Path.Combine(Folder(), "aurora.sksl"), null);
+        var panel = editor.Model.Properties.Shader!;
+        var view = new ShaderControlsView { DataContext = panel };
+        var window = new Window { Content = view, Width = 400, Height = 800, Left = -10000, Top = -10000, ShowActivated = false, ShowInTaskbar = false };
+        window.Show(); Sta.Pump();
+        try
+        {
+            panel.Uniforms.Single(row => row.Name == "heat").Components[0].Text = "cpu.load /";
+            editor.Workspace.Values.TestValues.Pin("cpu.load", TestPin.Of(80));
+            Sta.Pump();
+            var meter = Walk(view).OfType<ProgressBar>().First();
+            Assert.True(meter.IsIndeterminate);
+        }
+        finally { window.Close(); }
+    });
+
+    [Theory]
+    [InlineData("#FF0000")]
+    [InlineData("#FF000080")]
+    public void Shader_colour_picker_writes_red_RGB_without_a_transparency_control(string hex) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("colour"));
+        BackgroundLibrary.Use(editor.Session, Path.Combine(Folder(), "aurora.sksl"), null);
+        var panel = editor.Model.Properties.Shader!;
+        var view = new ShaderControlsView { DataContext = panel };
+        var window = new Window { Content = view, Width = 400, Height = 800, Left = -10000, Top = -10000, ShowActivated = false, ShowInTaskbar = false };
+        window.Show(); Sta.Pump();
+        try
+        {
+            Walk(view).OfType<Button>().Single(b => b.Name == "ColourSwatch").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Sta.Pump();
+            var picker = PresentationSource.CurrentSources.Cast<PresentationSource>().Where(s => s.RootVisual is not null)
+                .SelectMany(s => Walk(s.RootVisual)).OfType<ColorPicker>().Single(c => c.IsVisible);
+            var alphaVisible = ((FrameworkElement)picker.FindName("AlphaStrip")).IsVisible;
+            var box = (TextBox)picker.FindName("HexBox");
+            box.Text = hex;
+            box.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice, 0, box, null) { RoutedEvent = Keyboard.LostKeyboardFocusEvent });
+            Assert.Equal(new[] { "1", "0", "0" }, panel.Uniforms.Single(r => r.Name == "tint").Components.Select(c => c.Text));
+            Assert.False(alphaVisible);
+        }
+        finally { window.Close(); }
+    });
+
     [Fact]
     public void A_background_copy_failure_is_reported_without_changing_the_theme() => Sta.Run(() =>
     {
@@ -148,7 +199,9 @@ public class BackgroundGalleryTests
     [Theory]
     [InlineData(4, "Light")]
     [InlineData(7, "Heavy")]
-    [InlineData(10, "TooHeavy")]
+    [InlineData(9.5, "Heavy")]
+    [InlineData(10, "Heavy")]
+    [InlineData(10.5, "TooHeavy")]
     public void Cost_bar_uses_the_frame_budget(double cost, string expected) =>
         Assert.Equal(expected, ShaderCostPresentation.State(new CostHint(TimeSpan.FromMilliseconds(cost), TimeSpan.FromMilliseconds(10))));
 

@@ -7,6 +7,26 @@ namespace Marquee.Editor.Tests;
 
 public class StartScreenTests
 {
+    [Fact]
+    public void Monitor_preview_draws_a_trace_when_sensors_have_no_history() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        environment.AddExample("start-monitor", installed: true);
+        using var start = new StartViewModel(environment.Environment);
+        var bitmap = Assert.Single(start.Tiles).Bitmap!;
+        var pixels = GalleryPlaybackTests.Pixels(bitmap);
+        // Interior of the Load graph at [780, 130], size [320, 140], on the 1920 x 480 canvas.
+        var trace = 0;
+        for (var y = 19; y < 36; y++)
+            for (var x = 109; x < 150; x++)
+            {
+                var p = pixels[y * bitmap.PixelWidth + x];
+                // The 2px stroke is subpixel at thumbnail size: antialiasing blends cyan with the track.
+                if (((p >> 16) & 255) < 100 && ((p >> 8) & 255) > 120 && (p & 255) > 120) trace++;
+            }
+        Assert.True(trace > 10, "The monitor's graph must contain cyan trace pixels, not just its dark track.");
+    });
+
     [Theory]
     [InlineData("start-blank")]
     [InlineData("start-gaming")]

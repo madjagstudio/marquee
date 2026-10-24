@@ -7,6 +7,7 @@ using Marquee.Core.Themes;
 using Marquee.Core.Themes.Editing;
 using Marquee.Editor.Canvas;
 using Marquee.Editor.Model;
+using Marquee.Editor.Model.Values;
 using Marquee.Editor.Mvvm;
 using Marquee.Editor.Resources;
 
@@ -18,6 +19,7 @@ public sealed class LiveThemeTile : ObservableObject, IDisposable
     readonly ThemeAssetCache _cache = new();
     readonly LoadedTheme _theme;
     readonly ThemeRenderer _renderer;
+    readonly TestValues _previewKeys = new();
     WriteableBitmap? _bitmap;
     public LiveThemeTile(string name, string folder, string yaml, object? item = null, int width = 240, int height = 60, SkiaSharp.SKRect? viewBox = null, string? description = null)
     {
@@ -27,6 +29,7 @@ public sealed class LiveThemeTile : ObservableObject, IDisposable
         try
         {
             _theme = ThemeLoader.Load(folder, yaml, _cache);
+            _previewKeys.SetTheme(_theme.Spec);
             _renderer = new ThemeRenderer(_theme, new(width, height), viewBox);
         }
         catch { _cache.Dispose(); throw; }
@@ -37,6 +40,23 @@ public sealed class LiveThemeTile : ObservableObject, IDisposable
     public WriteableBitmap? Bitmap { get => _bitmap; private set => Set(ref _bitmap, value); }
     public void Render(SensorSnapshot values, TimeSpan time)
     {
+        // Gallery themes are independent of the open theme. Supply preview-only history when a graph
+        // has fewer than two points; preserve real histories and never register keys on the user's theme.
+        var missing = _previewKeys.Keys.Where(key => _previewKeys.IsGraphKey(key) && values.History(key).Count < 2).ToList();
+        if (missing.Count > 0)
+        {
+            var entries = new Dictionary<string, SensorEntry>(StringComparer.Ordinal);
+            foreach (var key in values.Keys)
+                if (values.TryGetLast(key, out var value, out var stale))
+                    entries[key] = new(value, values.Now, stale ? values.Now : null, [.. values.History(key)]);
+            foreach (var key in missing)
+            {
+                var history = Samples.HistoryFor(key, values.Now, _previewKeys.GraphPoints(key));
+                var value = values.TryGet(key, out var current) ? current : Samples.ValueFor(key, values.Now);
+                entries[key] = new(value, values.Now, null, [.. history]);
+            }
+            values = SensorSnapshot.Of(values.Now, entries);
+        }
         using var frame = _renderer.Render(values, time);
         Bitmap = FrameBitmap.Copy(frame, Bitmap);
     }
@@ -73,7 +93,7 @@ public sealed class BackgroundGalleryViewModel : IDisposable
         "drift" => Strings.BackgroundDrift, "nebula" => Strings.BackgroundNebula, _ => entry.Info.Name!,
     };
     public bool IsRunning => _timer.IsEnabled;
-    public void Start() { if (!_disposed) _timer.Start(); }
+    public void Start() { if (!_disposed && !_timer.IsEnabled) { _timer.Start(); Refresh(); } }
     public void Stop() => _timer.Stop();
     void OnTick(object? sender, EventArgs e) => Refresh();
     public void Refresh()

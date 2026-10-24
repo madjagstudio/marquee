@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using Marquee.Editor.Session;
 using Marquee.Core.Themes;
 using Marquee.Editor.Resources;
+using Marquee.Editor.Mvvm;
 
 namespace Marquee.Editor.Modules;
 
@@ -17,12 +18,13 @@ public sealed record ModuleCategoryView(ModuleCategory Category, string Name, IR
     public bool IsBlank => Category == ModuleCategory.BlankWidgets;
 }
 
-public sealed class ModuleGalleryViewModel : IDisposable
+public sealed class ModuleGalleryViewModel : ObservableObject, IDisposable
 {
     readonly Func<SensorSnapshot> _values;
     readonly Stopwatch _clock = Stopwatch.StartNew();
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     bool _disposed;
+    ModuleCategoryView? _selectedCategory;
     readonly UserModules? _userModules;
     public IEditorDialogs? Dialogs { get; init; }
     public ModuleGalleryViewModel(string folder, Func<SensorSnapshot> values, UserModules? userModules = null)
@@ -38,10 +40,16 @@ public sealed class ModuleGalleryViewModel : IDisposable
                 new ObservableCollection<LiveThemeTile>(tiles.Where(tile => ((Module)tile.Item!).Category == category)))).ToList();
         }
         catch { foreach (var tile in tiles) tile.Dispose(); throw; }
+        _selectedCategory = Categories.First();
         _timer.Tick += Tick;
         Refresh();
     }
     public IReadOnlyList<ModuleCategoryView> Categories { get; }
+    public ModuleCategoryView? SelectedCategory
+    {
+        get => _selectedCategory;
+        set { if (Set(ref _selectedCategory, value) && _timer.IsEnabled) Refresh(); }
+    }
     public string? StoreProblem { get; private set; }
     IReadOnlyList<Module> UserEntries()
     {
@@ -80,7 +88,7 @@ public sealed class ModuleGalleryViewModel : IDisposable
         foreach (var tile in tiles) tile.Dispose();
         tiles.Clear();
         foreach (var module in UserEntries()) tiles.Add(UserTile(module));
-        Refresh();
+        if (_timer.IsEnabled) Refresh();
     }
     public static LiveThemeTile Tile(Module module, string folder)
     {
@@ -97,14 +105,14 @@ public sealed class ModuleGalleryViewModel : IDisposable
         var theme = "canvas: { orientation: landscape }\nbackground: [{ fill: \"#0A0A0B\" }]\nwidgets:\n  - " + yaml.Trim().Replace("\r\n", "\n").Replace("\n", "\n    ") + "\n";
         return new(module.Name, folder, theme, module, 240, 140, SKRect.Create(-8, -8, size.Width + 16, size.Height + 16), ModuleLibrary.Description(module));
     }
-    public void Start() { if (!_disposed) _timer.Start(); }
+    public void Start() { if (!_disposed && !_timer.IsEnabled) { _timer.Start(); Refresh(); } }
     public void Stop() => _timer.Stop();
     void Tick(object? sender, EventArgs e) => Refresh();
     public void Refresh()
     {
         if (_disposed) return;
         var values = _values();
-        foreach (var tile in Categories.SelectMany(category => category.Tiles)) tile.Render(values, _clock.Elapsed);
+        foreach (var tile in SelectedCategory?.Tiles ?? []) tile.Render(values, _clock.Elapsed);
     }
     public void Dispose()
     {

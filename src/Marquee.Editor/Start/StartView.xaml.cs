@@ -10,7 +10,8 @@ public partial class StartView : Window
     public StartView(StartViewModel model)
     {
         _model = model; DataContext = model; InitializeComponent();
-        Loaded += (_, _) => model.Start(); Closed += (_, _) => model.Dispose();
+        GalleryPlayback.Attach(this, model.Start, model.Stop);
+        Closed += (_, _) => model.Dispose();
     }
     void OnChoose(object sender, RoutedEventArgs e)
     {
