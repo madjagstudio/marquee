@@ -19,6 +19,9 @@
                 </Style.Triggers>
             </Style>
             <local:PropertyTemplateSelector x:Key="Templates" />
+            <DataTemplate x:Key="VisualChoiceRow">
+                <DockPanel Margin="0,2"><Button DockPanel.Dock="Right" Style="{DynamicResource Reset}" /><local:VisualChoices /></DockPanel>
+            </DataTemplate>
             <SolidColorBrush x:Key="Muted" Color="{StaticResource TextMutedColor}" />
             <SolidColorBrush x:Key="Error" Color="{StaticResource WarningColor}" />
 
@@ -213,11 +216,6 @@
                                 </Border>
                             </Popup>
                         </Grid>
-                        <Grid Margin="6,0,0,0">
-                            <TextBox Style="{StaticResource Box}" FontFamily="{StaticResource LabelFont}" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
-                            <TextBlock Style="{StaticResource Hint}" />
-                        </Grid>
                     </DockPanel>
                     <TextBlock Style="{StaticResource ErrorText}" />
                 </StackPanel>
@@ -248,7 +246,7 @@
                                       IsChecked="{Binding UseGradient}" IsEnabled="{Binding CanUseGradient}"
                                       ToolTip="{x:Static res:Strings.GradientTip}" />
                         <Grid Margin="6,0,0,0">
-                            <TextBox x:Name="Hex" Style="{StaticResource Box}" FontFamily="{StaticResource LabelFont}"
+                            <TextBox x:Name="Hex" Visibility="Collapsed" Style="{StaticResource Box}" FontFamily="{StaticResource LabelFont}"
                                      Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
                             <ToggleButton ToolTip="{x:Static res:Strings.EditGradientTip}" x:Name="EditGradient" Content="{x:Static res:Strings.EditGradient}" Visibility="Collapsed"
                                           IsChecked="{Binding IsGradientOpen}" HorizontalContentAlignment="Left" Padding="6,0" />
@@ -427,12 +425,17 @@
                         </UniformGrid>
                     </DockPanel>
                     <UniformGrid Columns="2" Visibility="{Binding HasSizeSliders, Converter={StaticResource Visible}}">
+                        <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" MinWidth="55" Margin="4,0" VerticalAlignment="Center"><TextBlock.Text><MultiBinding StringFormat="{}{0} {1}"><Binding Path="X" /><Binding Path="Unit" /></MultiBinding></TextBlock.Text></TextBlock>
                         <Slider ToolTip="{Binding XLabel}" Tag="Width" Minimum="{Binding SizeSliderMin}" Maximum="{Binding WidthSliderMax}"
                                 Value="{Binding WidthNumber, Mode=OneWay}" SmallChange="1" IsEnabled="{Binding IsEditable}" Margin="0,0,4,0"
                                 ValueChanged="OnSizeSliderChanged" Thumb.DragStarted="OnSlideStarted" Thumb.DragCompleted="OnSlideCompleted" />
+                        </DockPanel><DockPanel>
+                        <TextBlock DockPanel.Dock="Right" MinWidth="55" Margin="4,0" VerticalAlignment="Center"><TextBlock.Text><MultiBinding StringFormat="{}{0} {1}"><Binding Path="Y" /><Binding Path="Unit" /></MultiBinding></TextBlock.Text></TextBlock>
                         <Slider ToolTip="{Binding YLabel}" Tag="Height" Minimum="{Binding SizeSliderMin}" Maximum="{Binding HeightSliderMax}"
                                 Value="{Binding HeightNumber, Mode=OneWay}" SmallChange="1" IsEnabled="{Binding IsEditable}"
                                 ValueChanged="OnSizeSliderChanged" Thumb.DragStarted="OnSlideStarted" Thumb.DragCompleted="OnSlideCompleted" />
+                        </DockPanel>
                     </UniformGrid>
                     <TextBlock Style="{StaticResource ErrorText}" />
                 </StackPanel>
@@ -513,7 +516,7 @@
 
             <StackPanel Visibility="{Binding HasProperties, Converter={StaticResource Visible}}">
                 <TextBlock x:Name="PlainHeading" Text="{Binding Heading}" FontFamily="{StaticResource HeadFont}" FontWeight="SemiBold" FontSize="16" Margin="0,2,0,6" TextWrapping="Wrap" />
-                <TextBlock Text="{x:Static res:Strings.BasicsSection}" FontWeight="SemiBold" Margin="0,4" />
+                <local:GaugeFormsView />
                 <DockPanel Margin="0,2,0,6" Visibility="{Binding IsLayer, Converter={StaticResource Visible}}">
                     <TextBlock Text="{x:Static res:Strings.LayerKind}" Width="108" VerticalAlignment="Center" />
                     <Button ToolTip="{x:Static res:Strings.LayerKindTip}" Content="{x:Static res:Strings.BackgroundGallery}" Command="{Binding BackgroundGalleryCommand}" IsEnabled="{Binding CanEdit}" />

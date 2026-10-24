@@ -23,6 +23,7 @@
             <DockPanel>
                 <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Unpin}" ToolTip="{x:Static res:Strings.UnpinTip}"
                         Command="{Binding UnpinCommand}" Margin="6,0,0,0" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding TryDisplay}" MinWidth="55" Margin="6,0" VerticalAlignment="Center" />
                 <Slider x:Name="TryValueSlider" Minimum="{Binding TryMin}" Maximum="{Binding TryMax}"
                         Value="{Binding TryNumber, Mode=OneWay}" ValueChanged="OnTryValueChanged"
                         ToolTip="{x:Static res:Strings.TryValueTip}" />

@@ -97,7 +97,7 @@ public partial class ShaderControlsView : UserControl
                 AddSlider(speed ? "SpeedSlider" : "StrengthSlider", control.Min, control.Max,
                     speed ? Strings.ShaderSlowIcon : Strings.ShaderFaintIcon, speed ? Strings.ShaderFastIcon : Strings.ShaderFullIcon,
                     speed ? Strings.ShaderSpeedTip : Strings.ShaderStrengthTip,
-                    () => ReadNumber(model, control.Uniform), value => model.Set(control.Uniform, [value.ToString("0.###", CultureInfo.InvariantCulture)]), speed ? Strings.ShaderSpeedUnit : "");
+                    () => ReadNumber(model, control.Uniform), value => model.Set(control.Uniform, [value.ToString("0.###", CultureInfo.InvariantCulture)]), speed ? Strings.ShaderSpeedUnit : Strings.PercentUnit, speed ? 1 : 100);
             }
         }
         if (info.Reacts is { } reacts)
@@ -145,9 +145,9 @@ public partial class ShaderControlsView : UserControl
         });
         Rows.Children.Add(new TextBlock { Text = Strings.ShaderQuality });
         AddSlider("QualitySlider", .1, 1, Strings.ShaderFaintIcon, Strings.ShaderFullIcon, Strings.ShaderQualityTip,
-            () => model.Owner.Row("scale")?.Number ?? 1, value => model.Owner.Row("scale")?.SlideTo(value, true), "");
+            () => model.Owner.Row("scale")?.Number ?? 1, value => model.Owner.Row("scale")?.SlideTo(value, true), Strings.PercentUnit, 100);
     }
-    void AddSlider(string name, double min, double max, string left, string right, string tip, Func<double> read, Action<double> write, string unit)
+    void AddSlider(string name, double min, double max, string left, string right, string tip, Func<double> read, Action<double> write, string unit, double displayScale = 1)
     {
         var row = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };
         var value = new TextBlock { Width = 48, VerticalAlignment = VerticalAlignment.Center };
@@ -158,7 +158,7 @@ public partial class ShaderControlsView : UserControl
         var slider = new Slider { Name = name, Minimum = min, Maximum = max, ToolTip = tip };
         slider.ValueChanged += (_, e) => { if (!_updating) write(e.NewValue); };
         row.Children.Add(slider); Rows.Children.Add(row);
-        _refresh.Add(() => { var number = read(); slider.Value = number; value.Text = number.ToString("0.##", CultureInfo.CurrentCulture) + unit; });
+        _refresh.Add(() => { var number = read(); slider.Value = number; value.Text = (number * displayScale).ToString("0.##", CultureInfo.CurrentCulture) + unit; });
     }
     Popup PopupFor(UIElement target, UIElement child) => new()
     {

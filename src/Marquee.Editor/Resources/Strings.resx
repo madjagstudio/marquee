@@ -1014,4 +1014,36 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="RenameModule" xml:space="preserve"><value>Rename…</value></data>
   <data name="DeleteModule" xml:space="preserve"><value>Delete module</value></data>
   <data name="MyModuleNamePrompt" xml:space="preserve"><value>Choose a name for this reusable widget.</value></data>
+  <data name="CaseUpperTip" xml:space="preserve"><value>Show all letters in uppercase.</value></data>
+  <data name="UnderlineIcon" xml:space="preserve"><value>U</value></data>
+  <data name="BlendDarkenTip" xml:space="preserve"><value>Darken: keep the darker colour.</value></data>
+  <data name="CaseAsWrittenTip" xml:space="preserve"><value>Keep the text case as written.</value></data>
+  <data name="GaugeRingTip" xml:space="preserve"><value>Ring: a full circle fills with the reading.</value></data>
+  <data name="TextAlignCenterTip" xml:space="preserve"><value>Centre the text.</value></data>
+  <data name="CaseLowerTip" xml:space="preserve"><value>Show all letters in lowercase.</value></data>
+  <data name="BlendLightenTip" xml:space="preserve"><value>Lighten: keep the lighter colour.</value></data>
+  <data name="GraphAreaTip" xml:space="preserve"><value>Area: fill below the readings.</value></data>
+  <data name="CaseUpperIcon" xml:space="preserve"><value>AA</value></data>
+  <data name="BoldIcon" xml:space="preserve"><value>B</value></data>
+  <data name="ItalicTip" xml:space="preserve"><value>Italic text.</value></data>
+  <data name="BlendOverlayTip" xml:space="preserve"><value>Overlay: combine light and dark contrast.</value></data>
+  <data name="GaugeFormChange" xml:space="preserve"><value>Change gauge form</value></data>
+  <data name="StrikeIcon" xml:space="preserve"><value>S</value></data>
+  <data name="ItalicIcon" xml:space="preserve"><value>I</value></data>
+  <data name="TextAlignLeftTip" xml:space="preserve"><value>Align text to the left.</value></data>
+  <data name="GraphLineTip" xml:space="preserve"><value>Line: follow the recent readings.</value></data>
+  <data name="GaugeDialTip" xml:space="preserve"><value>Dial: a needle and ticks show the reading.</value></data>
+  <data name="BlendNormalTip" xml:space="preserve"><value>Normal: show the colour unchanged.</value></data>
+  <data name="UnderlineTip" xml:space="preserve"><value>Underline the text.</value></data>
+  <data name="TextAlignRightTip" xml:space="preserve"><value>Align text to the right.</value></data>
+  <data name="CaseAsWrittenIcon" xml:space="preserve"><value>Aa</value></data>
+  <data name="BlendAddTip" xml:space="preserve"><value>Add: add the colours together.</value></data>
+  <data name="BlendScreenTip" xml:space="preserve"><value>Screen: lighten the colours underneath.</value></data>
+  <data name="GraphColumnsTip" xml:space="preserve"><value>Columns: one bar per reading.</value></data>
+  <data name="BoldTip" xml:space="preserve"><value>Make the text bold.</value></data>
+  <data name="CaseLowerIcon" xml:space="preserve"><value>aa</value></data>
+  <data name="StrikeTip" xml:space="preserve"><value>Draw a line through the text.</value></data>
+  <data name="GaugeArcTip" xml:space="preserve"><value>Arc: an open arc fills with the reading.</value></data>
+  <data name="BlendMultiplyTip" xml:space="preserve"><value>Multiply: darken the colours underneath.</value></data>
+  <data name="PercentUnit" xml:space="preserve"><value>%</value></data>
 </root>

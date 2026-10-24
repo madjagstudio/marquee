@@ -747,4 +747,11 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <Style x:Key="VisualOption" TargetType="ToggleButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+        <Setter Property="MinWidth" Value="34" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="Margin" Value="0,0,4,3" />
+        <Setter Property="Padding" Value="5,3" />
+        <Setter Property="ToolTipService.ShowDuration" Value="60000" />
+    </Style>
 </ResourceDictionary>

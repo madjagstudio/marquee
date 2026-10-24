@@ -44,6 +44,7 @@ public sealed class RulesViewModel : ObservableObject
     public bool IsPinned => TrySource is { } key && Panel.Workspace?.Values.TestValues.PinOf(key) is not null;
     public double TryMin => TrySource is { } key ? Panel.Workspace!.Values.TestValues.RangeOf(key).Min : 0;
     public double TryMax => TrySource is { } key ? Panel.Workspace!.Values.TestValues.RangeOf(key).Max : 100;
+    public string TryDisplay => TrySource is { } key ? SensorNames.Format(key, Marquee.Core.Sensors.SensorValue.Of(TryNumber)) : "";
     public double TryNumber
     {
         get
@@ -110,6 +111,7 @@ public sealed class RulesViewModel : ObservableObject
     {
         if (Panel.Session is not { IsPaused: false } session || Panel.Workspace is not { } workspace) return;
         Raise(nameof(TryNumber));
+        Raise(nameof(TryDisplay));
         Raise(nameof(IsPinned));
         UnpinCommand.Refresh();
         var matching = RuleSummaries.Matching(session.Document, Owner, workspace.Values.Snapshot());

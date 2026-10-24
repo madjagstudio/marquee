@@ -9,6 +9,38 @@ namespace Marquee.Editor.Resources;
 /// properties ({x:Static}).
 public static class Strings
 {
+    public static string PercentUnit => Get(nameof(PercentUnit));
+    public static string BlendMultiplyTip => Get(nameof(BlendMultiplyTip));
+    public static string GaugeArcTip => Get(nameof(GaugeArcTip));
+    public static string StrikeTip => Get(nameof(StrikeTip));
+    public static string CaseLowerIcon => Get(nameof(CaseLowerIcon));
+    public static string BoldTip => Get(nameof(BoldTip));
+    public static string GraphColumnsTip => Get(nameof(GraphColumnsTip));
+    public static string BlendScreenTip => Get(nameof(BlendScreenTip));
+    public static string BlendAddTip => Get(nameof(BlendAddTip));
+    public static string CaseAsWrittenIcon => Get(nameof(CaseAsWrittenIcon));
+    public static string TextAlignRightTip => Get(nameof(TextAlignRightTip));
+    public static string UnderlineTip => Get(nameof(UnderlineTip));
+    public static string BlendNormalTip => Get(nameof(BlendNormalTip));
+    public static string GaugeDialTip => Get(nameof(GaugeDialTip));
+    public static string GraphLineTip => Get(nameof(GraphLineTip));
+    public static string TextAlignLeftTip => Get(nameof(TextAlignLeftTip));
+    public static string ItalicIcon => Get(nameof(ItalicIcon));
+    public static string StrikeIcon => Get(nameof(StrikeIcon));
+    public static string GaugeFormChange => Get(nameof(GaugeFormChange));
+    public static string BlendOverlayTip => Get(nameof(BlendOverlayTip));
+    public static string ItalicTip => Get(nameof(ItalicTip));
+    public static string BoldIcon => Get(nameof(BoldIcon));
+    public static string CaseUpperIcon => Get(nameof(CaseUpperIcon));
+    public static string GraphAreaTip => Get(nameof(GraphAreaTip));
+    public static string BlendLightenTip => Get(nameof(BlendLightenTip));
+    public static string CaseLowerTip => Get(nameof(CaseLowerTip));
+    public static string TextAlignCenterTip => Get(nameof(TextAlignCenterTip));
+    public static string GaugeRingTip => Get(nameof(GaugeRingTip));
+    public static string CaseAsWrittenTip => Get(nameof(CaseAsWrittenTip));
+    public static string BlendDarkenTip => Get(nameof(BlendDarkenTip));
+    public static string UnderlineIcon => Get(nameof(UnderlineIcon));
+    public static string CaseUpperTip => Get(nameof(CaseUpperTip));
     public static string MyModuleNamePrompt => Get(nameof(MyModuleNamePrompt));
     public static string DeleteModule => Get(nameof(DeleteModule));
     public static string RenameModule => Get(nameof(RenameModule));
