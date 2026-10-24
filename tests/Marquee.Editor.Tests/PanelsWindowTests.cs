@@ -34,8 +34,8 @@ public class PanelsWindowTests
             var background = Assert.IsType<DockPanel>(layers.FindName("BackgroundSection"));
             Assert.Contains(Descendants(background).OfType<TextBlock>(),
                 text => text.Text == Resources.Strings.BackgroundSection);
-            Assert.Contains(Descendants(background).OfType<MenuItem>(),
-                item => Equals(item.Header, Resources.Strings.AddLayerMenu));
+            Assert.Contains(Descendants(background).OfType<Button>(),
+                item => Equals(item.Content, Resources.Strings.AddLayerMenu) && item.Command == window.Model.Layers.BackgroundGalleryCommand);
 
             var widgetList = (ItemsControl)layers.FindName("WidgetList");
             var backgroundList = (ItemsControl)layers.FindName("BackgroundList");

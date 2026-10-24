@@ -516,8 +516,7 @@
                 <TextBlock Text="{x:Static res:Strings.BasicsSection}" FontWeight="SemiBold" Margin="0,4" />
                 <DockPanel Margin="0,2,0,6" Visibility="{Binding IsLayer, Converter={StaticResource Visible}}">
                     <TextBlock Text="{x:Static res:Strings.LayerKind}" Width="108" VerticalAlignment="Center" />
-                    <ComboBox ToolTip="{x:Static res:Strings.LayerKindTip}" ItemsSource="{Binding KindChoices}" DisplayMemberPath="Label" SelectedValuePath="Kind"
-                              SelectedValue="{Binding Kind}" IsEnabled="{Binding CanEdit}" />
+                    <Button ToolTip="{x:Static res:Strings.LayerKindTip}" Content="{x:Static res:Strings.BackgroundGallery}" Command="{Binding BackgroundGalleryCommand}" IsEnabled="{Binding CanEdit}" />
                 </DockPanel>
                 <ItemsControl x:Name="BasicsRows" ItemsSource="{Binding Basics}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
                 <ContentControl Style="{StaticResource OptionalContent}" Content="{Binding RulesList}" Focusable="False">
@@ -540,6 +539,7 @@
                         </DataTemplate>
                     </ContentControl.ContentTemplate>
                 </ContentControl>
+                <local:ShaderControlsView DataContext="{Binding Shader}" Visibility="{Binding IsAnnotated, Converter={StaticResource Visible}}" />
                 <TextBlock Text="{x:Static res:Strings.MoreStylingSection}" FontWeight="SemiBold" Margin="0,10,0,4" />
                 <ItemsControl x:Name="MoreStylingSections" ItemsSource="{Binding MoreStyling}" Focusable="False">
                     <ItemsControl.ItemTemplate>
@@ -552,12 +552,60 @@
                 </ItemsControl>
                 <Expander ToolTip="{x:Static res:Strings.RawSectionTip}" x:Name="RawSection" Header="{x:Static res:Strings.RawSection}" IsExpanded="{Binding IsRawExpanded, Mode=TwoWay}"
                           local:PropertiesView.RawLabels="True" Margin="0,10,0,4">
+                    <StackPanel>
                     <ItemsControl ItemsSource="{Binding Raw}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
+                <ContentControl Content="{Binding Shader}" Focusable="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,8,0,0" Visibility="{Binding IsAnnotated, Converter={StaticResource Visible}}">
+                                <TextBlock Text="{Binding Problem}" Foreground="{StaticResource Error}" TextWrapping="Wrap" />
+                                <ItemsControl ItemsSource="{Binding Uniforms}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,3">
+                                                <DockPanel>
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Visibility="{Binding IsUnused, Converter={StaticResource Visible}}">
+                                                        <TextBlock Text="{x:Static res:Strings.UnusedUniform}" Foreground="{StaticResource Muted}" Margin="4,0" />
+                                                        <Button ToolTip="{x:Static res:Strings.RemoveUniformTip}" Content="{x:Static res:Strings.RemoveUniform}" Command="{Binding RemoveCommand}" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                </DockPanel>
+                                                <ItemsControl ItemsSource="{Binding Components}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid IsEnabled="{Binding IsEditable}" Margin="0,2">
+                                                                <controls:ValuePickerControl DataContext="{Binding Picker}" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding Hint}" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{Binding CostText}" TextWrapping="Wrap" Margin="0,6">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding OverBudget}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource Error}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+                    </StackPanel>
                 </Expander>
                 <ContentControl Content="{Binding Shader}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="0,8,0,0">
+                            <StackPanel Margin="0,8,0,0" Visibility="{Binding IsUnannotated, Converter={StaticResource Visible}}">
                                 <TextBlock Text="{Binding Problem}" Foreground="{StaticResource Error}" TextWrapping="Wrap" />
                                 <ItemsControl ItemsSource="{Binding Uniforms}">
                                     <ItemsControl.ItemTemplate>

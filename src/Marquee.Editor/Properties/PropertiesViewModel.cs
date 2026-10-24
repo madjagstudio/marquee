@@ -75,6 +75,7 @@ public sealed class PropertiesViewModel : ObservableObject
 
     public PropertyTargetKind? Target => Model?.Target;
     public bool IsLayer => Target == PropertyTargetKind.Layer;
+    public RelayCommand? BackgroundGalleryCommand { get; set; }
     public bool IsWidgets => Target == PropertyTargetKind.Widgets;
     public bool IsStyle => Target == PropertyTargetKind.Style;
     public bool HasProperties => Model is not null;

@@ -25,6 +25,7 @@ public sealed class ShaderLayerModel
 
     public string? Problem { get; }
     public IReadOnlyList<UniformRow> Rows { get; }
+    public ShaderInfo? Info { get; private init; }
 
     public static ShaderLayerModel Read(EditorSession session, YamlPath layer)
     {
@@ -58,7 +59,12 @@ public sealed class ShaderLayerModel
             var values = Values(document, bindings.Child(name));
             rows.Add(new UniformRow(name, values.Count, values, Declared: false));
         }
-        return new(path, scale, null, rows);
+        var info = ShaderControls.Read(source);
+        // Only controls that can actually write the declared uniforms get the visual panel.
+        var valid = info.Controls.All(control => declared.Any(uniform => uniform.Name == control.Uniform &&
+            uniform.Components == (control.Kind == ControlKind.Colour ? 3 : 1))) &&
+            (info.Reacts is null || declared.Any(uniform => uniform.Name == info.Reacts.Uniform && uniform.Components == 1));
+        return new(path, scale, null, rows) { Info = valid ? info : null };
     }
 
     static IReadOnlyList<string> Values(LayoutDocument document, YamlPath path)

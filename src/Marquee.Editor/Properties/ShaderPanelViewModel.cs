@@ -1,5 +1,6 @@
 using System.Windows.Threading;
 using Marquee.Core.Themes.Editing;
+using Marquee.Core.Themes;
 using Marquee.Editor.Model;
 using Marquee.Editor.Model.Values;
 using Marquee.Editor.Mvvm;
@@ -26,6 +27,10 @@ public sealed class ShaderPanelViewModel : ObservableObject, IDisposable
     }
 
     public YamlPath Layer { get; }
+    internal PropertiesViewModel Owner => _owner;
+    public ShaderInfo? Info { get; private set; }
+    public bool IsAnnotated => Info is { Controls.Count: > 0 };
+    public bool IsUnannotated => !IsAnnotated;
     internal ValueSources Values => _owner.Workspace!.Values;
     public string? Problem { get => _problem; private set => Set(ref _problem, value); }
     public IReadOnlyList<UniformRowViewModel> Uniforms { get => _uniforms; private set => Set(ref _uniforms, value); }
@@ -48,12 +53,15 @@ public sealed class ShaderPanelViewModel : ObservableObject, IDisposable
         if (_disposed || _owner.Session is not { } session) return;
         var model = ShaderLayerModel.Read(session, Layer);
         Problem = model.Problem;
+        Info = model.Info;
+        Raise(nameof(Info)); Raise(nameof(IsAnnotated)); Raise(nameof(IsUnannotated));
         if (Uniforms.Count == model.Rows.Count && Uniforms.Zip(model.Rows).All(pair =>
                 pair.First.Name == pair.Second.Name && pair.First.Components.Count == pair.Second.Components && pair.First.IsUnused == !pair.Second.Declared))
         {
             foreach (var (view, row) in Uniforms.Zip(model.Rows)) view.Update(row);
         }
         else Uniforms = model.Rows.Select(row => new UniformRowViewModel(this, row)).ToList();
+        Raise(nameof(Uniforms));
 
         session.Document.TryGetScalar(Layer.Child("shader"), out var file);
         session.Document.TryGetScalar(Layer.Child("scale"), out var scale);

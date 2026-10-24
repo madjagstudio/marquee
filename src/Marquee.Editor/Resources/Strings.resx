@@ -957,4 +957,42 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="GroupPickHint" xml:space="preserve">
     <value>Double-click, or Ctrl+click, to pick something inside this group.</value>
   </data>
+  <data name="BackgroundGallery" xml:space="preserve"><value>Backgrounds</value></data>
+  <data name="MovingBackgrounds" xml:space="preserve"><value>Moving</value></data>
+  <data name="StillBackgrounds" xml:space="preserve"><value>Still</value></data>
+  <data name="MoreBackgrounds" xml:space="preserve"><value>More backgrounds</value></data>
+  <data name="UseBackgroundTip" xml:space="preserve"><value>Use this moving background in your theme.</value></data>
+  <data name="StillColour" xml:space="preserve"><value>■ Colour</value></data>
+  <data name="StillGradient" xml:space="preserve"><value>◩ Gradient</value></data>
+  <data name="StillPicture" xml:space="preserve"><value>▧ Picture…</value></data>
+  <data name="StillVideo" xml:space="preserve"><value>▶ Video…</value></data>
+  <data name="ImportBackgroundShader" xml:space="preserve"><value>Import a shader file…</value></data>
+  <data name="ShaderColourTip" xml:space="preserve"><value>Choose the background's colour.</value></data>
+  <data name="ShaderSpeedTip" xml:space="preserve"><value>Set a steady animation speed.</value></data>
+  <data name="ShaderStrengthTip" xml:space="preserve"><value>Set how strongly the background appears.</value></data>
+  <data name="ShaderQualityTip" xml:space="preserve"><value>Choose the detail used to draw this background.</value></data>
+  <data name="ShaderReacts" xml:space="preserve"><value>Reacts to</value></data>
+  <data name="ShaderReactTip" xml:space="preserve"><value>Choose the reading this background reacts to.</value></data>
+  <data name="ShaderNothing" xml:space="preserve"><value>Nothing</value></data>
+  <data name="ShaderNothingTip" xml:space="preserve"><value>Keep this background calm without a reading.</value></data>
+  <data name="ShaderCalm" xml:space="preserve"><value>Calm</value></data>
+  <data name="ShaderBusy" xml:space="preserve"><value>Busy</value></data>
+  <data name="ShaderQuality" xml:space="preserve"><value>Quality</value></data>
+  <data name="ShaderLight" xml:space="preserve"><value>Light. The screen keeps up easily.</value></data>
+  <data name="ShaderHeavy" xml:space="preserve"><value>Heavy. Lower its quality if the screen stutters.</value></data>
+  <data name="ShaderTooHeavy" xml:space="preserve"><value>Too heavy. The screen will skip it.</value></data>
+  <data name="ShaderSlowIcon" xml:space="preserve"><value>◷</value></data>
+  <data name="ShaderFastIcon" xml:space="preserve"><value>»</value></data>
+  <data name="ShaderFaintIcon" xml:space="preserve"><value>◌</value></data>
+  <data name="ShaderFullIcon" xml:space="preserve"><value>●</value></data>
+  <data name="BackgroundAurora" xml:space="preserve"><value>Aurora</value></data>
+  <data name="BackgroundWaves" xml:space="preserve"><value>Slow waves</value></data>
+  <data name="BackgroundPlasma" xml:space="preserve"><value>Plasma</value></data>
+  <data name="BackgroundStarfield" xml:space="preserve"><value>Starfield</value></data>
+  <data name="BackgroundDrift" xml:space="preserve"><value>Gradient drift</value></data>
+  <data name="BackgroundNebula" xml:space="preserve"><value>Nebula</value></data>
+  <data name="ShaderReactionSentence" xml:space="preserve"><value>Warmer and brighter as it gets busy</value></data>
+  <data name="ShaderCpuLoad" xml:space="preserve"><value>CPU load</value></data>
+  <data name="ShaderSpeedUnit" xml:space="preserve"><value>×</value></data>
+  <data name="ShaderMissingValue" xml:space="preserve"><value>—</value></data>
 </root>

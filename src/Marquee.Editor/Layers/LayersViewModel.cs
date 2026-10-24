@@ -86,6 +86,7 @@ public sealed class LayersViewModel : ObservableObject
     public RelayCommand AddImageLayerCommand { get; }
     public RelayCommand AddVideoLayerCommand { get; }
     public RelayCommand AddShaderLayerCommand { get; }
+    public RelayCommand? BackgroundGalleryCommand { get; set; }
 
     /// Selects a layer by its YAML index (the rows display front to back).
     public void SelectBackground(int index)

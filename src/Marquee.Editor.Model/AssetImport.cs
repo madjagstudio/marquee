@@ -226,7 +226,7 @@ public sealed class AssetImport
 
     /// Deletes a copy no edit took, unless a link has come onto its path since. One that won't go is only an unused
     /// file, which the clean-up lists.
-    void Discard(ImportedFile file)
+    internal void Discard(ImportedFile file)
     {
         var path = Path.GetFullPath(Path.Combine(ThemeFolder, file.Path));
         try

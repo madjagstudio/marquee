@@ -23,6 +23,7 @@
     <Color x:Key="RedDeepColor">#7E0F18</Color>
     <SolidColorBrush x:Key="RedDeep" Color="{StaticResource RedDeepColor}" />
     <Color x:Key="WarningColor">#F59E0B</Color>
+    <SolidColorBrush x:Key="Success" Color="#34D399" />
     <SolidColorBrush x:Key="Warning" Color="{StaticResource WarningColor}" />
     <Color x:Key="ClearColor">#00000000</Color>
     <SolidColorBrush x:Key="Clear" Color="{StaticResource ClearColor}" />

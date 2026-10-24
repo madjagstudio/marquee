@@ -37,6 +37,7 @@ public partial class MainWindow : Window
         FillSave();
         model.PropertyChanged += OnModelChanged;
         model.ShowRequested += (_, _) => BringForward();
+        model.BackgroundGalleryRequested += OnBackgroundGallery;
 
         Loaded += (_, _) =>
         {
@@ -52,6 +53,14 @@ public partial class MainWindow : Window
     }
 
     public MainViewModel Model => _model;
+
+    void OnBackgroundGallery(bool replace)
+    {
+        using var gallery = _model.CreateBackgroundGallery();
+        if (gallery is null) return;
+        var window = new Backgrounds.BackgroundGalleryView(gallery) { Owner = this };
+        if (window.ShowDialog() == true) _model.ChooseBackground(window.Chosen, window.Still, replace);
+    }
 
     /// Restores the window if it is minimised and brings it to the front.
     public void BringForward()

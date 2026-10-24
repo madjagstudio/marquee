@@ -125,14 +125,8 @@
                 <TextBlock Text="{x:Static res:Strings.BackgroundSection}" Foreground="{StaticResource TextMuted}" FontWeight="SemiBold"
                            ToolTip="{x:Static res:Strings.BackgroundSectionTip}" />
             </Border>
-            <Menu DockPanel.Dock="Top" Background="{StaticResource Clear}" Margin="6,4" IsEnabled="{Binding CanEdit}">
-                <MenuItem ToolTip="{x:Static res:Strings.AddLayerTip}" Header="{x:Static res:Strings.AddLayerMenu}">
-                    <MenuItem ToolTip="{x:Static res:Strings.AddFillLayerTip}" Header="{x:Static res:Strings.LayerFill}" Command="{Binding AddFillLayerCommand}" />
-                    <MenuItem ToolTip="{x:Static res:Strings.AddImageTip}" Header="{x:Static res:Strings.AddLayerImage}" Command="{Binding AddImageLayerCommand}" />
-                    <MenuItem ToolTip="{x:Static res:Strings.AddVideoTip}" Header="{x:Static res:Strings.AddLayerVideo}" Command="{Binding AddVideoLayerCommand}" />
-                    <MenuItem ToolTip="{x:Static res:Strings.AddShaderLayerTip}" Header="{x:Static res:Strings.AddLayerShader}" Command="{Binding AddShaderLayerCommand}" />
-                </MenuItem>
-            </Menu>
+            <Button DockPanel.Dock="Top" Margin="6,4" IsEnabled="{Binding CanEdit}" Content="{x:Static res:Strings.AddLayerMenu}"
+                    ToolTip="{x:Static res:Strings.AddLayerTip}" Command="{Binding BackgroundGalleryCommand}" />
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                 <ItemsControl x:Name="BackgroundList" ItemsSource="{Binding Background}" ItemTemplate="{StaticResource LayerRow}" Margin="6,0,6,4" />
             </ScrollViewer>
