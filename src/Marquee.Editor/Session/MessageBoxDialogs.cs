@@ -13,6 +13,11 @@ namespace Marquee.Editor.Session;
 /// the clean-up as windows of their own (NameDialog, CleanUpDialog).
 public sealed class MessageBoxDialogs : IEditorDialogs
 {
+    public string? PickOpenFolder()
+    {
+        var dialog = new OpenFolderDialog { Title = Strings.OpenYourTheme };
+        return ShowDialog(dialog) ? dialog.FolderName : null;
+    }
     public string? AskStyleName(string suggested, Func<string, string?> problem)
     {
         var dialog = new NameDialog(Strings.SaveAsStyle, Strings.StyleNamePrompt, suggested, problem) { Owner = Owner() };

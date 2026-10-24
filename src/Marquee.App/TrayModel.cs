@@ -119,6 +119,7 @@ sealed partial class TrayModel
             TrayMenuItem.Separator,
             new(MenuKeys.Preview, Strings.MenuOpenPreview) { Enabled = hasEngine, Command = _host.OpenPreview },
             new(MenuKeys.EditTheme, Strings.MenuEditTheme) { Command = () => _ = EditTheme() },
+            new(MenuKeys.NewTheme, Strings.MenuNewTheme) { Command = () => _ = NewTheme() },
             new(MenuKeys.ThemesFolder, Strings.MenuOpenThemesFolder) { Command = () => _ = OpenThemesFolder() },
             new(MenuKeys.Logs, Strings.MenuOpenLogs) { Command = () => _ = OpenLogs() },
             new(MenuKeys.Settings, Strings.MenuEditSettings) { Command = () => _ = EditSettings() },
@@ -183,6 +184,12 @@ sealed partial class TrayModel
     {
         if (!File.Exists(_paths.EditorExe)) throw new InvalidOperationException(Strings.EditorMissing(_paths.EditorExe));
         _shell.Open(_paths.EditorExe);
+    });
+
+    public Task NewTheme() => Run(() =>
+    {
+        if (!File.Exists(_paths.EditorExe)) throw new InvalidOperationException(Strings.EditorMissing(_paths.EditorExe));
+        _shell.Open(_paths.EditorExe, "--new");
     });
 
     /// Cancels an update download, stops the engine (which lets go of the screen and saves the Claude limits), then

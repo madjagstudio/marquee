@@ -33,6 +33,7 @@ static class MenuKeys
     public const string Orientation = "orientation";
     public const string Preview = "preview";
     public const string EditTheme = "edit-theme";
+    public const string NewTheme = "new-theme";
     public const string ThemesFolder = "themes-folder";
     public const string Logs = "logs";
     public const string Settings = "settings";

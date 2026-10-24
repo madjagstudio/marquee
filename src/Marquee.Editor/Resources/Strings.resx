@@ -998,4 +998,13 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="ModuleGallery" xml:space="preserve"><value>Add a module</value></data>
   <data name="AddModule" xml:space="preserve"><value>Add</value></data>
   <data name="AddModuleTip" xml:space="preserve"><value>Click to add this module, or drag its picture onto the screen.</value></data>
+  <data name="NewTheme" xml:space="preserve"><value>New theme…</value></data>
+  <data name="StartBlank" xml:space="preserve"><value>Blank</value></data>
+  <data name="StartGaming" xml:space="preserve"><value>Gaming stats</value></data>
+  <data name="StartMonitor" xml:space="preserve"><value>System monitor</value></data>
+  <data name="StartLandscape" xml:space="preserve"><value>landscape</value></data>
+  <data name="StartPortrait" xml:space="preserve"><value>portrait</value></data>
+  <data name="StartThemeTip" xml:space="preserve"><value>Make your own theme from this look.</value></data>
+  <data name="OpenYourTheme" xml:space="preserve"><value>Open one of yours</value></data>
+  <data name="OpenYourThemeTip" xml:space="preserve"><value>Open a theme folder you already have.</value></data>
 </root>

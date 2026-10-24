@@ -1,0 +1,12 @@
+<Window x:Class="Marquee.Editor.Start.StartView" Style="{StaticResource {x:Type Window}}"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:res="clr-namespace:Marquee.Editor.Resources" Title="{x:Static res:Strings.NewTheme}" Width="920" Height="490" WindowStartupLocation="CenterOwner">
+ <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" /></ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
+ <StackPanel Margin="16">
+  <TextBlock Text="{Binding Screen}" Margin="0,0,0,20" />
+  <ItemsControl ItemsSource="{Binding Tiles}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+   <ItemsControl.ItemTemplate><DataTemplate><Button Click="OnChoose" Margin="4" Padding="8" ToolTip="{x:Static res:Strings.StartThemeTip}"><StackPanel><Image Source="{Binding Bitmap}" Stretch="None" /><TextBlock Text="{Binding Name}" Margin="0,6,0,0" /></StackPanel></Button></DataTemplate></ItemsControl.ItemTemplate>
+  </ItemsControl>
+  <Button Content="{x:Static res:Strings.OpenYourTheme}" Click="OnOpen" ToolTip="{x:Static res:Strings.OpenYourThemeTip}" HorizontalAlignment="Left" Margin="4,20,4,4" />
+ </StackPanel>
+</Window>

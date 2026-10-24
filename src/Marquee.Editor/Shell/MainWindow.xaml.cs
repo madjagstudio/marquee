@@ -38,6 +38,7 @@ public partial class MainWindow : Window
         model.ShowRequested += (_, _) => BringForward();
         model.BackgroundGalleryRequested += OnBackgroundGallery;
         model.ModuleGalleryRequested += OnModuleGallery;
+        model.StartRequested += OnStart;
 
         Loaded += (_, _) =>
         {
@@ -53,6 +54,13 @@ public partial class MainWindow : Window
     }
 
     public MainViewModel Model => _model;
+
+    void OnStart()
+    {
+        using var start = _model.CreateStartScreen();
+        if (new Start.StartView(start) { Owner = this }.ShowDialog() == true && start.ChosenFolder is { } folder)
+            _model.OpenTheme(folder);
+    }
 
     void OnModuleGallery()
     {
@@ -86,6 +94,7 @@ public partial class MainWindow : Window
     {
         if (!ReferenceEquals(e.OriginalSource, ThemeMenu)) return;
         ThemeMenu.Items.Clear();
+        ThemeMenu.Items.Add(new MenuItem { Header = Text(Strings.NewTheme), ToolTip = Strings.StartThemeTip, Command = _model.NewThemeCommand });
         foreach (var group in _model.ThemeChoices().Where(group => group.Count > 0))
         {
             if (ThemeMenu.Items.Count > 0) ThemeMenu.Items.Add(new Separator());

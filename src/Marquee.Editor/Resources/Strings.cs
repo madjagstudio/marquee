@@ -9,6 +9,15 @@ namespace Marquee.Editor.Resources;
 /// properties ({x:Static}).
 public static class Strings
 {
+    public static string NewTheme => Get(nameof(NewTheme));
+    public static string StartBlank => Get(nameof(StartBlank));
+    public static string StartGaming => Get(nameof(StartGaming));
+    public static string StartMonitor => Get(nameof(StartMonitor));
+    public static string StartLandscape => Get(nameof(StartLandscape));
+    public static string StartPortrait => Get(nameof(StartPortrait));
+    public static string StartThemeTip => Get(nameof(StartThemeTip));
+    public static string OpenYourTheme => Get(nameof(OpenYourTheme));
+    public static string OpenYourThemeTip => Get(nameof(OpenYourThemeTip));
     public static string ModuleGallery => Get(nameof(ModuleGallery));
     public static string AddModule => Get(nameof(AddModule));
     public static string AddModuleTip => Get(nameof(AddModuleTip));

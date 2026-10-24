@@ -52,6 +52,7 @@ internal static class Strings
     public static string MenuOpenLogs => Get(nameof(MenuOpenLogs));
 
     public static string MenuEditTheme => Get(nameof(MenuEditTheme));
+    public static string MenuNewTheme => Get(nameof(MenuNewTheme));
 
     public static string MenuEditSettings => Get(nameof(MenuEditSettings));
 

@@ -11,9 +11,13 @@ public sealed partial class MainViewModel
 {
     public event Action<bool>? BackgroundGalleryRequested;
     public event Action? ModuleGalleryRequested;
+    public event Action? StartRequested;
+    public RelayCommand NewThemeCommand { get; private set; } = null!;
+    public Start.StartViewModel CreateStartScreen() => new(_environment);
     public RelayCommand ModuleGalleryCommand { get; private set; } = null!;
     void InitializeGalleries()
     {
+        NewThemeCommand = new RelayCommand(() => StartRequested?.Invoke());
         ModuleGalleryCommand = new RelayCommand(() => ModuleGalleryRequested?.Invoke(), () => CanEdit);
         Canvas.ModuleDropped = (module, point) => AddGalleryModule(module, point);
         Layers.BackgroundGalleryCommand = new RelayCommand(() => BackgroundGalleryRequested?.Invoke(false), () => CanEdit);

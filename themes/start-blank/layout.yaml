@@ -1,0 +1,3 @@
+canvas: { orientation: landscape }
+background: [{ fill: "#0A0A0B" }]
+widgets: []
