@@ -38,12 +38,14 @@ jobs:
         with:
           name: received-snapshots
           path: tests/**/Snapshots/*.received.png
+          retention-days: 14
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: hang-dumps
           path: "**/TestResults/**/*.dmp"
+          retention-days: 14
           if-no-files-found: ignore
   installer:
     # Builds the MSI and installs, upgrades, downgrades and uninstalls it for real (installer/test-install.ps1), which
@@ -85,10 +87,14 @@ jobs:
         with:
           name: install-logs
           path: artifacts/install-logs/
+          retention-days: 14
           if-no-files-found: ignore
+      # About 60 MB a copy and nothing consumes it, so PR runs skip it: a copy on every PR revision filled the account's
+      # Actions storage. Run the workflow manually on a branch to get its MSI.
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
         with:
           name: msi
           path: artifacts/Marquee-${{ steps.version.outputs.current }}-x64.msi
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: error

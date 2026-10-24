@@ -108,7 +108,8 @@ CI's `installer` job (`.github/workflows/ci.yml`) also builds an older MSI from 
 installs, upgrades, repairs, reinstalls a rebuild of the same version, refuses a downgrade and uninstalls for real on
 the runner, checking the files, the PATH, the shortcut, the logon task, the permissions of `%ProgramData%\Marquee`,
 that `INSTALLFOLDER` is ignored and what uninstalling leaves. It installs machine-wide, so it refuses to run anywhere
-but a GitHub-hosted Actions runner. Its msiexec logs are the job's `install-logs` artifact. `-Version` is for that test
+but a GitHub-hosted Actions runner. Its msiexec logs are the job's `install-logs` artifact, kept 14 days. Runs on main and manual runs also
+upload the MSI as an `msi` artifact, kept 1 day; PR runs don't, to spare the account's Actions storage. `-Version` is for that test
 only: a release's version is the one in `Directory.Build.props`.
 
 WiX stays on 5.0.2: v6 adds the Open Source Maintenance Fee. WiX's validation (ICE) runs as part of the build; keep it

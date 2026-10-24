@@ -69,4 +69,5 @@ jobs:
             artifacts/Marquee-${{ steps.version.outputs.current }}-x64.msi
             artifacts/marquee-${{ steps.version.outputs.current }}.zip
             artifacts/SHA256SUMS
+          retention-days: 7
           if-no-files-found: error
