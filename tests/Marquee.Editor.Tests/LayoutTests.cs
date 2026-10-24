@@ -257,7 +257,7 @@ public class LayoutTests
     });
 
     [Fact]
-    public void Nested_styling_rules_and_sensor_groups_remember_open_sections_across_selection() => Sta.Run(() =>
+    public void Nested_styling_and_rules_remember_open_sections_across_selection_and_sensor_groups_start_closed() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();
         var widget = "{ type: value, source: cpu.temp, at: [0, 0], size: [200, 60], " +
@@ -283,9 +283,15 @@ public class LayoutTests
             Sta.Pump();
             Assert.False(Shadow().IsExpanded);
             Shadow().IsExpanded = true;
-            editor.Session.Select([OpenEditor.P("widgets[1]")]);
+            // A group opened in a picker stays open while it is used, and every other picker starts with its groups closed.
+            var picker = editor.Model.Properties.Row("source")!.Picker!;
+            picker.SelectedKey = "cpu.load";
+            Assert.True(picker.Commit());
             Sta.Pump();
             Assert.True(SensorGroup().IsExpanded);
+            editor.Session.Select([OpenEditor.P("widgets[1]")]);
+            Sta.Pump();
+            Assert.False(SensorGroup().IsExpanded);
             Assert.True(RuleSection().IsExpanded);
             Assert.True(StylingSection().IsExpanded);
             Assert.True(Shadow().IsExpanded);
