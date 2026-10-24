@@ -4,7 +4,7 @@ Marquee is a free, source-available Windows replacement for Lian Li's L-Connect 
 its LED ring**. Make themes in a visual editor or in YAML, showing hardware sensors, game FPS and AI-agent usage
 from Claude Code and Codex. L-Connect can keep managing your fans, pump and other RGB devices.
 
-<!-- screenshot: the showcase on the panel, added at launch -->
+<p align="center"><img src="docs/images/showcase-panel.jpg" width="260" alt="The example-showcase-portrait theme on a vertically mounted 8.8-inch Universal Screen: a clock with a radar clip, a CPU dial, a segmented GPU ring, a load history chart and a memory donut."></p>
 
 ## Install
 
@@ -63,7 +63,7 @@ Choose **New theme…** in the tray or editor to start from **Blank**, **Gaming 
 shows, its colour and size in the plain-language **Properties** panel. Follow the [theme guide](docs/themes.md)
 to make your first theme and use **Show on screen** to select it for the running tray.
 
-<!-- screenshot: the editor with the module gallery open, added at launch -->
+![The theme editor with the portrait showcase open: layers and styles on the left, the CPU panel selected on the canvas, and its properties on the right.](docs/images/editor.png)
 
 ## Updates
 
