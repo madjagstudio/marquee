@@ -89,18 +89,19 @@ public class TooltipTests
     });
 
     [Fact]
-    public void Add_widget_menu_explains_every_type_with_a_distinct_tooltip() => Sta.Run(() =>
+    public void Blank_widgets_in_the_gallery_explain_every_type_with_a_distinct_tooltip() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();
         using var editor = PropertiesPanelTests.Open(environment);
-        var window = new MainWindow(editor.Model);
+        using var gallery = editor.Model.CreateModuleGallery()!;
+        var window = new Modules.ModuleGalleryView(gallery, _ => { });
         Show(window);
         try
         {
-            var menu = (MenuItem)window.FindName("AddWidgetMenu");
-            menu.IsSubmenuOpen = true;
+            var tabs = Walk(window).Select(item => item.Node).OfType<TabControl>().Single();
+            tabs.SelectedIndex = 7;
             Sta.Pump();
-            var items = menu.Items.OfType<MenuItem>().ToList();
+            var items = Walk(window).Select(item => item.Node).OfType<Button>().Where(item => item.Command is not null).ToList();
             var tips = items.Select(item => item.ToolTip?.ToString()).ToList();
             Assert.Equal(tips.Count, tips.Distinct(StringComparer.OrdinalIgnoreCase).Count());
             foreach (var type in Marquee.Core.Themes.Schema.ThemeSchema.Widgets.Names)

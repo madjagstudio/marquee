@@ -1,0 +1,6 @@
+name: Usage bar
+at: [0, 0]
+type: bar
+size: [300, 28]
+source: cpu.load
+style: { fill: "#36D1DC", track: "#2A2A2A", radius: 4 }

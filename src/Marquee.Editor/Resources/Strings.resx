@@ -995,4 +995,7 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="ShaderCpuLoad" xml:space="preserve"><value>CPU load</value></data>
   <data name="ShaderSpeedUnit" xml:space="preserve"><value>×</value></data>
   <data name="ShaderMissingValue" xml:space="preserve"><value>—</value></data>
+  <data name="ModuleGallery" xml:space="preserve"><value>Add a module</value></data>
+  <data name="AddModule" xml:space="preserve"><value>Add</value></data>
+  <data name="AddModuleTip" xml:space="preserve"><value>Click to add this module, or drag its picture onto the screen.</value></data>
 </root>

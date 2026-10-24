@@ -11,13 +11,15 @@ public sealed class ThemeRenderer : IDisposable
 {
     readonly LoadedTheme _theme;
     readonly SKSurface _surface;
+    readonly SKRect _viewBox;
     readonly Dictionary<WidgetSpec, Smoother> _smoothers = new(ReferenceEqualityComparer.Instance);
     readonly Dictionary<ShaderLayer, SKSurface> _shaderSurfaces = new(ReferenceEqualityComparer.Instance);
 
-    public ThemeRenderer(LoadedTheme theme, SKSizeI? renderSize = null)
+    public ThemeRenderer(LoadedTheme theme, SKSizeI? renderSize = null, SKRect? viewBox = null)
     {
         _theme = theme;
         Size = renderSize ?? theme.Spec.Canvas.Size;
+        _viewBox = viewBox ?? SKRect.Create(theme.Spec.Canvas.Size.Width, theme.Spec.Canvas.Size.Height);
         _surface = SKSurface.Create(new SKImageInfo(Size.Width, Size.Height))
             ?? throw new InvalidOperationException("Could not create the render surface.");
     }
@@ -49,7 +51,8 @@ public sealed class ThemeRenderer : IDisposable
         };
         BackgroundPainter.Paint(ctx, _theme.Spec.Background, SKRect.Create(Size.Width, Size.Height));
         canvas.Save();
-        canvas.Scale((float)Size.Width / _theme.Spec.Canvas.Size.Width, (float)Size.Height / _theme.Spec.Canvas.Size.Height);
+        canvas.Scale(Size.Width / _viewBox.Width, Size.Height / _viewBox.Height);
+        canvas.Translate(-_viewBox.Left, -_viewBox.Top);
         foreach (var widget in widgets)
             WidgetPainter.Paint(ctx, widget, StyleSpec.Empty);
         canvas.Restore();

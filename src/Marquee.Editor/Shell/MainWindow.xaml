@@ -83,7 +83,7 @@
                 </WrapPanel>
                 <DockPanel LastChildFill="False" Margin="0,4,0,0">
                     <Menu DockPanel.Dock="Left" IsMainMenu="False" Background="{StaticResource Clear}" VerticalAlignment="Center">
-                        <MenuItem ToolTip="{x:Static res:Strings.AddWidgetTip}" x:Name="AddWidgetMenu" Header="{x:Static res:Strings.AddWidget}" />
+                        <MenuItem ToolTip="{x:Static res:Strings.AddModuleTip}" x:Name="AddWidgetMenu" Header="{x:Static res:Strings.AddModule}" Command="{Binding ModuleGalleryCommand}" />
                         <MenuItem ToolTip="{x:Static res:Strings.ArrangeTip}" x:Name="ArrangeMenu" Header="{x:Static res:Strings.Align}" />
                     </Menu>
                     <Separator DockPanel.Dock="Left" Style="{StaticResource Divider}" />

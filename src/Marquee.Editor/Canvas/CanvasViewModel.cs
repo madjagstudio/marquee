@@ -46,6 +46,7 @@ public sealed partial class CanvasViewModel : ObservableObject, IDisposable
     }
 
     public EditorSession? Session => _workspace?.Session;
+    public Action<Module, SKPoint>? ModuleDropped { get; set; }
 
     /// Whether the mouse and keys may change the theme: not while it is read-only or editing is paused.
     public bool CanEdit => _workspace is { IsReadOnly: false, Session: { IsPaused: false, Theme: not null } };

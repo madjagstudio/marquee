@@ -27,7 +27,6 @@ public partial class MainWindow : Window
         DataContext = model;
         InitializeComponent();
 
-        Fill(AddWidgetMenu, [.. model.WidgetChoices(), null, .. model.FileChoices()]);
         LayersPanel.Content = new LayersView { DataContext = model.Layers };
         StylesPanel.Content = new StylesView { DataContext = model.Styles };
         PropertiesPanel.Content = new PropertiesView { DataContext = model.Properties };
@@ -38,6 +37,7 @@ public partial class MainWindow : Window
         model.PropertyChanged += OnModelChanged;
         model.ShowRequested += (_, _) => BringForward();
         model.BackgroundGalleryRequested += OnBackgroundGallery;
+        model.ModuleGalleryRequested += OnModuleGallery;
 
         Loaded += (_, _) =>
         {
@@ -53,6 +53,13 @@ public partial class MainWindow : Window
     }
 
     public MainViewModel Model => _model;
+
+    void OnModuleGallery()
+    {
+        var gallery = _model.CreateModuleGallery();
+        if (gallery is null) return;
+        new Modules.ModuleGalleryView(gallery, module => _model.AddGalleryModule(module)) { Owner = this }.Show();
+    }
 
     void OnBackgroundGallery(bool replace)
     {

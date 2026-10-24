@@ -3,19 +3,44 @@ using Marquee.Editor.Backgrounds;
 using Marquee.Editor.Model;
 using Marquee.Editor.Mvvm;
 using Marquee.Editor.Resources;
+using Marquee.Editor.Properties;
 
 namespace Marquee.Editor.Shell;
 
 public sealed partial class MainViewModel
 {
     public event Action<bool>? BackgroundGalleryRequested;
+    public event Action? ModuleGalleryRequested;
+    public RelayCommand ModuleGalleryCommand { get; private set; } = null!;
     void InitializeGalleries()
     {
+        ModuleGalleryCommand = new RelayCommand(() => ModuleGalleryRequested?.Invoke(), () => CanEdit);
+        Canvas.ModuleDropped = (module, point) => AddGalleryModule(module, point);
         Layers.BackgroundGalleryCommand = new RelayCommand(() => BackgroundGalleryRequested?.Invoke(false), () => CanEdit);
         Properties.BackgroundGalleryCommand = new RelayCommand(() => BackgroundGalleryRequested?.Invoke(true), () => CanEdit && _workspace?.Session.SelectedLayer is not null);
     }
+    public Modules.ModuleGalleryViewModel? CreateModuleGallery() => _workspace is { } workspace
+        ? new(workspace.Session.Folder, () => workspace.Values.Snapshot(workspace.Values.KnownKeys().Concat(ModuleLibrary.Keys)))
+            { BlankWidgets = [.. WidgetChoices(), .. FileChoices()] } : null;
+
+    public void AddGalleryModule(Module module, SkiaSharp.SKPoint? point = null)
+    {
+        if (!CanEdit || _workspace is not { } workspace) return;
+        var session = workspace.Session;
+        var local = point is { } position ? CanvasGeometry.Of(session).ToLocal(position, Canvas.Group) : (SkiaSharp.SKPoint?)null;
+        if (!module.NeedsFile) { Run(new AddModule(module, local, Canvas.Group)); return; }
+        var kind = module.Id == "video" ? AssetKind.Video : AssetKind.Image;
+        if (_environment.Dialogs.PickImportFile(kind) is not { } file) return;
+        try
+        {
+            new AssetImport(session.Folder).AddModule(session, module, file, kind, local, Canvas.Group);
+            PropertyChoices.Forget();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or AssetImportException or Marquee.Core.Themes.ThemeException or LayoutEditException)
+        { _environment.Dialogs.ShowError(Strings.ImportRefused(module.Name, ex.Message)); }
+    }
     public BackgroundGalleryViewModel? CreateBackgroundGallery() => _workspace is { } workspace
-        ? new(new BackgroundLibrary(Path.Combine(_environment.InstalledThemes, "backgrounds")), workspace.Session.Values) : null;
+        ? new(new BackgroundLibrary(Path.Combine(_environment.InstalledThemes, "backgrounds")), () => workspace.Values.Snapshot(["cpu.load"])) : null;
 
     public void ChooseBackground(BackgroundEntry? entry, string? still, bool replace)
     {

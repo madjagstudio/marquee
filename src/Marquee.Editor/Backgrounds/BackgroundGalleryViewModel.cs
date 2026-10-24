@@ -19,19 +19,21 @@ public sealed class LiveThemeTile : ObservableObject, IDisposable
     readonly LoadedTheme _theme;
     readonly ThemeRenderer _renderer;
     WriteableBitmap? _bitmap;
-    public LiveThemeTile(string name, string folder, string yaml, object? item = null, int width = 240, int height = 60)
+    public LiveThemeTile(string name, string folder, string yaml, object? item = null, int width = 240, int height = 60, SkiaSharp.SKRect? viewBox = null, string? description = null)
     {
         Name = name;
         Item = item;
+        Description = description;
         try
         {
             _theme = ThemeLoader.Load(folder, yaml, _cache);
-            _renderer = new ThemeRenderer(_theme, new(width, height));
+            _renderer = new ThemeRenderer(_theme, new(width, height), viewBox);
         }
         catch { _cache.Dispose(); throw; }
     }
     public string Name { get; }
     public object? Item { get; }
+    public string? Description { get; }
     public WriteableBitmap? Bitmap { get => _bitmap; private set => Set(ref _bitmap, value); }
     public void Render(SensorSnapshot values, TimeSpan time)
     {

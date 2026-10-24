@@ -1,0 +1,9 @@
+name: Segmented ring
+at: [0, 0]
+type: gauge
+size: [200, 200]
+source: cpu.load
+start: -90
+sweep: 360
+segments: 24
+style: { fill: "#36D1DC", track: "#2A2A2A" }

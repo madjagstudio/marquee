@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Numbers" xml:space="preserve"><value>Numbers</value></data>
+  <data name="Gauges" xml:space="preserve"><value>Gauges</value></data>
+  <data name="Graphs" xml:space="preserve"><value>Graphs</value></data>
+  <data name="Time" xml:space="preserve"><value>Time</value></data>
+  <data name="Pictures" xml:space="preserve"><value>Pictures</value></data>
+  <data name="Shapes" xml:space="preserve"><value>Shapes</value></data>
+  <data name="MyModules" xml:space="preserve"><value>My modules</value></data>
+  <data name="BlankWidgets" xml:space="preserve"><value>Blank widgets</value></data>
+  <data name="GroupUnavailable" xml:space="preserve"><value>This group cannot take a module.</value></data>
+  <data name="BigNumber" xml:space="preserve"><value>Big number</value></data>
+  <data name="BigNumberDescription" xml:space="preserve"><value>CPU temperature, live</value></data>
+  <data name="NumberLabel" xml:space="preserve"><value>Number with label</value></data>
+  <data name="NumberLabelDescription" xml:space="preserve"><value>CPU temperature, live</value></data>
+  <data name="TemperatureDial" xml:space="preserve"><value>Temperature dial</value></data>
+  <data name="TemperatureDialDescription" xml:space="preserve"><value>CPU temperature, live</value></data>
+  <data name="ArcGauge" xml:space="preserve"><value>Arc gauge</value></data>
+  <data name="ArcGaugeDescription" xml:space="preserve"><value>CPU usage, live</value></data>
+  <data name="SegmentedRing" xml:space="preserve"><value>Segmented ring</value></data>
+  <data name="SegmentedRingDescription" xml:space="preserve"><value>CPU usage, live</value></data>
+  <data name="UsageBar" xml:space="preserve"><value>Usage bar</value></data>
+  <data name="UsageBarDescription" xml:space="preserve"><value>CPU usage, live</value></data>
+  <data name="SegmentedBar" xml:space="preserve"><value>Segmented bar</value></data>
+  <data name="SegmentedBarDescription" xml:space="preserve"><value>GPU usage, live</value></data>
+  <data name="LoadHistory" xml:space="preserve"><value>Load history</value></data>
+  <data name="LoadHistoryDescription" xml:space="preserve"><value>CPU usage history, live</value></data>
+  <data name="TwoLineHistory" xml:space="preserve"><value>Two-line history</value></data>
+  <data name="TwoLineHistoryDescription" xml:space="preserve"><value>CPU and GPU usage history, live</value></data>
+  <data name="MemoryDonut" xml:space="preserve"><value>Memory donut</value></data>
+  <data name="MemoryDonutDescription" xml:space="preserve"><value>Memory usage, live</value></data>
+  <data name="Clock" xml:space="preserve"><value>Clock (12-hour)</value></data>
+  <data name="ClockDescription" xml:space="preserve"><value>Your local time</value></data>
+  <data name="ClockDate" xml:space="preserve"><value>Clock and date</value></data>
+  <data name="ClockDateDescription" xml:space="preserve"><value>Your local time and date</value></data>
+  <data name="Image" xml:space="preserve"><value>Image</value></data>
+  <data name="ImageDescription" xml:space="preserve"><value>Choose a picture</value></data>
+  <data name="Video" xml:space="preserve"><value>Video box</value></data>
+  <data name="VideoDescription" xml:space="preserve"><value>Choose a video</value></data>
+  <data name="Card" xml:space="preserve"><value>Card panel</value></data>
+  <data name="CardDescription" xml:space="preserve"><value>A backdrop for your widgets</value></data>
+  <data name="Label" xml:space="preserve"><value>Label</value></data>
+  <data name="LabelDescription" xml:space="preserve"><value>Your own text</value></data>
+</root>

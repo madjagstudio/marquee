@@ -1,0 +1,7 @@
+name: Number with label
+at: [0, 0]
+type: group
+size: [240, 140]
+children:
+  - { type: text, at: [0, 0], size: [240, 30], text: CPU, style: { size: 24, color: "#A0A0A0" } }
+  - { type: value, at: [0, 36], size: [240, 100], source: cpu.temp, format: "{0:0}°C", style: { size: 64, color: "#F0F0F0" } }

@@ -9,6 +9,9 @@ namespace Marquee.Editor.Resources;
 /// properties ({x:Static}).
 public static class Strings
 {
+    public static string ModuleGallery => Get(nameof(ModuleGallery));
+    public static string AddModule => Get(nameof(AddModule));
+    public static string AddModuleTip => Get(nameof(AddModuleTip));
     public static string BackgroundAurora => Get(nameof(BackgroundAurora));
     public static string BackgroundWaves => Get(nameof(BackgroundWaves));
     public static string BackgroundPlasma => Get(nameof(BackgroundPlasma));

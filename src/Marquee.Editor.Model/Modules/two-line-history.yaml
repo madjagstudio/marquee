@@ -1,0 +1,10 @@
+name: Two-line history
+at: [0, 0]
+type: graph
+size: [320, 140]
+min: 0
+max: 100
+series:
+  - { source: cpu.load, style: { stroke: { color: "#36D1DC", width: 2 } } }
+  - { source: gpu.load, style: { stroke: { color: "#E11D2A", width: 2 } } }
+style: { track: "#161616" }

@@ -1,0 +1,9 @@
+name: Load history
+at: [0, 0]
+type: graph
+size: [320, 140]
+source: cpu.load
+kind: area
+min: 0
+max: 100
+style: { fill: "#36D1DC80", stroke: { color: "#36D1DC", width: 2 }, track: "#161616" }

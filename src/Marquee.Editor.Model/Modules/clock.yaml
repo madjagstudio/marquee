@@ -1,0 +1,6 @@
+name: Clock (12-hour)
+at: [0, 0]
+type: text
+size: [300, 90]
+text: "{now|time:hh:mm tt}"
+style: { size: 52, color: "#F0F0F0" }

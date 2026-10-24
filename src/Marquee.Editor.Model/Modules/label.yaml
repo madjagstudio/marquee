@@ -1,0 +1,6 @@
+name: Label
+at: [0, 0]
+type: text
+size: [240, 50]
+text: Label
+style: { size: 28, color: "#F0F0F0" }

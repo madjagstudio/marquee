@@ -1,0 +1,7 @@
+name: Big number
+at: [0, 0]
+type: value
+size: [240, 100]
+source: cpu.temp
+format: "{0:0}°C"
+style: { size: 72, weight: bold, color: "#F0F0F0" }

@@ -39,6 +39,18 @@ public partial class CanvasView : UserControl
         MouseMove += OnMouseMove;
         MouseLeftButtonUp += OnMouseUp;
         LostMouseCapture += (_, _) => _model?.PointerLost();
+        Surface.AllowDrop = true;
+        Surface.DragOver += (_, e) =>
+        {
+            e.Effects = _model?.CanEdit == true && e.Data.GetDataPresent(typeof(Model.Module)) ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        };
+        Surface.Drop += (_, e) =>
+        {
+            if (_model?.CanEdit != true || e.Data.GetData(typeof(Model.Module)) is not Model.Module module) return;
+            _model.ModuleDropped?.Invoke(module, _model.Transform.ToTheme(e.GetPosition(Surface)));
+            e.Effects = DragDropEffects.Copy; e.Handled = true;
+        };
     }
 
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)

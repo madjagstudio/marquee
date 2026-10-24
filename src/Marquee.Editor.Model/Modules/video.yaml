@@ -1,0 +1,5 @@
+name: Video box
+at: [0, 0]
+type: video
+size: [320, 180]
+src: video/clip.mp4
