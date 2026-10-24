@@ -3,7 +3,16 @@
 # Run it with:  marquee run themes/example-portrait --orientation portrait --preview
 canvas:
   orientation: portrait
-  fps: 30
+  fps: 30 # Smooth animation with a modest frame budget.
+
+# The LED ring breathes in the theme's teal accent, turning warm when the CPU exceeds 80 C.
+ring:
+  color: "#36D1DC"
+  effect: breathe
+  brightness: 40
+  source: cpu.temp
+  when:
+    - { above: 80, color: "#FF5A36" }
 
 styles:
   label: { size: 28, weight: semibold, color: "#8B95AA", align: center }

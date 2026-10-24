@@ -59,17 +59,37 @@ public class SampleThemeTests
     /// CPU over its hot threshold, RAM nearly full, and the GPU provider gone quiet.
     static SensorSnapshot Hot() => TestSensors.Of(("cpu.temp", 92), ("cpu.load", 96), ("cpu.clock", 5700), ("ram.used_pct", 95));
 
+    public static TheoryData<string> ExampleThemes
+    {
+        get
+        {
+            var folders = Directory.GetDirectories(ThemeFolder(""), "example-*");
+            Assert.NotEmpty(folders);
+            return new(folders.Select(folder => Path.GetFileName(folder)).OrderBy(name => name, StringComparer.Ordinal));
+        }
+    }
+
     [Theory]
-    [InlineData("example-landscape")]
-    [InlineData("example-portrait")]
-    [InlineData("example-agents")]
-    [InlineData("example-showcase")]
+    [MemberData(nameof(ExampleThemes))]
+    public void Sample_themes_explicitly_set_a_frame_rate_and_ring(string name)
+    {
+        var yaml = File.ReadAllText(Path.Combine(ThemeFolder(name), "layout.yaml"));
+        // Parsing defaults a missing fps to 30, so check that the example actually teaches the setting.
+        Assert.True(YamlValues.Read(yaml).ContainsKey("canvas.fps"), $"{name} must set canvas.fps.");
+        var spec = Layouts.Parse(yaml);
+        Assert.InRange(spec.Canvas.Fps, 1, CanvasSpec.MaxFps);
+        Assert.True(spec.Ring is not null, $"{name} must have a ring block.");
+    }
+
+    [Theory]
+    [MemberData(nameof(ExampleThemes))]
     public void Sample_themes_load_without_warnings(string name)
     {
         if (name == "example-showcase" && !MediaFoundation.IsAvailable) return; // Its clip can't play there.
         using var theme = Load(name);
 
         Assert.Empty(theme.Warnings);
+        Assert.Empty(Validations.Lines(Validations.Validate(ThemeFolder(name))));
     }
 
     [Theory]

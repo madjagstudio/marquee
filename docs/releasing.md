@@ -13,8 +13,8 @@ The signature is ECDSA P-256 over the file's SHA-256, made with one private key 
 Authenticode: a first install shows Windows SmartScreen's "unknown publisher" prompt, and updates are protected by this
 signature instead. Authenticode can be added later without changing any of this.
 
-The tool for all of it is `tools/Marquee.ReleaseTool`. It is not shipped. Two scripts run it:
-`tools/new-signing-key.ps1` and `tools/sign-release.ps1`.
+The tool for all of it is `tools/Marquee.ReleaseTool`. It is not shipped. The scripts that run it are
+`tools/new-signing-key.ps1`, `tools/sign-release.ps1` and `tools/publish-release.ps1`.
 
 ## The key
 
@@ -88,6 +88,7 @@ with PresentMon, the example themes, `LICENSE` and `THIRD-PARTY-NOTICES.md` in `
 `marquee.exe` runs from there, and builds `artifacts\Marquee-<version>-x64.msi` with WiX 5.0.2
 (`installer\Marquee.Installer.wixproj`, which is not in `Marquee.sln`). That file name is the one the updater looks for.
 The version is `<Version>` in `Directory.Build.props`, the only place it is set: change it there for a release.
+After the MSI, it zips `artifacts\publish\cli` into `artifacts\marquee-<version>.zip`, with `marquee.exe` at the root.
 `artifacts\` is ignored by git.
 
 `build.ps1` also checks the notices. Every staged file other than Marquee's own, the themes and PresentMon must be one
@@ -129,7 +130,34 @@ release with it.
 3. Upload each file together with its `.sig` to the GitHub release.
 4. Delete the key file you saved in step 1 (not the USB copy).
 
-M4c extends `sign-release.ps1` to check the CI build's hashes and publish the release with `gh release`.
+## Publishing a release
+
+Complete the key ceremony first, and set `<Version>` in `Directory.Build.props` to the release version. Push the
+matching tag, for example `v0.1.0`. The `release` workflow (`.github/workflows/release.yml`) checks that the tag matches
+that version and runs `check-key`, which refuses the placeholder. It builds the MSI and CLI zip, writes `SHA256SUMS`
+with their SHA-256 hashes, and uploads all three to a **draft** GitHub release. CI never holds the private key.
+
+To rehearse the build before the ceremony, run the workflow manually with `dry_run` checked (the default). It permits
+the placeholder and uploads the three files as a `release-dry-run` workflow artifact; it creates no release. Manual
+runs with `dry_run` unchecked are refused: only a tag push creates a release draft. Never publish the rehearsal files.
+
+Once the tag workflow succeeds, use a checkout of that tag on the owner's PC, with the .NET 8 SDK and GitHub CLI
+installed and `gh` authenticated for this repository. Get the encrypted key from the password manager or USB stick,
+then run from the repository root:
+
+```powershell
+tools\publish-release.ps1 -Tag v0.1.0 -Key D:\marquee-release-key.pem
+```
+
+The script refuses a tag other than `v` and three numbers, and refuses a release that isn't a draft. It downloads the
+MSI, zip and `SHA256SUMS` into a new temp folder, checks both hashes, then calls `sign-release.ps1`, which asks for the
+password. Compare the printed key fingerprint with the password manager entry. It verifies each `.sig` against the
+built-in public key, uploads the two signatures, publishes the draft and prints its URL. Any failed command, bad hash
+or bad signature stops it before publication. The hashes detect changed downloads; the signatures protect updates.
+
+The temp folder is printed and retained for inspection. Delete it when finished, and delete any key copy saved from
+the password manager (keep the USB backup). If publishing stops after signatures were uploaded, inspect the draft
+before retrying: the script deliberately refuses to overwrite existing signature assets.
 
 ## Checking a signature
 

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Builds Marquee's MSI: artifacts\Marquee-<version>-x64.msi.
+Builds Marquee's MSI and CLI zip: artifacts\Marquee-<version>-x64.msi and artifacts\marquee-<version>.zip.
 
 .DESCRIPTION
 Publishes marquee.exe (src\Marquee.Cli), MarqueeTray.exe (src\Marquee.App) and MarqueeEditor.exe (src\Marquee.Editor,
@@ -57,7 +57,7 @@ if ($Version) {
     $versionArgs = @("-p:Version=$Version")
 }
 else {
-    $version = (& dotnet msbuild (Join-Path $root 'src\Marquee.Cli\Marquee.Cli.csproj') -nologo '-getProperty:Version' | Out-String).Trim()
+    $version = (& dotnet msbuild (Join-Path $root 'src\Marquee.Cli\Marquee.Cli.csproj') -nologo -p:UseSharedCompilation=false '-getProperty:Version' | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or $version -notmatch '^\d+\.\d+\.\d+$') {
         throw "Could not read the version from Directory.Build.props (got '$version')."
     }
@@ -78,7 +78,7 @@ foreach ($app in $apps) {
     $out = Join-Path $publish $app.Folder
     Invoke-Native "Publishing $($app.Project)" {
         dotnet publish (Join-Path $root $app.Project) -nologo -c Release -r win-x64 --self-contained true `
-            -p:PublishSingleFile=false -p:PublishTrimmed=false @versionArgs -o $out
+            -p:PublishSingleFile=false -p:PublishTrimmed=false -p:UseSharedCompilation=false @versionArgs -o $out
     }
 }
 
@@ -225,7 +225,7 @@ Invoke-Native 'marquee.exe validate' { & (Join-Path $staging 'marquee.exe') vali
 $wixObj = Join-Path $PSScriptRoot 'obj'
 if (Test-Path $wixObj) { Remove-Item $wixObj -Recurse -Force }
 
-$wixArgs = @((Join-Path $PSScriptRoot 'Marquee.Installer.wixproj'), '-nologo', '-c', 'Release', "-p:StagingDir=$staging") + $versionArgs
+$wixArgs = @((Join-Path $PSScriptRoot 'Marquee.Installer.wixproj'), '-nologo', '-c', 'Release', '-p:UseSharedCompilation=false', "-p:StagingDir=$staging") + $versionArgs
 if ($SkipValidation) { $wixArgs += '-p:SuppressValidation=true' }
 Invoke-Native 'Building the MSI' { dotnet build @wixArgs }
 
@@ -234,3 +234,8 @@ if (-not (Test-Path $msi)) { throw "The build made no $msi." }
 $size = (Get-Item $msi).Length
 Write-Host ("Built {0} ({1:N1} MB, {2:N0} bytes) from {3:N1} MB staged." -f $msi, ($size / 1MB), $size,
     ((Get-ChildItem $staging -Recurse -File | Measure-Object Length -Sum).Sum / 1MB))
+
+# The CLI's self-contained publish, with marquee.exe at the zip's root so it can run after extraction.
+$zip = Join-Path $artifacts "marquee-$version.zip"
+Compress-Archive -Path (Join-Path $publish 'cli\*') -DestinationPath $zip -Force
+Write-Host "Built $zip."
