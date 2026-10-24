@@ -1,3 +1,3 @@
-canvas: { orientation: landscape }
+canvas: { orientation: landscape, fps: 30 }
 background: [{ fill: "#0A0A0B" }]
 widgets: []

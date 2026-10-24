@@ -1,4 +1,4 @@
-canvas: { orientation: landscape }
+canvas: { orientation: landscape, fps: 30 }
 background: [{ fill: "#0A0A0B" }]
 widgets:
   - { name: CPU, type: value, at: [80, 170], size: [400, 100], source: cpu.temp, format: "CPU {0:0}°C", style: { size: 56, weight: bold, color: "#F0F0F0" } }

@@ -4,7 +4,7 @@ Marquee is a free, source-available Windows replacement for Lian Li's L-Connect 
 its LED ring**. Make themes in a visual editor or in YAML, showing hardware sensors, game FPS and AI-agent usage
 from Claude Code and Codex. L-Connect can keep managing your fans, pump and other RGB devices.
 
-<!-- screenshot: the showcase on the panel, added at launch -->
+<p align="center"><img src="docs/images/showcase-panel.jpg" width="260" alt="The example-showcase-portrait theme on a vertically mounted 8.8-inch Universal Screen: a clock with a radar clip, a CPU dial, a segmented GPU ring, a load history chart and a memory donut."></p>
 
 ## Install
 
@@ -63,7 +63,7 @@ Choose **New theme…** in the tray or editor to start from **Blank**, **Gaming 
 shows, its colour and size in the plain-language **Properties** panel. Follow the [theme guide](docs/themes.md)
 to make your first theme and use **Show on screen** to select it for the running tray.
 
-<!-- screenshot: the editor with the module gallery open, added at launch -->
+![The theme editor with the portrait showcase open: layers and styles on the left, the CPU panel selected on the canvas, and its properties on the right.](docs/images/editor.png)
 
 ## Updates
 
@@ -448,8 +448,8 @@ and checks theme files once the YAML extension (Red Hat) is installed: the examp
 That path works only inside this repo: a copied theme needs its first line pointed at the schema, until the public
 repo gives it a URL.
 
-See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents` and `themes/example-showcase`, a
-tour of the format's newer parts: a clock with the weekday, an outlined title in gradient letters, a video box, a big
+See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents`, and `themes/example-showcase` with
+`themes/example-showcase-portrait` for a vertically mounted screen. The showcase is a tour of the format's newer parts: a clock with the weekday, an outlined title in gradient letters, a video box, a big
 number with a small unit, shapes, dials, segmented meters, charts, a donut, wrapped text, rotation, blending, names
 and hidden widgets. See the [theme authoring guide](docs/themes.md) for the full walkthrough.
 
