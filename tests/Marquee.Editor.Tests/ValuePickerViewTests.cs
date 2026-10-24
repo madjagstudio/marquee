@@ -172,7 +172,8 @@ public class ValuePickerViewTests
             var list = Descendants(control).OfType<ListBox>().Single();
             var groups = Descendants(list).OfType<Expander>().ToList();
             Assert.Equal(["CPU", "GPU", "Memory", "Gaming", "Claude Code", "Codex", "Time and date"], groups.Select(group => group.Header));
-            groups[0].IsExpanded = false;
+            Assert.All(groups, group => Assert.False(group.IsExpanded));
+            groups[0].IsExpanded = true;
             var search = (TextBox)control.FindName("SearchBox");
             search.Text = "CPU temperature";
             Sta.Pump();

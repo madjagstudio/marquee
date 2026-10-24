@@ -278,11 +278,14 @@ public class RulesAndRingTests
         {
             window.Show();
             Sta.Pump();
+            var section = Descendants(window).OfType<Expander>().Single(expander => Equals(expander.Header, Strings.RingSection));
+            Assert.False(section.IsExpanded);
+            section.IsExpanded = true;
+            Sta.Pump();
             var strip = Descendants(window).OfType<RingStrip>().Single();
             Assert.True(strip.IsVisible);
             AssertRulesInBasics(window, editor);
             Assert.True(strip.IsAnimating);
-            var section = Descendants(window).OfType<Expander>().Single(expander => Equals(expander.Header, Strings.RingSection));
             section.IsExpanded = false;
             Sta.Pump();
             Assert.False(strip.IsAnimating);

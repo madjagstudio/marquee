@@ -25,6 +25,7 @@ public sealed class RingViewModel : ObservableObject
     }
 
     public PropertiesViewModel Properties { get; }
+    public SectionExpansion Expansion => _panel.ExpansionFor("ring");
     public RulesViewModel Rules { get; }
     public bool IsOverridden { get; }
     public IReadOnlyList<PropertyRowViewModel> Rows => _rows;

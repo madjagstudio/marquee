@@ -37,7 +37,6 @@ public sealed partial class PropertyRowViewModel : ObservableObject
         ResetCommand = new RelayCommand(Reset, () => CanReset);
         ImportCommand = new RelayCommand(Import, () => CanImport);
         AddItemCommand = new RelayCommand(AddItem, () => _owner.CanEdit && _row.CanAdd);
-        IsExpanded = row.IsSet;
         owner.Register(this);
         Load();
     }
@@ -126,8 +125,9 @@ public sealed partial class PropertyRowViewModel : ObservableObject
 
     public IReadOnlyList<PropertyItemViewModel> Items { get; }
 
-    /// A block's or list's sub-section is open: at first when the file sets it.
-    public bool IsExpanded { get; set; }
+    /// A block's or list's sub-section starts closed, including when the file sets it.
+    public SectionExpansion Expansion => _owner.ExpansionFor("row:" + Name);
+    internal SectionExpansion ItemExpansion(int index) => _owner.ExpansionFor($"item:{Name}[{index}]");
 
     public RelayCommand ResetCommand { get; }
 
@@ -283,7 +283,7 @@ public sealed class PropertyItemViewModel
 
     public IReadOnlyList<PropertyRowViewModel> Rows { get; }
 
-    public bool IsExpanded { get; set; } = true;
+    public SectionExpansion Expansion => _list.ItemExpansion(Index);
 
     public RelayCommand RemoveCommand { get; }
 

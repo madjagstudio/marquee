@@ -66,7 +66,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string ThemeName => _workspace?.Name ?? "";
     public string ThemeHeading => ThemeName.ToUpperInvariant();
 
-    bool _isLayersOpen = true;
+    bool _isLayersOpen;
     GridLength _leftPanelWidth = new(260);
     public bool IsLayersOpen
     {

@@ -327,6 +327,8 @@ public class InsertValueTests
         var reading = editor.Model.TestValues.Row("cpu.temp")!;
         reading.NumberText = "52";
         Assert.True(reading.CommitNumber());
+        editor.Model.Properties.MoreStyling.Single(section => section.Title == "Text").Expansion.IsExpanded = true;
+        editor.Model.Properties.Row("spans")!.Items[0].Expansion.IsExpanded = true;
         var panel = new PropertiesView { DataContext = editor.Model.Properties };
         WithWindow(panel, () =>
         {

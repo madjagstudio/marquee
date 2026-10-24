@@ -31,6 +31,8 @@ public class PanelsWindowTests
         try
         {
             var layers = (LayersView)Panel(window, "LayersPanel");
+            window.Model.IsLayersOpen = true;
+            Sta.Pump();
             var background = Assert.IsType<DockPanel>(layers.FindName("BackgroundSection"));
             Assert.Contains(Descendants(background).OfType<TextBlock>(),
                 text => text.Text == Resources.Strings.BackgroundSection);
@@ -137,6 +139,8 @@ public class PanelsWindowTests
 
         // The clock group's title: a text with a gradient fill and an outline, with its gradient editor open.
         session.Select([P("widgets[0].children[0]")]);
+        model.IsLayersOpen = true;
+        model.Properties.MoreStyling.Single(section => section.Title == "Text").Expansion.IsExpanded = true;
         var fill = model.Properties.Row("style.text_fill")!;
         fill.IsGradientOpen = true;
         Assert.NotNull(fill.Gradient);

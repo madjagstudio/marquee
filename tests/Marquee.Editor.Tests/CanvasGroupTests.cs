@@ -35,6 +35,7 @@ public class CanvasGroupTests
         var layout = TestEnvironment.Layout + "      - { type: shape, shape: rect, at: [100, 100], size: [40, 40] }\n";
         using var editor = new OpenEditor(environment, environment.AddTheme("mine", layout));
         editor.Zoom();
+        editor.Model.Layers.ToggleExpanded(editor.Model.Layers.Find(P("widgets[2]"))!);
         editor.Model.Layers.Click(editor.Model.Layers.Find(P("widgets[2].children[0]"))!, ModifierKeys.None);
         editor.Canvas.PointerDown(editor.View(1120, 220), ModifierKeys.None, 1);
         editor.Canvas.PointerUp(editor.View(1120, 220), ModifierKeys.None);
@@ -72,6 +73,7 @@ public class CanvasGroupTests
         using var editor = new OpenEditor(environment, environment.AddTheme("mine"));
         editor.Zoom();
         var child = P("widgets[2].children[0]");
+        editor.Model.Layers.ToggleExpanded(editor.Model.Layers.Find(P("widgets[2]"))!);
         editor.Model.Layers.Click(editor.Model.Layers.Find(child)!, ModifierKeys.None);
         Assert.Equal(P("widgets[2]"), editor.Canvas.Group);
         editor.Canvas.PointerDown(editor.View(1035, 135), ModifierKeys.Alt, 1);

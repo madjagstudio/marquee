@@ -324,6 +324,7 @@
             <DataTemplate x:Key="TemplateRow">
                 <StackPanel Margin="0,2" IsEnabled="{Binding IsEditable}">
                     <Expander Header="What it shows" ToolTip="Choose the reading in this text."
+                              IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}"
                               Visibility="{Binding ShowTextPicker, Converter={StaticResource Visible}}">
                         <controls:ValuePickerControl DataContext="{Binding TextPicker}" />
                     </Expander>
@@ -443,7 +444,7 @@
 
             <!-- Block (stroke, shadow, needle…): a collapsible sub-section of rows. -->
             <DataTemplate x:Key="BlockRow">
-                <Expander ToolTip="{Binding Help}" IsExpanded="{Binding IsExpanded}" Margin="0,2">
+                <Expander ToolTip="{Binding Help}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}" Margin="0,2">
                     <Expander.Header>
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
@@ -466,7 +467,7 @@
                     <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Expander ToolTip="{x:Static res:Strings.ItemSectionTip}" IsExpanded="{Binding IsExpanded}" Margin="8,2,0,2">
+                                <Expander ToolTip="{x:Static res:Strings.ItemSectionTip}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}" Margin="8,2,0,2">
                                     <Expander.Header>
                                         <DockPanel>
                                             <Button DockPanel.Dock="Right" Content="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -531,7 +532,7 @@
                 <ContentControl Style="{StaticResource OptionalContent}" Content="{Binding Ring}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>
-                            <Expander ToolTip="{x:Static res:Strings.RingSectionTip}" Header="{x:Static res:Strings.RingSection}" IsExpanded="True" Margin="0,8">
+                            <Expander ToolTip="{x:Static res:Strings.RingSectionTip}" Header="{x:Static res:Strings.RingSection}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}" Margin="0,8">
                                 <StackPanel>
                                     <TextBlock Text="{x:Static res:Strings.RingOverridden}" TextWrapping="Wrap"
                                                Visibility="{Binding IsOverridden, Converter={StaticResource Visible}}" />
@@ -548,7 +549,7 @@
                 <ItemsControl x:Name="MoreStylingSections" ItemsSource="{Binding MoreStyling}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Expander ToolTip="{x:Static res:Strings.StylingSectionTip}" Header="{Binding Title}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,2">
+                            <Expander ToolTip="{x:Static res:Strings.StylingSectionTip}" Header="{Binding Title}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}" Margin="0,2">
                                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Margin="4,0,0,0" Focusable="False" />
                             </Expander>
                         </DataTemplate>

@@ -131,6 +131,7 @@ public class TooltipTests
         try
         {
             // Exercise all property templates, including controls initially inside collapsed sections.
+            editor.Model.IsLayersOpen = true;
             foreach (var value in editor.Model.TestValues.Rows) value.IsOpen = true;
             for (var index = 0; index < 6; index++)
             {
@@ -168,6 +169,7 @@ public class TooltipTests
         try
         {
             editor.Model.Layers.SelectBackground(0);
+            editor.Model.IsLayersOpen = true;
             Inspect(window, missing);
             InspectMenus(window, missing);
             editor.Session.Select([OpenEditor.P("widgets[2]")]);

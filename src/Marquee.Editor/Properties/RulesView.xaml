@@ -58,7 +58,7 @@
                             <ItemsControl ItemsSource="{Binding Properties.Sections}" Visibility="{Binding IsCustom, Converter={StaticResource Visible}}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Expander ToolTip="{x:Static res:Strings.RuleSectionTip}" Header="{Binding Title}" IsExpanded="True">
+                                        <Expander ToolTip="{x:Static res:Strings.RuleSectionTip}" Header="{Binding Title}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}">
                                             <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Margin="4,0,0,0" />
                                         </Expander>
                                     </DataTemplate>

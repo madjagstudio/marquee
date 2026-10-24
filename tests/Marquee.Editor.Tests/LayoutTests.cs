@@ -43,7 +43,10 @@ public class LayoutTests
             var toggle = Assert.IsType<ToggleButton>(window.FindName("LayersToggle"));
             var panel = Assert.IsType<Grid>(window.FindName("LeftPanel"));
             var canvas = (FrameworkElement)window.FindName("CanvasArea");
-            Assert.True(toggle.IsChecked);
+            Assert.False(toggle.IsChecked);
+            Assert.Equal(Visibility.Collapsed, panel.Visibility);
+            toggle.IsChecked = true;
+            Sta.Pump();
             var width = canvas.ActualWidth;
             toggle.IsChecked = false;
             editor.Session.Select([OpenEditor.P("widgets[0]")]);
@@ -130,13 +133,13 @@ public class LayoutTests
             Assert.Equal("Every setting as written in layout.yaml", raw.Header);
             var sections = Descendants(styling).OfType<Expander>().Where(e => e.DataContext is PropertySectionViewModel).ToArray();
             Assert.NotEmpty(sections);
-            foreach (var section in sections) Assert.Equal(Equals(section.Header, "Text"), section.IsExpanded);
+            AssertCollapsed(window);
             var text = sections.Single(e => Equals(e.Header, "Text"));
-            text.IsExpanded = false;
+            text.IsExpanded = true;
             editor.Session.Select([]);
             editor.Session.Select([OpenEditor.P("widgets[0]")]);
             Sta.Pump();
-            Assert.False(Descendants(styling).OfType<Expander>().Single(e => Equals(e.Header, "Text")).IsExpanded);
+            Assert.True(Descendants(styling).OfType<Expander>().Single(e => Equals(e.Header, "Text")).IsExpanded);
             var source = editor.Model.Properties.Row("source")!;
             Assert.Contains(Descendants(basics).OfType<TextBlock>(), t => t.Text == source.Row.PlainLabel);
             raw.IsExpanded = true;
@@ -170,6 +173,134 @@ public class LayoutTests
         }
         finally { window.Close(); }
     });
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("widgets[0]")]
+    [InlineData("widgets[1]")]
+    [InlineData("widgets[2]")]
+    public void Fresh_editor_starts_every_expander_collapsed(string? selection) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("collapsed", """
+            canvas: { orientation: landscape }
+            widgets:
+              - type: text
+                text: "CPU {cpu.temp}"
+                at: [0, 0]
+                size: [200, 60]
+                style: { shadow: { color: "#000000", blur: 4 } }
+                source: cpu.temp
+                when: [{ above: 80, style: { color: "#FF0000" } }]
+              - type: value
+                source: gpu.temp
+                at: [200, 0]
+                size: [200, 60]
+              - type: graph
+                at: [400, 0]
+                size: [200, 60]
+                series: [{ source: cpu.temp, style: { color: "#FF0000" } }]
+            ring: { source: cpu.temp }
+            """));
+        Assert.False(editor.Session.IsPaused, editor.Session.LoadError?.ToString());
+        var window = Show(editor);
+        try
+        {
+            if (selection is not null) editor.Session.Select([OpenEditor.P(selection)]);
+            Sta.Pump();
+            AssertCollapsed(window);
+            var view = Descendants(window).OfType<PropertiesView>().Single();
+            Assert.True(Assert.IsType<ItemsControl>(view.FindName("BasicsRows")).IsVisible);
+            // WPF creates some nested templates only when their parent opens.
+            var raw = Assert.IsType<Expander>(view.FindName("RawSection"));
+            raw.IsExpanded = true;
+            Sta.Pump();
+            AssertCollapsed(window, raw);
+        }
+        finally { window.Close(); }
+    });
+
+    [Fact]
+    public void Text_opened_by_the_user_stays_open_across_widgets_but_not_editor_sessions() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        var folder = environment.AddTheme("text", """
+            canvas: { orientation: landscape }
+            widgets:
+              - { type: text, text: First, at: [0, 0], size: [200, 60] }
+              - { type: text, text: Second, at: [200, 0], size: [200, 60] }
+            """);
+        for (var session = 0; session < 2; session++)
+        {
+            using var editor = new OpenEditor(environment, folder);
+            Assert.False(editor.Session.IsPaused, editor.Session.LoadError?.ToString());
+            var window = Show(editor);
+            try
+            {
+                editor.Session.Select([OpenEditor.P("widgets[0]")]);
+                Sta.Pump();
+                Expander TextSection() => Descendants(window).OfType<Expander>().Single(e =>
+                    Equals(e.Header, "Text") && e.DataContext is PropertySectionViewModel);
+                AssertCollapsed(window);
+                TextSection().IsExpanded = true;
+                editor.Session.Select([OpenEditor.P("widgets[1]")]);
+                Sta.Pump();
+                Assert.True(TextSection().IsExpanded);
+                TextSection().IsExpanded = false;
+                editor.Session.Select([OpenEditor.P("widgets[0]")]);
+                Sta.Pump();
+                Assert.False(TextSection().IsExpanded);
+                TextSection().IsExpanded = true;
+            }
+            finally { window.Close(); }
+        }
+    });
+
+    [Fact]
+    public void Nested_styling_rules_and_sensor_groups_remember_open_sections_across_selection() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        var widget = "{ type: value, source: cpu.temp, at: [0, 0], size: [200, 60], " +
+            "style: { shadow: { color: '#000000', blur: 4 } }, when: [{ above: 80, style: { color: '#FF0000' } }] }";
+        using var editor = new OpenEditor(environment, environment.AddTheme("memory",
+            $"canvas: {{ orientation: landscape }}\nwidgets:\n  - {widget}\n  - {widget}\n"));
+        var window = Show(editor);
+        try
+        {
+            editor.Session.Select([OpenEditor.P("widgets[0]")]);
+            Sta.Pump();
+            AssertCollapsed(window);
+            Expander SensorGroup() => Descendants(window).OfType<Expander>().Single(e => e.IsVisible && Equals(e.Header, "CPU"));
+            Expander RuleSection() => Descendants(window).OfType<Expander>().Single(e =>
+                ReferenceEquals(e.DataContext, editor.Model.Properties.RulesList!.Rows[0].Properties.Sections[0]));
+            Expander StylingSection() => Descendants(window).OfType<Expander>().Single(e =>
+                e.DataContext is PropertySectionViewModel section && section.Rows.Contains(editor.Model.Properties.Row("style.shadow")!));
+            Expander Shadow() => Descendants(window).OfType<Expander>().Single(e => e.IsVisible &&
+                e.DataContext is PropertyRowViewModel { Name: "style.shadow" });
+            SensorGroup().IsExpanded = true;
+            RuleSection().IsExpanded = true;
+            StylingSection().IsExpanded = true;
+            Sta.Pump();
+            Assert.False(Shadow().IsExpanded);
+            Shadow().IsExpanded = true;
+            editor.Session.Select([OpenEditor.P("widgets[1]")]);
+            Sta.Pump();
+            Assert.True(SensorGroup().IsExpanded);
+            Assert.True(RuleSection().IsExpanded);
+            Assert.True(StylingSection().IsExpanded);
+            Assert.True(Shadow().IsExpanded);
+        }
+        finally { window.Close(); }
+    });
+
+    static void AssertCollapsed(DependencyObject root, params Expander[] opened)
+    {
+        var expanders = Descendants(root).OfType<Expander>().ToList();
+        Assert.NotEmpty(expanders);
+        var open = expanders.Where(e => e.IsExpanded && !opened.Contains(e)).Select(e =>
+            $"{e.Name} ({e.Header}, {(e.DataContext as PropertyRowViewModel)?.Name ?? (e.DataContext as PropertyItemViewModel)?.Title ?? e.DataContext?.GetType().Name})");
+        Assert.True(!open.Any(), "Unexpected expanded sections: " + string.Join(", ", open));
+    }
 
     static MainWindow Show(OpenEditor editor)
     {
