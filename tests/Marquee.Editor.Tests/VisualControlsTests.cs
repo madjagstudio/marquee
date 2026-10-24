@@ -78,6 +78,32 @@ public class VisualControlsTests
     });
 
     [Fact]
+    public void Swatches_fill_their_button_with_the_colour_for_widgets_the_ring_and_its_rules() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("ring", TextTheme.Replace("text: Hello", "text: Hello, style: { color: '#336699' }") +
+            "ring: { color: '#36D1DC', source: cpu.temp, when: [{ above: 80, color: '#FF5A36' }] }\n"));
+        var window = Show(editor.Model.Properties);
+        try
+        {
+            Assert.Equal(["#FF36D1DC", "#FFFF5A36"], SwatchColours(window));
+            window.Close();
+            editor.Session.Select([OpenEditor.P("widgets[0]")]);
+            window = Show(editor.Model.Properties);
+            Assert.Contains("#FF336699", SwatchColours(window));
+        }
+        finally { window.Close(); }
+    });
+
+    // The colours the swatch buttons draw, each over the whole button rather than collapsed to nothing.
+    static List<string> SwatchColours(Window window) => Walk(window).OfType<ToggleButton>()
+        .Where(b => b.IsVisible && b.Name == "SwatchButton" && !PropertiesView.GetRawLabels(b))
+        .Select(b => Walk(b).OfType<System.Windows.Shapes.Rectangle>().Single())
+        .Where(r => r.ActualWidth >= 20 && r.ActualHeight >= 12)
+        .Select(r => ((SolidColorBrush)r.Fill).Color.ToString())
+        .ToList();
+
+    [Fact]
     public void Gauge_forms_have_pictures_and_change_in_one_undo_step() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();

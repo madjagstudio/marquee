@@ -203,6 +203,7 @@
                         <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
                         <Grid DockPanel.Dock="Left">
                             <ToggleButton x:Name="SwatchButton" Width="30" Height="22" Padding="2" IsEnabled="{Binding IsEditable}"
+                                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                           ToolTip="{x:Static res:Strings.PickColorTip}">
                                 <Border Background="{StaticResource Checks}">
                                     <Rectangle Fill="{Binding SwatchBrush}" />
@@ -229,6 +230,7 @@
                         <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
                         <Grid DockPanel.Dock="Left">
                             <ToggleButton x:Name="SwatchButton" Width="30" Height="22" Padding="2" IsEnabled="{Binding IsEditable}"
+                                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                           ToolTip="{x:Static res:Strings.PickColorTip}">
                                 <Border Background="{StaticResource Checks}">
                                     <Rectangle Fill="{Binding SwatchBrush}" />
