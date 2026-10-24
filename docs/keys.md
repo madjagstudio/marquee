@@ -50,7 +50,7 @@ the desktop or an app that is not presenting frames has no fresh FPS reading.
 | --- | --- | --- | --- | --- |
 | `fps` | Frame rate over the last second | frames/s | PresentMon | Foreground app, not the theme's rendering rate. |
 | `frametime` | Mean time between frames over the last second | ms | PresentMon | Lower is faster. |
-| `fps.1pct_low` | 1% low frame rate over the last ten seconds | frames/s | PresentMon | Converts the mean of the slowest 1% of frame times (at least one frame) to FPS. |
+| `fps.1pct_low` | 1% low frame rate over the last ten seconds, or the last 2,000 frames when that is fewer | frames/s | PresentMon | Converts the mean of the slowest 1% of frame times (at least one frame) to FPS. |
 | `fps.app` | Foreground presenting process name | text | PresentMon, with Windows process lookup | Name without `.exe`. |
 
 ## Claude Code

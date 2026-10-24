@@ -747,7 +747,7 @@ The source is `--sensors`, or `sensors:` in `config.yaml`.
 |---|---|
 | `fps` | Frames per second over the last second |
 | `frametime` | The average time between frames over the last second, in ms |
-| `fps.1pct_low` | The 1% low: the average of the slowest 1% of frame times (at least one frame) over the last 10 seconds, as frames per second |
+| `fps.1pct_low` | The 1% low: the average of the slowest 1% of frame times (at least one frame) over the last 10 seconds, or the last 2,000 frames when that is fewer (about 5 seconds at 400 fps), as frames per second |
 | `fps.app` | The game's process name, without `.exe` |
 
 The game is whichever process owns the window in front, checked every 250 ms; Marquee itself and `dwm.exe`, which

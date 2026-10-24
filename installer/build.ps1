@@ -42,6 +42,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $artifacts = Join-Path $root 'artifacts'
 $publish = Join-Path $artifacts 'publish'
 $staging = Join-Path $artifacts 'staging'
+$cliStaging = Join-Path $artifacts 'cli-staging'
 
 function Invoke-Native([string] $what, [scriptblock] $command) {
     & $command
@@ -64,7 +65,7 @@ else {
 }
 Write-Host "Marquee $version"
 
-foreach ($folder in $publish, $staging) {
+foreach ($folder in $publish, $staging, $cliStaging) {
     if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
 }
 
@@ -235,7 +236,18 @@ $size = (Get-Item $msi).Length
 Write-Host ("Built {0} ({1:N1} MB, {2:N0} bytes) from {3:N1} MB staged." -f $msi, ($size / 1MB), $size,
     ((Get-ChildItem $staging -Recurse -File | Measure-Object Length -Sum).Sum / 1MB))
 
-# The CLI's self-contained publish, with marquee.exe at the zip's root so it can run after extraction.
+# The CLI's self-contained publish, with marquee.exe at the zip's root so it can run after extraction. It redistributes
+# the same runtime and packages as the MSI, so it carries the same LICENSE, THIRD-PARTY-NOTICES.md and licenses folder,
+# checked above for the staging folder (a superset: the tray's and editor's packages too).
+New-Item -ItemType Directory $cliStaging | Out-Null
+Copy-Item (Join-Path $publish 'cli\*') $cliStaging -Recurse -Force
+Get-ChildItem $cliStaging -Recurse -Filter '*.pdb' | Remove-Item
+Copy-Item (Join-Path $staging 'LICENSE'), (Join-Path $staging 'THIRD-PARTY-NOTICES.md') $cliStaging
+Copy-Item (Join-Path $staging 'licenses') $cliStaging -Recurse
+foreach ($required in 'marquee.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
+    'licenses\Microsoft.NETCore.App.Runtime.win-x64\THIRD-PARTY-NOTICES.TXT', 'licenses\Inter\OFL.txt') {
+    if (-not (Test-Path (Join-Path $cliStaging $required))) { throw "The CLI zip's folder has no $required." }
+}
 $zip = Join-Path $artifacts "marquee-$version.zip"
-Compress-Archive -Path (Join-Path $publish 'cli\*') -DestinationPath $zip -Force
+Compress-Archive -Path (Join-Path $cliStaging '*') -DestinationPath $zip -Force
 Write-Host "Built $zip."
