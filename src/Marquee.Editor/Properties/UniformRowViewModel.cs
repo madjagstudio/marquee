@@ -26,6 +26,7 @@ public sealed class UniformRowViewModel : ObservableObject
     internal ValueSources Sources => _owner.Values;
     public bool IsUnused { get; }
     public bool IsEditable => _owner.IsEditable;
+    internal bool RequiresConstant => _owner.RequiresConstant(Name);
     public IReadOnlyList<UniformComponentViewModel> Components { get; }
     public RelayCommand RemoveCommand { get; }
 
@@ -60,7 +61,7 @@ public sealed class UniformComponentViewModel : ObservableObject
     internal UniformComponentViewModel(UniformRowViewModel owner, string text)
     {
         _owner = owner;
-        Picker = new ValuePickerViewModel(owner.Sources, text, showRange: true, owner.Hint);
+        Picker = new ValuePickerViewModel(owner.Sources, text, showRange: true, owner.Hint) { ConstantsOnly = owner.RequiresConstant };
         Picker.PropertyChanged += (_, _) => Raise(null);
         Picker.Committed += (_, _) => Commit();
     }
@@ -76,5 +77,5 @@ public sealed class UniformComponentViewModel : ObservableObject
     public bool HasError => Error is not null;
     public bool IsEditable => _owner.IsEditable;
     public bool Commit() => _owner.Commit();
-    internal void Refresh() { Picker.Hint = _owner.Hint; Raise(null); }
+    internal void Refresh() { Picker.Hint = _owner.Hint; Picker.ConstantsOnly = _owner.RequiresConstant; Raise(null); }
 }

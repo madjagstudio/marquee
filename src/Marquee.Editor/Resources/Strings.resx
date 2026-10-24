@@ -1046,4 +1046,6 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="GaugeArcTip" xml:space="preserve"><value>Arc: an open arc fills with the reading.</value></data>
   <data name="BlendMultiplyTip" xml:space="preserve"><value>Multiply: darken the colours underneath.</value></data>
   <data name="PercentUnit" xml:space="preserve"><value>%</value></data>
+  <data name="ShaderConstantRequired" xml:space="preserve"><value>This control needs a constant. Choose a sensor with Reacts to instead.</value></data>
+  <data name="ModuleUnavailable" xml:space="preserve"><value>This module cannot be loaded. Right-click to rename or delete it.</value></data>
 </root>

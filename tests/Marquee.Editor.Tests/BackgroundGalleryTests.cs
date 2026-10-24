@@ -2,6 +2,9 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Controls.Primitives;
+using Marquee.Editor.Controls;
+using Marquee.Editor.Resources;
 using Marquee.Editor.Backgrounds;
 using Marquee.Editor.Model;
 using Marquee.Editor.Properties;
@@ -11,6 +14,93 @@ namespace Marquee.Editor.Tests;
 
 public class BackgroundGalleryTests
 {
+    [Fact]
+    public void A_background_copy_failure_is_reported_without_changing_the_theme() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("copy-failure"));
+        var before = editor.Session.Document.Text;
+        File.WriteAllText(Path.Combine(editor.Session.Folder, "shaders"), "This file prevents creating the shader directory.");
+        var entry = new BackgroundEntry(Path.Combine(Folder(), "aurora.sksl"), Marquee.Core.Themes.ShaderControls.Read(File.ReadAllText(Path.Combine(Folder(), "aurora.sksl"))));
+        editor.Model.ChooseBackground(entry, null, false);
+        Assert.Single(environment.Dialogs.Errors); Assert.Equal(before, editor.Session.Document.Text);
+    });
+
+    [Theory]
+    [InlineData("speed")]
+    [InlineData("strength")]
+    [InlineData("tint")]
+    public void Annotated_controls_refuse_sensor_bindings_even_in_raw_settings(string name) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("constant"));
+        BackgroundLibrary.Use(editor.Session, Path.Combine(Folder(), "aurora.sksl"), null);
+        var panel = editor.Model.Properties.Shader!;
+        var component = panel.Uniforms.Single(row => row.Name == name).Components[0];
+        var before = editor.Session.Document.Text;
+        component.Text = "cpu.load";
+        Assert.False(component.Commit());
+        Assert.NotNull(component.Error); Assert.Equal(before, editor.Session.Document.Text);
+        Assert.DoesNotContain(component.Picker.Modes, mode => mode.Mode == ValuePickerMode.Sensor);
+        var heat = panel.Uniforms.Single(row => row.Name == "heat").Components[0];
+        heat.Text = "gpu.load / 100"; Assert.True(heat.Commit());
+    });
+
+    [Theory]
+    [InlineData("SpeedSlider")]
+    [InlineData("StrengthSlider")]
+    [InlineData("QualitySlider")]
+    public void One_shader_slider_drag_is_one_undo_step(string name) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("slider"));
+        BackgroundLibrary.Use(editor.Session, Path.Combine(Folder(), "aurora.sksl"), null);
+        var view = new ShaderControlsView { DataContext = editor.Model.Properties.Shader };
+        var window = new Window { Content = view, Width = 400, Height = 800, Left = -10000, Top = -10000, ShowActivated = false, ShowInTaskbar = false };
+        window.Show(); Sta.Pump();
+        try
+        {
+            var before = editor.Session.Document.Text;
+            var slider = Walk(view).OfType<Slider>().Single(s => s.Name == name);
+            slider.RaiseEvent(new DragStartedEventArgs(0, 0) { RoutedEvent = Thumb.DragStartedEvent });
+            slider.Value = .3; slider.Value = .6; slider.Value = .9;
+            slider.RaiseEvent(new DragCompletedEventArgs(0, 0, false) { RoutedEvent = Thumb.DragCompletedEvent });
+            Assert.True(editor.Session.Undo()); Assert.Equal(before, editor.Session.Document.Text);
+        }
+        finally { window.Close(); }
+    });
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Reaction_picker_offers_sensors_for_the_default_and_after_nothing(bool nothingFirst) => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("reaction"));
+        BackgroundLibrary.Use(editor.Session, Path.Combine(Folder(), "aurora.sksl"), null);
+        var view = new ShaderControlsView { DataContext = editor.Model.Properties.Shader };
+        var window = new Window { Content = view, Width = 400, Height = 800, Left = -10000, Top = -10000, ShowActivated = false, ShowInTaskbar = false };
+        window.Show(); Sta.Pump();
+        try
+        {
+            var chip = Walk(view).OfType<Button>().Single(b => Equals(b.ToolTip, Strings.ShaderReactTip));
+            chip.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); Sta.Pump();
+            if (nothingFirst)
+            {
+                PopupNodes().OfType<Button>().Single(b => Equals(b.Content, Strings.ShaderNothing)).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                Sta.Pump(); chip.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); Sta.Pump();
+            }
+            var control = PopupNodes().OfType<ValuePickerControl>().Single(c => c.IsVisible);
+            var picker = Assert.IsType<ValuePickerViewModel>(control.DataContext);
+            Assert.True(picker.IsSensor);
+            Assert.Contains(picker.Keys, key => key.Key == "gpu.temp");
+            picker.SelectedKey = "gpu.temp"; Sta.Pump();
+            Assert.Contains("gpu.temp", editor.Session.Document.Text);
+            Assert.DoesNotContain("speed: gpu.temp", editor.Session.Document.Text);
+        }
+        finally { window.Close(); }
+        static IEnumerable<DependencyObject> PopupNodes() => PresentationSource.CurrentSources.Cast<PresentationSource>()
+            .Where(source => source.RootVisual is not null).SelectMany(source => Walk(source.RootVisual));
+    });
     internal static string Folder([CallerFilePath] string file = "") => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, "../../themes/backgrounds"));
 
     [Fact]

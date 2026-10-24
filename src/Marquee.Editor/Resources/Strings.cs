@@ -9,6 +9,8 @@ namespace Marquee.Editor.Resources;
 /// properties ({x:Static}).
 public static class Strings
 {
+    public static string ShaderConstantRequired => Get(nameof(ShaderConstantRequired));
+    public static string ModuleUnavailable => Get(nameof(ModuleUnavailable));
     public static string PercentUnit => Get(nameof(PercentUnit));
     public static string BlendMultiplyTip => Get(nameof(BlendMultiplyTip));
     public static string GaugeArcTip => Get(nameof(GaugeArcTip));

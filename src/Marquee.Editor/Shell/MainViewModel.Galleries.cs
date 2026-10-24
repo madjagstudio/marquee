@@ -27,9 +27,17 @@ public sealed partial class MainViewModel
         Layers.BackgroundGalleryCommand = new RelayCommand(() => BackgroundGalleryRequested?.Invoke(false), () => CanEdit);
         Properties.BackgroundGalleryCommand = new RelayCommand(() => BackgroundGalleryRequested?.Invoke(true), () => CanEdit && _workspace?.Session.SelectedLayer is not null);
     }
-    public Modules.ModuleGalleryViewModel? CreateModuleGallery() => _workspace is { } workspace
-        ? new(workspace.Session.Folder, () => workspace.Values.Snapshot(workspace.Values.KnownKeys().Concat(ModuleLibrary.Keys)), _environment.Modules)
-            { BlankWidgets = [.. WidgetChoices(), .. FileChoices()], Dialogs = _environment.Dialogs } : null;
+    public Modules.ModuleGalleryViewModel? CreateModuleGallery()
+    {
+        if (_workspace is not { } workspace) return null;
+        try
+        {
+            return new(workspace.Session.Folder, () => workspace.Values.Snapshot(workspace.Values.KnownKeys().Concat(ModuleLibrary.Keys)), _environment.Modules)
+                { BlankWidgets = [.. WidgetChoices(), .. FileChoices()], Dialogs = _environment.Dialogs };
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or Marquee.Core.Themes.ThemeException or LayoutEditException)
+        { _environment.Dialogs.ShowError(Strings.ImportRefused(Strings.ModuleGallery, ex.Message)); return null; }
+    }
 
     public void SaveSelectedModule(string name)
     {
@@ -42,6 +50,7 @@ public sealed partial class MainViewModel
     public void AddGalleryModule(Module module, SkiaSharp.SKPoint? point = null)
     {
         if (!CanEdit || _workspace is not { } workspace) return;
+        if (module.Problem is { } problem) { _environment.Dialogs.ShowError(Strings.ImportRefused(module.Name, problem)); return; }
         var session = workspace.Session;
         var local = point is { } position ? CanvasGeometry.Of(session).ToLocal(position, Canvas.Group) : (SkiaSharp.SKPoint?)null;
         if (module.Category == ModuleCategory.MyModules)
@@ -78,7 +87,7 @@ public sealed partial class MainViewModel
                 if (replace) ChangeBackgroundKind(kind); else AddBackground(kind);
             }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or Marquee.Core.Themes.ThemeException or LayoutEditException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or AssetImportException or Marquee.Core.Themes.ThemeException or LayoutEditException)
         { _environment.Dialogs.ShowError(Strings.ImportRefused(entry?.Info.Name ?? Strings.BackgroundGallery, ex.Message)); }
     }
     sealed record GalleryGradient(YamlPath? Replace, int Index) : EditorCommand

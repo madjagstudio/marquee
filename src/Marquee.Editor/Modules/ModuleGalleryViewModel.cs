@@ -7,6 +7,8 @@ using Marquee.Core.Themes.Editing;
 using SkiaSharp;
 using System.Collections.ObjectModel;
 using Marquee.Editor.Session;
+using Marquee.Core.Themes;
+using Marquee.Editor.Resources;
 
 namespace Marquee.Editor.Modules;
 
@@ -31,8 +33,7 @@ public sealed class ModuleGalleryViewModel : IDisposable
         try
         {
             foreach (var module in ModuleLibrary.All) tiles.Add(Tile(module, folder));
-            if (userModules is not null)
-                foreach (var module in userModules.All()) tiles.Add(Tile(module, userModules.Folder(module.Id)));
+            foreach (var module in UserEntries()) tiles.Add(UserTile(module));
             Categories = Enum.GetValues<ModuleCategory>().Select(category => new ModuleCategoryView(category, ModuleLibrary.CategoryName(category),
                 new ObservableCollection<LiveThemeTile>(tiles.Where(tile => ((Module)tile.Item!).Category == category)))).ToList();
         }
@@ -41,6 +42,26 @@ public sealed class ModuleGalleryViewModel : IDisposable
         Refresh();
     }
     public IReadOnlyList<ModuleCategoryView> Categories { get; }
+    public string? StoreProblem { get; private set; }
+    IReadOnlyList<Module> UserEntries()
+    {
+        try { return _userModules?.All() ?? []; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { StoreProblem = Strings.ImportRefused(Strings.MyModuleSuggestion, ex.Message); return []; }
+    }
+    LiveThemeTile UserTile(Module module)
+    {
+        try
+        {
+            if (module.Problem is not null) return ProblemTile(module);
+            return Tile(module, _userModules!.Folder(module.Id));
+        }
+        catch (Exception ex) when (ex is ThemeException or LayoutEditException or IOException or UnauthorizedAccessException or ArgumentException or FormatException)
+        { return ProblemTile(module with { Problem = ex.Message }); }
+    }
+    static LiveThemeTile ProblemTile(Module module) => new(module.Name, Path.GetTempPath(),
+        "canvas: { orientation: landscape }\nwidgets: [{ type: shape, shape: rect, at: [12, 12], size: [72, 40], style: { fill: \"#24242B\", stroke: { width: 3, color: \"#FF9D36\" } } }]\n",
+        module, 240, 140, SKRect.Create(0, 0, 96, 64), Strings.ModuleUnavailable);
     public IReadOnlyList<Shell.MenuChoice> BlankWidgets { get; init; } = [];
     public void Rename(string name, string newName) => ChangeMine(() => _userModules!.Rename(name, newName));
     public void Delete(string name) => ChangeMine(() => _userModules!.Delete(name));
@@ -58,7 +79,7 @@ public sealed class ModuleGalleryViewModel : IDisposable
         var tiles = (ObservableCollection<LiveThemeTile>)Categories.Single(c => c.Category == ModuleCategory.MyModules).Tiles;
         foreach (var tile in tiles) tile.Dispose();
         tiles.Clear();
-        foreach (var module in _userModules!.All()) tiles.Add(Tile(module, _userModules.Folder(module.Id)));
+        foreach (var module in UserEntries()) tiles.Add(UserTile(module));
         Refresh();
     }
     public static LiveThemeTile Tile(Module module, string folder)

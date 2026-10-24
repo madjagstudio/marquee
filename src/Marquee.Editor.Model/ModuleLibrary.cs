@@ -8,7 +8,10 @@ using Marquee.Core.Themes.Parsing;
 namespace Marquee.Editor.Model;
 
 public enum ModuleCategory { Numbers, Gauges, Graphs, Time, Pictures, Shapes, MyModules, BlankWidgets }
-public sealed record Module(string Id, string Name, ModuleCategory Category, string Yaml, bool NeedsFile);
+public sealed record Module(string Id, string Name, ModuleCategory Category, string Yaml, bool NeedsFile)
+{
+    public string? Problem { get; init; }
+}
 
 internal static class ModuleText
 {

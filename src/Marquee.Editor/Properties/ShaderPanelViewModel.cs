@@ -42,7 +42,13 @@ public sealed class ShaderPanelViewModel : ObservableObject, IDisposable
     public bool IsEditable => !_disposed && _owner.CanEdit && _owner.Session?.SelectedLayer == Layer &&
         _owner.Model?.Rows.All(row => row.IsEditable) == true;
 
-    internal bool Set(string name, IReadOnlyList<string> values) => IsEditable && _owner.Write(() => new SetUniform(Layer, name, values));
+    internal bool RequiresConstant(string name) => IsAnnotated && name != Info!.Reacts?.Uniform;
+    internal bool Set(string name, IReadOnlyList<string> values, bool merge = false) => IsEditable && _owner.Write(() =>
+    {
+        if (RequiresConstant(name) && values.Any(value => Marquee.Core.Expressions.Expression.Parse(value).Keys.Count > 0))
+            throw new ArgumentException(Strings.ShaderConstantRequired);
+        return new SetUniform(Layer, name, values) { MergeKey = merge ? ("uniform", Layer, name) : null };
+    });
     internal void Remove(string name)
     {
         if (IsEditable) _owner.Write(() => new RemoveUniform(Layer, name));

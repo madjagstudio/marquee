@@ -40,9 +40,16 @@ public sealed class UserModules(string root)
     public IReadOnlyList<Module> All()
     {
         if (!Directory.Exists(_root)) return [];
-        return Directory.EnumerateDirectories(_root).Select(Path.GetFileName).Where(name => name is not null && ValidName(name))
-            .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
-            .Where(name => File.Exists(Path.Combine(Folder(name!), "module.yaml"))).Select(name => Read(name!)).ToList();
+        var modules = new List<Module>();
+        foreach (var folder in Directory.EnumerateDirectories(_root).Order(StringComparer.CurrentCultureIgnoreCase))
+        {
+            var name = Path.GetFileName(folder);
+            if (!ValidName(name) || !File.Exists(Path.Combine(folder, "module.yaml"))) continue;
+            try { modules.Add(Read(name)); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { modules.Add(new Module(name, name, ModuleCategory.MyModules, "", false) { Problem = ex.Message }); }
+        }
+        return modules;
     }
     Module Read(string name)
     {
