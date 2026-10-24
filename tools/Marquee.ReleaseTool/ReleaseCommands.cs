@@ -3,7 +3,7 @@ using Marquee.Host.Updates;
 
 namespace Marquee.ReleaseTool;
 
-/// The tool's three commands. Passwords come from `askPassword` (the console, without echo, in Program; a fake in the
+/// The owner's release commands. Passwords come from `askPassword` (the console, without echo, in Program; a fake in the
 /// tests), are held as char arrays and cleared once used. Exit codes: 0 done, 1 refused or failed, 2 usage.
 ///
 /// `builtInKey` is the public key Marquee is built to trust (ReleaseKey.Public, compiled into the tool from the same
@@ -19,12 +19,44 @@ sealed class ReleaseCommands(TextWriter output, TextWriter error, Func<string, c
 
     public int Run(string[] args) => args switch
     {
+        ["check-key"] => CheckKey(),
+        ["hashes", .. var files] when files.Length > 0 => Hashes(files),
         ["keygen", var path] => Keygen(path),
         ["sign", var keyPath, .. var files] when files.Length > 0 => Sign(keyPath, files),
         ["verify", var file] => Verify(null, file),
         ["verify", var publicKeyPath, var file] => Verify(publicKeyPath, file),
         _ => Usage(),
     };
+
+    int CheckKey()
+    {
+        if (ReleaseKey.IsPlaceholderKey(builtInKey))
+            return Fail("release-key.pub.pem is still the placeholder; run the key ceremony (docs/releasing.md) first");
+
+        output.WriteLine(ReleaseSignature.Fingerprint(builtInKey));
+        return 0;
+    }
+
+    int Hashes(string[] files)
+    {
+        try
+        {
+            // Read every input before writing the manifest, so a missing file leaves no partial SHA256SUMS.
+            var lines = files.Select(file =>
+            {
+                using var stream = File.OpenRead(file);
+                return $"{Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant()}  {Path.GetFileName(file)}";
+            }).ToArray();
+            var path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(files[0]))!, "SHA256SUMS");
+            File.WriteAllLines(path, lines);
+            output.WriteLine($"Wrote {path}.");
+            return 0;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return Fail($"Couldn't write SHA256SUMS: {ex.Message}");
+        }
+    }
 
     int Keygen(string path)
     {
@@ -219,6 +251,8 @@ sealed class ReleaseCommands(TextWriter output, TextWriter error, Func<string, c
     {
         error.WriteLine("Marquee release tool: the owner's key and signing commands (docs/releasing.md). Not shipped.");
         error.WriteLine();
+        error.WriteLine("  check-key                  refuse the placeholder, or print the built-in key's fingerprint");
+        error.WriteLine("  hashes <file>...           write SHA256SUMS beside the first file");
         error.WriteLine("  keygen <out.pem>             make the release signing key, encrypted with a password, outside any repository");
         error.WriteLine("  sign <key.pem> <file>...     write <file>.sig beside each file, and check it; the key must be the");
         error.WriteLine("                               one built into Marquee (release-key.pub.pem)");

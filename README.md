@@ -1,120 +1,135 @@
 # Marquee
 
-Source-available Windows driver and renderer for USB PC-accessory LCD panels.
-First supported device: the 8.8" Universal Screen (USB `1CBE:A088`).
+Marquee is a free, source-available Windows replacement for Lian Li's L-Connect **for the 8.8" Universal Screen and
+its LED ring**. Make themes in a visual editor or in YAML, showing hardware sensors, game FPS and AI-agent usage
+from Claude Code and Codex. L-Connect can keep managing your fans, pump and other RGB devices.
 
-> Status: early development. Milestone 4b adds an installer and a tray app that starts at sign-in, takes the screen
-> from L-Connect if you let it, lights the screen's LED ring and keeps Marquee up to date. Milestone 4a added settings
-> in `config.yaml`, the frame rate of the game in front, video backgrounds, `marquee validate` and log files.
+<!-- screenshot: the showcase on the panel, added at launch -->
 
-## Installing
+## Install
 
-Run `Marquee-<version>-x64.msi` from the [releases page](https://github.com/madjagstudios/marquee/releases). It installs
-Marquee for every user of the PC and asks for administrator rights once. It has no options and nothing else to
-install: Marquee brings the .NET runtime it runs on.
+Download and run `Marquee-<version>-x64.msi` from [GitHub
+Releases](https://github.com/madjagstudios/marquee/releases). It installs for every user and asks for
+administrator rights once; the .NET runtime is included.
 
-The installer isn't signed with a code-signing certificate, so Windows SmartScreen may say it is from an unknown
-publisher: choose "More info", then "Run anyway". Updates carry a signature of Marquee's own instead (see
-[Updates](#updates)).
+The MSI has no Authenticode signature yet, so an "unknown publisher" prompt from Windows is expected. If
+SmartScreen appears, choose **More info → Run anyway**. The separate signature used to verify Marquee updates is
+explained [below](#updates).
 
-It installs:
+The installer adds:
 
-- Marquee into `C:\Program Files\Marquee`, always there: `INSTALLFOLDER=` on msiexec's command line is ignored. The
-  logon task below starts the tray from that folder with administrator rights, so it must be one only administrators
-  can change.
-- That folder at the end of the system PATH, so `marquee` works in any new terminal. The folder also holds the .NET
-  runtime's DLLs, so a program that looks for a DLL by name along the PATH may find them there.
-- "Marquee" in the Start menu, which starts the tray, or opens its menu if it is running, and "Marquee Theme Editor"
-  (see [Theme editor](#theme-editor)).
-- A logon task, `\Marquee\Marquee` in Task Scheduler, that starts the tray with administrator rights, without a UAC
-  prompt, for every user who signs in (see [The tray](#the-tray)).
-- `%ProgramData%\Marquee`, where a Marquee running as administrator keeps each user's log and data, and where updates
-  are downloaded (see [Logs](#logs)).
+- The tray app and **Marquee Theme Editor** to `C:\Program Files\Marquee`, with Start menu shortcuts.
+- The `marquee` command to the system PATH, available in a new terminal.
+- A logon task, `\Marquee\Marquee`, that starts the tray at sign-in with the highest rights your account has.
+- An administrator-only data and update folder under `%ProgramData%\Marquee` (see [Logs](#logs)).
 
-When the install finishes, the tray starts for the user who installed it; everyone else gets theirs when they next sign
-in. Installing a newer version upgrades in place, keeping your settings and themes. Installing an older one over a
-newer one is refused. If an upgrade fails partway, Windows Installer puts the old version back as it was, with its
-logon task and its tray.
+The tray starts after installation. Choose **Themes** and **Orientation** in its menu; without settings it shows
+`example-landscape`. Game FPS and the L-Connect handover need administrator rights, which the logon task
+supplies for administrator accounts (see [Without administrator rights](#without-administrator-rights)).
 
-Installing, upgrading, repairing and uninstalling close every user's tray first, the way Quit does: the screen is let
-go, the ring goes dark and the Claude Code limits are saved. A tray that hasn't closed after a minute (an L-Connect
-handover can take that long to finish) is ended, so the installer may pause for up to about 65 seconds. If the log
-says another program made the event the installer uses to close the tray, the next install ends the tray instead.
+Installing a newer MSI upgrades in place and keeps your settings and themes. Uninstall from **Settings → Apps**:
+Marquee closes the trays and removes the program, shortcuts, PATH entry, logon task and downloaded updates. Your
+`%LOCALAPPDATA%\Marquee` settings and themes, and per-user logs and data under
+`%ProgramData%\Marquee\users\<SID>`, remain so you can reinstall without losing them.
 
-### Uninstalling
+## L-Connect and the screen
 
-Uninstall Marquee from Settings > Apps. It closes the trays and removes the program folder, the Start menu entries, the
-PATH entry, the logon task (and its `\Marquee` folder in Task Scheduler) and any downloaded updates. It leaves what is
-yours, so installing again picks up where you left off:
+Only one program can use the screen at a time. Closing L-Connect's window doesn't free it: its background
+service keeps it open. As Marquee's tray puts it: "Marquee can take it over while L-Connect keeps running your
+fans and RGB."
 
-- `%LOCALAPPDATA%\Marquee` for each user: `config.yaml`, your themes, and the logs and data of a Marquee that didn't
-  run as administrator.
-- `%ProgramData%\Marquee\users\<SID>` for each user whose tray ran as administrator: `logs`, `claude-limits.json`,
-  `last-update-check.txt` and the first-run markers (`first-run-hint-shown`, `handover-offer-shown`).
+The handover stops L-Connect's watcher and service, opens the screen, then starts both again. L-Connect skips
+the screen and continues controlling the other devices. While the service is stopped, fans keep their last
+speed; L-Connect pauses its fan and RGB adjustments. Taking over needs administrator rights.
 
-Delete those folders to remove everything (the second needs an administrator).
+Set `lconnect.handover` in [`config.yaml`](#settings):
 
-## The tray
+| Mode | What happens |
+|---|---|
+| `off` (default) | No automatic handover. The tray still offers **Take over the screen from L-Connect**. With no explicit setting, it also offers a one-time introductory notification. |
+| `ask` | A notification offers to take over when L-Connect holds the screen; click it to agree. |
+| `auto` | Takes over when L-Connect holds the screen, including at startup; retries failed attempts with increasing waits. |
 
-`MarqueeTray.exe` is Marquee's tray icon. It runs what `marquee run` runs, with no window and no command line: its
-settings are `config.yaml`'s, and what `marquee run` would print goes to its [log](#logs). Its menu, from the top:
+**Always take over at start** in the tray sets `auto`; unchecking it sets `ask`. To disable automatic handover
+and the introductory notification, set `lconnect: { handover: off }`. To give the screen and ring back to
+L-Connect, pause or quit Marquee, then stop and start L-Connect's service from its tray menu. The handover
+doesn't permanently disable L-Connect's services. See [Sharing the screen with
+L-Connect](#sharing-the-screen-with-l-connect) for details.
 
-- **The status:** the theme, its frame rate and the screen, or what stops it (paused, waiting for the screen, L-Connect
-  using it, a theme that didn't load). Under it, a line for each problem until it is fixed: an error in `config.yaml`
-  or the theme, game FPS off, a source of values that is failing (LibreHardwareMonitor or PresentMon missing, `claude`
-  not found, and so on), or why taking the screen from L-Connect failed. An error in `config.yaml`, the theme or a
-  handover also shows as a balloon, at most once a minute for each.
-- **Themes** and **Orientation:** your themes, then the installed examples, and the four orientations. Picking one
-  writes `theme:` or `orientation:` to `config.yaml`, changing only that setting, then shows it.
-- **Open preview**, **Edit theme…** (the theme on show in the [theme editor](#theme-editor)), **Open themes folder**
-  (`%LOCALAPPDATA%\Marquee\themes`, made if it isn't there), **Open logs** and **Edit settings** (`config.yaml` in your
-  editor; if there is none, one naming the theme on show is written first).
-- **Take over the screen from L-Connect** and **Always take over at start** (see
-  [Sharing the screen with L-Connect](#sharing-the-screen-with-l-connect)).
-- **Pause** lets go of the screen, so another program (L-Connect, or `marquee run`) can have it, and turns the ring
-  off. **Resume** takes it back.
-- **Check for updates**, or **Install Marquee <version>…** once there is one (see [Updates](#updates)).
-- **About Marquee** and **Quit.** Quit lets go of the screen, darkens the ring, saves the Claude Code limits and ends
-  the tray until you next sign in. The Start menu's "Marquee" starts it again, but without administrator rights (see
-  [below](#without-administrator-rights)); `marquee task start` in an administrator terminal starts it as signing in
-  does.
+## Making a theme
 
-The first time, with no `config.yaml`, the tray shows `example-landscape` and a balloon says to pick your theme and the
-screen's orientation from its menu. That balloon shows once; it waits for a later start if L-Connect has the screen
-(the [handover's offer](#sharing-the-screen-with-l-connect) comes first) or if `config.yaml` has an error (whose
-balloon comes instead). A `config.yaml` without a `theme:` line shows `example-landscape` too.
+Choose **New theme…** in the tray or editor to start from **Blank**, **Gaming stats** or **System monitor**, or
+**Open one of yours** on the start screen to open a theme folder. **Add** opens the module gallery and **Add layer ▾** opens the background gallery, both with live previews; select an item on the canvas to change what it
+shows, its colour and size in the plain-language **Properties** panel. Follow the [theme guide](docs/themes.md)
+to make your first theme and use **Show on screen** to select it for the running tray.
 
-`marquee run` while the tray is showing the screen says so and stops: pause the tray, or quit it, first.
+<!-- screenshot: the editor with the module gallery open, added at launch -->
 
-The logon task starts the tray as administrator, which game FPS and the L-Connect handover need. So the tray takes care
-with what your own programs can change:
+## Updates
 
-- Files and folders it opens (themes, logs, `config.yaml`, a release page) open through Explorer, so the folder, your
-  editor and your browser run as you, not as administrator. If Explorer isn't running (after a crash, or with another
-  shell), they open nothing and a balloon says why.
-- It changes `config.yaml` only if neither the file nor a folder on its path is a junction or symbolic link, and the
-  file isn't a hard link: such a link could send an administrator's write anywhere on the PC. A write it refuses is
-  a balloon and a log line, and changes nothing; edit the file by hand instead. It makes a missing `themes` folder, or
-  `%LOCALAPPDATA%\Marquee`, only through a path without a link. A themes folder that is a junction already (to keep
-  your themes on another drive, say) opens as usual.
-- Its log and data go in an admin-only folder under `%ProgramData%\Marquee` (see [Logs](#logs)).
+With a release key built in, the tray looks for a newer Marquee once a day, the first time 5 minutes after it
+starts, and remembers when it last looked (`last-update-check.txt` in its data folder), so restarting the PC
+doesn't make it look again. That check is the only automatic outbound HTTP request made directly by Marquee: one
+unauthenticated GitHub Releases API call, `GET
+https://api.github.com/repos/madjagstudios/marquee/releases/latest`, with no account and no cookies. All it
+sends about you is what any request does (your IP address) and a `User-Agent` header saying `Marquee/<version>`,
+which GitHub requires. If the check fails, nothing else is affected, and it tries again the next day.
 
-### Without administrator rights
+Manual checks and the installer/signature downloads you request also use the network. Separately, the Claude
+usage provider runs the installed Claude CLI's `/usage` command, which can contact Anthropic; turn that polling
+off with `providers: { claude_usage: off }`. Local sensor readings and Codex log reading need no outbound
+request.
 
-For a user who isn't an administrator, the logon task starts the tray with their own rights; so does the Start menu
-when no tray is running. That tray shows themes as usual, but game FPS and the L-Connect handover are off, and its menu
-says why: "Game FPS is off: Marquee isn't running as administrator." and, while L-Connect has the screen, that Marquee
-can take it only as administrator. It can't install updates either: its update offer opens the release's page.
-`marquee claim-screen` in an administrator terminal still hands it the screen once. To have an administrator's tray
-back, quit this one and run `marquee task start` in an administrator terminal.
+`updates: off` in `config.yaml` turns the daily check off. "Check for updates" in the tray's menu still checks
+when you click it, whatever `updates:` says, and says what it found.
 
-### More than one user
+A newer version shows as a balloon and as "Install Marquee <version>…" in the menu. Nothing is downloaded until
+you click one. Then the tray downloads the installer and its signature from the GitHub release into
+`%ProgramData%\Marquee\updates`, a folder only administrators can change, with its progress in the status line.
+It checks the signature against the public key built into Marquee, and only then runs the installer. A missing
+or wrong signature means nothing is installed, and the log says why. How releases are signed is in
+[docs/releasing.md](docs/releasing.md).
 
-Every user who signs in gets a tray of their own, with their own `config.yaml`, themes and folders, and one tray each:
-starting it again opens the running one's menu. There is one screen, though: the first tray to open it keeps it until
-it pauses or quits, and the others wait for it.
+While the installer runs, the tray pauses: the screen and the ring go dark. The installer closes the tray,
+replaces Marquee's files and starts the new tray. If the update doesn't install (you cancel it, another
+installation is under way, or it fails and rolls back), the screen comes back and a balloon gives the
+installer's exit code and its log, `%ProgramData%\Marquee\updates\Marquee-<version>-x64.msi.log`. The offer
+stays in the menu, to try again. The next download replaces that log, and uninstalling removes it.
 
-## Usage
+A tray without administrator rights can't install an update: its offer opens the release's page instead, to
+download and run the installer from there. A development build with the placeholder in place of the release
+key (see [docs/releasing.md](docs/releasing.md))
+never checks or installs anything: "Check for updates" points to the releases page.
+
+## How Marquee differs
+
+Marquee draws the screen itself. L-Connect manages Lian Li hardware as well as its screens; LianliThemeEditor
+edits themes **for L-Connect**, which still displays them. This comparison is for the 8.8" screen, at the time
+of writing; "not verified" means we haven't established support, not that a feature is absent.
+
+| | Marquee | L-Connect 3 | LianliThemeEditor |
+|---|---|---|---|
+| Theme format | `layout.yaml` plus local assets | L-Connect templates | L-Connect `.template`, `.turtheme` and compatible ZIP exports |
+| Editor | Visual canvas, module/background galleries and YAML editing | Built-in screen/theme editor | Layer editing, grouping, undo/redo and recovery snapshots |
+| Sensors | LibreHardwareMonitor or HWiNFO; custom values from scripts | Built-in hardware readings | L-Connect sensor data layers |
+| Game FPS | PresentMon: FPS, frame time, 1% low and app name | FPS data source for 8.8" modular assets | Available sensor choices depend on L-Connect; FPS not verified here |
+| AI-agent usage | Claude Code and Codex limits and sessions | Not verified at the time of writing | Not verified at the time of writing |
+| Screen LED ring | Theme-driven effects and rules, or a fixed colour/off | Screen lighting controls | Managed through L-Connect; independent ring control not verified |
+| Licence | Source-available, free for personal and noncommercial use; see [licence](LICENSE) | No public source identified at the time of writing | Source published on GitHub; open-source licence not verified at the time of writing |
+| Price | Free | Free download | Download available on GitHub; pricing not verified at the time of writing |
+
+Sources: [Lian Li's screen guide](https://lian-li.com/l-connect3/screensoftwareguide/), [L-Connect
+downloads](https://lian-li.com/l-connect3/), [L-Connect's FPS
+changelog](https://lian-li.com/l-connect3/l3-changelog/), [LianliThemeEditor's
+README](https://github.com/ozgurce/LianliThemeEditor) and [editor sensor
+labels](https://github.com/ozgurce/LianliThemeEditor/blob/main/lang/en.json).
+
+## Built with AI agents
+
+Marquee is built by a small studio working with AI coding agents (Claude, Codex); changes go through review and
+testing before release.
+
+## Command line
 
     marquee devices
     marquee show-image <file> [--orientation portrait|portrait-flipped|landscape|landscape-flipped] [--brightness 0-100] [--repeat N] [--sink <folder>]
@@ -165,59 +180,6 @@ runs it, so it is seldom needed by hand. All but `status` need an administrator 
   sign-in. For a user whose tray is running already, that opens its menu.
 - `stop` closes every tray running from this folder, for every user, as the installer does before it changes any
   files. Each is asked to quit, and one still running after a minute is ended.
-
-## Sharing the screen with L-Connect
-
-Only one program can drive the screen at a time. L-Connect 3's background service holds it, and closing the
-L-Connect 3 window doesn't free it. Marquee can take the screen over while L-Connect keeps running your fans and RGB:
-it stops L-Connect's service watcher and service, opens the screen, and starts them again straight away. L-Connect then
-skips the screen and goes on running everything else. The cost is a pause of a few seconds while the service is
-stopped, in which your fans keep their last speed and L-Connect doesn't adjust them or the RGB. Marquee waits up to 15
-seconds for the watcher, then the service, to stop. It never stops another service that depends on L-Connect's: if one
-is running, the handover fails and L-Connect keeps the screen. Pausing or quitting Marquee during a handover (an install
-closing the tray included) starts L-Connect again at once, and doesn't count as a failure.
-
-`lconnect.handover` in [`config.yaml`](#settings) says when Marquee does this:
-
-- `off` (the default): not on its own. While L-Connect has the screen, the tray's menu still offers "Take over the
-  screen from L-Connect". The first time L-Connect holds the screen, a user who hasn't set `lconnect.handover` gets the
-  `ask` balloon below, once, so that they hear the handover exists. Its click takes the screen this once, and it adds:
-  "To do this at every start, choose "Always take over at start" in Marquee's menu." Writing
-  `lconnect: { handover: off }` yourself turns that balloon off too. Without the tray, the log says how to hand the screen over by hand (below).
-- `ask`: whenever Marquee finds L-Connect using the screen, the tray shows a balloon: "L-Connect is using the screen.
-  Marquee can take it over while L-Connect keeps running your fans and RGB. Click here to take over." Clicking it does.
-- `auto`: at start, and whenever Marquee finds the screen busy again (after you unplug it, say). If a try fails, Marquee
-  tries again for as long as L-Connect's service holds the screen: after 1 minute, then 2, then 5, then every 10
-  minutes, so Marquee and L-Connect never fight over the screen and a problem that lasts pauses L-Connect's fan control
-  less and less often. The waits start again at 1 minute whenever the screen is found busy afresh: after Marquee had it,
-  or after a pause. "Take over the screen from L-Connect" never waits for them. This holds for `marquee run` too.
-
-The tray's "Always take over at start" item writes `lconnect.handover: auto` to `config.yaml` when you check it, and
-`ask` when you uncheck it. Checking it while L-Connect has the screen also takes the screen at once, rather than at the
-next time it is found busy. It shows only where L-Connect is installed, or while it is checked, so it can be turned off.
-"Take over the screen from L-Connect" shows only while L-Connect has the screen, in any mode, and does nothing once
-Marquee has it. A handover that fails says why in a balloon (with `auto`, that Marquee will keep trying) and in a menu
-line until Marquee gets the screen.
-
-Stopping L-Connect's service takes administrator rights. The tray has them when its logon task starts it. A tray
-without them offers neither item, and while L-Connect has the screen its menu says why; a `marquee run` without them
-says once in its log that it can't take the screen over. `marquee claim-screen`, run in an administrator terminal,
-takes the screen once for a Marquee without those rights (a `marquee run` in another window, or such a tray): it stops
-L-Connect, waits until that Marquee has the screen (15 seconds at most), and starts L-Connect again. It does nothing
-when no Marquee is running, or when Marquee has the screen already.
-
-To turn the handover off, set `lconnect: { handover: off }`. It changes nothing in L-Connect itself: once Marquee
-quits, stopping and starting the service from L-Connect's tray icon gives the screen back to L-Connect.
-
-By hand, with the handover off:
-
-1. Right-click L-Connect's tray icon and choose its stop-service option. Ending the service in Task Manager doesn't
-   stick: a watcher service starts it again. Fans keep their last settings meanwhile.
-2. Start Marquee (`marquee run …`, or Resume in the tray) and wait for the picture.
-3. Start the service again from the same tray menu. L-Connect skips the screen and goes on running your fans and RGB.
-
-While Marquee has the screen, L-Connect doesn't control it or its LED ring, and neither shows up in the L-Connect app.
-To give the screen back, pause or quit Marquee, then stop and start the service from the tray again.
 
 ## Settings
 
@@ -280,6 +242,120 @@ says.
 side by side; `marquee run` then watches that file. A file named that way that doesn't exist gets a warning, and the
 defaults are used.
 
+## The tray
+
+`MarqueeTray.exe` is Marquee's tray icon. It runs what `marquee run` runs, with no window and no command line: its
+settings are `config.yaml`'s, and what `marquee run` would print goes to its [log](#logs). Its menu, from the top:
+
+- **The status:** the theme, its frame rate and the screen, or what stops it (paused, waiting for the screen, L-Connect
+  using it, a theme that didn't load). Under it, a line for each problem until it is fixed: an error in `config.yaml`
+  or the theme, game FPS off, a source of values that is failing (LibreHardwareMonitor or PresentMon missing, `claude`
+  not found, and so on), or why taking the screen from L-Connect failed. An error in `config.yaml`, the theme or a
+  handover also shows as a balloon, at most once a minute for each.
+- **Themes** and **Orientation:** your themes, then the installed examples, and the four orientations. Picking one
+  writes `theme:` or `orientation:` to `config.yaml`, changing only that setting, then shows it.
+- **Open preview**, **Edit theme…** (the theme on show in the [theme editor](#theme-editor)), **New theme…** (the
+  [start screen](#making-a-theme)), **Open themes folder**
+  (`%LOCALAPPDATA%\Marquee\themes`, made if it isn't there), **Open logs** and **Edit settings** (`config.yaml` in your
+  editor; if there is none, one naming the theme on show is written first).
+- **Take over the screen from L-Connect** and **Always take over at start** (see
+  [Sharing the screen with L-Connect](#sharing-the-screen-with-l-connect)).
+- **Pause** lets go of the screen, so another program (L-Connect, or `marquee run`) can have it, and turns the ring
+  off. **Resume** takes it back.
+- **Check for updates**, or **Install Marquee <version>…** once there is one (see [Updates](#updates)).
+- **About Marquee** and **Quit.** Quit lets go of the screen, darkens the ring, saves the Claude Code limits and ends
+  the tray until you next sign in. The Start menu's "Marquee" starts it again, but without administrator rights (see
+  [below](#without-administrator-rights)); `marquee task start` in an administrator terminal starts it as signing in
+  does.
+
+The first time, with no `config.yaml`, the tray shows `example-landscape` and a balloon says to pick your theme and the
+screen's orientation from its menu. That balloon shows once; it waits for a later start if L-Connect has the screen
+(the [handover's offer](#sharing-the-screen-with-l-connect) comes first) or if `config.yaml` has an error (whose
+balloon comes instead). A `config.yaml` without a `theme:` line shows `example-landscape` too.
+
+`marquee run` while the tray is showing the screen says so and stops: pause the tray, or quit it, first.
+
+The logon task starts the tray as administrator, which game FPS and the L-Connect handover need. So the tray takes care
+with what your own programs can change:
+
+- Files and folders it opens (themes, logs, `config.yaml`, a release page) open through Explorer, so the folder, your
+  editor and your browser run as you, not as administrator. If Explorer isn't running (after a crash, or with another
+  shell), they open nothing and a balloon says why.
+- It changes `config.yaml` only if neither the file nor a folder on its path is a junction or symbolic link, and the
+  file isn't a hard link: such a link could send an administrator's write anywhere on the PC. A write it refuses is
+  a balloon and a log line, and changes nothing; edit the file by hand instead. It makes a missing `themes` folder, or
+  `%LOCALAPPDATA%\Marquee`, only through a path without a link. A themes folder that is a junction already (to keep
+  your themes on another drive, say) opens as usual.
+- Its log and data go in an admin-only folder under `%ProgramData%\Marquee` (see [Logs](#logs)).
+
+### Without administrator rights
+
+For a user who isn't an administrator, the logon task starts the tray with their own rights; so does the Start menu
+when no tray is running. That tray shows themes as usual, but game FPS and the L-Connect handover are off, and its menu
+says why: "Game FPS is off: Marquee isn't running as administrator." and, while L-Connect has the screen, that Marquee
+can take it only as administrator. It can't install updates either: its update offer opens the release's page.
+`marquee claim-screen` in an administrator terminal still hands it the screen once. To have an administrator's tray
+back, quit this one and run `marquee task start` in an administrator terminal.
+
+### More than one user
+
+Every user who signs in gets a tray of their own, with their own `config.yaml`, themes and folders, and one tray each:
+starting it again opens the running one's menu. There is one screen, though: the first tray to open it keeps it until
+it pauses or quits, and the others wait for it.
+
+## Sharing the screen with L-Connect
+
+Only one program can drive the screen at a time. L-Connect 3's background service holds it, and closing the
+L-Connect 3 window doesn't free it. Marquee can take the screen over while L-Connect keeps running your fans and RGB:
+it stops L-Connect's service watcher and service, opens the screen, and starts them again straight away. L-Connect then
+skips the screen and goes on running everything else. The cost is a pause of a few seconds while the service is
+stopped, in which your fans keep their last speed and L-Connect doesn't adjust them or the RGB. Marquee waits up to 15
+seconds for the watcher, then the service, to stop. It never stops another service that depends on L-Connect's: if one
+is running, the handover fails and L-Connect keeps the screen. Pausing or quitting Marquee during a handover (an install
+closing the tray included) starts L-Connect again at once, and doesn't count as a failure.
+
+`lconnect.handover` in [`config.yaml`](#settings) says when Marquee does this:
+
+- `off` (the default): not on its own. While L-Connect has the screen, the tray's menu still offers "Take over the
+  screen from L-Connect". The first time L-Connect holds the screen, a user who hasn't set `lconnect.handover` gets the
+  `ask` balloon below, once, so that they hear the handover exists. Its click takes the screen this once, and it adds:
+  "To do this at every start, choose "Always take over at start" in Marquee's menu." Writing
+  `lconnect: { handover: off }` yourself turns that balloon off too. Without the tray, the log says how to hand the screen over by hand (below).
+- `ask`: whenever Marquee finds L-Connect using the screen, the tray shows a balloon: "L-Connect is using the screen.
+  Marquee can take it over while L-Connect keeps running your fans and RGB. Click here to take over." Clicking it does.
+- `auto`: at start, and whenever Marquee finds the screen busy again (after you unplug it, say). If a try fails, Marquee
+  tries again for as long as L-Connect's service holds the screen: after 1 minute, then 2, then 5, then every 10
+  minutes, so Marquee and L-Connect never fight over the screen and a problem that lasts pauses L-Connect's fan control
+  less and less often. The waits start again at 1 minute whenever the screen is found busy afresh: after Marquee had it,
+  or after a pause. "Take over the screen from L-Connect" never waits for them. This holds for `marquee run` too.
+
+The tray's "Always take over at start" item writes `lconnect.handover: auto` to `config.yaml` when you check it, and
+`ask` when you uncheck it. Checking it while L-Connect has the screen also takes the screen at once, rather than at the
+next time it is found busy. It shows only where L-Connect is installed, or while it is checked, so it can be turned off.
+"Take over the screen from L-Connect" shows only while L-Connect has the screen, in any mode, and does nothing once
+Marquee has it. A handover that fails says why in a balloon (with `auto`, that Marquee will keep trying) and in a menu
+line until Marquee gets the screen.
+
+Stopping L-Connect's service takes administrator rights. The tray has them when its logon task starts it. A tray
+without them offers neither item, and while L-Connect has the screen its menu says why; a `marquee run` without them
+says once in its log that it can't take the screen over. `marquee claim-screen`, run in an administrator terminal,
+takes the screen once for a Marquee without those rights (a `marquee run` in another window, or such a tray): it stops
+L-Connect, waits until that Marquee has the screen (15 seconds at most), and starts L-Connect again. It does nothing
+when no Marquee is running, or when Marquee has the screen already.
+
+To turn the handover off, set `lconnect: { handover: off }`. It changes nothing in L-Connect itself: once Marquee
+quits, stopping and starting the service from L-Connect's tray icon gives the screen back to L-Connect.
+
+By hand, with the handover off:
+
+1. Right-click L-Connect's tray icon and choose its stop-service option. Ending the service in Task Manager doesn't
+   stick: a watcher service starts it again. Fans keep their last settings meanwhile.
+2. Start Marquee (`marquee run …`, or Resume in the tray) and wait for the picture.
+3. Start the service again from the same tray menu. L-Connect skips the screen and goes on running your fans and RGB.
+
+While Marquee has the screen, L-Connect doesn't control it or its LED ring, and neither shows up in the L-Connect app.
+To give the screen back, pause or quit Marquee, then stop and start the service from the tray again.
+
 ## Orientation
 
 Pick the orientation that matches how the screen is mounted, with `--orientation` or `orientation:` in `config.yaml`. A
@@ -290,6 +366,8 @@ for; running it on the other shape prints a warning and shows it scaled down rat
 never changes the orientation: that is how the screen is mounted, which only you know.
 
 ## Themes
+
+Start with the [theme guide](docs/themes.md) for the visual editor and a first YAML theme; the [key reference](docs/keys.md) lists the readings you can use.
 
 A theme is a folder with a `layout.yaml` and any images or fonts it uses. A small example:
 
@@ -373,7 +451,7 @@ repo gives it a URL.
 See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents` and `themes/example-showcase`, a
 tour of the format's newer parts: a clock with the weekday, an outlined title in gradient letters, a video box, a big
 number with a small unit, shapes, dials, segmented meters, charts, a donut, wrapped text, rotation, blending, names
-and hidden widgets. A full theme authoring guide comes with the public release.
+and hidden widgets. See the [theme authoring guide](docs/themes.md) for the full walkthrough.
 
 ### Shader backgrounds
 
@@ -486,26 +564,17 @@ dark when Marquee pauses or quits, and so while an update installs. `--sink` and
 
 ### Theme editor
 
-`MarqueeEditor.exe` edits a theme on a canvas that shows the theme's real frames, drawn by the same renderer as the
-screen. Open it with:
+Open **Edit theme…** in the tray, **Marquee Theme Editor** in the Start menu, or `marquee edit` to edit the
+configured theme; `marquee edit <theme or folder>` opens another. **New theme…** opens the start screen
+described [above](#making-a-theme). The canvas uses the same renderer as the screen; the [theme
+guide](docs/themes.md) walks through the galleries, **Properties**, **Layers**, styles, rules and test values.
 
-- **Edit theme…** in the tray's menu, or **Marquee Theme Editor** in the Start menu: the theme `config.yaml` names, the
-  one on the screen;
-- `marquee edit` for that same theme, or `marquee edit <theme or folder>` for another, found as `marquee run` finds one.
+`layout.yaml` stays the source of truth. Edits save automatically after about a second, preserving comments and
+unrelated formatting. Hand edits reload as one undo step; undo keeps up to 500 steps, and a recovery copy
+helps after a crash. Installed examples are read-only: make a copy to edit, or open one read-only to look around.
 
-Select, move, resize and rotate widgets on the canvas; reorder, group, hide and lock them in the layers panel; set
-their properties, styles and gradients in the properties panel; import images, fonts and clips; and pin test values
-to see a theme at a full CPU or a missing sensor. "Show on screen" writes the theme to `config.yaml`.
-
-`layout.yaml` stays the source of truth. Each change is written into it about a second later, changing only the text
-that edit is about: your comments, order and formatting stay as they were, and the tray shows the change as it does a
-hand edit. You can keep editing the file by hand while the editor is open; it reloads what you saved, as one step you
-can undo. Undo goes back 500 steps, "Revert to opened version" brings back the file as it was when you opened it, and
-unsaved changes survive a crash. The installed examples are read-only: the editor offers to copy one into your themes
-folder first.
-
-The editor runs as you, never as administrator: started elevated, or by `marquee edit` from an administrator
-terminal, it refuses, so your theme files never end up owned by Administrators.
+**Show on screen** writes the selected theme to `config.yaml`; a running tray follows that setting and
+subsequent saves. The editor runs as you and refuses to start as administrator.
 
 ### Checking a theme
 
@@ -639,6 +708,8 @@ give them a ttl. `custom: { max_keys: N }` in `config.yaml` sets the limit, from
 
 ## Hardware sensors
 
+See the [sensor and provider key reference](docs/keys.md) for all keys, units and stale-value behaviour.
+
 `marquee sensors` lists every key and its current value. Keys include `cpu.temp`, `cpu.load`, `cpu.clock`,
 `cpu.power`, `cpu.voltage`, `gpu.temp`, `gpu.load`, `gpu.clock`, `gpu.power`, `gpu.voltage`, `gpu.fan`,
 `gpu.vram_used`, `ram.used_pct`, `ram.used` and `fan.<name>`. A key whose source stops updating goes stale after
@@ -676,7 +747,7 @@ The source is `--sensors`, or `sensors:` in `config.yaml`.
 |---|---|
 | `fps` | Frames per second over the last second |
 | `frametime` | The average time between frames over the last second, in ms |
-| `fps.1pct_low` | The 1% low: the average of the slowest 1% of frame times (at least one frame) over the last 10 seconds, as frames per second |
+| `fps.1pct_low` | The 1% low: the average of the slowest 1% of frame times (at least one frame) over the last 10 seconds, or the last 2,000 frames when that is fewer (about 5 seconds at 400 fps), as frames per second |
 | `fps.app` | The game's process name, without `.exe` |
 
 The game is whichever process owns the window in front, checked every 250 ms; Marquee itself and `dwm.exe`, which
@@ -695,36 +766,6 @@ PresentMon reads Windows' event tracing, which needs administrator rights, so FP
 administrator: the tray does when its logon task starts it, and `marquee run` does from an elevated terminal.
 Unelevated, FPS is off with a warning saying why (in the tray's menu, too). `providers: { fps: off }` in `config.yaml`
 or `--no-fps` turns FPS off, and the warning with it.
-
-## Updates
-
-The tray looks for a newer Marquee once a day, the first time 5 minutes after it starts, and remembers when it last
-looked (`last-update-check.txt` in its data folder), so restarting the PC doesn't make it look again. That check is the
-only request Marquee makes on its own: one `GET https://api.github.com/repos/madjagstudios/marquee/releases/latest`,
-with no account and no cookies. All it sends about you is what any request does (your IP address) and a `User-Agent`
-header saying `Marquee/<version>`, which GitHub requires. If the check fails, nothing else is affected, and it tries
-again the next day.
-
-`updates: off` in `config.yaml` turns the daily check off. "Check for updates" in the tray's menu still checks when you
-click it, whatever `updates:` says, and says what it found.
-
-A newer version shows as a balloon and as "Install Marquee <version>…" in the menu. Nothing is downloaded until you
-click one. Then the tray downloads the installer and its signature from the GitHub release into
-`%ProgramData%\Marquee\updates`, a folder only administrators can change, with its progress in the status line. It
-checks the signature against the public key built into Marquee, and only then runs the installer. A missing or wrong
-signature means nothing is installed, and the log says why. How releases are signed is in
-[docs/releasing.md](docs/releasing.md).
-
-While the installer runs, the tray pauses: the screen and the ring go dark. The installer closes the tray, replaces
-Marquee's files and starts the new tray. If the update doesn't install (you cancel it, another installation is under
-way, or it fails and rolls back), the screen comes back and a balloon gives the installer's exit code and its log,
-`%ProgramData%\Marquee\updates\Marquee-<version>-x64.msi.log`. The offer stays in the menu, to try again. The next
-download replaces that log, and uninstalling removes it.
-
-A tray without administrator rights can't install an update: its offer opens the release's page instead, to download
-and run the installer from there. A development build, one with the placeholder in place of the release key (see
-[docs/releasing.md](docs/releasing.md)), never checks or installs anything: "Check for updates" points to the
-releases page.
 
 ## Logs
 
@@ -763,10 +804,13 @@ administrator) and Marquee makes it again, safely.
 | 8.8" Universal Screen (`1CBE:A088`) with the redesigned theme editor | `lianli88_0001_0023` | the owner's walkthroughs of the MadJag look and the layered panel in plain words: readings by plain name, inserting the time and date into text, groups that grow with their text, the start screen, a moving background picked from the gallery with its colour, speed and reaction controls, and modules added from the gallery with live previews |
 | 8.8" Universal Screen (`1CBE:A088`) and its LED ring (`0416:8050`) with the tray and the MSI | `lianli88_0001_0023` | installed per-machine with no options; the tray started elevated at logon with no UAC prompt; the one-time offer, and later `lconnect.handover: auto` at logon, took the screen from L-Connect's service about 10 s after the tray started, with L-Connect's service and watcher running again afterwards; the LED ring lit from the theme and `config.yaml`, dark on pause and quit; themes and orientation switched from the menu; sleep and wake, unplug and replug; a 0.1.0 → 0.1.1 upgrade restarted the tray in 2 s; uninstall; 22 fps rather than 30 with the tray (send ~28–29 ms), still being looked into |
 
-## Credits
+## Licence and third-party notices
+
+Marquee is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE).
 
 The panel and LED ring protocols were documented by the community, notably
 [sgtaziz/lian-li-linux](https://github.com/sgtaziz/lian-li-linux) (MIT). Marquee is an independent implementation.
+Game FPS uses the bundled [PresentMon](https://github.com/GameTechDev/PresentMon) (MIT).
 Third-party components and their licenses, including everything the installer redistributes, are listed in
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

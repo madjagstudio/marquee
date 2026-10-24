@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Builds Marquee's MSI: artifacts\Marquee-<version>-x64.msi.
+Builds Marquee's MSI and CLI zip: artifacts\Marquee-<version>-x64.msi and artifacts\marquee-<version>.zip.
 
 .DESCRIPTION
 Publishes marquee.exe (src\Marquee.Cli), MarqueeTray.exe (src\Marquee.App) and MarqueeEditor.exe (src\Marquee.Editor,
@@ -42,6 +42,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $artifacts = Join-Path $root 'artifacts'
 $publish = Join-Path $artifacts 'publish'
 $staging = Join-Path $artifacts 'staging'
+$cliStaging = Join-Path $artifacts 'cli-staging'
 
 function Invoke-Native([string] $what, [scriptblock] $command) {
     & $command
@@ -57,14 +58,14 @@ if ($Version) {
     $versionArgs = @("-p:Version=$Version")
 }
 else {
-    $version = (& dotnet msbuild (Join-Path $root 'src\Marquee.Cli\Marquee.Cli.csproj') -nologo '-getProperty:Version' | Out-String).Trim()
+    $version = (& dotnet msbuild (Join-Path $root 'src\Marquee.Cli\Marquee.Cli.csproj') -nologo -p:UseSharedCompilation=false '-getProperty:Version' | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or $version -notmatch '^\d+\.\d+\.\d+$') {
         throw "Could not read the version from Directory.Build.props (got '$version')."
     }
 }
 Write-Host "Marquee $version"
 
-foreach ($folder in $publish, $staging) {
+foreach ($folder in $publish, $staging, $cliStaging) {
     if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
 }
 
@@ -78,7 +79,7 @@ foreach ($app in $apps) {
     $out = Join-Path $publish $app.Folder
     Invoke-Native "Publishing $($app.Project)" {
         dotnet publish (Join-Path $root $app.Project) -nologo -c Release -r win-x64 --self-contained true `
-            -p:PublishSingleFile=false -p:PublishTrimmed=false @versionArgs -o $out
+            -p:PublishSingleFile=false -p:PublishTrimmed=false -p:UseSharedCompilation=false @versionArgs -o $out
     }
 }
 
@@ -225,7 +226,7 @@ Invoke-Native 'marquee.exe validate' { & (Join-Path $staging 'marquee.exe') vali
 $wixObj = Join-Path $PSScriptRoot 'obj'
 if (Test-Path $wixObj) { Remove-Item $wixObj -Recurse -Force }
 
-$wixArgs = @((Join-Path $PSScriptRoot 'Marquee.Installer.wixproj'), '-nologo', '-c', 'Release', "-p:StagingDir=$staging") + $versionArgs
+$wixArgs = @((Join-Path $PSScriptRoot 'Marquee.Installer.wixproj'), '-nologo', '-c', 'Release', '-p:UseSharedCompilation=false', "-p:StagingDir=$staging") + $versionArgs
 if ($SkipValidation) { $wixArgs += '-p:SuppressValidation=true' }
 Invoke-Native 'Building the MSI' { dotnet build @wixArgs }
 
@@ -234,3 +235,19 @@ if (-not (Test-Path $msi)) { throw "The build made no $msi." }
 $size = (Get-Item $msi).Length
 Write-Host ("Built {0} ({1:N1} MB, {2:N0} bytes) from {3:N1} MB staged." -f $msi, ($size / 1MB), $size,
     ((Get-ChildItem $staging -Recurse -File | Measure-Object Length -Sum).Sum / 1MB))
+
+# The CLI's self-contained publish, with marquee.exe at the zip's root so it can run after extraction. It redistributes
+# the same runtime and packages as the MSI, so it carries the same LICENSE, THIRD-PARTY-NOTICES.md and licenses folder,
+# checked above for the staging folder (a superset: the tray's and editor's packages too).
+New-Item -ItemType Directory $cliStaging | Out-Null
+Copy-Item (Join-Path $publish 'cli\*') $cliStaging -Recurse -Force
+Get-ChildItem $cliStaging -Recurse -Filter '*.pdb' | Remove-Item
+Copy-Item (Join-Path $staging 'LICENSE'), (Join-Path $staging 'THIRD-PARTY-NOTICES.md') $cliStaging
+Copy-Item (Join-Path $staging 'licenses') $cliStaging -Recurse
+foreach ($required in 'marquee.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
+    'licenses\Microsoft.NETCore.App.Runtime.win-x64\THIRD-PARTY-NOTICES.TXT', 'licenses\Inter\OFL.txt') {
+    if (-not (Test-Path (Join-Path $cliStaging $required))) { throw "The CLI zip's folder has no $required." }
+}
+$zip = Join-Path $artifacts "marquee-$version.zip"
+Compress-Archive -Path (Join-Path $cliStaging '*') -DestinationPath $zip -Force
+Write-Host "Built $zip."

@@ -1,0 +1,72 @@
+name: release
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build artifacts only (publishing starts with a version tag push)
+        type: boolean
+        default: true
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Check version and run mode
+        id: version
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TAG: ${{ github.ref_name }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          $version = ([regex]::Match((Get-Content Directory.Build.props -Raw), '<Version>([^<]+)</Version>')).Groups[1].Value
+          if ($version -cnotmatch '\A[0-9]+\.[0-9]+\.[0-9]+\z') { throw "Invalid version '$version'." }
+          if ($env:EVENT_NAME -eq 'push') {
+            if ($env:TAG -cne "v$version") { throw "Tag '$env:TAG' must equal v$version from Directory.Build.props." }
+          }
+          elseif ($env:DRY_RUN -ne 'true') { throw 'Manual runs must be dry runs; push a version tag to create a draft release.' }
+          "current=$version" >> $env:GITHUB_OUTPUT
+      - name: Refuse the placeholder key
+        if: github.event_name == 'push'
+        run: dotnet run --project tools/Marquee.ReleaseTool -c Release -p:UseSharedCompilation=false -- check-key
+      - name: Media Foundation (off by default on Windows Server)
+        shell: pwsh
+        run: |
+          if ((Get-WindowsFeature Server-Media-Foundation).InstallState -ne 'Installed') { Install-WindowsFeature Server-Media-Foundation }
+          if (-not (Test-Path "$env:WINDIR\System32\mfreadwrite.dll")) { throw 'Media Foundation is missing; the build needs it for video themes' }
+      # Windows PowerShell 5.1 runs the packaging script, as in ci.yml. A dry run may package the placeholder key.
+      - name: Build the MSI and CLI zip
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File installer\build.ps1
+      - name: Hash the release files
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.current }}
+        run: |
+          dotnet run --project tools/Marquee.ReleaseTool -c Release -p:UseSharedCompilation=false -- hashes "artifacts/Marquee-$env:VERSION-x64.msi" "artifacts/marquee-$env:VERSION.zip"
+      # CI has no private key. The owner checks these hashes, signs both files and publishes the draft locally.
+      - name: Create the draft release
+        if: github.event_name == 'push'
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.current }}
+        run: |
+          $tag = $env:TAG
+          gh release create $tag --draft --verify-tag --title $tag --notes "Release files await the owner's signature." "artifacts/Marquee-$env:VERSION-x64.msi" "artifacts/marquee-$env:VERSION.zip" artifacts/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        with:
+          name: release-dry-run
+          path: |
+            artifacts/Marquee-${{ steps.version.outputs.current }}-x64.msi
+            artifacts/marquee-${{ steps.version.outputs.current }}.zip
+            artifacts/SHA256SUMS
+          if-no-files-found: error

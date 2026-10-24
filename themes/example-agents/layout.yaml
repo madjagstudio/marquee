@@ -4,7 +4,16 @@
 # Claude Code's limits need `marquee setup-claude` once; push your own line with:  marquee push status "deploy ok" --ttl 10m
 canvas:
   orientation: landscape
-  fps: 30
+  fps: 30 # Smooth animation with a modest frame budget.
+
+# The LED ring breathes in the theme's teal accent, turning warm when the CPU exceeds 80 C.
+ring:
+  color: "#36D1DC"
+  effect: breathe
+  brightness: 40
+  source: cpu.temp
+  when:
+    - { above: 80, color: "#FF5A36" }
 
 styles:
   title: { size: 26, weight: semibold, color: "#8B95AA" }

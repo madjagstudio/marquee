@@ -40,6 +40,61 @@ public sealed class ReleaseCommandsTests : IDisposable
     }
 
     [Fact]
+    public void Check_key_refuses_the_placeholder_without_asking_for_a_password()
+    {
+        BuildIn(PlaceholderKey.Pem);
+        var passwords = new FakePasswords();
+
+        Assert.Equal(1, Run(passwords, "check-key"));
+
+        Assert.Equal("release-key.pub.pem is still the placeholder; run the key ceremony (docs/releasing.md) first" + Environment.NewLine,
+            error.ToString());
+        Assert.Equal("", output.ToString());
+        Assert.Empty(passwords.Prompts);
+    }
+
+    [Fact]
+    public void Check_key_checks_the_key_embedded_from_the_repos_pem()
+    {
+        BuildIn(ReleaseKey.Public.ExportSubjectPublicKeyInfoPem());
+
+        Assert.Equal(ReleaseKey.IsPlaceholder ? 1 : 0, Run(new FakePasswords(), "check-key"));
+    }
+
+    [Fact]
+    public void Check_key_prints_a_test_keys_fingerprint()
+    {
+        var passwords = new FakePasswords();
+
+        Assert.Equal(0, Run(passwords, "check-key"));
+
+        Assert.Equal(ReleaseSignature.Fingerprint(builtIn) + Environment.NewLine, output.ToString());
+        Assert.Equal("", error.ToString());
+        Assert.Empty(passwords.Prompts);
+    }
+
+    [Fact]
+    public void Hashes_writes_sha256sums_beside_the_first_file_with_one_line_per_file()
+    {
+        using var first = new TempDir();
+        using var second = new TempDir();
+        var msi = first.Write("Marquee-0.1.0-x64.msi", "abc");
+        var zip = second.Write("marquee-0.1.0.zip", "");
+        var passwords = new FakePasswords();
+
+        Assert.Equal(0, Run(passwords, "hashes", msi, zip));
+
+        Assert.Equal(new[]
+        {
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad  Marquee-0.1.0-x64.msi",
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  marquee-0.1.0.zip",
+        }, File.ReadAllLines(first.File("SHA256SUMS")));
+        Assert.False(File.Exists(second.File("SHA256SUMS")));
+        Assert.Equal("", error.ToString());
+        Assert.Empty(passwords.Prompts);
+    }
+
+    [Fact]
     public void Keygen_writes_an_encrypted_key_and_prints_its_public_half_and_fingerprint()
     {
         using var dir = new TempDir();
@@ -315,6 +370,8 @@ public sealed class ReleaseCommandsTests : IDisposable
     [InlineData("keygen", "a.pem", "b.pem")]
     [InlineData("sign", "key.pem")]
     [InlineData("verify")]
+    [InlineData("hashes")]
+    [InlineData("check-key", "extra")]
     [InlineData("verify", "key.pub.pem", "a.msi", "b.msi")]
     public void Anything_else_prints_the_usage(params string[] args)
     {
