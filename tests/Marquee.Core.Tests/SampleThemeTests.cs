@@ -109,7 +109,7 @@ public class SampleThemeTests
     [MemberData(nameof(ExampleThemes))]
     public void Sample_themes_load_without_warnings(string name)
     {
-        if (name == "example-showcase" && !MediaFoundation.IsAvailable) return; // Its clip can't play there.
+        if (name.StartsWith("example-showcase", StringComparison.Ordinal) && !MediaFoundation.IsAvailable) return; // Its clip can't play there.
         using var theme = Load(name);
 
         Assert.Empty(theme.Warnings);
@@ -163,11 +163,11 @@ public class SampleThemeTests
         return store.Snapshot();
     }
 
-    /// The showcase at the test sensors' fixed time in the pinned zone and culture (Friday, 17:30), with its clip on its
+    /// The showcase (or its portrait version, `name`) at the test sensors' fixed time in the pinned zone and culture (Friday, 17:30), with its clip on its
     /// first frame, which the player has decoded by the time the theme has loaded.
-    static SKImage RenderShowcase(SensorSnapshot sensors)
+    static SKImage RenderShowcase(SensorSnapshot sensors, string name = "example-showcase")
     {
-        using var theme = Load("example-showcase");
+        using var theme = Load(name);
         using var renderer = new ThemeRenderer(theme) { Locale = TestClock.Locale() };
         using var frame = renderer.Render(sensors, TimeSpan.Zero);
         return Frames.ThroughSink(frame);
@@ -189,6 +189,24 @@ public class SampleThemeTests
         using var frame = RenderShowcase(ShowcaseHot());
 
         Snapshots.Match(frame, "example-showcase-hot");
+    }
+
+    [Fact]
+    public void Portrait_showcase_theme_with_typical_values()
+    {
+        if (!MediaFoundation.IsAvailable) return;
+        using var frame = RenderShowcase(Showcase(), "example-showcase-portrait");
+
+        Snapshots.Match(frame, "example-showcase-portrait");
+    }
+
+    [Fact]
+    public void Portrait_showcase_theme_running_hot_in_a_game_with_a_stale_gpu()
+    {
+        if (!MediaFoundation.IsAvailable) return;
+        using var frame = RenderShowcase(ShowcaseHot(), "example-showcase-portrait");
+
+        Snapshots.Match(frame, "example-showcase-portrait-hot");
     }
 
     /// The clip is committed beside the theme, so it stays small enough for the repository and the installer, and is a

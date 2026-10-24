@@ -448,8 +448,8 @@ and checks theme files once the YAML extension (Red Hat) is installed: the examp
 That path works only inside this repo: a copied theme needs its first line pointed at the schema, until the public
 repo gives it a URL.
 
-See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents` and `themes/example-showcase`, a
-tour of the format's newer parts: a clock with the weekday, an outlined title in gradient letters, a video box, a big
+See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents`, and `themes/example-showcase` with
+`themes/example-showcase-portrait` for a vertically mounted screen. The showcase is a tour of the format's newer parts: a clock with the weekday, an outlined title in gradient letters, a video box, a big
 number with a small unit, shapes, dials, segmented meters, charts, a donut, wrapped text, rotation, blending, names
 and hidden widgets. See the [theme authoring guide](docs/themes.md) for the full walkthrough.
 
