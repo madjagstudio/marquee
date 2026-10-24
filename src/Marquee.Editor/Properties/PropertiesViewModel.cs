@@ -76,6 +76,7 @@ public sealed class PropertiesViewModel : ObservableObject
     public PropertyTargetKind? Target => Model?.Target;
     public bool IsLayer => Target == PropertyTargetKind.Layer;
     public RelayCommand? BackgroundGalleryCommand { get; set; }
+    public RelayCommand? SaveModuleCommand { get; set; }
     public bool IsWidgets => Target == PropertyTargetKind.Widgets;
     public bool IsStyle => Target == PropertyTargetKind.Style;
     public bool HasProperties => Model is not null;
@@ -394,6 +395,7 @@ public sealed class PropertiesViewModel : ObservableObject
         CopyStyleCommand.Refresh();
         PasteStyleCommand.Refresh();
         SaveAsStyleCommand.Refresh();
+        SaveModuleCommand?.Refresh();
     }
 
     PropertyRowViewModel Make(PropertyRow row)

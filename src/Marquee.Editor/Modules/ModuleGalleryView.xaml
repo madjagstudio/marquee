@@ -6,7 +6,8 @@
   <TabControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" /></DataTemplate></TabControl.ItemTemplate>
   <TabControl.ContentTemplate><DataTemplate><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
    <ItemsControl ItemsSource="{Binding Tiles}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-    <ItemsControl.ItemTemplate><DataTemplate><Button Margin="4" Padding="6" Click="OnAdd" PreviewMouseLeftButtonDown="OnPress" PreviewMouseMove="OnMove" ToolTip="{x:Static res:Strings.AddModuleTip}">
+    <ItemsControl.ItemTemplate><DataTemplate><Button Margin="4" Padding="6" Click="OnAdd" PreviewMouseLeftButtonDown="OnPress" PreviewMouseMove="OnMove" ContextMenuOpening="OnModuleMenu" ToolTip="{x:Static res:Strings.AddModuleTip}">
+     <Button.ContextMenu><ContextMenu /></Button.ContextMenu>
      <StackPanel><Image Source="{Binding Bitmap}" Width="240" Height="140" /><TextBlock Text="{Binding Name}" /><TextBlock Text="{Binding Description}" Foreground="{StaticResource TextMuted}" /></StackPanel>
     </Button></DataTemplate></ItemsControl.ItemTemplate>
    </ItemsControl>

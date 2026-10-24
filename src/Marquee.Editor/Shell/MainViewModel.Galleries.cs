@@ -17,6 +17,10 @@ public sealed partial class MainViewModel
     public RelayCommand ModuleGalleryCommand { get; private set; } = null!;
     void InitializeGalleries()
     {
+        Properties.SaveModuleCommand = new RelayCommand(() =>
+        {
+            if (_environment.Dialogs.AskModuleName(Strings.MyModuleSuggestion, _environment.Modules.NameProblem) is { } name) SaveSelectedModule(name);
+        }, () => CanEdit && Properties.Model is { Target: PropertyTargetKind.Widgets, Widgets.Count: 1 });
         NewThemeCommand = new RelayCommand(() => StartRequested?.Invoke());
         ModuleGalleryCommand = new RelayCommand(() => ModuleGalleryRequested?.Invoke(), () => CanEdit);
         Canvas.ModuleDropped = (module, point) => AddGalleryModule(module, point);
@@ -24,14 +28,29 @@ public sealed partial class MainViewModel
         Properties.BackgroundGalleryCommand = new RelayCommand(() => BackgroundGalleryRequested?.Invoke(true), () => CanEdit && _workspace?.Session.SelectedLayer is not null);
     }
     public Modules.ModuleGalleryViewModel? CreateModuleGallery() => _workspace is { } workspace
-        ? new(workspace.Session.Folder, () => workspace.Values.Snapshot(workspace.Values.KnownKeys().Concat(ModuleLibrary.Keys)))
-            { BlankWidgets = [.. WidgetChoices(), .. FileChoices()] } : null;
+        ? new(workspace.Session.Folder, () => workspace.Values.Snapshot(workspace.Values.KnownKeys().Concat(ModuleLibrary.Keys)), _environment.Modules)
+            { BlankWidgets = [.. WidgetChoices(), .. FileChoices()], Dialogs = _environment.Dialogs } : null;
+
+    public void SaveSelectedModule(string name)
+    {
+        if (!CanEdit || _workspace is not { } workspace || workspace.Session.Selection.Count != 1) return;
+        try { _environment.Modules.Save(workspace.Session, workspace.Session.Selection.Single(), name); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or AssetImportException or LayoutEditException)
+        { _environment.Dialogs.ShowError(Strings.ImportRefused(name, ex.Message)); }
+    }
 
     public void AddGalleryModule(Module module, SkiaSharp.SKPoint? point = null)
     {
         if (!CanEdit || _workspace is not { } workspace) return;
         var session = workspace.Session;
         var local = point is { } position ? CanvasGeometry.Of(session).ToLocal(position, Canvas.Group) : (SkiaSharp.SKPoint?)null;
+        if (module.Category == ModuleCategory.MyModules)
+        {
+            try { _environment.Modules.Add(session, module.Id, local, Canvas.Group); PropertyChoices.Forget(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or AssetImportException or LayoutEditException)
+            { _environment.Dialogs.ShowError(Strings.ImportRefused(module.Name, ex.Message)); }
+            return;
+        }
         if (!module.NeedsFile) { Run(new AddModule(module, local, Canvas.Group)); return; }
         var kind = module.Id == "video" ? AssetKind.Video : AssetKind.Image;
         if (_environment.Dialogs.PickImportFile(kind) is not { } file) return;

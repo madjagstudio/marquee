@@ -1007,4 +1007,11 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="StartThemeTip" xml:space="preserve"><value>Make your own theme from this look.</value></data>
   <data name="OpenYourTheme" xml:space="preserve"><value>Open one of yours</value></data>
   <data name="OpenYourThemeTip" xml:space="preserve"><value>Open a theme folder you already have.</value></data>
+  <data name="MyModuleName" xml:space="preserve"><value>Name your module</value></data>
+  <data name="SaveAsModuleTip" xml:space="preserve"><value>Keep this widget or group to use in another theme, with its files.</value></data>
+  <data name="SaveAsModule" xml:space="preserve"><value>Save as my module…</value></data>
+  <data name="MyModuleSuggestion" xml:space="preserve"><value>My module</value></data>
+  <data name="RenameModule" xml:space="preserve"><value>Rename…</value></data>
+  <data name="DeleteModule" xml:space="preserve"><value>Delete module</value></data>
+  <data name="MyModuleNamePrompt" xml:space="preserve"><value>Choose a name for this reusable widget.</value></data>
 </root>

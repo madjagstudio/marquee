@@ -9,6 +9,13 @@ namespace Marquee.Editor.Resources;
 /// properties ({x:Static}).
 public static class Strings
 {
+    public static string MyModuleNamePrompt => Get(nameof(MyModuleNamePrompt));
+    public static string DeleteModule => Get(nameof(DeleteModule));
+    public static string RenameModule => Get(nameof(RenameModule));
+    public static string MyModuleSuggestion => Get(nameof(MyModuleSuggestion));
+    public static string SaveAsModule => Get(nameof(SaveAsModule));
+    public static string SaveAsModuleTip => Get(nameof(SaveAsModuleTip));
+    public static string MyModuleName => Get(nameof(MyModuleName));
     public static string NewTheme => Get(nameof(NewTheme));
     public static string StartBlank => Get(nameof(StartBlank));
     public static string StartGaming => Get(nameof(StartGaming));

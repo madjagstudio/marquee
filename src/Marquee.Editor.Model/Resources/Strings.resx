@@ -43,4 +43,8 @@
   <data name="CardDescription" xml:space="preserve"><value>A backdrop for your widgets</value></data>
   <data name="Label" xml:space="preserve"><value>Label</value></data>
   <data name="LabelDescription" xml:space="preserve"><value>Your own text</value></data>
+  <data name="ModuleInvalidName" xml:space="preserve"><value>Give the module a valid folder name of 1 to 64 characters, without dots at either end or a Windows device name.</value></data>
+  <data name="ModuleNameTaken" xml:space="preserve"><value>There is already a module with that name. Choose another.</value></data>
+  <data name="ModuleUnsafePath" xml:space="preserve"><value>The module cannot use a file outside its folder or through a link.</value></data>
+  <data name="ModuleWidgetRequired" xml:space="preserve"><value>Select a widget or group to save as a module.</value></data>
 </root>

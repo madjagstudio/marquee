@@ -5,6 +5,8 @@ using Marquee.Editor.Backgrounds;
 using Marquee.Editor.Model;
 using Marquee.Core.Themes.Editing;
 using SkiaSharp;
+using System.Collections.ObjectModel;
+using Marquee.Editor.Session;
 
 namespace Marquee.Editor.Modules;
 
@@ -19,15 +21,20 @@ public sealed class ModuleGalleryViewModel : IDisposable
     readonly Stopwatch _clock = Stopwatch.StartNew();
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     bool _disposed;
-    public ModuleGalleryViewModel(string folder, Func<SensorSnapshot> values)
+    readonly UserModules? _userModules;
+    public IEditorDialogs? Dialogs { get; init; }
+    public ModuleGalleryViewModel(string folder, Func<SensorSnapshot> values, UserModules? userModules = null)
     {
+        _userModules = userModules;
         _values = values;
         var tiles = new List<LiveThemeTile>();
         try
         {
             foreach (var module in ModuleLibrary.All) tiles.Add(Tile(module, folder));
+            if (userModules is not null)
+                foreach (var module in userModules.All()) tiles.Add(Tile(module, userModules.Folder(module.Id)));
             Categories = Enum.GetValues<ModuleCategory>().Select(category => new ModuleCategoryView(category, ModuleLibrary.CategoryName(category),
-                tiles.Where(tile => ((Module)tile.Item!).Category == category).ToList())).ToList();
+                new ObservableCollection<LiveThemeTile>(tiles.Where(tile => ((Module)tile.Item!).Category == category)))).ToList();
         }
         catch { foreach (var tile in tiles) tile.Dispose(); throw; }
         _timer.Tick += Tick;
@@ -35,6 +42,25 @@ public sealed class ModuleGalleryViewModel : IDisposable
     }
     public IReadOnlyList<ModuleCategoryView> Categories { get; }
     public IReadOnlyList<Shell.MenuChoice> BlankWidgets { get; init; } = [];
+    public void Rename(string name, string newName) => ChangeMine(() => _userModules!.Rename(name, newName));
+    public void Delete(string name) => ChangeMine(() => _userModules!.Delete(name));
+    void ChangeMine(Action change)
+    {
+        // Release video/font handles before moving or deleting the module's files.
+        var tiles = (ObservableCollection<LiveThemeTile>)Categories.Single(c => c.Category == ModuleCategory.MyModules).Tiles;
+        foreach (var tile in tiles) tile.Dispose();
+        tiles.Clear();
+        try { change(); } finally { ReloadMine(); }
+    }
+    public string? NameProblem(string name) => _userModules!.NameProblem(name);
+    void ReloadMine()
+    {
+        var tiles = (ObservableCollection<LiveThemeTile>)Categories.Single(c => c.Category == ModuleCategory.MyModules).Tiles;
+        foreach (var tile in tiles) tile.Dispose();
+        tiles.Clear();
+        foreach (var module in _userModules!.All()) tiles.Add(Tile(module, _userModules.Folder(module.Id)));
+        Refresh();
+    }
     public static LiveThemeTile Tile(Module module, string folder)
     {
         var size = ModuleLibrary.Size(module);

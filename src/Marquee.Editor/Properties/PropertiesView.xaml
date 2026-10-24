@@ -519,6 +519,7 @@
                     <Button ToolTip="{x:Static res:Strings.LayerKindTip}" Content="{x:Static res:Strings.BackgroundGallery}" Command="{Binding BackgroundGalleryCommand}" IsEnabled="{Binding CanEdit}" />
                 </DockPanel>
                 <ItemsControl x:Name="BasicsRows" ItemsSource="{Binding Basics}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
+                <Button Content="{x:Static res:Strings.SaveAsModule}" ToolTip="{x:Static res:Strings.SaveAsModuleTip}" Command="{Binding SaveModuleCommand}" Visibility="{Binding IsWidgets, Converter={StaticResource Visible}}" Margin="0,6" />
                 <ContentControl Style="{StaticResource OptionalContent}" Content="{Binding RulesList}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate><local:RulesView /></DataTemplate>
