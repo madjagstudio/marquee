@@ -84,6 +84,9 @@ public class SampleThemeTests
     [MemberData(nameof(StartThemes))]
     public void Start_themes_load_without_warnings(string name)
     {
+        // A new theme copies its frame rate from here, so the starting points set it as the examples do.
+        var yaml = File.ReadAllText(Path.Combine(ThemeFolder(name), "layout.yaml"));
+        Assert.True(YamlValues.Read(yaml).ContainsKey("canvas.fps"), $"{name} must set canvas.fps.");
         using var theme = Load(name);
 
         Assert.Empty(theme.Warnings);

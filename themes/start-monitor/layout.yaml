@@ -1,4 +1,4 @@
-canvas: { orientation: landscape }
+canvas: { orientation: landscape, fps: 30 }
 background:
   - shader: shaders/aurora.sksl
     scale: 0.5
