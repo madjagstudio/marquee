@@ -54,7 +54,7 @@ public sealed class TestValueRowViewModel : ObservableObject
     };
 
     /// The value as the canvas gets it: a number or text, "—" for missing, marked when stale; `now` as a local date and
-    /// time.
+    /// time, and a size in bytes as "3.3 GB".
     public string ValueText
     {
         get
@@ -63,6 +63,8 @@ public sealed class TestValueRowViewModel : ObservableObject
             string text;
             if (IsNow && value.Number is { } seconds)
                 text = DateTimeOffset.FromUnixTimeSeconds((long)seconds).ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
+            else if (SensorNames.IsBytes(Key) && value.Number is { } bytes)
+                text = Formatting.Bytes(bytes);
             else
                 text = Formatting.Format(value);
             return _row.Stale ? Strings.ValueStale(text) : text;
