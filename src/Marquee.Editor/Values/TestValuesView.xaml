@@ -70,6 +70,7 @@
                                     <TextBox ToolTip="{x:Static res:Strings.TestNumberTip}" DockPanel.Dock="Right" Width="64" Margin="6,0,0,0" Padding="2,0"
                                              Text="{Binding NumberText, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnNumberKeyDown"
                                              LostKeyboardFocus="OnNumberLostFocus" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Unit}" Margin="4,0" VerticalAlignment="Center" />
                                     <Slider ToolTip="{x:Static res:Strings.TestNumberTip}" Minimum="{Binding Min}" Maximum="{Binding Max}" Value="{Binding Number}" VerticalAlignment="Center" />
                                 </DockPanel>
                                 <DockPanel Margin="0,4,0,0" LastChildFill="False">

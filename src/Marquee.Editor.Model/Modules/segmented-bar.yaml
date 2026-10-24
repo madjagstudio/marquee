@@ -1,0 +1,8 @@
+name: Segmented bar
+at: [0, 0]
+type: bar
+size: [300, 32]
+source: gpu.load
+segments: 20
+gap: 3
+style: { fill: "#E11D2A", track: "#2A2A2A" }

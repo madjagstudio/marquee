@@ -125,11 +125,14 @@ public sealed partial class ValueSources : IDisposable
     }
 
     /// The values the canvas draws now: every key the theme reads, from its highest source.
-    public SensorSnapshot Snapshot()
+    public SensorSnapshot Snapshot() => Snapshot(null);
+
+    /// Gallery values may include readings that the open theme has not used yet.
+    public SensorSnapshot Snapshot(IEnumerable<string>? keys)
     {
         var view = View();
         var entries = new Dictionary<string, SensorEntry>(StringComparer.Ordinal);
-        foreach (var key in view.Keys)
+        foreach (var key in keys ?? view.Keys)
             if (key != TestValues.Now && view.Resolve(key).Entry is { } entry)
                 entries[key] = entry;
         return SensorSnapshot.Of(view.Now, entries);

@@ -1,0 +1,10 @@
+name: Temperature dial
+at: [0, 0]
+type: gauge
+size: [220, 220]
+source: cpu.temp
+min: 0
+max: 100
+needle: { color: "#F0F0F0" }
+ticks: { major: 5 }
+style: { fill: "#E11D2A", track: "#2A2A2A", color: "#F0F0F0" }

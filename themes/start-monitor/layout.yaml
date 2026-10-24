@@ -1,0 +1,9 @@
+canvas: { orientation: landscape }
+background:
+  - shader: shaders/aurora.sksl
+    scale: 0.5
+    uniforms: { tint: [0.21, 0.82, 0.86], speed: 1, strength: 0.5, heat: "cpu.load / 100" }
+widgets:
+  - { name: CPU, type: gauge, at: [200, 100], size: [220, 220], source: cpu.temp, needle: {}, ticks: { major: 5 }, style: { fill: "#36D1DC", track: "#2A2A2A", color: "#F0F0F0" } }
+  - { name: Load, type: graph, at: [780, 130], size: [320, 140], source: cpu.load, kind: area, min: 0, max: 100, style: { fill: "#36D1DC80", stroke: { width: 2, color: "#36D1DC" }, track: "#161616" } }
+  - { name: Clock, type: text, at: [1420, 150], size: [320, 100], text: "{now|time:HH:mm}", style: { size: 64, color: "#F0F0F0" } }

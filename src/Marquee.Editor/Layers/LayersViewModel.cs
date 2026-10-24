@@ -22,7 +22,7 @@ public sealed class LayersViewModel : ObservableObject
     readonly Func<EditorCommand, bool> _run;
     readonly CanvasViewModel _canvas;
     readonly Action<string> _report;
-    readonly HashSet<YamlPath> _collapsed = [];
+    readonly HashSet<YamlPath> _expanded = [];
     EditorSession? _session;
     LayersModel? _model;
     LayerItem? _anchor;
@@ -86,6 +86,7 @@ public sealed class LayersViewModel : ObservableObject
     public RelayCommand AddImageLayerCommand { get; }
     public RelayCommand AddVideoLayerCommand { get; }
     public RelayCommand AddShaderLayerCommand { get; }
+    public RelayCommand? BackgroundGalleryCommand { get; set; }
 
     /// Selects a layer by its YAML index (the rows display front to back).
     public void SelectBackground(int index)
@@ -104,7 +105,7 @@ public sealed class LayersViewModel : ObservableObject
     {
         Detach();
         _session = session;
-        _collapsed.Clear();
+        _expanded.Clear();
         session.Changed += OnSessionChanged;
         Rebuild();
     }
@@ -159,7 +160,7 @@ public sealed class LayersViewModel : ObservableObject
     public void ToggleExpanded(LayerItem group)
     {
         if (!group.IsGroup) return;
-        if (!_collapsed.Remove(group.Path)) _collapsed.Add(group.Path);
+        if (!_expanded.Remove(group.Path)) _expanded.Add(group.Path);
         Rebuild();
     }
 
@@ -278,7 +279,7 @@ public sealed class LayersViewModel : ObservableObject
         var unfolded = false;
         foreach (var path in _session?.Selection ?? [])
             for (var group = CanvasGeometry.GroupOf(path); group is not null; group = CanvasGeometry.GroupOf(group))
-                unfolded |= _collapsed.Remove(group);
+                unfolded |= _expanded.Add(group);
         return unfolded;
     }
 
@@ -297,7 +298,7 @@ public sealed class LayersViewModel : ObservableObject
     {
         foreach (var node in nodes)
         {
-            var expanded = !_collapsed.Contains(node.Path);
+            var expanded = _expanded.Contains(node.Path);
             rows.Add(new LayerItem(node, depth, expanded));
             if (node.Kind == LayerKind.Group && expanded) Add(rows, node.Children, depth + 1);
         }

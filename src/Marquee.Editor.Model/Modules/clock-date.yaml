@@ -1,0 +1,7 @@
+name: Clock and date
+at: [0, 0]
+type: group
+size: [320, 140]
+children:
+  - { type: text, at: [0, 0], size: [320, 85], text: "{now|time:HH:mm}", style: { size: 64, color: "#F0F0F0" } }
+  - { type: text, at: [0, 90], size: [320, 40], text: "{now|time:ddd, d MMM}", style: { size: 24, color: "#A0A0A0" } }

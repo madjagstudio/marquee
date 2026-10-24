@@ -25,6 +25,9 @@ background:
   - fill: { linear: ["#05070D", "#101626"], angle: 90 }
   - shader: shaders/aurora.sksl
     uniforms:
+      tint: [0.21, 0.82, 0.86]
+      speed: 1
+      strength: 1
       heat: "clamp(max(cpu.load, gpu.load) / 100, 0, 1)"
     scale: 0.25 # smooth bands lose nothing, and a quarter of the size keeps it well inside the 30 fps frame budget
     opacity: 0.9

@@ -20,6 +20,8 @@ public enum CopyChoice
 /// (the Dialogs folder).
 public interface IEditorDialogs
 {
+    string? AskModuleName(string suggested, Func<string, string?> problem) => null;
+    string? PickOpenFolder() => null;
     /// Asks for a named style, checking each edit; null when cancelled.
     string? AskStyleName(string suggested, Func<string, string?> problem);
 

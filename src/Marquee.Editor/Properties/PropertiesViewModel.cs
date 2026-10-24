@@ -37,6 +37,14 @@ public sealed class PropertiesViewModel : ObservableObject
     IReadOnlyList<PropertyRowViewModel> _rows = [];
     IReadOnlyList<PropertySectionViewModel> _sections = [];
     readonly Dictionary<PlainSection, PropertySectionViewModel> _plainSections = [];
+    Dictionary<string, SectionExpansion> _expansion = [];
+    string _expansionScope = "";
+    internal SectionExpansion ExpansionFor(string section)
+    {
+        var key = _expansionScope + section;
+        if (!_expansion.TryGetValue(key, out var state)) _expansion[key] = state = new();
+        return state;
+    }
     public IReadOnlyList<PropertyRowViewModel> Basics { get; private set; } = [];
     public IReadOnlyList<PropertySectionViewModel> MoreStyling { get; private set; } = [];
     public IReadOnlyList<PropertyRowViewModel> Raw { get; private set; } = [];
@@ -75,6 +83,8 @@ public sealed class PropertiesViewModel : ObservableObject
 
     public PropertyTargetKind? Target => Model?.Target;
     public bool IsLayer => Target == PropertyTargetKind.Layer;
+    public RelayCommand? BackgroundGalleryCommand { get; set; }
+    public RelayCommand? SaveModuleCommand { get; set; }
     public bool IsWidgets => Target == PropertyTargetKind.Widgets;
     public bool IsStyle => Target == PropertyTargetKind.Style;
     public bool HasProperties => Model is not null;
@@ -303,6 +313,7 @@ public sealed class PropertiesViewModel : ObservableObject
         var panel = new PropertiesViewModel(run ?? _run, _report, _canvas, _dialogs, _orientation, _changeKind)
         {
             _workspace = _workspace, _nested = true,
+            _expansion = _expansion, _expansionScope = model.Target + ":",
         };
         panel.RefreshTarget(model);
         return panel;
@@ -334,7 +345,7 @@ public sealed class PropertiesViewModel : ObservableObject
             _shape = shape;
             _byName = [];
             Rows = model?.Rows.Select(Make).ToList() ?? [];
-            Sections = model?.Style.Select(section => new PropertySectionViewModel(SectionTitle(section.Title), section.Rows.Select(Make).ToList())).ToList()
+            Sections = model?.Style.Select(section => new PropertySectionViewModel(SectionTitle(section.Title), section.Rows.Select(Make).ToList(), ExpansionFor("style:" + section.Title))).ToList()
                 ?? [];
             Basics = model?.Basics.Where(row => !(model.Type == "text" && row.Name == "source"))
                 .Select(row => _byName[row.Name]).ToList() ?? [];
@@ -342,7 +353,7 @@ public sealed class PropertiesViewModel : ObservableObject
             MoreStyling = model?.MoreStyling.Select(group =>
             {
                 if (!_plainSections.TryGetValue(group.Section, out var section))
-                    _plainSections[group.Section] = section = new PropertySectionViewModel(group.Title, [], group.Section == PlainSection.Text);
+                    _plainSections[group.Section] = section = new PropertySectionViewModel(group.Title, []);
                 section.Rows = group.Rows.Select(row => _byName[row.Name]).ToList();
                 return section;
             }).ToList() ?? [];
@@ -393,6 +404,7 @@ public sealed class PropertiesViewModel : ObservableObject
         CopyStyleCommand.Refresh();
         PasteStyleCommand.Refresh();
         SaveAsStyleCommand.Refresh();
+        SaveModuleCommand?.Refresh();
     }
 
     PropertyRowViewModel Make(PropertyRow row)
@@ -435,13 +447,12 @@ public sealed class PropertiesViewModel : ObservableObject
 }
 
 /// One group of the Style section, with its title in the user's language.
-public sealed class PropertySectionViewModel(string title, IReadOnlyList<PropertyRowViewModel> rows, bool isExpanded = false) : ObservableObject
+public sealed class PropertySectionViewModel(string title, IReadOnlyList<PropertyRowViewModel> rows, SectionExpansion? expansion = null) : ObservableObject
 {
     IReadOnlyList<PropertyRowViewModel> _rows = rows;
-    bool _isExpanded = isExpanded;
+    public SectionExpansion Expansion { get; } = expansion ?? new();
     public string Title { get; } = title;
     public IReadOnlyList<PropertyRowViewModel> Rows { get => _rows; set => Set(ref _rows, value); }
-    public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
 }
 
 public sealed record LayerKindOption(LayerKindChoice Kind, string Label);

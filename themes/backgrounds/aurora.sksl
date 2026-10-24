@@ -1,0 +1,20 @@
+// @name Aurora
+// @control tint colour "Colour" default #36D1DC
+// @control speed number 0.1..3 default 1 "Speed"
+// @control strength number 0..1 default 0.8 "Strength"
+// @reacts heat "Warmer and brighter as it gets busy"
+uniform float time;
+uniform float2 resolution;
+uniform float3 tint;
+uniform float speed;
+uniform float strength;
+uniform float heat; // 0 calm … 1 busy: warmer, brighter, taller bands
+
+half4 main(float2 p) {
+    float2 uv = p / resolution;
+    float t = time * speed * 0.3;
+    float warmth = clamp(heat, 0.0, 1.0);
+    float glow = 0.0; for (int i = 0; i < 3; i++) { float f = float(i); float y = 0.5 + (0.18 + 0.08 * warmth) * sin(uv.x * (2.0 + f) + t * (1.0 + 0.4 * f) + f * 1.7); glow += 0.03 / (abs(uv.y - y) + 0.05); }
+    float3 color = mix(tint, float3(1.0, 0.35, 0.21), warmth) * glow * strength * (0.65 + 0.3 * warmth);
+    return half4(half3(color), 1.0);
+}

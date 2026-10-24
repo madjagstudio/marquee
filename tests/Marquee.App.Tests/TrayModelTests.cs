@@ -66,7 +66,7 @@ public sealed class TrayModelTests : IDisposable
 
         Assert.Equal([
             MenuKeys.Status, MenuKeys.Separator, MenuKeys.Themes, MenuKeys.Orientation, MenuKeys.Separator,
-            MenuKeys.Preview, MenuKeys.EditTheme, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
+            MenuKeys.Preview, MenuKeys.EditTheme, MenuKeys.NewTheme, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
             MenuKeys.AlwaysTakeOver, MenuKeys.Pause, MenuKeys.Separator, MenuKeys.CheckForUpdates, MenuKeys.About, MenuKeys.Quit,
         ], keys);
     }
@@ -82,7 +82,7 @@ public sealed class TrayModelTests : IDisposable
 
         Assert.Equal([
             MenuKeys.Status, MenuKeys.Separator, MenuKeys.Themes, MenuKeys.Orientation, MenuKeys.Separator,
-            MenuKeys.Preview, MenuKeys.EditTheme, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
+            MenuKeys.Preview, MenuKeys.EditTheme, MenuKeys.NewTheme, MenuKeys.ThemesFolder, MenuKeys.Logs, MenuKeys.Settings, MenuKeys.Separator,
             MenuKeys.TakeOver, MenuKeys.AlwaysTakeOver, MenuKeys.Pause, MenuKeys.Separator, MenuKeys.InstallUpdate, MenuKeys.About,
             MenuKeys.Quit,
         ], keys);
@@ -392,6 +392,18 @@ public sealed class TrayModelTests : IDisposable
         var balloon = Assert.Single(_host.Balloons);
         Assert.Contains(missing, balloon.Text);
         Assert.True(balloon.IsError);
+    }
+
+    [Fact]
+    public async Task New_theme_asks_the_desktop_shell_to_open_the_editor_with_new()
+    {
+        var editor = _dir.Write("MarqueeEditor.exe", "");
+        var model = new TrayModel(_engine, _paths with { EditorExe = editor }, _shell, _host, _worker, _updates.Updates,
+            NullLog.Instance, () => _now);
+        Item(model.BuildMenu(), MenuKeys.NewTheme).Command!();
+        Assert.True(await Wait.UntilAsync(() => !_shell.Commands.IsEmpty));
+        Assert.Equal((editor, "--new"), Assert.Single(_shell.Commands));
+        Assert.Empty(_host.Balloons);
     }
 
     [Fact]

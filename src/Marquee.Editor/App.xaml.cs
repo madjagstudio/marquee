@@ -15,7 +15,16 @@ public partial class App : Application
         base.OnStartup(e);
         var environment = EditorEnvironment.ForThisUser();
         var ui = SynchronizationContext.Current ?? throw new InvalidOperationException("WPF starts with a UI context.");
-        if (EditorStartup.Open(e.Args, environment, ui) is not { } workspace)
+        var args = e.Args;
+        if (args is ["--new"])
+        {
+            if (environment.IsElevated()) { environment.Dialogs.ShowError(Marquee.Editor.Resources.Strings.RefuseElevated); Shutdown(1); return; }
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            using var start = new Start.StartViewModel(environment);
+            if (new Start.StartView(start).ShowDialog() != true || start.ChosenFolder is not { } folder) { Shutdown(); return; }
+            args = [folder];
+        }
+        if (EditorStartup.Open(args, environment, ui) is not { } workspace)
         {
             Shutdown(1);
             return;

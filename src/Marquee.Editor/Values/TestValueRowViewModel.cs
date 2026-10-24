@@ -37,6 +37,7 @@ public sealed class TestValueRowViewModel : ObservableObject
 
     public string Key => _row.Key;
     public string Name => SensorNames.For(Key).Name;
+    public string? Unit => SensorNames.For(Key).Unit;
     public string CategoryName => SensorNames.CategoryName(SensorNames.For(Key).Category);
 
     public bool IsNow => _row.Key == TestValues.Now;

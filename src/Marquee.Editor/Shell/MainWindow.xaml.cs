@@ -27,7 +27,6 @@ public partial class MainWindow : Window
         DataContext = model;
         InitializeComponent();
 
-        Fill(AddWidgetMenu, [.. model.WidgetChoices(), null, .. model.FileChoices()]);
         LayersPanel.Content = new LayersView { DataContext = model.Layers };
         StylesPanel.Content = new StylesView { DataContext = model.Styles };
         PropertiesPanel.Content = new PropertiesView { DataContext = model.Properties };
@@ -37,6 +36,9 @@ public partial class MainWindow : Window
         FillSave();
         model.PropertyChanged += OnModelChanged;
         model.ShowRequested += (_, _) => BringForward();
+        model.BackgroundGalleryRequested += OnBackgroundGallery;
+        model.ModuleGalleryRequested += OnModuleGallery;
+        model.StartRequested += OnStart;
 
         Loaded += (_, _) =>
         {
@@ -52,6 +54,28 @@ public partial class MainWindow : Window
     }
 
     public MainViewModel Model => _model;
+
+    void OnStart()
+    {
+        using var start = _model.CreateStartScreen();
+        if (new Start.StartView(start) { Owner = this }.ShowDialog() == true && start.ChosenFolder is { } folder)
+            _model.OpenTheme(folder);
+    }
+
+    void OnModuleGallery()
+    {
+        var gallery = _model.CreateModuleGallery();
+        if (gallery is null) return;
+        new Modules.ModuleGalleryView(gallery, module => _model.AddGalleryModule(module)) { Owner = this }.Show();
+    }
+
+    void OnBackgroundGallery(bool replace)
+    {
+        using var gallery = _model.CreateBackgroundGallery();
+        if (gallery is null) return;
+        var window = new Backgrounds.BackgroundGalleryView(gallery) { Owner = this };
+        if (window.ShowDialog() == true) _model.ChooseBackground(window.Chosen, window.Still, replace);
+    }
 
     /// Restores the window if it is minimised and brings it to the front.
     public void BringForward()
@@ -70,6 +94,7 @@ public partial class MainWindow : Window
     {
         if (!ReferenceEquals(e.OriginalSource, ThemeMenu)) return;
         ThemeMenu.Items.Clear();
+        ThemeMenu.Items.Add(new MenuItem { Header = Text(Strings.NewTheme), ToolTip = Strings.StartThemeTip, Command = _model.NewThemeCommand });
         foreach (var group in _model.ThemeChoices().Where(group => group.Count > 0))
         {
             if (ThemeMenu.Items.Count > 0) ThemeMenu.Items.Add(new Separator());

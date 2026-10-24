@@ -4,6 +4,16 @@ namespace Marquee.App.Tests;
 /// test here starts explorer.exe.
 public class ExplorerShellTests
 {
+    [Fact]
+    public void New_theme_arguments_go_through_the_desktop_shell_without_starting_an_elevated_process()
+    {
+        (string, string)? opened = null;
+        var shell = new ExplorerShell(() => true, (path, args) => opened = (path, args));
+        shell.Open(@"C:\Marquee\MarqueeEditor.exe", "--new");
+        Assert.Equal((@"C:\Marquee\MarqueeEditor.exe", "--new"), opened);
+        var absent = new ExplorerShell(() => false, (_, _) => throw new Exception("Must not launch"));
+        Assert.Throws<InvalidOperationException>(() => absent.Open(@"C:\Marquee\MarqueeEditor.exe", "--new"));
+    }
     [Theory]
     [InlineData(@"C:\Users\someone\AppData\Local\Marquee\themes", "\"C:\\Users\\someone\\AppData\\Local\\Marquee\\themes\"")]
     [InlineData(@"C:\Users\someone\AppData\Local\Marquee\themes\", "\"C:\\Users\\someone\\AppData\\Local\\Marquee\\themes\"")]

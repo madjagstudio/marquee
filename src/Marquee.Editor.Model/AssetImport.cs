@@ -131,6 +131,13 @@ public sealed class AssetImport
     public ImportedFile AddVideo(EditorSession session, string source, YamlPath? group = null) =>
         Apply(session, source, AssetKind.Video, file => new AddImportedWidget("video", file.Path, group));
 
+    public ImportedFile AddModule(EditorSession session, Module module, string source, AssetKind kind, SkiaSharp.SKPoint? at, YamlPath? group) =>
+        Apply(session, source, kind, file => new AddModule(module with
+        {
+            Yaml = LayoutDocument.Open(module.Yaml).SetScalar(YamlPath.Root.Child("src"), file.Path).Text,
+            NeedsFile = false,
+        }, at, group));
+
     /// Imports a background's image, video or shader and adds its layer above the selection as one undo step.
     /// A refused edit discards a new copy. Fill has no file; add it directly with the AddLayer command.
     public ImportedFile AddLayer(EditorSession session, LayerKindChoice kind, string source)
@@ -226,7 +233,7 @@ public sealed class AssetImport
 
     /// Deletes a copy no edit took, unless a link has come onto its path since. One that won't go is only an unused
     /// file, which the clean-up lists.
-    void Discard(ImportedFile file)
+    internal void Discard(ImportedFile file)
     {
         var path = Path.GetFullPath(Path.Combine(ThemeFolder, file.Path));
         try

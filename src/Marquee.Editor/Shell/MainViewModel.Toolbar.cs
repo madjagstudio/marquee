@@ -127,6 +127,7 @@ public sealed partial class MainViewModel
         OpenThemeCommand = new RelayCommand(folder => OpenTheme((string)folder!), folder => folder is string);
         NewFromExampleCommand = new RelayCommand(folder => NewFromExample((string)folder!), folder => folder is string);
         InitializeFileCommands();
+        InitializeGalleries();
     }
 
     void RefreshCommands()

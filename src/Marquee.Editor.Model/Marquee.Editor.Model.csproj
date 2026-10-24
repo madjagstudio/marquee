@@ -7,5 +7,6 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Marquee.Editor.Model.Tests" />
+    <EmbeddedResource Include="Modules\*.yaml" />
   </ItemGroup>
 </Project>

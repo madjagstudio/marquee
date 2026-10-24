@@ -1,0 +1,6 @@
+canvas: { orientation: landscape }
+background: [{ fill: "#0A0A0B" }]
+widgets:
+  - { name: CPU, type: value, at: [80, 170], size: [400, 100], source: cpu.temp, format: "CPU {0:0}°C", style: { size: 56, weight: bold, color: "#F0F0F0" } }
+  - { name: GPU, type: value, at: [760, 170], size: [400, 100], source: gpu.temp, format: "GPU {0:0}°C", style: { size: 56, weight: bold, color: "#36D1DC" } }
+  - { name: FPS, type: value, at: [1440, 170], size: [400, 100], source: fps, format: "FPS {0:0}", style: { size: 56, weight: bold, color: "#E11D2A" } }

@@ -49,7 +49,7 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="GroupItem">
-                                            <Expander Header="{Binding Name}" IsExpanded="True" HorizontalContentAlignment="Stretch" ToolTip="{x:Static res:Strings.SensorGroupTip}">
+                                            <Expander Header="{Binding Name}" Loaded="OnGroupLoaded" HorizontalContentAlignment="Stretch" ToolTip="{x:Static res:Strings.SensorGroupTip}">
                                                 <ItemsPresenter />
                                             </Expander>
                                         </ControlTemplate>
@@ -110,7 +110,7 @@
                  AutomationProperties.Name="{x:Static res:Strings.PickerNumber}" />
         <StackPanel Visibility="{Binding IsAdvanced, Converter={StaticResource Visible}}">
             <TextBlock Text="{Binding AdvancedSummary}" TextWrapping="Wrap" />
-            <Expander x:Name="RawExpression" ToolTip="{x:Static res:Strings.RawSectionTip}">
+            <Expander x:Name="RawExpression" IsExpanded="{Binding RawExpansion.IsExpanded, Mode=TwoWay}" ToolTip="{x:Static res:Strings.RawSectionTip}">
                 <Expander.Header><TextBlock Text="{x:Static res:Strings.RawSection}" TextWrapping="Wrap" /></Expander.Header>
                 <TextBox ToolTip="{x:Static res:Strings.PickerAdvancedTip}" Style="{StaticResource ValueBox}" Text="{Binding AdvancedText, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource LabelFont}"
                          TextWrapping="Wrap" AutomationProperties.Name="{x:Static res:Strings.PickerAdvanced}" />

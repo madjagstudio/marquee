@@ -5,4 +5,5 @@ namespace Marquee.App;
 interface IShell
 {
     void Open(string path);
+    void Open(string path, string arguments);
 }

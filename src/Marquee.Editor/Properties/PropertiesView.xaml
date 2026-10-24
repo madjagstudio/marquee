@@ -19,6 +19,9 @@
                 </Style.Triggers>
             </Style>
             <local:PropertyTemplateSelector x:Key="Templates" />
+            <DataTemplate x:Key="VisualChoiceRow">
+                <DockPanel Margin="0,2"><Button DockPanel.Dock="Right" Style="{DynamicResource Reset}" /><local:VisualChoices /></DockPanel>
+            </DataTemplate>
             <SolidColorBrush x:Key="Muted" Color="{StaticResource TextMutedColor}" />
             <SolidColorBrush x:Key="Error" Color="{StaticResource WarningColor}" />
 
@@ -213,11 +216,6 @@
                                 </Border>
                             </Popup>
                         </Grid>
-                        <Grid Margin="6,0,0,0">
-                            <TextBox Style="{StaticResource Box}" FontFamily="{StaticResource LabelFont}" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
-                            <TextBlock Style="{StaticResource Hint}" />
-                        </Grid>
                     </DockPanel>
                     <TextBlock Style="{StaticResource ErrorText}" />
                 </StackPanel>
@@ -248,7 +246,7 @@
                                       IsChecked="{Binding UseGradient}" IsEnabled="{Binding CanUseGradient}"
                                       ToolTip="{x:Static res:Strings.GradientTip}" />
                         <Grid Margin="6,0,0,0">
-                            <TextBox x:Name="Hex" Style="{StaticResource Box}" FontFamily="{StaticResource LabelFont}"
+                            <TextBox x:Name="Hex" Visibility="Collapsed" Style="{StaticResource Box}" FontFamily="{StaticResource LabelFont}"
                                      Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnBoxKeyDown" LostKeyboardFocus="OnBoxLostFocus" />
                             <ToggleButton ToolTip="{x:Static res:Strings.EditGradientTip}" x:Name="EditGradient" Content="{x:Static res:Strings.EditGradient}" Visibility="Collapsed"
                                           IsChecked="{Binding IsGradientOpen}" HorizontalContentAlignment="Left" Padding="6,0" />
@@ -326,6 +324,7 @@
             <DataTemplate x:Key="TemplateRow">
                 <StackPanel Margin="0,2" IsEnabled="{Binding IsEditable}">
                     <Expander Header="What it shows" ToolTip="Choose the reading in this text."
+                              IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}"
                               Visibility="{Binding ShowTextPicker, Converter={StaticResource Visible}}">
                         <controls:ValuePickerControl DataContext="{Binding TextPicker}" />
                     </Expander>
@@ -427,12 +426,17 @@
                         </UniformGrid>
                     </DockPanel>
                     <UniformGrid Columns="2" Visibility="{Binding HasSizeSliders, Converter={StaticResource Visible}}">
+                        <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" MinWidth="55" Margin="4,0" VerticalAlignment="Center"><TextBlock.Text><MultiBinding StringFormat="{}{0} {1}"><Binding Path="X" /><Binding Path="Unit" /></MultiBinding></TextBlock.Text></TextBlock>
                         <Slider ToolTip="{Binding XLabel}" Tag="Width" Minimum="{Binding SizeSliderMin}" Maximum="{Binding WidthSliderMax}"
                                 Value="{Binding WidthNumber, Mode=OneWay}" SmallChange="1" IsEnabled="{Binding IsEditable}" Margin="0,0,4,0"
                                 ValueChanged="OnSizeSliderChanged" Thumb.DragStarted="OnSlideStarted" Thumb.DragCompleted="OnSlideCompleted" />
+                        </DockPanel><DockPanel>
+                        <TextBlock DockPanel.Dock="Right" MinWidth="55" Margin="4,0" VerticalAlignment="Center"><TextBlock.Text><MultiBinding StringFormat="{}{0} {1}"><Binding Path="Y" /><Binding Path="Unit" /></MultiBinding></TextBlock.Text></TextBlock>
                         <Slider ToolTip="{Binding YLabel}" Tag="Height" Minimum="{Binding SizeSliderMin}" Maximum="{Binding HeightSliderMax}"
                                 Value="{Binding HeightNumber, Mode=OneWay}" SmallChange="1" IsEnabled="{Binding IsEditable}"
                                 ValueChanged="OnSizeSliderChanged" Thumb.DragStarted="OnSlideStarted" Thumb.DragCompleted="OnSlideCompleted" />
+                        </DockPanel>
                     </UniformGrid>
                     <TextBlock Style="{StaticResource ErrorText}" />
                 </StackPanel>
@@ -440,7 +444,7 @@
 
             <!-- Block (stroke, shadow, needle…): a collapsible sub-section of rows. -->
             <DataTemplate x:Key="BlockRow">
-                <Expander ToolTip="{Binding Help}" IsExpanded="{Binding IsExpanded}" Margin="0,2">
+                <Expander ToolTip="{Binding Help}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}" Margin="0,2">
                     <Expander.Header>
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Style="{StaticResource Reset}" />
@@ -463,7 +467,7 @@
                     <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Expander ToolTip="{x:Static res:Strings.ItemSectionTip}" IsExpanded="{Binding IsExpanded}" Margin="8,2,0,2">
+                                <Expander ToolTip="{x:Static res:Strings.ItemSectionTip}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}" Margin="8,2,0,2">
                                     <Expander.Header>
                                         <DockPanel>
                                             <Button DockPanel.Dock="Right" Content="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -513,13 +517,13 @@
 
             <StackPanel Visibility="{Binding HasProperties, Converter={StaticResource Visible}}">
                 <TextBlock x:Name="PlainHeading" Text="{Binding Heading}" FontFamily="{StaticResource HeadFont}" FontWeight="SemiBold" FontSize="16" Margin="0,2,0,6" TextWrapping="Wrap" />
-                <TextBlock Text="{x:Static res:Strings.BasicsSection}" FontWeight="SemiBold" Margin="0,4" />
+                <local:GaugeFormsView />
                 <DockPanel Margin="0,2,0,6" Visibility="{Binding IsLayer, Converter={StaticResource Visible}}">
                     <TextBlock Text="{x:Static res:Strings.LayerKind}" Width="108" VerticalAlignment="Center" />
-                    <ComboBox ToolTip="{x:Static res:Strings.LayerKindTip}" ItemsSource="{Binding KindChoices}" DisplayMemberPath="Label" SelectedValuePath="Kind"
-                              SelectedValue="{Binding Kind}" IsEnabled="{Binding CanEdit}" />
+                    <Button ToolTip="{x:Static res:Strings.LayerKindTip}" Content="{x:Static res:Strings.BackgroundGallery}" Command="{Binding BackgroundGalleryCommand}" IsEnabled="{Binding CanEdit}" />
                 </DockPanel>
                 <ItemsControl x:Name="BasicsRows" ItemsSource="{Binding Basics}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
+                <Button Content="{x:Static res:Strings.SaveAsModule}" ToolTip="{x:Static res:Strings.SaveAsModuleTip}" Command="{Binding SaveModuleCommand}" Visibility="{Binding IsWidgets, Converter={StaticResource Visible}}" Margin="0,6" />
                 <ContentControl Style="{StaticResource OptionalContent}" Content="{Binding RulesList}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate><local:RulesView /></DataTemplate>
@@ -528,7 +532,7 @@
                 <ContentControl Style="{StaticResource OptionalContent}" Content="{Binding Ring}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>
-                            <Expander ToolTip="{x:Static res:Strings.RingSectionTip}" Header="{x:Static res:Strings.RingSection}" IsExpanded="True" Margin="0,8">
+                            <Expander ToolTip="{x:Static res:Strings.RingSectionTip}" Header="{x:Static res:Strings.RingSection}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}" Margin="0,8">
                                 <StackPanel>
                                     <TextBlock Text="{x:Static res:Strings.RingOverridden}" TextWrapping="Wrap"
                                                Visibility="{Binding IsOverridden, Converter={StaticResource Visible}}" />
@@ -540,11 +544,12 @@
                         </DataTemplate>
                     </ContentControl.ContentTemplate>
                 </ContentControl>
+                <local:ShaderControlsView DataContext="{Binding Shader}" Visibility="{Binding IsAnnotated, Converter={StaticResource Visible}}" />
                 <TextBlock Text="{x:Static res:Strings.MoreStylingSection}" FontWeight="SemiBold" Margin="0,10,0,4" />
                 <ItemsControl x:Name="MoreStylingSections" ItemsSource="{Binding MoreStyling}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Expander ToolTip="{x:Static res:Strings.StylingSectionTip}" Header="{Binding Title}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,2">
+                            <Expander ToolTip="{x:Static res:Strings.StylingSectionTip}" Header="{Binding Title}" IsExpanded="{Binding Expansion.IsExpanded, Mode=TwoWay}" Margin="0,2">
                                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplateSelector="{StaticResource Templates}" Margin="4,0,0,0" Focusable="False" />
                             </Expander>
                         </DataTemplate>
@@ -552,12 +557,60 @@
                 </ItemsControl>
                 <Expander ToolTip="{x:Static res:Strings.RawSectionTip}" x:Name="RawSection" Header="{x:Static res:Strings.RawSection}" IsExpanded="{Binding IsRawExpanded, Mode=TwoWay}"
                           local:PropertiesView.RawLabels="True" Margin="0,10,0,4">
+                    <StackPanel>
                     <ItemsControl ItemsSource="{Binding Raw}" ItemTemplateSelector="{StaticResource Templates}" Focusable="False" />
+                <ContentControl Content="{Binding Shader}" Focusable="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,8,0,0" Visibility="{Binding IsAnnotated, Converter={StaticResource Visible}}">
+                                <TextBlock Text="{Binding Problem}" Foreground="{StaticResource Error}" TextWrapping="Wrap" />
+                                <ItemsControl ItemsSource="{Binding Uniforms}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,3">
+                                                <DockPanel>
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Visibility="{Binding IsUnused, Converter={StaticResource Visible}}">
+                                                        <TextBlock Text="{x:Static res:Strings.UnusedUniform}" Foreground="{StaticResource Muted}" Margin="4,0" />
+                                                        <Button ToolTip="{x:Static res:Strings.RemoveUniformTip}" Content="{x:Static res:Strings.RemoveUniform}" Command="{Binding RemoveCommand}" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                </DockPanel>
+                                                <ItemsControl ItemsSource="{Binding Components}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid IsEnabled="{Binding IsEditable}" Margin="0,2">
+                                                                <controls:ValuePickerControl DataContext="{Binding Picker}" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding Hint}" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{Binding CostText}" TextWrapping="Wrap" Margin="0,6">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding OverBudget}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource Error}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+                    </StackPanel>
                 </Expander>
                 <ContentControl Content="{Binding Shader}" Focusable="False">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="0,8,0,0">
+                            <StackPanel Margin="0,8,0,0" Visibility="{Binding IsUnannotated, Converter={StaticResource Visible}}">
                                 <TextBlock Text="{Binding Problem}" Foreground="{StaticResource Error}" TextWrapping="Wrap" />
                                 <ItemsControl ItemsSource="{Binding Uniforms}">
                                     <ItemsControl.ItemTemplate>

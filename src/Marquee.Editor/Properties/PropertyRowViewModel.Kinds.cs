@@ -20,7 +20,6 @@ public sealed partial class PropertyRowViewModel
     string _y = "";
     double _number;
     string? _preview;
-    bool _isGradientOpen;
     GradientEditorViewModel? _gradient;
     public ValuePickerViewModel? Picker { get; private set; }
 
@@ -151,10 +150,10 @@ public sealed partial class PropertyRowViewModel
     /// The gradient editor is open under the row.
     public bool IsGradientOpen
     {
-        get => _isGradientOpen && Gradient is not null;
+        get => _owner.ExpansionFor("gradient:" + Name).IsExpanded && Gradient is not null;
         set
         {
-            _isGradientOpen = value;
+            _owner.ExpansionFor("gradient:" + Name).IsExpanded = value;
             Raise(nameof(IsGradientOpen));
             Raise(nameof(Gradient));
         }

@@ -52,6 +52,13 @@ public partial class ColorPicker : UserControl
     /// The hue, saturation, value and alpha the picker shows.
     public Hsva Current => _hsva;
 
+    /// RGB shader uniforms cannot represent transparency.
+    public bool ShowAlpha
+    {
+        get => AlphaStrip.Visibility == Visibility.Visible;
+        set => AlphaStrip.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     public event EventHandler<ColorPickedEventArgs>? ColorChanging;
 
     public event EventHandler<ColorPickedEventArgs>? ColorCommitted;

@@ -13,6 +13,8 @@ public sealed record EditorEnvironment
 {
     /// The user's themes: %LOCALAPPDATA%\Marquee\themes, where copies and new themes go.
     public required string UserThemes { get; init; }
+    public string? ModuleRoot { get; init; }
+    public UserModules Modules => new(ModuleRoot ?? Path.Combine(Path.GetDirectoryName(UserThemes)!, "modules"));
 
     /// The examples the installer puts beside the exe, which the editor never saves (ThemeOpening).
     public required string InstalledThemes { get; init; }
@@ -51,6 +53,7 @@ public sealed record EditorEnvironment
         return new EditorEnvironment
         {
             UserThemes = MarqueePaths.Themes,
+            ModuleRoot = Path.Combine(MarqueePaths.DataRoot, "modules"),
             InstalledThemes = Path.Combine(AppContext.BaseDirectory, "themes"),
             ConfigFile = configFile,
             Folders = EditorFolders.Default,

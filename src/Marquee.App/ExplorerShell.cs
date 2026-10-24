@@ -16,9 +16,39 @@ namespace Marquee.App;
 ///
 /// `hasDesktopShell` is whether the desktop's Explorer is there to hand the path to (GetShellWindow); tests give their
 /// own.
-sealed class ExplorerShell(Func<bool>? hasDesktopShell = null) : IShell
+sealed class ExplorerShell(Func<bool>? hasDesktopShell = null, Action<string, string>? executeFromDesktop = null) : IShell
 {
     readonly Func<bool> _hasDesktopShell = hasDesktopShell ?? (() => GetShellWindow() != IntPtr.Zero);
+    readonly Action<string, string> _executeFromDesktop = executeFromDesktop ?? ExecuteFromDesktop;
+
+    /// Arguments must go through the existing desktop's automation object, never a newly elevated Shell.Application.
+    public void Open(string path, string arguments)
+    {
+        if (!_hasDesktopShell()) throw new InvalidOperationException(Strings.NoDesktopShell);
+        _executeFromDesktop(path, arguments);
+    }
+
+    static void ExecuteFromDesktop(string path, string arguments)
+    {
+        object? windows = null, desktop = null, document = null, application = null;
+        try
+        {
+            windows = Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("9BA05972-F6A8-11CF-A442-00A0C90A8F39"), true)!);
+            object location = 0, root = 0;
+            int handle;
+            // SWC_DESKTOP (8), SWFO_NEEDDISPATCH (1). Obtain the running Explorer desktop's document.
+            desktop = ((dynamic)windows!).FindWindowSW(ref location, ref root, 8, out handle, 1);
+            if (desktop is null) throw new InvalidOperationException(Strings.NoDesktopShell);
+            document = ((dynamic)desktop).Document;
+            application = ((dynamic)document!).Application;
+            ((dynamic)application!).ShellExecute(path, arguments, Path.GetDirectoryName(path) ?? "", "open", 1);
+        }
+        finally
+        {
+            foreach (var value in new[] { application, document, desktop, windows })
+                if (value is not null && Marshal.IsComObject(value)) Marshal.ReleaseComObject(value);
+        }
+    }
 
     /// Throws InvalidOperationException, opening nothing, when there is no desktop shell: after Explorer crashed and
     /// before it restarts, or under another shell, explorer.exe has no one to hand the path to and may open it itself,

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using Marquee.Core.Expressions;
 using Marquee.Editor.Model.Values;
@@ -25,7 +26,16 @@ public sealed record ValuePickerModeChoice(ValuePickerMode Mode, string Label);
 /// Shared expression editor. Drafts are checked as they change; only a pick or Commit asks the owner to write.
 public sealed class ValuePickerViewModel : ObservableObject
 {
+    // Pickers are recreated on selection changes; their value source lives for the editor session.
+    static readonly ConditionalWeakTable<ValueSources, Dictionary<string, SectionExpansion>> Expansion = new();
     readonly ValueSources _sources;
+    internal SectionExpansion ExpansionFor(string section)
+    {
+        var states = Expansion.GetOrCreateValue(_sources);
+        if (!states.TryGetValue(section, out var state)) states[section] = state = new();
+        return state;
+    }
+    public SectionExpansion RawExpansion => ExpansionFor("raw");
     string _saved = "";
     ValuePickerMode _mode;
     string? _selectedKey;
@@ -33,6 +43,7 @@ public sealed class ValuePickerViewModel : ObservableObject
     string _fromLow = "0", _fromHigh = "100", _toLow = "0", _toHigh = "1", _number = "0", _advancedText = "";
     bool _ranged;
     bool _advancedEdited;
+    bool _constantsOnly;
     IReadOnlyList<ValuePickerKey> _keys = [];
 
     public ValuePickerViewModel(ValueSources sources, string? text, bool showRange, string? hint = null)
@@ -45,14 +56,27 @@ public sealed class ValuePickerViewModel : ObservableObject
         WeakEventManager<ValueSources, EventArgs>.AddHandler(sources, nameof(ValueSources.Updated), OnValuesUpdated);
     }
 
-    public IReadOnlyList<ValuePickerModeChoice> Modes { get; } =
-    [new(ValuePickerMode.Sensor, Strings.PickerSensor), new(ValuePickerMode.Number, Strings.PickerNumber), new(ValuePickerMode.Advanced, Strings.PickerAdvanced)];
+    public IReadOnlyList<ValuePickerModeChoice> Modes => ConstantsOnly
+        ? [new(ValuePickerMode.Number, Strings.PickerNumber), new(ValuePickerMode.Advanced, Strings.PickerAdvanced)]
+        : [new(ValuePickerMode.Sensor, Strings.PickerSensor), new(ValuePickerMode.Number, Strings.PickerNumber), new(ValuePickerMode.Advanced, Strings.PickerAdvanced)];
+    public bool ConstantsOnly
+    {
+        get => _constantsOnly;
+        internal set
+        {
+            if (_constantsOnly == value) return;
+            _constantsOnly = value;
+            if (value && _mode == ValuePickerMode.Sensor) _mode = ValuePickerMode.Advanced;
+            Raise(null);
+        }
+    }
 
     public ValuePickerMode Mode
     {
         get => _mode;
         set
         {
+            if (ConstantsOnly && value == ValuePickerMode.Sensor) return;
             if (_mode == value) return;
             if (value == ValuePickerMode.Advanced && Text is { } text)
             {
@@ -152,6 +176,7 @@ public sealed class ValuePickerViewModel : ObservableObject
                 _mode = ValuePickerMode.Advanced;
                 break;
         }
+        if (ConstantsOnly && _mode == ValuePickerMode.Sensor) _mode = ValuePickerMode.Advanced;
         RefreshKeys();
         Raise(null);
     }
@@ -181,7 +206,10 @@ public sealed class ValuePickerViewModel : ObservableObject
                 text = AdvancedText;
                 break;
         }
-        try { Expression.Parse(text ?? ""); }
+        try
+        {
+            if (Expression.Parse(text ?? "").Keys.Count > 0 && ConstantsOnly) return Strings.ShaderConstantRequired;
+        }
         catch (ExpressionException ex) { return ex.Message; }
         return null;
     }

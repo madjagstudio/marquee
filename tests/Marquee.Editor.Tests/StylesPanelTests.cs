@@ -145,6 +145,7 @@ public class StylesPanelTests
         try
         {
             window.Show();
+            editor.Model.IsLayersOpen = true;
             editor.Model.Styles.Select("base");
             Sta.Pump();
             var panel = Assert.IsType<StylesView>(((ContentControl)window.FindName("StylesPanel")).Content);

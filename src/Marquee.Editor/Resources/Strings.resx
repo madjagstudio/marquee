@@ -957,4 +957,95 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="GroupPickHint" xml:space="preserve">
     <value>Double-click, or Ctrl+click, to pick something inside this group.</value>
   </data>
+  <data name="BackgroundGallery" xml:space="preserve"><value>Backgrounds</value></data>
+  <data name="MovingBackgrounds" xml:space="preserve"><value>Moving</value></data>
+  <data name="StillBackgrounds" xml:space="preserve"><value>Still</value></data>
+  <data name="MoreBackgrounds" xml:space="preserve"><value>More backgrounds</value></data>
+  <data name="UseBackgroundTip" xml:space="preserve"><value>Use this moving background in your theme.</value></data>
+  <data name="StillColour" xml:space="preserve"><value>■ Colour</value></data>
+  <data name="StillGradient" xml:space="preserve"><value>◩ Gradient</value></data>
+  <data name="StillPicture" xml:space="preserve"><value>▧ Picture…</value></data>
+  <data name="StillVideo" xml:space="preserve"><value>▶ Video…</value></data>
+  <data name="ImportBackgroundShader" xml:space="preserve"><value>Import a shader file…</value></data>
+  <data name="ShaderColourTip" xml:space="preserve"><value>Choose the background's colour.</value></data>
+  <data name="ShaderSpeedTip" xml:space="preserve"><value>Set a steady animation speed.</value></data>
+  <data name="ShaderStrengthTip" xml:space="preserve"><value>Set how strongly the background appears.</value></data>
+  <data name="ShaderQualityTip" xml:space="preserve"><value>Choose the detail used to draw this background.</value></data>
+  <data name="ShaderReacts" xml:space="preserve"><value>Reacts to</value></data>
+  <data name="ShaderReactTip" xml:space="preserve"><value>Choose the reading this background reacts to.</value></data>
+  <data name="ShaderNothing" xml:space="preserve"><value>Nothing</value></data>
+  <data name="ShaderNothingTip" xml:space="preserve"><value>Keep this background calm without a reading.</value></data>
+  <data name="ShaderCalm" xml:space="preserve"><value>Calm</value></data>
+  <data name="ShaderBusy" xml:space="preserve"><value>Busy</value></data>
+  <data name="ShaderQuality" xml:space="preserve"><value>Quality</value></data>
+  <data name="ShaderLight" xml:space="preserve"><value>Light. The screen keeps up easily.</value></data>
+  <data name="ShaderHeavy" xml:space="preserve"><value>Heavy. Lower its quality if the screen stutters.</value></data>
+  <data name="ShaderTooHeavy" xml:space="preserve"><value>Too heavy. The screen will skip it.</value></data>
+  <data name="ShaderSlowIcon" xml:space="preserve"><value>◷</value></data>
+  <data name="ShaderFastIcon" xml:space="preserve"><value>»</value></data>
+  <data name="ShaderFaintIcon" xml:space="preserve"><value>◌</value></data>
+  <data name="ShaderFullIcon" xml:space="preserve"><value>●</value></data>
+  <data name="BackgroundAurora" xml:space="preserve"><value>Aurora</value></data>
+  <data name="BackgroundWaves" xml:space="preserve"><value>Slow waves</value></data>
+  <data name="BackgroundPlasma" xml:space="preserve"><value>Plasma</value></data>
+  <data name="BackgroundStarfield" xml:space="preserve"><value>Starfield</value></data>
+  <data name="BackgroundDrift" xml:space="preserve"><value>Gradient drift</value></data>
+  <data name="BackgroundNebula" xml:space="preserve"><value>Nebula</value></data>
+  <data name="ShaderReactionSentence" xml:space="preserve"><value>Warmer and brighter as it gets busy</value></data>
+  <data name="ShaderCpuLoad" xml:space="preserve"><value>CPU load</value></data>
+  <data name="ShaderSpeedUnit" xml:space="preserve"><value>×</value></data>
+  <data name="ShaderMissingValue" xml:space="preserve"><value>—</value></data>
+  <data name="ModuleGallery" xml:space="preserve"><value>Add a module</value></data>
+  <data name="AddModule" xml:space="preserve"><value>Add</value></data>
+  <data name="AddModuleTip" xml:space="preserve"><value>Click to add this module, or drag its picture onto the screen.</value></data>
+  <data name="NewTheme" xml:space="preserve"><value>New theme…</value></data>
+  <data name="StartBlank" xml:space="preserve"><value>Blank</value></data>
+  <data name="StartGaming" xml:space="preserve"><value>Gaming stats</value></data>
+  <data name="StartMonitor" xml:space="preserve"><value>System monitor</value></data>
+  <data name="StartLandscape" xml:space="preserve"><value>landscape</value></data>
+  <data name="StartPortrait" xml:space="preserve"><value>portrait</value></data>
+  <data name="StartThemeTip" xml:space="preserve"><value>Make your own theme from this look.</value></data>
+  <data name="OpenYourTheme" xml:space="preserve"><value>Open one of yours</value></data>
+  <data name="OpenYourThemeTip" xml:space="preserve"><value>Open a theme folder you already have.</value></data>
+  <data name="MyModuleName" xml:space="preserve"><value>Name your module</value></data>
+  <data name="SaveAsModuleTip" xml:space="preserve"><value>Keep this widget or group to use in another theme, with its files.</value></data>
+  <data name="SaveAsModule" xml:space="preserve"><value>Save as my module…</value></data>
+  <data name="MyModuleSuggestion" xml:space="preserve"><value>My module</value></data>
+  <data name="RenameModule" xml:space="preserve"><value>Rename…</value></data>
+  <data name="DeleteModule" xml:space="preserve"><value>Delete module</value></data>
+  <data name="MyModuleNamePrompt" xml:space="preserve"><value>Choose a name for this reusable widget.</value></data>
+  <data name="CaseUpperTip" xml:space="preserve"><value>Show all letters in uppercase.</value></data>
+  <data name="UnderlineIcon" xml:space="preserve"><value>U</value></data>
+  <data name="BlendDarkenTip" xml:space="preserve"><value>Darken: keep the darker colour.</value></data>
+  <data name="CaseAsWrittenTip" xml:space="preserve"><value>Keep the text case as written.</value></data>
+  <data name="GaugeRingTip" xml:space="preserve"><value>Ring: a full circle fills with the reading.</value></data>
+  <data name="TextAlignCenterTip" xml:space="preserve"><value>Centre the text.</value></data>
+  <data name="CaseLowerTip" xml:space="preserve"><value>Show all letters in lowercase.</value></data>
+  <data name="BlendLightenTip" xml:space="preserve"><value>Lighten: keep the lighter colour.</value></data>
+  <data name="GraphAreaTip" xml:space="preserve"><value>Area: fill below the readings.</value></data>
+  <data name="CaseUpperIcon" xml:space="preserve"><value>AA</value></data>
+  <data name="BoldIcon" xml:space="preserve"><value>B</value></data>
+  <data name="ItalicTip" xml:space="preserve"><value>Italic text.</value></data>
+  <data name="BlendOverlayTip" xml:space="preserve"><value>Overlay: combine light and dark contrast.</value></data>
+  <data name="GaugeFormChange" xml:space="preserve"><value>Change gauge form</value></data>
+  <data name="StrikeIcon" xml:space="preserve"><value>S</value></data>
+  <data name="ItalicIcon" xml:space="preserve"><value>I</value></data>
+  <data name="TextAlignLeftTip" xml:space="preserve"><value>Align text to the left.</value></data>
+  <data name="GraphLineTip" xml:space="preserve"><value>Line: follow the recent readings.</value></data>
+  <data name="GaugeDialTip" xml:space="preserve"><value>Dial: a needle and ticks show the reading.</value></data>
+  <data name="BlendNormalTip" xml:space="preserve"><value>Normal: show the colour unchanged.</value></data>
+  <data name="UnderlineTip" xml:space="preserve"><value>Underline the text.</value></data>
+  <data name="TextAlignRightTip" xml:space="preserve"><value>Align text to the right.</value></data>
+  <data name="CaseAsWrittenIcon" xml:space="preserve"><value>Aa</value></data>
+  <data name="BlendAddTip" xml:space="preserve"><value>Add: add the colours together.</value></data>
+  <data name="BlendScreenTip" xml:space="preserve"><value>Screen: lighten the colours underneath.</value></data>
+  <data name="GraphColumnsTip" xml:space="preserve"><value>Columns: one bar per reading.</value></data>
+  <data name="BoldTip" xml:space="preserve"><value>Make the text bold.</value></data>
+  <data name="CaseLowerIcon" xml:space="preserve"><value>aa</value></data>
+  <data name="StrikeTip" xml:space="preserve"><value>Draw a line through the text.</value></data>
+  <data name="GaugeArcTip" xml:space="preserve"><value>Arc: an open arc fills with the reading.</value></data>
+  <data name="BlendMultiplyTip" xml:space="preserve"><value>Multiply: darken the colours underneath.</value></data>
+  <data name="PercentUnit" xml:space="preserve"><value>%</value></data>
+  <data name="ShaderConstantRequired" xml:space="preserve"><value>This control needs a constant. Choose a sensor with Reacts to instead.</value></data>
+  <data name="ModuleUnavailable" xml:space="preserve"><value>This module cannot be loaded. Right-click to rename or delete it.</value></data>
 </root>

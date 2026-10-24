@@ -54,4 +54,6 @@ sealed class FakeShell : IShell
     public ConcurrentQueue<string> Opened { get; } = new();
 
     public void Open(string path) => Opened.Enqueue(path);
+    public ConcurrentQueue<(string Path, string Arguments)> Commands { get; } = new();
+    public void Open(string path, string arguments) => Commands.Enqueue((path, arguments));
 }

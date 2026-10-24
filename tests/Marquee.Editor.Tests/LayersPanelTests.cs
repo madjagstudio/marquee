@@ -32,6 +32,9 @@ public class LayersPanelTests
         using var editor = new OpenEditor(environment, environment.AddTheme("mine"));
         var layers = editor.Model.Layers;
 
+        Assert.Equal(3, layers.Widgets.Count);
+        Assert.False(layers.Widgets[0].IsExpanded);
+        layers.ToggleExpanded(layers.Widgets[0]);
         Assert.Equal([P("widgets[2]"), P("widgets[2].children[0]"), P("widgets[1]"), P("widgets[0]")], layers.Widgets.Select(row => row.Path));
         Assert.Equal([0, 1, 0, 0], layers.Widgets.Select(row => row.Depth));
         Assert.Equal("Group", layers.Widgets[0].Name);
@@ -59,7 +62,7 @@ public class LayersPanelTests
         layers.Click(Row(editor, "widgets[0]"), ModifierKeys.Control);
         Assert.Equal([P("widgets[1]"), P("widgets[0]")], editor.Session.Selection);
         layers.Click(Row(editor, "widgets[2]"), ModifierKeys.Shift);
-        Assert.Equal([P("widgets[2]"), P("widgets[2].children[0]"), P("widgets[1]"), P("widgets[0]")], editor.Session.Selection);
+        Assert.Equal([P("widgets[2]"), P("widgets[1]"), P("widgets[0]")], editor.Session.Selection);
 
         editor.Session.Select([P("widgets[1]")]);
         Assert.Equal([P("widgets[1]")], layers.Widgets.Where(row => row.IsSelected).Select(row => row.Path));
@@ -79,6 +82,7 @@ public class LayersPanelTests
         var layers = editor.Model.Layers;
 
         // Above the blue box is in front of it: after it in the file.
+        layers.ToggleExpanded(Row(editor, "widgets[2]"));
         Assert.Equal(new MoveLayer(P("widgets[0]"), null, 1), layers.DropFor(Row(editor, "widgets[0]"), Row(editor, "widgets[1]"), DropPlace.Above));
         Assert.Null(layers.DropFor(Row(editor, "widgets[0]"), Row(editor, "widgets[1]"), DropPlace.Below));
         Assert.Null(layers.DropFor(Row(editor, "widgets[0]"), Row(editor, "widgets[1]"), DropPlace.Into));

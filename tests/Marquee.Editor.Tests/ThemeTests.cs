@@ -89,6 +89,11 @@ public class ThemeTests
             () => new NameDialog("Theme", "Name", "mine", _ => null),
             () => new OrientationDialog("portrait"),
             () => new CleanUpDialog("mine", new CleanUpViewModel([])),
+            () => new Start.StartView(new Start.StartViewModel(environment.Environment)),
+            () => new Modules.ModuleGalleryView(new Modules.ModuleGalleryViewModel(environment.Root,
+                () => Marquee.Core.Sensors.SensorSnapshot.Of(DateTimeOffset.Now, new Dictionary<string, Marquee.Core.Sensors.SensorEntry>())), _ => { }),
+            () => new Backgrounds.BackgroundGalleryView(new Backgrounds.BackgroundGalleryViewModel(
+                new Model.BackgroundLibrary(environment.InstalledThemes), () => Marquee.Core.Sensors.SensorSnapshot.Of(DateTimeOffset.Now, new Dictionary<string, Marquee.Core.Sensors.SensorEntry>()))),
         ];
         var covered = new List<Type>();
         foreach (var factory in create)

@@ -1,0 +1,6 @@
+name: Card panel
+at: [0, 0]
+type: shape
+size: [320, 180]
+shape: rect
+style: { fill: "#161616", stroke: { width: 2, color: "#2A2A2A" }, radius: 8 }
