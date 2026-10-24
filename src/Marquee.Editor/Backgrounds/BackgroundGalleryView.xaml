@@ -1,4 +1,4 @@
-<Window x:Class="Marquee.Editor.Backgrounds.BackgroundGalleryView"
+<Window x:Class="Marquee.Editor.Backgrounds.BackgroundGalleryView" Style="{DynamicResource {x:Type Window}}"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:res="clr-namespace:Marquee.Editor.Resources" Title="{x:Static res:Strings.BackgroundGallery}" Width="820" Height="430" WindowStartupLocation="CenterOwner">
  <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" /></ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>

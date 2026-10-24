@@ -1,4 +1,4 @@
-<Window x:Class="Marquee.Editor.Modules.ModuleGalleryView" Style="{StaticResource {x:Type Window}}"
+<Window x:Class="Marquee.Editor.Modules.ModuleGalleryView" Style="{DynamicResource {x:Type Window}}"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:res="clr-namespace:Marquee.Editor.Resources" Title="{x:Static res:Strings.ModuleGallery}" Width="880" Height="560" WindowStartupLocation="CenterOwner">
  <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/MarqueeEditor;component/Theme/MadJag.xaml" /></ResourceDictionary.MergedDictionaries><BooleanToVisibilityConverter x:Key="Visible" /></ResourceDictionary></Window.Resources>
