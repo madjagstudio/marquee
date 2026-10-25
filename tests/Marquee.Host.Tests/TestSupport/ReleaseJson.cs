@@ -6,15 +6,15 @@ namespace Marquee.Host.Tests.TestSupport;
 /// installer, its signature and the CLI zip. Tests change what they need through the JsonObject.
 static class ReleaseJson
 {
-    public const string Downloads = "https://github.com/madjagstudios/marquee/releases/download";
+    public const string Downloads = "https://github.com/madjagstudio/marquee/releases/download";
 
     public static JsonObject Release(string tag = "v0.2.0", long installerSize = 4_321_000, long signatureSize = 104)
     {
         var version = tag.TrimStart('v');
         return new JsonObject
         {
-            ["url"] = "https://api.github.com/repos/madjagstudios/marquee/releases/1",
-            ["html_url"] = $"https://github.com/madjagstudios/marquee/releases/tag/{tag}",
+            ["url"] = "https://api.github.com/repos/madjagstudio/marquee/releases/1",
+            ["html_url"] = $"https://github.com/madjagstudio/marquee/releases/tag/{tag}",
             ["id"] = 1,
             ["tag_name"] = tag,
             ["name"] = $"Marquee {version}",

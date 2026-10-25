@@ -26,7 +26,7 @@
 
     <Icon Id="Marquee.ico" SourceFile="$(var.RepoRoot)src\Marquee.App\marquee.ico" />
     <Property Id="ARPPRODUCTICON" Value="Marquee.ico" />
-    <Property Id="ARPURLINFOABOUT" Value="https://github.com/madjagstudios/marquee" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/madjagstudio/marquee" />
     <!-- There is nothing to choose, so Settings offers no Modify. -->
     <Property Id="ARPNOMODIFY" Value="1" />
     <!-- The installer closes the trays itself (marquee task stop), from the old version's uninstall during an upgrade.

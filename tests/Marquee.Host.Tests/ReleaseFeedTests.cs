@@ -29,7 +29,7 @@ public class ReleaseFeedTests
 
         Assert.Equal(new Version(0, 2, 0), offer.Version);
         Assert.Equal("Marquee 0.2.0", offer.Title);
-        Assert.Equal(new Uri("https://github.com/madjagstudios/marquee/releases/tag/v0.2.0"), offer.ReleasePage);
+        Assert.Equal(new Uri("https://github.com/madjagstudio/marquee/releases/tag/v0.2.0"), offer.ReleasePage);
         Assert.Equal(new ReleaseAsset("Marquee-0.2.0-x64.msi", 4_321_000,
             new Uri($"{ReleaseJson.Downloads}/v0.2.0/Marquee-0.2.0-x64.msi")), offer.Installer);
         Assert.Equal(new ReleaseAsset("Marquee-0.2.0-x64.msi.sig", 104,
@@ -138,7 +138,7 @@ public class ReleaseFeedTests
     }
 
     [Theory]
-    [InlineData("http://github.com/madjagstudios/marquee/releases/download/v0.2.0/Marquee-0.2.0-x64.msi")]
+    [InlineData("http://github.com/madjagstudio/marquee/releases/download/v0.2.0/Marquee-0.2.0-x64.msi")]
     [InlineData("https://example.com/Marquee-0.2.0-x64.msi")]
     [InlineData("https://github.com.example.com/Marquee-0.2.0-x64.msi")]
     [InlineData("file:///C:/Marquee-0.2.0-x64.msi")]

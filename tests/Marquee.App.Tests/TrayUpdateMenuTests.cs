@@ -8,7 +8,7 @@ namespace Marquee.App.Tests;
 /// clock, the daily timer and msiexec faked.
 public sealed class TrayUpdateMenuTests : IDisposable
 {
-    const string ReleasesPage = "https://github.com/madjagstudios/marquee/releases";
+    const string ReleasesPage = "https://github.com/madjagstudio/marquee/releases";
 
     readonly TrayRig _rig = new();
 

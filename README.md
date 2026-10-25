@@ -9,7 +9,7 @@ from Claude Code and Codex. L-Connect can keep managing your fans, pump and othe
 ## Install
 
 Download and run `Marquee-<version>-x64.msi` from [GitHub
-Releases](https://github.com/madjagstudios/marquee/releases). It installs for every user and asks for
+Releases](https://github.com/madjagstudio/marquee/releases). It installs for every user and asks for
 administrator rights once; the .NET runtime is included.
 
 The MSI has no Authenticode signature yet, so an "unknown publisher" prompt from Windows is expected. If
@@ -54,7 +54,7 @@ With a release key built in, the tray looks for a newer Marquee once a day, the 
 starts, and remembers when it last looked (`last-update-check.txt` in its data folder), so restarting the PC
 doesn't make it look again. That check is the only automatic outbound HTTP request made directly by Marquee: one
 unauthenticated GitHub Releases API call, `GET
-https://api.github.com/repos/madjagstudios/marquee/releases/latest`, with no account and no cookies. All it
+https://api.github.com/repos/madjagstudio/marquee/releases/latest`, with no account and no cookies. All it
 sends about you is what any request does (your IP address) and a `User-Agent` header saying `Marquee/<version>`,
 which GitHub requires. If the check fails, nothing else is affected, and it tries again the next day.
 
@@ -424,7 +424,7 @@ and checks theme files once the YAML extension (Red Hat) is installed: the examp
 For a copied theme, point that first line at a local copy of the schema or use the public URL:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/madjagstudios/marquee/main/docs/layout.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/madjagstudio/marquee/main/docs/layout.schema.json
 ```
 
 See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents`, and `themes/example-showcase`

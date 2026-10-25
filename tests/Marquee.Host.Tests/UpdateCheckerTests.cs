@@ -39,7 +39,7 @@ public sealed class UpdateCheckerTests : IDisposable
 
         var request = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Get, request.Method);
-        Assert.Equal(new Uri("https://api.github.com/repos/madjagstudios/marquee/releases/latest"), request.Uri);
+        Assert.Equal(new Uri("https://api.github.com/repos/madjagstudio/marquee/releases/latest"), request.Uri);
         Assert.Equal("Marquee/0.1.0", request.UserAgent);
         Assert.Equal("application/vnd.github+json", request.Accept);
         Assert.False(request.HasAuthorization);
