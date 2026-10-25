@@ -112,17 +112,17 @@ of writing; "not verified" means we haven't established support, not that a feat
 | Theme format | `layout.yaml` plus local assets | L-Connect templates | L-Connect `.template`, `.turtheme` and compatible ZIP exports |
 | Editor | Visual canvas, module/background galleries and YAML editing | Built-in screen/theme editor | Layer editing, grouping, undo/redo and recovery snapshots |
 | Sensors | LibreHardwareMonitor or HWiNFO; custom values from scripts | Built-in hardware readings | L-Connect sensor data layers |
-| Game FPS | PresentMon: FPS, frame time, 1% low and app name | FPS data source for 8.8" modular assets | Available sensor choices depend on L-Connect; FPS not verified here |
-| AI-agent usage | Claude Code and Codex limits and sessions | Not verified at the time of writing | Not verified at the time of writing |
+| Game FPS | PresentMon: FPS, frame time, 1% low and app name | An FPS sensor for 8.8" modular assets, off by default; no 1% low | Available sensor choices depend on L-Connect; FPS not verified here |
+| AI-agent usage | Claude Code and Codex limits and sessions | None in its screen guide or changelog | None in its README or sensor labels |
 | Screen LED ring | Theme-driven effects and rules, or a fixed colour/off | Screen lighting controls | Managed through L-Connect; independent ring control not verified |
-| Licence | Source-available, free for personal and noncommercial use; see [licence](LICENSE) | No public source identified at the time of writing | Source published on GitHub; open-source licence not verified at the time of writing |
-| Price | Free | Free download | Download available on GitHub; pricing not verified at the time of writing |
+| Licence | Source-available, free for personal and noncommercial use; see [licence](LICENSE) | No public source identified at the time of writing | Source on GitHub, with no licence file at the time of writing |
+| Price | Free | Free download | Free download (an MSI on its GitHub releases) |
 
 Sources: [Lian Li's screen guide](https://lian-li.com/l-connect3/screensoftwareguide/), [L-Connect
 downloads](https://lian-li.com/l-connect3/), [L-Connect's FPS
 changelog](https://lian-li.com/l-connect3/l3-changelog/), [LianliThemeEditor's
-README](https://github.com/ozgurce/LianliThemeEditor) and [editor sensor
-labels](https://github.com/ozgurce/LianliThemeEditor/blob/main/lang/en.json).
+README](https://github.com/ozgurce/LianliThemeEditor), [releases](https://github.com/ozgurce/LianliThemeEditor/releases)
+and [editor sensor labels](https://github.com/ozgurce/LianliThemeEditor/blob/main/lang/en.json).
 
 ## Built with AI agents
 
