@@ -115,7 +115,7 @@ of writing; "not verified" means we haven't established support, not that a feat
 | Game FPS | PresentMon: FPS, frame time, 1% low and app name | An FPS sensor for 8.8" modular assets, off by default; no 1% low | Available sensor choices depend on L-Connect; FPS not verified here |
 | AI-agent usage | Claude Code and Codex limits and sessions | None in its screen guide or changelog | None in its README or sensor labels |
 | Screen LED ring | Theme-driven effects and rules, or a fixed colour/off | Screen lighting controls | Managed through L-Connect; independent ring control not verified |
-| Licence | Source-available, free for personal and noncommercial use; see [licence](LICENSE) | No public source identified at the time of writing | Source on GitHub, with no licence file at the time of writing |
+| Licence | Source-available, free for personal and noncommercial use; see [licence](LICENSE) | No public source identified at the time of writing | Source on GitHub; no open-source licence identified at the time of writing |
 | Price | Free | Free download | Free download (an MSI on its GitHub releases) |
 
 Sources: [Lian Li's screen guide](https://lian-li.com/l-connect3/screensoftwareguide/), [L-Connect
