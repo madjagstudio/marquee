@@ -6,7 +6,7 @@ namespace Marquee.ReleaseTool.Tests;
 
 public sealed class ReleaseCommandsTests : IDisposable
 {
-    const string Password = "a long test password";
+    static readonly string Password = TestKeys.Password;
 
     readonly StringWriter output = new();
     readonly StringWriter error = new();
@@ -105,7 +105,7 @@ public sealed class ReleaseCommandsTests : IDisposable
 
         Assert.Equal(2, passwords.Prompts.Count);
         var pem = File.ReadAllText(path);
-        Assert.StartsWith("-----BEGIN ENCRYPTED PRIVATE KEY-----", pem);
+        Assert.StartsWith(TestKeys.PemHeader("ENCRYPTED PRIVATE KEY"), pem);
         using var key = SigningKey.Open(pem, Password);
         Assert.Contains(key.ExportSubjectPublicKeyInfoPem(), output.ToString());
         Assert.Contains(ReleaseSignature.Fingerprint(key), output.ToString());
