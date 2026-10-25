@@ -711,11 +711,14 @@ administrator) and Marquee makes it again, safely.
 Known limitations:
 
 - Tray rendering reaches 22 fps rather than the 30 fps target; this remains unresolved.
-- LibreHardwareMonitor exposes only GPU load and memory on the tested RX 7800 XT; use HWiNFO for the other readings.
+- LibreHardwareMonitor doesn't report GPU temperature, clock or power on the tested RX 7800 XT; use HWiNFO for those.
 
 ## Licence and third-party notices
 
-Marquee is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+Marquee is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE): free to use, change and share
+for any noncommercial purpose. Commercial use, such as selling Marquee or a modified version or bundling it with
+hardware you sell, needs a commercial licence from MadJag Studios: support@madjagstudios.com. Contributions are
+welcome under the terms in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The panel and LED ring protocols were documented by the community, notably
 [sgtaziz/lian-li-linux](https://github.com/sgtaziz/lian-li-linux) (MIT). Marquee is an independent implementation.

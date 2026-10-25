@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 namespace Marquee.Host.Updates;
 
 /// The one public key Marquee trusts for updates, built in from release-key.pub.pem (a SubjectPublicKeyInfo PEM,
-/// embedded in this assembly). The maintainer keeps the matching private key offline (docs/releasing.md).
+/// embedded in this assembly). The matching private key is never in this repository (docs/releasing.md).
 ///
 /// The placeholder fingerprint identifies the original test key, whose private half was discarded. A build that
 /// still carries that key installs no updates: IsPlaceholder is checked before offering an update and again before
