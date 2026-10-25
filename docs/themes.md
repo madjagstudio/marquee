@@ -151,11 +151,10 @@ The cost bar gives a plain verdict: **Light. The screen keeps up easily.**,
 will skip it.** Lower **Quality** to render at a smaller scale. This is an
 estimate of shader work, so also judge the result on the screen.
 
-**Still** offers **Colour**, **Gradient** and **Picture…**. It also holds
-**Video…**, which plays a clip. Images and videos are imported
-into the theme. Backgrounds can combine fill, image, video and shader layers;
-their order determines what covers what. Under **More backgrounds**, **Import
-a shader file…** adds your own shader.
+**Still** offers **Colour**, **Gradient**, **Picture…** and **Video…**.
+Images and videos are imported into the theme. Backgrounds can combine fill,
+image, video and shader layers; their order determines what covers what.
+Under **More backgrounds**, **Import a shader file…** adds your own shader.
 
 ## Keep your own modules
 
@@ -262,7 +261,8 @@ In a repository theme under `themes/my-first-theme`, the first line can be:
 # yaml-language-server: $schema=../../docs/layout.schema.json
 ```
 
-For a theme elsewhere, change that path to your local copy of the schema.
+For a theme elsewhere, change that path to your local copy of the schema or
+`https://raw.githubusercontent.com/madjagstudios/marquee/main/docs/layout.schema.json`.
 The [theme reference](themes-reference.md) lists every layout key, allowed
 value and default. The [sensor key reference](keys.md) explains the readings,
 their units and sources.

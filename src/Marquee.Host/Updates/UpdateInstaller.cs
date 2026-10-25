@@ -13,7 +13,8 @@ namespace Marquee.Host.Updates;
 ///
 /// The folder is one for the whole PC, so two users' elevated trays (fast user switching) that both install at once
 /// share it: one's clean-up or download may delete or replace the other's files, and that one then fails with a
-/// download or signature error, to be tried again. VerifiedUpdate enforces the installer's integrity.
+/// download or signature error, to be tried again. Each tray runs only the installer it holds open and has verified
+/// (VerifiedUpdate); the folder's permissions are the lasting guarantee.
 ///
 /// `releaseKey` is the key updates must be signed with, `runningVersion` the running Marquee's informational version
 /// (for the User-Agent); ForThisApp passes the real ones and starts the real msiexec.

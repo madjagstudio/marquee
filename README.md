@@ -203,14 +203,15 @@ A command-line flag wins over `config.yaml`, `config.yaml` over the theme, and t
 `--no-claude-usage` and `--no-fps` likewise win over `http` and `providers`. Orientation is the exception: a theme
 never sets it (see [Orientation](#orientation)).
 
-A theme name such as `example-agents` is looked for in `%LOCALAPPDATA%\Marquee\themes`, then beside `marquee.exe`
-in `themes`, then in the current folder. Paths in `config.yaml` are relative to that file's folder; paths on the
-command line are relative to the current folder.
+A rooted value, a value with `\` or `/` in it, or `.` or `..`, is a path, resolved relative to `config.yaml`'s folder.
+Anything else is a theme name, looked for in `%LOCALAPPDATA%\Marquee\themes`, then in a `themes` folder beside
+`marquee.exe`, then in `config.yaml`'s folder. On the command line, paths and that last lookup are relative to the
+current folder.
 
 `marquee run` reloads settings when you save `config.yaml`. It changes only the settings you edited: a theme or
 frame-rate change keeps the screen on, orientation reopens it, and a provider or HTTP change restarts that part.
 Invalid edits leave the previous settings active and log the error with its line number. At startup, an invalid
-file uses the defaults instead. Command-line flags still take precedence.
+file uses the defaults instead. Command-line flags still win over these settings.
 
 If a new theme fails to load, Marquee keeps the previous settings and watches the theme. Fixing and saving it
 applies the waiting settings without another edit to `config.yaml`. If the theme can't be found, correct its name
@@ -258,10 +259,10 @@ The logon task starts the tray as administrator, which game FPS and the L-Connec
 and web pages open through Explorer with your normal rights. Logs and data use the administrator-only folder
 described in [Logs](#logs).
 
-If Explorer isn't running, the tray can't open files or web pages and shows a notification. Writes to
-`config.yaml` and creation of missing folders are refused through junctions or symbolic links; the config file
-also cannot be a hard link. The notification and log explain a refused write; you can edit the file by hand.
-An existing themes folder that is a junction can still be opened.
+If Explorer isn't running, the tray can't open files or web pages and shows a balloon. The tray won't write
+`config.yaml`, or make a missing folder, through a junction or symbolic link, or write a `config.yaml` that is a
+hard link, because a link could send an administrator's write anywhere on the PC. The balloon and log explain a
+refused write; you can edit the file by hand. An existing themes folder that is a junction can still be opened.
 
 ### Without administrator rights
 
@@ -591,15 +592,14 @@ names are checked as usual.
 
 ## Claude Code and Codex
 
-`marquee run` reads Claude Code and Codex status automatically. See the [sensor key reference](docs/keys.md) for
-their keys, sources and expiry rules, and which readings `marquee sensors` can list.
+`marquee run` reads Claude Code and Codex status automatically. See the [sensor key reference](docs/keys.md).
 
 Marquee checks Claude Code's usage limits every 5 minutes with `claude -p /usage` (no model call or cost). This
 needs a native `claude.exe` installation or the desktop app's bundled copy, logged in to a claude.ai subscription.
-API-key sessions have no usage limits. Set `providers: { claude_usage: off }` in `config.yaml`, or pass
-`--no-claude-usage` to `marquee run` or `marquee sensors`, to disable the poll.
+API-key sessions have no usage limits. Setting `providers: { claude_usage: off }` in `config.yaml`, or passing
+`--no-claude-usage` to `marquee run` or `marquee sensors`, turns it off.
 
-When Marquee runs elevated, it starts `claude` with your normal rights through Explorer. If Explorer is unavailable,
+When Marquee runs elevated, it starts `claude` with your normal rights through Explorer. If Explorer isn't running,
 it logs the problem and uses only status-line updates. The child runs with its auto-updater disabled and stops
 when Marquee exits.
 
@@ -620,11 +620,11 @@ line looks the same as before. It edits only `statusLine` in `~/.claude/settings
 `marquee setup-claude --undo` puts the old setting back. `--dry-run` shows the change first. If it can't rewrite
 `settings.json` exactly (comments, trailing commas, repeated keys, a file that isn't UTF-8, a link, or a `statusLine`
 that isn't an object), it changes nothing and says why. A project's `.claude/settings.json` or managed settings with
-their own `statusLine` take precedence over this one.
+their own `statusLine` win over this one.
 
 Status-line updates arrive while Marquee is running and a terminal Claude Code session is updating its status
 line. Only programs running as your Windows account can send them. The desktop app's Code tab does not run status
-lines, so it relies on the `/usage` poll. If `claude` is missing, logged out or fails, Marquee logs the problem once
+lines, so Marquee relies on the `/usage` poll. If `claude` is missing, logged out or fails, Marquee logs the problem once
 and retries after 5 minutes.
 
 `marquee run` and the tray keep the last limits across restarts in `%LOCALAPPDATA%\Marquee\claude-limits.json`, or,
@@ -642,26 +642,25 @@ logs a warning and those keys go stale; everything else keeps working.
 
 ## Custom values
 
-Scripts can send `custom.*` readings with `marquee push` or HTTP. The [custom value reference](docs/keys.md#custom)
-covers examples, expiry, server settings and limits.
+Scripts can send `custom.*` readings with `marquee push` or HTTP. See the [Custom](docs/keys.md#custom) section of the sensor key reference.
 
 ## Hardware sensors
 
 `marquee sensors` lists current readings; `marquee sensors --raw` also lists the hardware source's unmapped readings.
-See the [hardware key reference](docs/keys.md#hardware-cpu-gpu-ram-fans-and-voltages) for keys, units and how readings
-are selected.
+See the [Hardware](docs/keys.md#hardware-cpu-gpu-ram-fans-and-voltages) section of the sensor key reference.
 
 Choose the source with `--sensors` or `sensors:` in `config.yaml`:
 
 - **LibreHardwareMonitor** (`lhm`, the default) reads sensors directly. CPU temperatures and motherboard sensors
   need administrator rights and the [PawnIO](https://pawnio.eu/) driver, which you install separately.
 - **HWiNFO** (`hwinfo`) reads HWiNFO's shared memory. Start HWiNFO and enable **Settings → Shared Memory Support**.
-  Use it for AMD GPU readings unavailable through LibreHardwareMonitor, including on the Radeon RX 7800 XT.
+  Some AMD cards, such as the Radeon RX 7800 XT, give no temperature, clock or power through LibreHardwareMonitor;
+  HWiNFO reads those.
 
 ## Game FPS
 
-`marquee run` measures the game in front. See the [FPS key reference](docs/keys.md#fps) for readings, units and
-expiry. The foreground process is checked every 250 ms; if it has several swap chains, Marquee measures the one
+`marquee run` measures the game in front. See the [FPS](docs/keys.md#fps) section of the sensor key reference.
+The foreground process is checked every 250 ms; if it has several swap chains, Marquee measures the one
 with the most frames in the last second.
 
 Frames are counted by [PresentMon](https://github.com/GameTechDev/PresentMon) 2.6.0, Intel's open-source frame-time
@@ -698,7 +697,7 @@ administrator) and Marquee makes it again, safely.
 
 ## Verified hardware
 
-| Device and USB ID | Firmware | Verified | Measured frame rates and timings |
+| Setup | Firmware | Verified | Measured frame rates and timings |
 |---|---|---|---|
 | 8.8" Universal Screen (`1CBE:A088`) | `lianli88_0001_0023` | Portrait orientation, brightness, image retained after exit | ~47 fps; ~21 ms per frame including JPEG encoding |
 | Same screen, example themes | `lianli88_0001_0023` | Rendering, hot reload, letterboxing, USB reconnect | 30 fps for 12 min; render ~2.5 ms, send ~18 ms; `--fps 60` reaches ~51 fps; reload ~2 s |
@@ -710,7 +709,7 @@ administrator) and Marquee makes it again, safely.
 
 Known limitations:
 
-- Tray rendering reaches 22 fps rather than the 30 fps target; this remains unresolved.
+- Tray rendering reaches 22 fps, not 30; the cause isn't known yet.
 - LibreHardwareMonitor doesn't report GPU temperature, clock or power on the tested RX 7800 XT; use HWiNFO for those.
 
 ## Licence and third-party notices
