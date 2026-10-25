@@ -75,15 +75,20 @@ their purpose.
 
 For a reading, open the value picker from **What it shows**. Sensors have plain
 names such as **CPU temperature**, grouped into categories including CPU, GPU,
-Memory and Gaming, with their current readings. Search the list to narrow it.
-The picker also offers **Number** for a fixed value and **Advanced** for an
-expression. Where a mapping is offered, **From low** and **From high** describe
+Memory and Gaming, with their current readings. The categories start collapsed
+each time the picker opens. Search the list to narrow it. The picker also
+offers **Number** for a fixed value and **Advanced** for an expression. Where a mapping is offered, **From low** and **From high** describe
 the input range, and **To low** and **To high** describe the output range.
 
 In text, **Insert value** adds a reading, **Time** or **Date** as a chip among
 your words. Time and date offer formats with previews. Select a chip to change
 its format, such as the number of decimal places, or remove it. This lets a
 label say “CPU” beside a live temperature without writing placeholder syntax.
+
+A clock (text that shows only the time and date) offers **Time format** and
+**Date format** instead: 12-hour or 24-hour, with or without seconds, and a
+long, short or month-and-day date, or the weekday. Select a group that holds a clock, such as
+the **Clock and date** module, and the same choices change every clock inside it.
 
 ## Colours, fonts and styles
 
