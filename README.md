@@ -642,12 +642,12 @@ logs a warning and those keys go stale; everything else keeps working.
 
 ## Custom values
 
-Scripts can send `custom.*` readings with `marquee push` or HTTP. See its [Custom](docs/keys.md#custom) section.
+Scripts can send `custom.*` readings with `marquee push` or HTTP. See the [Custom](docs/keys.md#custom) section of the sensor key reference.
 
 ## Hardware sensors
 
 `marquee sensors` lists current readings; `marquee sensors --raw` also lists the hardware source's unmapped readings.
-See its [Hardware](docs/keys.md#hardware-cpu-gpu-ram-fans-and-voltages) section.
+See the [Hardware](docs/keys.md#hardware-cpu-gpu-ram-fans-and-voltages) section of the sensor key reference.
 
 Choose the source with `--sensors` or `sensors:` in `config.yaml`:
 
@@ -659,7 +659,7 @@ Choose the source with `--sensors` or `sensors:` in `config.yaml`:
 
 ## Game FPS
 
-`marquee run` measures the game in front. See its [FPS](docs/keys.md#fps) section.
+`marquee run` measures the game in front. See the [FPS](docs/keys.md#fps) section of the sensor key reference.
 The foreground process is checked every 250 ms; if it has several swap chains, Marquee measures the one
 with the most frames in the last second.
 
