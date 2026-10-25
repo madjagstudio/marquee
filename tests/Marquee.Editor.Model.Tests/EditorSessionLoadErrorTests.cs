@@ -41,9 +41,6 @@ public class EditorSessionLoadErrorTests
     [Fact]
     public void While_paused_only_text_from_outside_is_taken()
     {
-        // The owner's decision: undo and redo are off while editing is paused, whatever paused it, so the hand edit is
-        // never written over without an explicit click. Text from outside that loads (the file fixed, or "Revert to
-        // opened version") is the way out.
         using var folder = TempTheme.With(Good);
         using var session = folder.Open();
         session.Apply(HandEdit(Broken));

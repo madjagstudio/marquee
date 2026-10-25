@@ -2,9 +2,7 @@ using System.Security.Cryptography;
 
 namespace Marquee.Host.Tests.TestSupport;
 
-/// The placeholder public key, as release-key.pub.pem holds it until the owner's key ceremony. It is copied here so the
-/// tests still know the placeholder after the ceremony replaces that file. Its private half was never kept, so nothing
-/// anyone has can sign for it: the update tests use it to show that the placeholder refuses every update.
+/// The original placeholder public key, kept here to test that builds using it refuse every update.
 static class PlaceholderKey
 {
     public const string Pem = """

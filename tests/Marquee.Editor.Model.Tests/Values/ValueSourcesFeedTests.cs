@@ -90,9 +90,8 @@ public class ValueSourcesFeedTests
     }
 
     [Fact]
-    public Task A_graph_is_drawn_again_each_poll_though_its_reading_holds_steady() =>
-        // The QA review's R8: the history moves on with a steady reading, so the canvas must draw it. Made off the
-        // test's context, Updated is raised on the poll's own thread, as it returns.
+    public Task Graph_history_raises_Updated_when_the_reading_is_steady() =>
+        // Off the test's context, Updated is raised on the poll's own thread, as it returns.
         Task.Run(async () =>
         {
             var pipes = UniquePipes();

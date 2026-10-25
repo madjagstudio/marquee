@@ -11,7 +11,6 @@ public class AutosaverGoneTests
     [Fact]
     public void A_theme_folder_deleted_while_open_is_not_made_again_and_says_so()
     {
-        // The review's R04: the folder used to come back holding only layout.yaml, under "Saved".
         using var theme = TempTheme.With(Saving.Layout);
         File.WriteAllText(Path.Combine(theme.Folder, "keep.png"), "x");
         using var saving = new Saving(theme);

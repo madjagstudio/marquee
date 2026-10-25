@@ -95,7 +95,6 @@ public class FileCommandsTests
     [Fact]
     public void Clean_up_says_why_when_layout_yaml_is_locked_as_it_deletes() => Sta.Run(() =>
     {
-        // The QA review's R5: an IOException from reading layout.yaml at the delete used to escape the command.
         using var environment = new TestEnvironment();
         var folder = environment.AddTheme("mine", Layout);
         TestEnvironment.WritePng(Path.Combine(folder, "images", "spare.png"));

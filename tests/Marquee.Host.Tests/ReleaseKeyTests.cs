@@ -53,17 +53,14 @@ public class ReleaseKeyTests
     [Fact]
     public void IsPlaceholder_is_true_exactly_while_the_built_in_key_is_the_placeholder()
     {
-        // True until the owner's key ceremony replaces release-key.pub.pem, false after, with no test to edit.
         using var placeholder = Placeholder();
 
         Assert.Equal(ReleaseSignature.Fingerprint(placeholder) == ReleaseKey.Fingerprint, ReleaseKey.IsPlaceholder);
     }
 
-    /// The placeholder's private half was discarded when it was made and the owner's key lives offline
-    /// (docs/releasing.md), so no private key belongs anywhere in the repository; a secret scanner would flag one.
     /// Build output and dot folders (.git, .cache, .vs) are skipped, and so are files too big to be a key file.
     [Fact]
-    public void No_private_key_is_in_the_repository()
+    public void Scanned_source_files_contain_no_PEM_private_key_block()
     {
         var root = RepositoryRoot();
         var skipped = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "bin", "obj", "out", "TestResults" };

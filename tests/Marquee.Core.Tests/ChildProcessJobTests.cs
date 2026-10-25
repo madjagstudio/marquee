@@ -43,7 +43,7 @@ public class ChildProcessJobTests
 
     // Why each child gets a job of its own. An unelevated claude starts inside the Secondary Logon service's job; here a
     // process in an unrelated job stands in for it. Windows refuses to move it into a job that already holds another
-    // process ("Access is denied", seen on the owner's PC with one shared job), and accepts a new, empty job.
+    // process ("Access is denied", observed with one shared job), and accepts a new, empty job.
     [Fact]
     public void A_process_already_in_another_job_can_only_join_a_new_empty_job()
     {

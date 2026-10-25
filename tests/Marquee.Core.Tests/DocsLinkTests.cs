@@ -32,8 +32,6 @@ public class DocsLinkTests
                     ? Path.Combine(root, path.TrimStart('/'))
                     : Path.Combine(Path.GetDirectoryName(file)!, path));
                 var relative = Path.GetRelativePath(root, target).Replace('\\', '/');
-                // Private planning documents are removed from the public copy; never traverse them.
-                if (relative.StartsWith("docs/superpowers/", StringComparison.OrdinalIgnoreCase)) continue;
                 if (relative == ".." || relative.StartsWith("../", StringComparison.Ordinal) || Path.IsPathRooted(relative)
                     || !File.Exists(target))
                     problems.Add($"{Path.GetRelativePath(root, file)}: {destination} does not resolve to a file in the repo.");

@@ -40,11 +40,8 @@ public class SigningKeyTests
     {
         var created = SigningKey.Create(Password);
 
-        Assert.StartsWith(TestKeys.PemHeader("ENCRYPTED PRIVATE KEY"), created.EncryptedPem);
-        Assert.DoesNotContain(TestKeys.PemHeader("PRIVATE KEY"), created.EncryptedPem);
-        Assert.DoesNotContain(TestKeys.PemHeader("EC PRIVATE KEY"), created.EncryptedPem);
-        Assert.StartsWith("-----BEGIN PUBLIC KEY-----", created.PublicPem);
-        Assert.DoesNotContain("PRIVATE", created.PublicPem);
+        TestKeys.AssertSinglePem("ENCRYPTED PRIVATE KEY", created.EncryptedPem);
+        TestKeys.AssertSinglePem("PUBLIC KEY", created.PublicPem);
     }
 
     [Fact]
