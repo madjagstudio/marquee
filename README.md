@@ -259,10 +259,11 @@ The logon task starts the tray as administrator, which game FPS and the L-Connec
 and web pages open through Explorer with your normal rights. Logs and data use the administrator-only folder
 described in [Logs](#logs).
 
-If Explorer isn't running, the tray can't open files or web pages and shows a balloon. The tray won't write
-`config.yaml`, or make a missing folder, through a junction or symbolic link, or write a `config.yaml` that is a
-hard link, because a link could send an administrator's write anywhere on the PC. The balloon and log explain a
-refused write; you can edit the file by hand. An existing themes folder that is a junction can still be opened.
+If Explorer isn't running, the tray can't open files or web pages and shows a balloon instead. The tray won't write
+`config.yaml`, or make a missing folder, through a junction or symbolic link, which could send an administrator's
+write somewhere else. It won't edit a `config.yaml` that is a hard link either, since reading it as administrator
+could expose a file you can't otherwise read. The balloon and log explain a refused write; you can edit the file by
+hand. An existing themes folder that is a junction can still be opened.
 
 ### Without administrator rights
 
@@ -597,10 +598,10 @@ names are checked as usual.
 Marquee checks Claude Code's usage limits every 5 minutes with `claude -p /usage` (no model call or cost). This
 needs a native `claude.exe` installation or the desktop app's bundled copy, logged in to a claude.ai subscription.
 API-key sessions have no usage limits. Setting `providers: { claude_usage: off }` in `config.yaml`, or passing
-`--no-claude-usage` to `marquee run` or `marquee sensors`, turns it off.
+`--no-claude-usage` to `marquee run` or `marquee sensors`, turns the poll off.
 
-When Marquee runs elevated, it starts `claude` with your normal rights through Explorer. If Explorer isn't running,
-it logs the problem and uses only status-line updates. The child runs with its auto-updater disabled and stops
+When Marquee runs elevated, it starts `claude` with your normal rights through Explorer. If it can't (Explorer isn't
+running, or belongs to another account), it logs the problem and uses only status-line updates. The child runs with its auto-updater disabled and stops
 when Marquee exits.
 
 **Troubleshooting:** Marquee uses the account logged in to the `claude` command line, which can differ from the

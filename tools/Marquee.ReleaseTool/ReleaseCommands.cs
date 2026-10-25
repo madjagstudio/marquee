@@ -95,7 +95,7 @@ sealed class ReleaseCommands(TextWriter output, TextWriter error, Func<string, c
             output.WriteLine();
             output.WriteLine($"Fingerprint (SHA-256): {key.Fingerprint}");
             output.WriteLine();
-            output.WriteLine("Next: put the public key in release-key.pub.pem, store the key file in your password manager and on the offline USB stick, then delete this copy (docs/releasing.md).");
+            output.WriteLine("Next: put the public key in release-key.pub.pem, store the key file in your password manager and in one place outside every repository (docs/releasing.md).");
             return 0;
         }
         catch (IOException ex)

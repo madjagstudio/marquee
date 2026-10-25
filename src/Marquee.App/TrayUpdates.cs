@@ -14,7 +14,7 @@ namespace Marquee.App;
 /// nothing found could be installed.
 ///
 /// `stateFile` is UpdateSchedule.FileName in the tray's data folder, `downloads` is MarqueePaths.Updates, and
-/// `secureFolder` makes that folder admin-only before each download. `now` and `delay` are the clock and Task.Delay, for
+/// `secureFolder` makes that folder admin-only, or refuses one that exists and isn't, before each download. `now` and `delay` are the clock and Task.Delay, for
 /// tests. Thread-safe; Offered is raised on a thread-pool thread.
 sealed class TrayUpdates : IDisposable
 {
