@@ -7,6 +7,7 @@ namespace Marquee.Editor.Model;
 public sealed partial class EditorSession
 {
     /// False while editing is paused, since autosave would write the undone text over the hand edit.
+    /// Text from outside that loads (the file fixed, or "Revert to opened version") ends the pause.
     /// False during a drag in a panel too (IsInteracting): its step isn't finished.
     public bool CanUndo => History.CanUndo && !IsPaused && !IsInteracting;
 
