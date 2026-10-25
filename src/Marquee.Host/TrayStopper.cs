@@ -40,8 +40,7 @@ public static class TrayStopper
     /// a second, except during an L-Connect handover: the engine then stops the handover's wait for the screen, but the
     /// handover must still start L-Connect's service and watcher again, and a service can't start while it is still
     /// stopping. That can take one LConnectHandover.DefaultStopTimeout for the stop it was waiting for, and one more for
-    /// each of the two to finish stopping before it starts. Ending the tray before then would leave L-Connect stopped,
-    /// and with it the fans and RGB, until the next restart. The rest is for a busy PC. A tray that quits ends the wait
+    /// each of the two to finish stopping before it starts. The rest is for a busy PC. A tray that quits ends the wait
     /// as it exits, so only a tray that hangs keeps the installer waiting this long.
     public static readonly TimeSpan Grace = 3 * LConnectHandover.DefaultStopTimeout + TimeSpan.FromSeconds(15);
 

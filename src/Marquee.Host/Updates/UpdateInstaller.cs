@@ -6,17 +6,14 @@ using Marquee.Host.Resources;
 
 namespace Marquee.Host.Updates;
 
-/// Downloads an offered update and its signature, and verifies the signature against the key updates must be signed
-/// with, before anything can run it. The tray downloads into %ProgramData%\Marquee\updates (MarqueePaths.Updates, made
-/// admin-only by SecureFolder.Ensure first), which no unelevated program can write, and VerifiedUpdate then holds the
-/// installer so that nothing can change it before msiexec reads it either. A missing or bad signature, a file of the
+/// Downloads an offered update and its signature into MarqueePaths.Updates, verifies them, and returns a
+/// VerifiedUpdate for installation. A missing or bad signature, a file of the
 /// wrong size, a failed download, or the placeholder key built in (ReleaseKey.IsPlaceholder) refuses the update with
 /// UpdateException, logged, and leaves nothing behind to run.
 ///
 /// The folder is one for the whole PC, so two users' elevated trays (fast user switching) that both install at once
 /// share it: one's clean-up or download may delete or replace the other's files, and that one then fails with a
-/// download or signature error, to be tried again. That is rare, and harmless: each tray verifies the installer it
-/// holds open and runs only that, so neither can run a file that didn't verify.
+/// download or signature error, to be tried again. VerifiedUpdate enforces the installer's integrity.
 ///
 /// `releaseKey` is the key updates must be signed with, `runningVersion` the running Marquee's informational version
 /// (for the User-Agent); ForThisApp passes the real ones and starts the real msiexec.

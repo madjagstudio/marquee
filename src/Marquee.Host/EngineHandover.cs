@@ -16,14 +16,9 @@ namespace Marquee.Host;
 sealed class EngineHandover : IDisposable
 {
     /// How long Auto leaves a busy screen alone after a handover failed, before it tries again: 1 minute after the
-    /// episode's first failure, 2 after its second, 5 after its third, then every 10 for as long as the episode lasts. A
-    /// failure means L-Connect's service didn't stop or Marquee didn't get the screen while it was stopped; trying again
-    /// at once would most likely fail the same way, and each try stops L-Connect's fan and RGB control for up to half a
-    /// minute. Without the pause, a screen that keeps coming back busy would have Marquee and L-Connect fighting over it
-    /// in a loop, and a cause that lasts (a screen slow to come back after sleep, a service L-Connect's depends on) is
-    /// tried less and less often. The render loop reports a busy screen only once per episode, so the next try comes
-    /// from a timer. Each episode starts the schedule again; one ends when the screen opens (by a handover or
-    /// otherwise) or when Marquee pauses, and the next busy screen is reported afresh.
+    /// episode's first failure, 2 after its second, 5 after its third, then every 10. See LConnectHandover for why
+    /// retries back off. The render loop reports a busy screen only once per episode, so a timer schedules retries.
+    /// Opening the screen or pausing Marquee ends the episode; the next busy screen starts the schedule again.
     public static readonly IReadOnlyList<TimeSpan> RetrySchedule =
         [TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10)];
 
@@ -178,8 +173,7 @@ sealed class EngineHandover : IDisposable
             if (_disposed || !_wanted || _cancel is not null) return false;
             if (_screenOpen.IsSet)
             {
-                // A busy report or a "Take over" that came after the screen opened: L-Connect has nothing to give, and
-                // stopping it would only pause its fans and RGB.
+                // A busy report or a "Take over" that came after the screen opened: nothing to take.
                 _log.Info(Strings.HandoverScreenOpen);
                 return false;
             }

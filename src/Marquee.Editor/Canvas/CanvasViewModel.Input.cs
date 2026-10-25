@@ -8,7 +8,7 @@ using SkiaSharp;
 
 namespace Marquee.Editor.Canvas;
 
-/// The canvas's mouse and keys (spec Part B, Canvas), each through the model:
+/// The canvas's mouse and keys, each through the model:
 /// - click selects, Shift-click adds or removes (Ctrl-click too for non-groups), and empty-canvas drags select a box;
 /// - a drag on a widget moves the selection, a handle resizes or turns it (CanvasDrag); Alt places freely, and Shift
 ///   keeps a resize's proportions or snaps a turn to 15°; Esc cancels;

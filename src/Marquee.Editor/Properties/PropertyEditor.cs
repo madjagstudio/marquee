@@ -2,7 +2,7 @@ using Marquee.Core.Themes.Schema;
 
 namespace Marquee.Editor.Properties;
 
-/// The control a properties row shows, one per kind of key (spec Part B, Properties panel).
+/// The control a properties row shows, one per kind of key.
 public enum PropertyEditor
 {
     /// A slider and a number box, with the unit.

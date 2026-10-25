@@ -1,6 +1,6 @@
 namespace Marquee.Editor.Model;
 
-/// How the properties panel groups a widget's style keys, as the design lays the Style section out. The catalog says
+/// How the properties panel groups a widget's style keys. The catalog says
 /// which keys a type draws with (AppliesTo); this table only says where each goes, in the order shown. A style key the
 /// catalog gains later shows under More until it is placed here, so it is never left out of the panel.
 public static class StyleSections

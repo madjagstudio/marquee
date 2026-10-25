@@ -10,7 +10,7 @@ using Marquee.Host;
 
 namespace Marquee.Editor.Shell;
 
-/// The toolbar (spec Part B, Toolbar): the theme picker and "New from an example", Add widget, undo and redo, align
+/// The toolbar: the theme picker and "New from an example", Add widget, undo and redo, align
 /// and distribute, zoom, and "Show on screen"; "Revert to opened version", in the banner and the theme menu; and the
 /// banner's "Make a copy to edit".
 public sealed partial class MainViewModel

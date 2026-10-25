@@ -12,8 +12,7 @@ namespace Marquee.App;
 /// with a balloon that names the installer's exit code and log. So a failed update never leaves the screen dark.
 /// Anything that goes wrong is a balloon, and the engine and the offer carry on, so the user can try again.
 ///
-/// Installing needs an elevated tray: only an administrator can write the updates folder, which is what keeps the
-/// installer from being swapped between the check and msiexec. An unelevated tray (started by hand) still checks, and
+/// Installing needs an elevated tray. An unelevated tray (started by hand) still checks, and
 /// its offer opens the release's page in the browser instead, to download and run the installer from there, as UAC
 /// would ask anyway. A build with the placeholder release key can't verify anything, so it doesn't check: "Check for
 /// updates" points to the releases page.

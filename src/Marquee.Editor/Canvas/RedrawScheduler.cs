@@ -2,7 +2,7 @@ using System.Windows.Threading;
 
 namespace Marquee.Editor.Canvas;
 
-/// When the canvas draws a frame (spec Part D):
+/// When the canvas draws a frame:
 /// - after each change, and each time the values move on (about once a second): Request, which draws once, soon,
 ///   however many requests come first, and no more often than MaxFramesPerSecond, so a drag's stream of mouse moves
 ///   draws at the screen's pace rather than once a move;
