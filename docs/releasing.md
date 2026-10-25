@@ -9,7 +9,7 @@ The updater finds the two files by name, so the names are fixed: the installer i
 that name plus `.sig`. The tag is always `v` and three numbers, with no `-rc.1` or other suffix. A release that is a
 draft or a prerelease, or lacks either file under those names, is never offered (`ReleaseFeed`).
 
-The signature is ECDSA P-256 over the file's SHA-256, made with one private key that only the owner holds. There is no
+The signature is ECDSA P-256 over the file's SHA-256, made with one private key that only the maintainer holds. There is no
 Authenticode: a first install shows Windows SmartScreen's "unknown publisher" prompt, and updates are protected by this
 signature instead. Authenticode can be added later without changing any of this.
 
@@ -21,7 +21,7 @@ The tool for all of it is `tools/Marquee.ReleaseTool`. It is not shipped. The sc
 - The private key lives in a password-encrypted PEM file (AES-256, its key derived from the password with 600,000
   rounds of PBKDF2-SHA256). The key is never written to disk unencrypted. Signing asks for the password and decrypts
   the key in memory only.
-- Two copies are kept: one as an attachment in the owner's password manager, in the same entry as the password, and one
+- Two copies are kept: one as an attachment in the maintainer's password manager, in the same entry as the password, and one
   on a USB stick kept offline. No other copies.
 - The public half is `src/Marquee.Host/Updates/release-key.pub.pem`, built into every Marquee as a resource
   (`ReleaseKey`). A build trusts that key and no other.
@@ -39,7 +39,7 @@ copy installed from it would then refuse every update, and its users would have 
 
 ## The key ceremony (once)
 
-On the owner's PC, from the root of the repository:
+On the maintainer's PC, from the root of the repository:
 
 1. Generate a password in the password manager (long and random) and save it in a new entry, "Marquee release signing
    key".
@@ -142,7 +142,7 @@ To rehearse the build before the ceremony, run the workflow manually with `dry_r
 the placeholder and uploads the three files as a `release-dry-run` workflow artifact; it creates no release. Manual
 runs with `dry_run` unchecked are refused: only a tag push creates a release draft. Never publish the rehearsal files.
 
-Once the tag workflow succeeds, use a checkout of that tag on the owner's PC, with the .NET 8 SDK and GitHub CLI
+Once the tag workflow succeeds, use a checkout of that tag on the maintainer's PC, with the .NET 8 SDK and GitHub CLI
 installed and `gh` authenticated for this repository. Get the encrypted key from the password manager or USB stick,
 then run from the repository root:
 

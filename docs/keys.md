@@ -173,7 +173,3 @@ Use `--sensors hwinfo` or `--sensors lhm` to select a source, and
 
 The one-off sensor listing does not include live FPS, status-line context usage,
 or custom pushes. With `sensors: none`, there are no raw hardware readings to list.
-
-The key mappings above follow `HardwareKeyMap`, `FpsProvider`, the agent providers
-and the custom-values parser. `KeysDocTests` checks every table key against the
-editor's `Samples.Knows` and requires every concrete `Samples.Keys` entry here.

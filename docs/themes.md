@@ -70,8 +70,7 @@ under plain headings such as **Text**, **Fill and border**, **Effects**,
 **Position** and **Motion**, depending on the item. **Every setting as written
 in layout.yaml** exposes the YAML names when you need the full detail. Expand
 the sections you need; styling sections start collapsed and remember how you
-leave them during the session. Hover over controls for tooltips explaining
-their purpose.
+leave them during the session.
 
 For a reading, open the value picker from **What it shows**. Sensors have plain
 names such as **CPU temperature**, grouped into categories including CPU, GPU,
@@ -152,8 +151,8 @@ The cost bar gives a plain verdict: **Light. The screen keeps up easily.**,
 will skip it.** Lower **Quality** to render at a smaller scale. This is an
 estimate of shader work, so also judge the result on the screen.
 
-**Still** offers **Colour**, **Gradient**, **Picture…** and **Video…**; video
-plays despite being in this gallery section. Images and videos are imported
+**Still** offers **Colour**, **Gradient** and **Picture…**. It also holds
+**Video…**, which plays a clip. Images and videos are imported
 into the theme. Backgrounds can combine fill, image, video and shader layers;
 their order determines what covers what. Under **More backgrounds**, **Import
 a shader file…** adds your own shader.
@@ -253,8 +252,7 @@ marquee validate "$env:LOCALAPPDATA\Marquee\themes\my-first-theme"
 ```
 
 Validation lists errors and warnings with file locations. An error gives a
-nonzero exit code; warnings still deserve attention even when validation
-succeeds. Validation needs no connected screen.
+nonzero exit code. Validation needs no connected screen.
 
 For VS Code with its YAML extension, associate the file with
 [`layout.schema.json`](layout.schema.json) for completion and validation.
@@ -267,8 +265,7 @@ In a repository theme under `themes/my-first-theme`, the first line can be:
 For a theme elsewhere, change that path to your local copy of the schema.
 The [theme reference](themes-reference.md) lists every layout key, allowed
 value and default. The [sensor key reference](keys.md) explains the readings,
-their units and sources. Use those references when moving beyond the controls
-you have explored in the editor.
+their units and sources.
 
 ## Write your own moving background
 
