@@ -17,7 +17,7 @@ public class ThemeReloadTimingTests(ITestOutputHelper output)
 {
     const int Reloads = 20;
 
-    /// The reload and first frame fail over 50 ms; a desktop PC measures about 10 ms.
+    /// The test fails if the reload and first frame take over 50 ms; a desktop PC takes about 10 ms.
     static readonly TimeSpan Limit = TimeSpan.FromMilliseconds(50);
 
     static string ThemeFolder(string name, [CallerFilePath] string file = "") =>

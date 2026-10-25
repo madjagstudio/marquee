@@ -91,7 +91,8 @@ public class ValueSourcesFeedTests
 
     [Fact]
     public Task Graph_history_raises_Updated_when_the_reading_is_steady() =>
-        // Off the test's context, Updated is raised on the poll's own thread, as it returns.
+        // Task.Run keeps the test off its own synchronization context, so Updated is raised on the poll's thread
+        // before PollAsync returns.
         Task.Run(async () =>
         {
             var pipes = UniquePipes();

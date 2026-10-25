@@ -6,8 +6,7 @@ namespace Marquee.Editor.Model;
 /// Applying commands as undo steps, and undoing and redoing them as whole texts.
 public sealed partial class EditorSession
 {
-    /// Undo is disabled while editing is paused, because autosave could overwrite the external edit.
-    /// Text from outside that loads (the file fixed, or "Revert to opened version") ends the pause.
+    /// False while editing is paused, since autosave would write the undone text over the hand edit.
     /// False during a drag in a panel too (IsInteracting): its step isn't finished.
     public bool CanUndo => History.CanUndo && !IsPaused && !IsInteracting;
 

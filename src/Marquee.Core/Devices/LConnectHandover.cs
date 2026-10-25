@@ -32,7 +32,8 @@ public sealed record HandoverResult(HandoverOutcome Outcome, string Message, IRe
 /// otherwise restart the service, then the service; lets Marquee open the
 /// screen and the ring; and then always starts the service and the watcher again. Stopping and starting them needs
 /// admin rights, which the elevated engine has. While the service is stopped, fans keep their last speed and
-/// L-Connect pauses its fan and RGB adjustments. Keep the stop brief and back off after failures (EngineHandover).
+/// L-Connect pauses its fan and RGB adjustments. That is why ScreenTimeout is short and EngineHandover backs off
+/// after a failed handover.
 public sealed class LConnectHandover(IServiceControl services, ILog log, TimeSpan? stopTimeout = null)
 {
     public const string ServiceName = SystemLConnectStatus.ServiceName;

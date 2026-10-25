@@ -1,8 +1,9 @@
 # Third-party notices
 
-Marquee is licensed under the PolyForm Noncommercial License 1.0.0 (`LICENSE`). The installer puts the components below in `Program Files\Marquee` beside it,
-each under its own license. The license and notices files each NuGet package comes with are installed too, in
-`licenses\<package>`, and building the installer stops if a file in it came from a package this page doesn't name.
+Marquee is licensed under the PolyForm Noncommercial License 1.0.0 (`LICENSE`). The installer puts the components below
+in `Program Files\Marquee` beside it, each under its own license. The license and notices files each NuGet package
+comes with are installed too, in `licenses\<package>`, and building the installer stops if a file in it came from a
+package this page doesn't name.
 
 ## What the installer redistributes
 

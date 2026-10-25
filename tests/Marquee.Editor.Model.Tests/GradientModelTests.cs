@@ -85,8 +85,7 @@ public class GradientModelTests
         Assert.Null(session.LoadError);
     }
 
-    /// Each paint row of each widget with a named style in the examples accepts a gradient, starting from the
-    /// inherited gradient when it has one.
+    /// Starting from the inherited gradient when it has one.
     [Theory]
     [MemberData(nameof(Examples))]
     public void Every_paint_row_of_a_widget_with_a_named_style_takes_a_gradient(string example)

@@ -9,9 +9,9 @@ The updater finds the two files by name, so the names are fixed: the installer i
 that name plus `.sig`. The tag is always `v` and three numbers, with no `-rc.1` or other suffix. A release that is a
 draft or a prerelease, or lacks either file under those names, is never offered (`ReleaseFeed`).
 
-The signature is ECDSA P-256 over the file's SHA-256, made with one private key that only the maintainer holds. There is no
-Authenticode: a first install shows Windows SmartScreen's "unknown publisher" prompt, and updates are protected by this
-signature instead. Authenticode can be added later without changing any of this.
+The signature is ECDSA P-256 over the file's SHA-256, made with one private key that only the maintainer holds. There
+is no Authenticode: a first install shows Windows SmartScreen's "unknown publisher" prompt, and updates are protected
+by this signature instead. Authenticode can be added later without changing any of this.
 
 The tool for all of it is `tools/Marquee.ReleaseTool`. It is not shipped. The scripts that run it are
 `tools/new-signing-key.ps1`, `tools/sign-release.ps1` and `tools/publish-release.ps1`.
@@ -58,19 +58,20 @@ On the maintainer's PC, from the root of the repository:
 4. Store `$HOME\marquee-release-key.pem` in the password manager entry: as an attachment, or as its text in the
    entry's notes if the password manager has no attachments. Add the fingerprint to the entry's notes.
 5. Move `$HOME\marquee-release-key.pem` to its second location, a folder outside every repository, and check that
-   copy and the password together work. The release tool is built from this working tree each time the scripts run it, so it now trusts the
-   public key from step 3, as Marquee will: `sign` refuses any key file but that key's (and refuses to sign at all while
-   the placeholder is built in), and `verify` checks against it when it is given no public key.
+   copy and the password together work. The release tool is built from this working tree each time the scripts run
+   it, so it now trusts the public key from step 3, as Marquee will: `sign` refuses any key file but that key's (and
+   refuses to sign at all while the placeholder is built in), and `verify` checks against it when it is given no
+   public key.
 
    ```powershell
    Set-Content $env:TEMP\scratch.txt 'key check'
-   tools\sign-release.ps1 <second copy>\marquee-release-key.pem $env:TEMP\scratch.txt
+   tools\sign-release.ps1 <second location>\marquee-release-key.pem $env:TEMP\scratch.txt
    dotnet run --project tools\Marquee.ReleaseTool -c Release -- verify $env:TEMP\scratch.txt
    Remove-Item $env:TEMP\scratch.txt, $env:TEMP\scratch.txt.sig
    ```
 
-6. Check the copy in the password manager the same way, then delete any other copy of the key file. It is encrypted,
-   but the fewer copies the better.
+6. Save the password manager's copy to a temporary folder, check it the same way, then delete that temporary file.
+   Keep the copy from step 5.
 7. Run `dotnet test -c Release`. `ReleaseKeyTests` checks that the embedded key is the one in the file and that
    no private key file is left in the repository, and `IsPlaceholder` turns false on its own.
 8. Commit `release-key.pub.pem`. From then on every build trusts only the new key.
@@ -109,9 +110,9 @@ CI's `installer` job (`.github/workflows/ci.yml`) also builds an older MSI from 
 installs, upgrades, repairs, reinstalls a rebuild of the same version, refuses a downgrade and uninstalls for real on
 the runner, checking the files, the PATH, the shortcut, the logon task, the permissions of `%ProgramData%\Marquee`,
 that `INSTALLFOLDER` is ignored and what uninstalling leaves. It installs machine-wide, so it refuses to run anywhere
-but a GitHub-hosted Actions runner. Its msiexec logs are the job's `install-logs` artifact, kept 14 days. Runs on main and manual runs also
-upload the MSI as an `msi` artifact, kept 1 day; PR runs don't, to spare the account's Actions storage. `-Version` is for that test
-only: a release's version is the one in `Directory.Build.props`.
+but a GitHub-hosted Actions runner. Its msiexec logs are the job's `install-logs` artifact, kept 14 days. Runs on main
+and manual runs also upload the MSI as an `msi` artifact, kept 1 day; PR runs don't, to spare the account's Actions
+storage. `-Version` is for that test only: a release's version is the one in `Directory.Build.props`.
 
 WiX stays on 5.0.2: v6 adds the Open Source Maintenance Fee. WiX's validation (ICE) runs as part of the build; keep it
 on. `build.ps1 -SkipValidation` exists only for a PC where the Windows Installer service can't run it: never build a
@@ -144,8 +145,8 @@ the placeholder and uploads the three files as a `release-dry-run` workflow arti
 runs with `dry_run` unchecked are refused: only a tag push creates a release draft. Never publish the rehearsal files.
 
 Once the tag workflow succeeds, use a checkout of that tag on the maintainer's PC, with the .NET 8 SDK and GitHub CLI
-installed and `gh` authenticated for this repository. Get the encrypted key from the maintainer's PC or the password manager,
-then run from the repository root:
+installed and `gh` authenticated for this repository. Get the encrypted key from the maintainer's PC or the password
+manager, then run from the repository root:
 
 ```powershell
 tools\publish-release.ps1 -Tag v0.1.0 -Key D:\marquee-release-key.pem

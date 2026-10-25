@@ -12,7 +12,7 @@ public class AutosaverHandEditTests
     [Fact]
     public void A_hand_edit_saved_just_before_the_autosave_is_reloaded_not_written_over()
     {
-        // The hand edit lands 0.1 s before the autosave, before the watcher reads it.
+        // The hand edit lands 0.1 s before the autosave writes, and before the watcher has read it.
         using var saving = new Saving();
         using var watcher = new ExternalChangeWatcher(saving.Session, saving.File, saving.Ui, saving.Clock);
         saving.Move(20);
