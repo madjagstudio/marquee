@@ -74,6 +74,21 @@ public class TestValuesPanelTests
     });
 
     [Fact]
+    public void Byte_readings_show_as_sizes() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("values",
+            "canvas: { orientation: landscape }\nwidgets: [{ type: value, at: [0, 0], size: [200, 60], source: gpu.vram_used }]\n"));
+        var sample = editor.Workspace.Values.Snapshot().TryGet("gpu.vram_used", out var reading) ? reading.Number!.Value : 0;
+        var vram = editor.Model.TestValues.Row("gpu.vram_used")!;
+        vram.Number = 3529506816;
+        Assert.Equal("3.3 GB", editor.Model.TestValues.Row("gpu.vram_used")!.ValueText);
+        // A stale pin keeps the sample's reading, marked.
+        vram.StaleCommand.Execute(null);
+        Assert.Equal(Strings.ValueStale(Marquee.Core.Expressions.Formatting.Bytes(sample)), editor.Model.TestValues.Row("gpu.vram_used")!.ValueText);
+    });
+
+    [Fact]
     public void Pins_change_the_snapshot_the_canvas_draws_with() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();

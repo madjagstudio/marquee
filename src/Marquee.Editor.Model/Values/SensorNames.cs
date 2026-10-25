@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Marquee.Core.Expressions;
 using Marquee.Core.Sensors;
 
 namespace Marquee.Editor.Model.Values;
@@ -46,9 +47,13 @@ public static class SensorNames
         if ((key == "now" || key.EndsWith(".resets_at", StringComparison.Ordinal) || key.EndsWith(".updated_at", StringComparison.Ordinal))
             && value.Number is { } seconds && seconds >= -62135596800 && seconds <= 253402300799)
             return DateTimeOffset.FromUnixTimeSeconds((long)seconds).ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
+        if (IsBytes(key) && value.Number is { } bytes) return Formatting.Bytes(bytes);
         var text = value.Number is { } number ? number.ToString("0.##", CultureInfo.CurrentCulture) : value.Text ?? "";
         return value.Number is not null && For(key).Unit is { } unit ? $"{text} {unit}" : text;
     }
+
+    /// The reading is a size in bytes, shown as the theme's `|bytes` helper shows it: "3.3 GB".
+    public static bool IsBytes(string key) => For(key).Unit == "bytes";
 
     public static IReadOnlyList<IGrouping<SensorCategory, SensorName>> Grouped(IEnumerable<string> keys) =>
         keys.Distinct(StringComparer.Ordinal).Select(For).OrderBy(name => name.Category)

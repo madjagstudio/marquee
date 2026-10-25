@@ -1,9 +1,11 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Xml.Linq;
@@ -105,6 +107,11 @@ public class ThemeTests
                 Assert.IsType<SolidColorBrush>(window.Resources["Ink"]);
                 Assert.Contains(window.Resources.MergedDictionaries,
                     dictionary => dictionary.Source.OriginalString.EndsWith("Theme/MadJag.xaml", StringComparison.Ordinal));
+                // The window itself takes the theme's style, not the system's white one, and asks Windows for a dark frame.
+                Assert.Equal(((SolidColorBrush)window.Resources["Ink"]).Color, Assert.IsType<SolidColorBrush>(window.Background).Color);
+                OffScreen(window).Show();
+                Assert.Equal(0, DwmGetWindowAttribute(new WindowInteropHelper(window).Handle, 20, out var dark, sizeof(int)));
+                Assert.Equal(1, dark);
             }
             finally { window.Close(); }
         }
@@ -184,6 +191,10 @@ public class ThemeTests
             window.Close();
         }
     });
+
+    // 20 is DWMWA_USE_IMMERSIVE_DARK_MODE.
+    [DllImport("dwmapi.dll")]
+    static extern int DwmGetWindowAttribute(IntPtr window, int attribute, out int value, int size);
 
     static Window OffScreen(Window window)
     {

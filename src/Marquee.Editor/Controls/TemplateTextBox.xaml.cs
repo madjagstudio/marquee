@@ -41,15 +41,8 @@ public partial class TemplateTextBox : UserControl
         DataObject.AddPastingHandler(Input, OnPaste);
         // Clipboard data travels as template text, never foreign rich-text UI.
         Input.AllowDrop = false;
-        _times.AddRange(Enum.GetValues<TimeFormat>().Select(format => new FormatChoice(TextTemplate.Pattern(format), format switch
-        {
-            TimeFormat.Hour12 => "12-hour", TimeFormat.Hour12Seconds => "12-hour with seconds",
-            TimeFormat.Hour24 => "24-hour", _ => "24-hour with seconds",
-        })));
-        _dates.AddRange(Enum.GetValues<DateFormat>().Select(format => new FormatChoice(TextTemplate.Pattern(format), format switch
-        {
-            DateFormat.Long => "Long date", DateFormat.Short => "Short date", DateFormat.MonthDay => "Month and day", _ => "Weekday",
-        })));
+        _times.AddRange(FormatChoice.Times());
+        _dates.AddRange(FormatChoice.Dates());
         TimeChoice.ItemsSource = _times;
         DateChoice.ItemsSource = _dates;
         RefreshDocument();
@@ -408,4 +401,17 @@ public sealed class FormatChoice(string pattern, string name) : ObservableObject
     public string Pattern { get; } = pattern;
     public string Label => _preview.Length == 0 ? name : name + " — " + _preview;
     public string Preview { set { if (Set(ref _preview, value)) Raise(nameof(Label)); } }
+
+    /// The time formats a clock offers: 12-hour or 24-hour, with or without seconds.
+    public static List<FormatChoice> Times() => Enum.GetValues<TimeFormat>().Select(format => new FormatChoice(TextTemplate.Pattern(format), format switch
+    {
+        TimeFormat.Hour12 => "12-hour", TimeFormat.Hour12Seconds => "12-hour with seconds",
+        TimeFormat.Hour24 => "24-hour", _ => "24-hour with seconds",
+    })).ToList();
+
+    /// The date formats a clock offers.
+    public static List<FormatChoice> Dates() => Enum.GetValues<DateFormat>().Select(format => new FormatChoice(TextTemplate.Pattern(format), format switch
+    {
+        DateFormat.Long => "Long date", DateFormat.Short => "Short date", DateFormat.MonthDay => "Month and day", _ => "Weekday",
+    })).ToList();
 }

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using Marquee.Core.Expressions;
 using Marquee.Editor.Model.Values;
@@ -26,13 +25,13 @@ public sealed record ValuePickerModeChoice(ValuePickerMode Mode, string Label);
 /// Shared expression editor. Drafts are checked as they change; only a pick or Commit asks the owner to write.
 public sealed class ValuePickerViewModel : ObservableObject
 {
-    // Pickers are recreated on selection changes; their value source lives for the editor session.
-    static readonly ConditionalWeakTable<ValueSources, Dictionary<string, SectionExpansion>> Expansion = new();
+    // Each picker starts with its sections closed. Pickers are recreated on selection changes, so a section opened in
+    // one stays open while that widget is selected and doesn't open in the next.
+    readonly Dictionary<string, SectionExpansion> _expansion = [];
     readonly ValueSources _sources;
     internal SectionExpansion ExpansionFor(string section)
     {
-        var states = Expansion.GetOrCreateValue(_sources);
-        if (!states.TryGetValue(section, out var state)) states[section] = state = new();
+        if (!_expansion.TryGetValue(section, out var state)) _expansion[section] = state = new();
         return state;
     }
     public SectionExpansion RawExpansion => ExpansionFor("raw");

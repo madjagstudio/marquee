@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:res="clr-namespace:Marquee.Editor.Resources">
+                    xmlns:res="clr-namespace:Marquee.Editor.Resources"
+                    xmlns:theme="clr-namespace:Marquee.Editor.Theme">
     <!-- Brand tokens. Picker colours are mathematical HSV endpoints, not UI accents. -->
     <Color x:Key="InkColor">#0A0A0B</Color>
     <SolidColorBrush x:Key="Ink" Color="{StaticResource InkColor}" />
@@ -81,9 +82,12 @@
             </Trigger>
         </Style.Triggers>
     </Style>
+    <!-- A window sets this with DynamicResource: a StaticResource on its own element looks before its resources load,
+         and finds the system's white Window style. -->
     <Style TargetType="Window" BasedOn="{StaticResource ControlBase}">
         <Setter Property="Background" Value="{StaticResource Ink}" />
         <Setter Property="FontSize" Value="13" />
+        <Setter Property="theme:DarkFrame.IsEnabled" Value="True" />
     </Style>
 
     <ControlTemplate x:Key="ButtonTemplate" TargetType="ButtonBase">

@@ -203,6 +203,7 @@
                         <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
                         <Grid DockPanel.Dock="Left">
                             <ToggleButton x:Name="SwatchButton" Width="30" Height="22" Padding="2" IsEnabled="{Binding IsEditable}"
+                                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                           ToolTip="{x:Static res:Strings.PickColorTip}">
                                 <Border Background="{StaticResource Checks}">
                                     <Rectangle Fill="{Binding SwatchBrush}" />
@@ -229,6 +230,7 @@
                         <TextBlock DockPanel.Dock="Left" Style="{StaticResource Label}" />
                         <Grid DockPanel.Dock="Left">
                             <ToggleButton x:Name="SwatchButton" Width="30" Height="22" Padding="2" IsEnabled="{Binding IsEditable}"
+                                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                           ToolTip="{x:Static res:Strings.PickColorTip}">
                                 <Border Background="{StaticResource Checks}">
                                     <Rectangle Fill="{Binding SwatchBrush}" />
@@ -518,6 +520,7 @@
             <StackPanel Visibility="{Binding HasProperties, Converter={StaticResource Visible}}">
                 <TextBlock x:Name="PlainHeading" Text="{Binding Heading}" FontFamily="{StaticResource HeadFont}" FontWeight="SemiBold" FontSize="16" Margin="0,2,0,6" TextWrapping="Wrap" />
                 <local:GaugeFormsView />
+                <local:ClockFormatsView />
                 <DockPanel Margin="0,2,0,6" Visibility="{Binding IsLayer, Converter={StaticResource Visible}}">
                     <TextBlock Text="{x:Static res:Strings.LayerKind}" Width="108" VerticalAlignment="Center" />
                     <Button ToolTip="{x:Static res:Strings.LayerKindTip}" Content="{x:Static res:Strings.BackgroundGallery}" Command="{Binding BackgroundGalleryCommand}" IsEnabled="{Binding CanEdit}" />

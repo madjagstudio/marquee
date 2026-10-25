@@ -1028,6 +1028,12 @@ Close it anyway? Your changes are kept, and offered the next time you open this 
   <data name="ItalicTip" xml:space="preserve"><value>Italic text.</value></data>
   <data name="BlendOverlayTip" xml:space="preserve"><value>Overlay: combine light and dark contrast.</value></data>
   <data name="GaugeFormChange" xml:space="preserve"><value>Change gauge form</value></data>
+  <data name="ClockTimeFormat" xml:space="preserve"><value>Time format</value></data>
+  <data name="ClockTimeFormatTip" xml:space="preserve"><value>Choose 12-hour or 24-hour time, with or without seconds, for the clock in this group.</value></data>
+  <data name="ClockDateFormat" xml:space="preserve"><value>Date format</value></data>
+  <data name="ClockDateFormatTip" xml:space="preserve"><value>Choose a long date, short date, month and day, or weekday for the date in this group.</value></data>
+  <data name="ClockCurrentFormat" xml:space="preserve"><value>Current format</value></data>
+  <data name="ClockFormatChange" xml:space="preserve"><value>Change clock format</value></data>
   <data name="StrikeIcon" xml:space="preserve"><value>S</value></data>
   <data name="ItalicIcon" xml:space="preserve"><value>I</value></data>
   <data name="TextAlignLeftTip" xml:space="preserve"><value>Align text to the left.</value></data>

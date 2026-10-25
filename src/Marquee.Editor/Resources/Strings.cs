@@ -30,6 +30,12 @@ public static class Strings
     public static string ItalicIcon => Get(nameof(ItalicIcon));
     public static string StrikeIcon => Get(nameof(StrikeIcon));
     public static string GaugeFormChange => Get(nameof(GaugeFormChange));
+    public static string ClockTimeFormat => Get(nameof(ClockTimeFormat));
+    public static string ClockTimeFormatTip => Get(nameof(ClockTimeFormatTip));
+    public static string ClockDateFormat => Get(nameof(ClockDateFormat));
+    public static string ClockDateFormatTip => Get(nameof(ClockDateFormatTip));
+    public static string ClockCurrentFormat => Get(nameof(ClockCurrentFormat));
+    public static string ClockFormatChange => Get(nameof(ClockFormatChange));
     public static string BlendOverlayTip => Get(nameof(BlendOverlayTip));
     public static string ItalicTip => Get(nameof(ItalicTip));
     public static string BoldIcon => Get(nameof(BoldIcon));

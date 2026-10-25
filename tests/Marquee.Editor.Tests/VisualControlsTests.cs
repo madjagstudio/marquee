@@ -78,6 +78,68 @@ public class VisualControlsTests
     });
 
     [Fact]
+    public void Swatches_fill_their_button_with_the_colour_for_widgets_the_ring_and_its_rules() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("ring", TextTheme.Replace("text: Hello", "text: Hello, style: { color: '#336699' }") +
+            "ring: { color: '#36D1DC', source: cpu.temp, when: [{ above: 80, color: '#FF5A36' }] }\n"));
+        var window = Show(editor.Model.Properties);
+        try
+        {
+            Assert.Equal(["#FF36D1DC", "#FFFF5A36"], SwatchColours(window));
+            window.Close();
+            editor.Session.Select([OpenEditor.P("widgets[0]")]);
+            window = Show(editor.Model.Properties);
+            Assert.Contains("#FF336699", SwatchColours(window));
+        }
+        finally { window.Close(); }
+    });
+
+    [Fact]
+    public void A_group_holding_a_clock_changes_its_time_and_date_formats_in_one_step() => Sta.Run(() =>
+    {
+        using var environment = new TestEnvironment();
+        using var editor = new OpenEditor(environment, environment.AddTheme("clock", "canvas: { orientation: landscape }\nwidgets: []\n"));
+        editor.Session.Apply(new Model.AddModule(Model.ModuleLibrary.All.Single(module => module.Name == "Clock and date")));
+        Assert.Equal([OpenEditor.P("widgets[0]")], editor.Session.Selection);
+        var window = Show(editor.Model.Properties);
+        try
+        {
+            var time = ClockChoice(window, "Time format");
+            Assert.Equal("HH:mm", time.SelectedValue);
+            var before = editor.Session.Document.Text;
+            time.SelectedItem = time.Items.Cast<FormatChoice>().Single(choice => choice.Pattern == "h:mm tt");
+            Sta.Pump();
+            Assert.True(editor.Session.Document.TryGetScalar(OpenEditor.P("widgets[0].children[0].text"), out var text));
+            Assert.Equal("{now|time:h:mm tt}", text);
+            Assert.Equal("h:mm tt", ClockChoice(window, "Time format").SelectedValue);
+            var date = ClockChoice(window, "Date format");
+            date.SelectedItem = date.Items.Cast<FormatChoice>().Single(choice => choice.Pattern == "D");
+            Sta.Pump();
+            Assert.True(editor.Session.Document.TryGetScalar(OpenEditor.P("widgets[0].children[1].text"), out text));
+            Assert.Equal("{now|date:D}", text);
+            Assert.True(editor.Session.Undo());
+            Assert.True(editor.Session.Undo());
+            Assert.Equal(before, editor.Session.Document.Text);
+            editor.Session.Select([OpenEditor.P("widgets[0].children[0]")]);
+            Sta.Pump();
+            Assert.DoesNotContain(Walk(window).OfType<ComboBox>(), box => box.IsVisible && box.Name == "GroupTimeFormat");
+        }
+        finally { window.Close(); }
+    });
+
+    static ComboBox ClockChoice(Window window, string name) => Walk(window).OfType<ComboBox>()
+        .Single(box => box.IsVisible && System.Windows.Automation.AutomationProperties.GetName(box) == name && box.Name.StartsWith("Group", StringComparison.Ordinal));
+
+    // The colours the swatch buttons draw, each over the whole button rather than collapsed to nothing.
+    static List<string> SwatchColours(Window window) => Walk(window).OfType<ToggleButton>()
+        .Where(b => b.IsVisible && b.Name == "SwatchButton" && !PropertiesView.GetRawLabels(b))
+        .Select(b => Walk(b).OfType<System.Windows.Shapes.Rectangle>().Single())
+        .Where(r => r.ActualWidth >= 20 && r.ActualHeight >= 12)
+        .Select(r => ((SolidColorBrush)r.Fill).Color.ToString())
+        .ToList();
+
+    [Fact]
     public void Gauge_forms_have_pictures_and_change_in_one_undo_step() => Sta.Run(() =>
     {
         using var environment = new TestEnvironment();

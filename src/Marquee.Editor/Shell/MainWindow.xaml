@@ -1,4 +1,4 @@
-<Window Style="{StaticResource {x:Type Window}}" x:Class="Marquee.Editor.Shell.MainWindow"
+<Window Style="{DynamicResource {x:Type Window}}" x:Class="Marquee.Editor.Shell.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:canvas="clr-namespace:Marquee.Editor.Canvas"

@@ -18,6 +18,13 @@ public class SensorNamesTests
         Assert.Equal(new SensorName(key, name, category, unit), SensorNames.For(key));
 
     [Fact]
+    public void Byte_readings_show_as_sizes_like_the_bytes_helper()
+    {
+        Assert.Equal("3.3 GB", SensorNames.Format("gpu.vram_used", Marquee.Core.Sensors.SensorValue.Of(3529506816)));
+        Assert.Equal("512 B", SensorNames.Format("ram.used", Marquee.Core.Sensors.SensorValue.Of(512)));
+    }
+
+    [Fact]
     public void All_concrete_sample_and_provider_keys_have_deliberate_names()
     {
         var root = Repository();
