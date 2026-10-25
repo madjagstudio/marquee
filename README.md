@@ -34,27 +34,10 @@ Marquee closes the trays and removes the program, shortcuts, PATH entry, logon t
 
 ## L-Connect and the screen
 
-Only one program can use the screen at a time. Closing L-Connect's window doesn't free it: its background
-service keeps it open. As Marquee's tray puts it: "Marquee can take it over while L-Connect keeps running your
-fans and RGB."
-
-The handover stops L-Connect's watcher and service, opens the screen, then starts both again. L-Connect skips
-the screen and continues controlling the other devices. While the service is stopped, fans keep their last
-speed; L-Connect pauses its fan and RGB adjustments. Taking over needs administrator rights.
-
-Set `lconnect.handover` in [`config.yaml`](#settings):
-
-| Mode | What happens |
-|---|---|
-| `off` (default) | No automatic handover. The tray still offers **Take over the screen from L-Connect**. With no explicit setting, it also offers a one-time introductory notification. |
-| `ask` | A notification offers to take over when L-Connect holds the screen; click it to agree. |
-| `auto` | Takes over when L-Connect holds the screen, including at startup; retries failed attempts with increasing waits. |
-
-**Always take over at start** in the tray sets `auto`; unchecking it sets `ask`. To disable automatic handover
-and the introductory notification, set `lconnect: { handover: off }`. To give the screen and ring back to
-L-Connect, pause or quit Marquee, then stop and start L-Connect's service from its tray menu. The handover
-doesn't permanently disable L-Connect's services. See [Sharing the screen with
-L-Connect](#sharing-the-screen-with-l-connect) for details.
+Closing L-Connect's window doesn't free the screen; its background service keeps it open. Choose **Take over the
+screen from L-Connect** in Marquee's tray menu to use the screen while L-Connect keeps managing your fans and RGB.
+Taking over needs administrator rights; see [Sharing the screen with L-Connect](#sharing-the-screen-with-l-connect)
+for setup and handover details.
 
 ## Making a theme
 
@@ -208,9 +191,7 @@ updates: check                # check | off; default check
 - `custom.max_keys` is how many different `custom.*` keys a running Marquee holds.
 - `ring` is the screen's LED ring: `theme` lets each theme set it, `off` keeps it dark, and a color shows that color
   for every theme. Quote the color: an unquoted `#` starts a comment.
-- `lconnect.handover` is whether Marquee takes the screen from L-Connect: `off` doesn't on its own, `ask` offers to in
-  a tray notification, and `auto` takes it without asking (see
-  [Sharing the screen with L-Connect](#sharing-the-screen-with-l-connect)).
+- `lconnect.handover` controls the [L-Connect handover](#sharing-the-screen-with-l-connect).
 - `updates: check` has the tray look for a newer release once a day; `updates: off` turns that off. See
   [Updates](#updates).
 
@@ -222,20 +203,18 @@ A command-line flag wins over `config.yaml`, `config.yaml` over the theme, and t
 `--no-claude-usage` and `--no-fps` likewise win over `http` and `providers`. Orientation is the exception: a theme
 never sets it (see [Orientation](#orientation)).
 
-A theme given by name (`example-agents`), on the command line or as `theme:`, is looked for in
-`%LOCALAPPDATA%\Marquee\themes`, then in a `themes` folder next to `marquee.exe`, then in the current folder. A value
-with a `\` or `/` in it, a full path, `.` or `..` is a path instead, relative to the current folder. In `config.yaml`,
-"the current folder" is the folder `config.yaml` is in, so the file means the same thing however Marquee was started.
+A theme name such as `example-agents` is looked for in `%LOCALAPPDATA%\Marquee\themes`, then beside `marquee.exe`
+in `themes`, then in the current folder. Paths in `config.yaml` are relative to that file's folder; paths on the
+command line are relative to the current folder.
 
-An unknown key or a bad value is an error with its line number (`config.yaml line 3: …`). At startup, a broken file
-means the default settings, with the error in the console and the log. `marquee run` picks up edits while it runs and
-changes only what the edit touches, keeping the values read so far: a new theme or `fps` is loaded first and then
-swapped in while the screen stays on, a new `orientation` reopens the screen, and a provider or `http` change restarts
-only that provider or the server. If the new settings can't be applied (the new theme doesn't load, say), it keeps
-the previous ones; a new theme that doesn't load is watched, and the new settings apply as soon as it is fixed and
-saved, with no need to save `config.yaml` again. An edit that breaks the file, or names a theme that can't be found, is logged with the reason (and
-the line) and changes nothing until the file is fixed; flags on the command line still win over whatever the file
-says.
+`marquee run` reloads settings when you save `config.yaml`. It changes only the settings you edited: a theme or
+frame-rate change keeps the screen on, orientation reopens it, and a provider or HTTP change restarts that part.
+Invalid edits leave the previous settings active and log the error with its line number. At startup, an invalid
+file uses the defaults instead. Command-line flags still take precedence.
+
+If a new theme fails to load, Marquee keeps the previous settings and watches the theme. Fixing and saving it
+applies the waiting settings without another edit to `config.yaml`. If the theme can't be found, correct its name
+or path in `config.yaml`.
 
 `marquee sensors` reads `sensors` and `providers.claude_usage` from `config.yaml` too, and `marquee push` reads `http`.
 `--config <file>` makes `run`, `sensors` and `push` read that file instead, to try settings out or keep several sets
@@ -275,18 +254,14 @@ balloon comes instead). A `config.yaml` without a `theme:` line shows `example-l
 
 `marquee run` while the tray is showing the screen says so and stops: pause the tray, or quit it, first.
 
-The logon task starts the tray as administrator, which game FPS and the L-Connect handover need. So the tray takes care
-with what your own programs can change:
+The logon task starts the tray as administrator, which game FPS and the L-Connect handover need. Files, folders
+and web pages open through Explorer with your normal rights. Logs and data use the administrator-only folder
+described in [Logs](#logs).
 
-- Files and folders it opens (themes, logs, `config.yaml`, a release page) open through Explorer, so the folder, your
-  editor and your browser run as you, not as administrator. If Explorer isn't running (after a crash, or with another
-  shell), they open nothing and a balloon says why.
-- It changes `config.yaml` only if neither the file nor a folder on its path is a junction or symbolic link, and the
-  file isn't a hard link: such a link could send an administrator's write anywhere on the PC. A write it refuses is
-  a balloon and a log line, and changes nothing; edit the file by hand instead. It makes a missing `themes` folder, or
-  `%LOCALAPPDATA%\Marquee`, only through a path without a link. A themes folder that is a junction already (to keep
-  your themes on another drive, say) opens as usual.
-- Its log and data go in an admin-only folder under `%ProgramData%\Marquee` (see [Logs](#logs)).
+If Explorer isn't running, the tray can't open files or web pages and shows a notification. Writes to
+`config.yaml` and creation of missing folders are refused through junctions or symbolic links; the config file
+also cannot be a hard link. The notification and log explain a refused write; you can edit the file by hand.
+An existing themes folder that is a junction can still be opened.
 
 ### Without administrator rights
 
@@ -320,14 +295,14 @@ closing the tray included) starts L-Connect again at once, and doesn't count as 
   screen from L-Connect". The first time L-Connect holds the screen, a user who hasn't set `lconnect.handover` gets the
   `ask` balloon below, once, so that they hear the handover exists. Its click takes the screen this once, and it adds:
   "To do this at every start, choose "Always take over at start" in Marquee's menu." Writing
-  `lconnect: { handover: off }` yourself turns that balloon off too. Without the tray, the log says how to hand the screen over by hand (below).
+  `lconnect: { handover: off }` yourself turns that balloon off too. Without the tray, the log explains the manual
+  handover below.
 - `ask`: whenever Marquee finds L-Connect using the screen, the tray shows a balloon: "L-Connect is using the screen.
   Marquee can take it over while L-Connect keeps running your fans and RGB. Click here to take over." Clicking it does.
-- `auto`: at start, and whenever Marquee finds the screen busy again (after you unplug it, say). If a try fails, Marquee
-  tries again for as long as L-Connect's service holds the screen: after 1 minute, then 2, then 5, then every 10
-  minutes, so Marquee and L-Connect never fight over the screen and a problem that lasts pauses L-Connect's fan control
-  less and less often. The waits start again at 1 minute whenever the screen is found busy afresh: after Marquee had it,
-  or after a pause. "Take over the screen from L-Connect" never waits for them. This holds for `marquee run` too.
+- `auto`: at start, and whenever Marquee finds the screen busy again (after you unplug it, say). Failed attempts
+  retry after 1, 2 and 5 minutes, then every 10 minutes while L-Connect's service holds the screen. Opening the screen
+  or pausing Marquee resets that schedule. **Take over the screen from L-Connect** bypasses the wait. This also
+  applies to `marquee run`.
 
 The tray's "Always take over at start" item writes `lconnect.handover: auto` to `config.yaml` when you check it, and
 `ask` when you uncheck it. Checking it while L-Connect has the screen also takes the screen at once, rather than at the
@@ -343,8 +318,7 @@ takes the screen once for a Marquee without those rights (a `marquee run` in ano
 L-Connect, waits until that Marquee has the screen (15 seconds at most), and starts L-Connect again. It does nothing
 when no Marquee is running, or when Marquee has the screen already.
 
-To turn the handover off, set `lconnect: { handover: off }`. It changes nothing in L-Connect itself: once Marquee
-quits, stopping and starting the service from L-Connect's tray icon gives the screen back to L-Connect.
+To turn the handover off, set `lconnect: { handover: off }`. It changes nothing in L-Connect itself.
 
 By hand, with the handover off:
 
@@ -445,13 +419,17 @@ style sets how its letters look. The box keys (`fill`, `stroke`, `radius`, `padd
 Every key, with its values and default, is in [docs/themes-reference.md](docs/themes-reference.md). VS Code completes
 and checks theme files once the YAML extension (Red Hat) is installed: the examples' first line,
 `# yaml-language-server: $schema=../../docs/layout.schema.json`, points it at [the schema](docs/layout.schema.json).
-That path works only inside this repo: a copied theme needs its first line pointed at the schema, until the public
-repo gives it a URL.
+For a copied theme, point that first line at a local copy of the schema or use the public URL:
 
-See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents`, and `themes/example-showcase` with
-`themes/example-showcase-portrait` for a vertically mounted screen. The showcase is a tour of the format's newer parts: a clock with the weekday, an outlined title in gradient letters, a video box, a big
-number with a small unit, shapes, dials, segmented meters, charts, a donut, wrapped text, rotation, blending, names
-and hidden widgets. See the [theme authoring guide](docs/themes.md) for the full walkthrough.
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/madjagstudios/marquee/main/docs/layout.schema.json
+```
+
+See `themes/example-landscape`, `themes/example-portrait`, `themes/example-agents`, and `themes/example-showcase`
+with `themes/example-showcase-portrait` for a vertically mounted screen. The showcase includes a clock with the
+weekday, an outlined gradient title, a video box, a number with a small unit, shapes, dials, segmented meters,
+charts, a donut, wrapped text, rotation, blending, names and hidden widgets. See the
+[theme authoring guide](docs/themes.md) for the full walkthrough.
 
 ### Shader backgrounds
 
@@ -613,35 +591,21 @@ names are checked as usual.
 
 ## Claude Code and Codex
 
-`marquee run` reads Claude Code and Codex status on its own. `marquee sensors` prints the session counts, the Codex
-values and Claude Code's limits (through `/usage`, below), but not `claude.context.pct` or custom values: those exist
-only inside a running `marquee run`.
+`marquee run` reads Claude Code and Codex status automatically. See the [sensor key reference](docs/keys.md) for
+their keys, sources and expiry rules, and which readings `marquee sensors` can list.
 
-| Keys | Source |
-|---|---|
-| `claude.five_hour.pct`, `claude.five_hour.resets_at`, `claude.seven_day.pct`, `claude.seven_day.resets_at`, `claude.updated_at` | Claude Code's `/usage`, which Marquee polls (every 5 minutes while it lists fresh limits), and its status line, through `marquee statusline` (below); the newest write wins |
-| `claude.seven_day_model.pct`, `claude.seven_day_model.resets_at`, `claude.seven_day_model.name` | Claude Code's `/usage`: the per-model weekly limit (`weekly_scoped`) on plans that have one, the most used one if there are several; `name` is the model as `/usage` shows it ("Opus", say) |
-| `claude.context.pct` | Claude Code's status line, through `marquee statusline` (below) |
-| `claude.sessions.total`, `claude.sessions.busy`, `claude.sessions.idle` | Running sessions in `~/.claude/sessions` |
-| `codex.primary.pct`, `codex.primary.resets_at`, `codex.primary.window_min`, the same for `codex.secondary`, `codex.updated_at` | The newest usage report in Codex's logs (`~/.codex/sessions`) |
-| `codex.sessions.total`, `codex.sessions.busy`, `codex.sessions.idle` | Codex threads (CLI, desktop app or IDE) whose newest log event is under 10 minutes old |
+Marquee checks Claude Code's usage limits every 5 minutes with `claude -p /usage` (no model call or cost). This
+needs a native `claude.exe` installation or the desktop app's bundled copy, logged in to a claude.ai subscription.
+API-key sessions have no usage limits. Set `providers: { claude_usage: off }` in `config.yaml`, or pass
+`--no-claude-usage` to `marquee run` or `marquee sensors`, to disable the poll.
 
-A Claude Code session is busy or idle as its session file says. A Codex session is busy while a turn is in progress
-(its last turn event is `task_started`) and idle after the turn completes or is interrupted.
+When Marquee runs elevated, it starts `claude` with your normal rights through Explorer. If Explorer is unavailable,
+it logs the problem and uses only status-line updates. The child runs with its auto-updater disabled and stops
+when Marquee exits.
 
-Claude Code's usage limits exist only on claude.ai subscriptions (its docs name Pro and Max; API-key sessions have
-none). Marquee checks them every 5 minutes by running `claude -p /usage` (no model call and no cost). That needs
-Claude Code installed (`claude.exe` on `PATH`, in `~/.local/bin`, or the desktop app's bundled copy) and logged in to a
-subscription, and it works for every Claude Code surface, so limits show up for desktop-app users too. The limits are
-those of the account the `claude` command line is logged in to (`/status` in a terminal `claude` session shows which).
-The desktop app keeps a login of its own, so if it uses a different account (a Team seat, say, next to a personal
-plan), Marquee shows the command line's account; log the command line in to the same account (`/login`) to match. An npm install
-provides only `claude.cmd`, which Marquee doesn't run; use the native installer or the desktop app. Add
-`--no-claude-usage` to `marquee run` or `marquee sensors`, or set `providers: { claude_usage: off }` in `config.yaml`,
-if you don't want Marquee starting `claude`. Marquee never
-starts `claude` elevated (unless Windows' UAC is off, where there is no boundary to protect): when Marquee runs elevated, it starts `claude` with your normal unelevated rights (taken from
-Explorer), and if it can't (no Explorer yet, for example), it logs that once and uses only the status line. `claude`
-runs with its auto-updater turned off, and one still running when Marquee exits is stopped with it.
+**Troubleshooting:** Marquee uses the account logged in to the `claude` command line, which can differ from the
+desktop app's account. Check `/status` in a terminal Claude session and use `/login` to match accounts. An npm-only
+installation supplies `claude.cmd`, which Marquee cannot run; use the native installer or desktop app.
 
 When Claude Code can't fetch fresh limits (`/usage` then falls back to its last-known bars and lists none), Marquee
 writes nothing, keeps the last values until they reset, and logs that once. It then checks less often, after 5, 10 and
@@ -658,13 +622,10 @@ line looks the same as before. It edits only `statusLine` in `~/.claude/settings
 that isn't an object), it changes nothing and says why. A project's `.claude/settings.json` or managed settings with
 their own `statusLine` take precedence over this one.
 
-Status-line updates arrive only while `marquee run` is going (elevated or not) and a Claude Code session is updating
-its status line; only programs running as your Windows account can hand them to Marquee. Terminal sessions (`claude`)
-run the status line; the Claude desktop app's Code tab doesn't, which is why Marquee also polls `/usage`. Between
-updates the limits keep their last value (`claude.updated_at` says how old it is), and each window goes stale (`—`)
-when it resets. If `claude` can't be found, isn't logged in or fails, Marquee logs that once and tries again after 5
-minutes. Which Codex window is primary depends on the plan: `codex.primary.window_min` is 300 for a 5-hour window and
-10080 for a weekly one.
+Status-line updates arrive while Marquee is running and a terminal Claude Code session is updating its status
+line. Only programs running as your Windows account can send them. The desktop app's Code tab does not run status
+lines, so it relies on the `/usage` poll. If `claude` is missing, logged out or fails, Marquee logs the problem once
+and retries after 5 minutes.
 
 `marquee run` and the tray keep the last limits across restarts in `%LOCALAPPDATA%\Marquee\claude-limits.json`, or,
 running as administrator, in `%ProgramData%\Marquee\users\<your SID>\claude-limits.json` (see [Logs](#logs) for why).
@@ -681,80 +642,27 @@ logs a warning and those keys go stale; everything else keeps working.
 
 ## Custom values
 
-Scripts can put their own values on the screen as `custom.*` keys. `marquee push` adds the `custom.` prefix, so these
-set `custom.build` and `custom.queue`:
-
-    marquee push build "passing" --ttl 10m
-    marquee push queue 12
-
-`push` needs `marquee run` to be going, and fails with an explanation if it isn't. A value that reads as a number is
-sent as a number; to send text that looks like a number, use HTTP. Over HTTP the key is written in full:
-
-    Invoke-RestMethod -Method Post -Uri http://127.0.0.1:47913/values -ContentType application/json `
-      -Body '{"custom.queue": 12, "ttl": "30s"}'
-
-Any HTTP client works if it sends `Content-Type: application/json`. Values are numbers or text (up to 256
-characters). Without `ttl` (`--ttl` for `push`) a value never goes stale; with it, the value goes stale (`—`) after
-that long. The endpoint listens on 127.0.0.1 only and refuses requests from other machines and from web pages. The
-default port is 47913; `http: { port: N }` in `config.yaml` or `--http-port` changes it, and `http: off` or
-`--no-http` turns it off. `marquee push` uses the port in `config.yaml`; if `marquee run` was started with
-`--http-port`, pass the same `--port` to `marquee push`.
-
-A running `marquee run` holds at most 1,000 different custom keys. Setting a key it already has always works; a push
-that would add a key past the limit is refused with a message saying so. A key frees its place 10 minutes after it goes
-stale, so keys pushed with a ttl come and go on their own. A key pushed without a ttl never goes stale, so it counts
-until `marquee run` restarts. Reuse a fixed set of key names rather than making new ones (per build number, say), or
-give them a ttl. `custom: { max_keys: N }` in `config.yaml` sets the limit, from 1 to 10,000.
+Scripts can send `custom.*` readings with `marquee push` or HTTP. The [custom value reference](docs/keys.md#custom)
+covers examples, expiry, server settings and limits.
 
 ## Hardware sensors
 
-See the [sensor and provider key reference](docs/keys.md) for all keys, units and stale-value behaviour.
+`marquee sensors` lists current readings; `marquee sensors --raw` also lists the hardware source's unmapped readings.
+See the [hardware key reference](docs/keys.md#hardware-cpu-gpu-ram-fans-and-voltages) for keys, units and how readings
+are selected.
 
-`marquee sensors` lists every key and its current value. Keys include `cpu.temp`, `cpu.load`, `cpu.clock`,
-`cpu.power`, `cpu.voltage`, `gpu.temp`, `gpu.load`, `gpu.clock`, `gpu.power`, `gpu.voltage`, `gpu.fan`,
-`gpu.vram_used`, `ram.used_pct`, `ram.used` and `fan.<name>`. A key whose source stops updating goes stale after
-5 seconds and shows `—`.
+Choose the source with `--sensors` or `sensors:` in `config.yaml`:
 
-`cpu.voltage` and `gpu.voltage` are the CPU's and the GPU's core voltage, in volts. With LibreHardwareMonitor, the CPU
-voltage needs the elevated tray (or an elevated terminal), as CPU temperatures do, and is missing unelevated; the GPU
-voltage usually doesn't, as the card's driver reports it. With HWiNFO, HWiNFO reads both. `gpu.fan` is the GPU's
-fan speed in RPM: the first fan, on a card with several. The card's fans are still listed as `fan.<name>` too. On a
-PC with two GPUs, such as a CPU's integrated graphics beside a card, `gpu.voltage` and `gpu.fan` come from the one with
-the most dedicated memory, the card.
-
-`marquee sensors --raw` then lists every reading the hardware source reported, sorted, as the source gives them: the
-hardware (`Cpu`, `Gpu`, `Memory`, or `Other` for the motherboard and everything else), the source's type for the
-reading, its label, its value in the source's own unit (HWiNFO names it; LibreHardwareMonitor's `Data` is GB and
-`SmallData` MB), and the device. Readings no key uses are listed too, and so are the zeros an unelevated
-LibreHardwareMonitor reports for sensors it can't read. Keys are picked by label, so when one is missing on your PC,
-`--raw` shows what the source calls that sensor. Like the rest of `marquee sensors`, it only reads.
-
-The source is `--sensors`, or `sensors:` in `config.yaml`.
-
-- **LibreHardwareMonitor** (`--sensors lhm`, the default) reads sensors directly. CPU temperatures and motherboard
-  sensors need Marquee running as administrator (the tray from its logon task, or an elevated terminal) and the
-  [PawnIO](https://pawnio.eu/) driver; without them those keys show `—`.
-  On some AMD cards (verified: Radeon RX 7800 XT) it reports only GPU load and memory, so `gpu.temp`, `gpu.clock`
-  and `gpu.power` stay `—`; use HWiNFO for those.
-- **HWiNFO** (`--sensors hwinfo`) reads HWiNFO's shared memory instead. Start HWiNFO and turn on
-  Settings → Shared Memory Support.
+- **LibreHardwareMonitor** (`lhm`, the default) reads sensors directly. CPU temperatures and motherboard sensors
+  need administrator rights and the [PawnIO](https://pawnio.eu/) driver, which you install separately.
+- **HWiNFO** (`hwinfo`) reads HWiNFO's shared memory. Start HWiNFO and enable **Settings → Shared Memory Support**.
+  Use it for AMD GPU readings unavailable through LibreHardwareMonitor, including on the Radeon RX 7800 XT.
 
 ## Game FPS
 
-`marquee run` measures the frame rate of the game in front:
-
-| Key | Value |
-|---|---|
-| `fps` | Frames per second over the last second |
-| `frametime` | The average time between frames over the last second, in ms |
-| `fps.1pct_low` | The 1% low: the average of the slowest 1% of frame times (at least one frame) over the last 10 seconds, or the last 2,000 frames when that is fewer (about 5 seconds at 400 fps), as frames per second |
-| `fps.app` | The game's process name, without `.exe` |
-
-The game is whichever process owns the window in front, checked every 250 ms; Marquee itself and `dwm.exe`, which
-draws the desktop, are left out. A game that presents more than one swap chain (an overlay or a launcher next to the
-game, say) is measured on the one with the most frames in the last second. The keys go stale 2 seconds after the
-game's last frame, so on the desktop they show `—`; a theme can hide them with `when: stale`. `marquee sensors`
-doesn't list them, since they need a game in front and a running, elevated `marquee run`.
+`marquee run` measures the game in front. See the [FPS key reference](docs/keys.md#fps) for readings, units and
+expiry. The foreground process is checked every 250 ms; if it has several swap chains, Marquee measures the one
+with the most frames in the last second.
 
 Frames are counted by [PresentMon](https://github.com/GameTechDev/PresentMon) 2.6.0, Intel's open-source frame-time
 tool (MIT). It is bundled next to `marquee.exe` as `PresentMon\PresentMon-2.6.0-x64.exe`, and Marquee checks its SHA-256
@@ -790,19 +698,20 @@ administrator) and Marquee makes it again, safely.
 
 ## Verified hardware
 
-| Device | Firmware | Notes |
-|---|---|---|
-| 8.8" Universal Screen (`1CBE:A088`) | `lianli88_0001_0023` | `portrait` is upright when mounted vertically; brightness works; the image persists after Marquee exits; about 21 ms per frame (~47 fps) including JPEG encoding |
-| 8.8" Universal Screen (`1CBE:A088`) with `marquee run` | `lianli88_0001_0023` | example themes at 30 fps for 12 min (render ~2.5 ms, send ~18 ms); `--fps 60` tops out at ~51 fps; hot reload in ~2 s with the last good layout kept on errors; letterboxing on an orientation mismatch; reconnects after unplugging |
-| 8.8" Universal Screen (`1CBE:A088`) with `example-agents` | `lianli88_0001_0023` | shader theme at 30 fps (render ~11 ms with the aurora at `scale: 0.25`, send ~26 ms, overlapped); `--fps 60` topped out at ~43 fps with the earlier `scale: 0.5`; Claude Code limits through the status line from terminal sessions (the desktop app's Code tab doesn't run status lines), with `marquee run` elevated or not; Codex limits and sessions; `marquee push` |
-| 8.8" Universal Screen (`1CBE:A088`) with config.yaml, video and game FPS | `lianli88_0001_0023` | `marquee run` with no folder, the theme named in config.yaml; fps changed live in config.yaml without the screen going dark, and a bad value refused with its line; an MP4 screen recording as a background layer at ~30 fps (render ~7 ms, send ~28 ms); game FPS, frame time, 1% low and app name from PresentMon with Marquee elevated, `—` on the desktop, and no PresentMon process or ETW session left after Ctrl+C |
-| 8.8" Universal Screen (`1CBE:A088`) with `example-showcase` (theme format v2) | `lianli88_0001_0023` | from the tray and the MSI: a needle dial with ticks, a segmented ring and bars, a two-series chart, a memory donut, and rotated, blended and wrapped text all read well; `marquee validate` passes the showcase and a copy, and refuses `rotate: 400` with its line; fps not measured |
-| 8.8" Universal Screen (`1CBE:A088`) with `example-showcase` (theme format v2.1), Ryzen 7 9800X3D and RX 7800 XT | `lianli88_0001_0023` | from the tray and the MSI: the clock and weekday, the outlined gradient title, the radar video box and the eased span readout read well; the clock followed a change of regional format and of time zone without a restart; `cpu.voltage` (the board's Vcore), `gpu.voltage` (the card, not the integrated GPU) and `gpu.fan` from LibreHardwareMonitor, checked with `marquee sensors --raw`; fps not measured |
-| 8.8" Universal Screen (`1CBE:A088`) with the theme editor (E1) | `lianli88_0001_0023` | from the MSI and the tray: a copy of the showcase arranged, resized, rotated, grouped and restyled (colours, a font-size slide as one undo step, letter spacing, a gradient title), an image added, with every save on the screen about a second later; test values from the tray, pinned, and from the editor's own readings with the tray stopped; a hand edit reloaded as one undo step, a broken file pausing editing until fixed, crash recovery after ending the editor in Task Manager, revert to the opened version, one editor per theme, and `marquee edit` |
-| 8.8" Universal Screen (`1CBE:A088`) with the theme editor (E2a) | `lianli88_0001_0023` | from the MSI: a background fill changed to a solid colour and a gradient; image and video layers added, reordered, deleted and restored with undo; a layer's kind switched; the aurora shader added with `heat` bound to a sensor expression, its scale slid with the cost hint following; portrait with the widgets rearranged into a column, and undone |
-| 8.8" Universal Screen (`1CBE:A088`) and its LED ring (`0416:8050`) with the theme editor (E2b) | `lianli88_0001_0023` | from the MSI: a widget's style saved as a named style, renamed, applied to a second widget, edited for both, and deleted with no change on screen; a when rule (above 80 → red) switching on the canvas and the screen with pinned test values; a shader uniform bound to CPU load with the picker and no typing; the LED ring set to breathe in blue with a rule to red, the preview strip and the real ring following a pinned source |
-| 8.8" Universal Screen (`1CBE:A088`) with the redesigned theme editor | `lianli88_0001_0023` | the owner's walkthroughs of the MadJag look and the layered panel in plain words: readings by plain name, inserting the time and date into text, groups that grow with their text, the start screen, a moving background picked from the gallery with its colour, speed and reaction controls, and modules added from the gallery with live previews |
-| 8.8" Universal Screen (`1CBE:A088`) and its LED ring (`0416:8050`) with the tray and the MSI | `lianli88_0001_0023` | installed per-machine with no options; the tray started elevated at logon with no UAC prompt; the one-time offer, and later `lconnect.handover: auto` at logon, took the screen from L-Connect's service about 10 s after the tray started, with L-Connect's service and watcher running again afterwards; the LED ring lit from the theme and `config.yaml`, dark on pause and quit; themes and orientation switched from the menu; sleep and wake, unplug and replug; a 0.1.0 → 0.1.1 upgrade restarted the tray in 2 s; uninstall; 22 fps rather than 30 with the tray (send ~28–29 ms), still being looked into |
+| Device and USB ID | Firmware | Verified | Measured frame rates and timings |
+|---|---|---|---|
+| 8.8" Universal Screen (`1CBE:A088`) | `lianli88_0001_0023` | Portrait orientation, brightness, image retained after exit | ~47 fps; ~21 ms per frame including JPEG encoding |
+| Same screen, example themes | `lianli88_0001_0023` | Rendering, hot reload, letterboxing, USB reconnect | 30 fps for 12 min; render ~2.5 ms, send ~18 ms; `--fps 60` reaches ~51 fps; reload ~2 s |
+| Same screen, `example-agents` | `lianli88_0001_0023` | Aurora, Claude and Codex readings, custom values | 30 fps at `scale: 0.25`; render ~11 ms, send ~26 ms, overlapped; `--fps 60` reaches ~43 fps at `scale: 0.5` |
+| Same screen, video and game FPS | `lianli88_0001_0023` | Config reload, MP4 background, PresentMon readings and cleanup | ~30 fps; render ~7 ms, send ~28 ms |
+| Same screen, `example-showcase` v2 and v2.1; Ryzen 7 9800X3D, RX 7800 XT | `lianli88_0001_0023` | Widgets, text, clock locale/time-zone changes, voltages, GPU fan | FPS not measured |
+| Same screen and LED ring (`0416:8050`), theme editor | `lianli88_0001_0023` | Editing, undo, recovery, layers, styles, rules, gallery, sensor bindings and ring effects | Saves reach screen in about 1 s; FPS not measured |
+| Same screen and LED ring (`0416:8050`), tray and MSI | `lianli88_0001_0023` | Install, elevated logon, L-Connect handover, ring, theme switching, sleep/wake, reconnect, upgrade, uninstall | 22 fps; send ~28–29 ms; handover ~10 s after tray start; 0.1.0 → 0.1.1 upgrade restarts tray in 2 s |
+
+Known limitations:
+
+- Tray rendering reaches 22 fps rather than the 30 fps target; this remains unresolved.
+- LibreHardwareMonitor exposes only GPU load and memory on the tested RX 7800 XT; use HWiNFO for the other readings.
 
 ## Licence and third-party notices
 
