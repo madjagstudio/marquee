@@ -12,7 +12,7 @@ namespace Marquee.App.Tests.TestSupport;
 /// Nothing here opens a socket.
 sealed class FakeGitHub : HttpMessageHandler
 {
-    public const string Downloads = "https://github.com/madjagstudios/marquee/releases/download";
+    public const string Downloads = "https://github.com/madjagstudio/marquee/releases/download";
 
     int _apiRequests;
     int _installerRequests;
@@ -39,7 +39,7 @@ sealed class FakeGitHub : HttpMessageHandler
     /// A client over this handler, with no timeout of its own, as UpdateHttp.CreateClient makes the real one.
     public HttpClient Client() => new(this, disposeHandler: false) { Timeout = Timeout.InfiniteTimeSpan };
 
-    public static string ReleasePage(string version) => $"https://github.com/madjagstudios/marquee/releases/tag/v{version}";
+    public static string ReleasePage(string version) => $"https://github.com/madjagstudio/marquee/releases/tag/v{version}";
 
     static string InstallerName(string version) => $"Marquee-{version}-x64.msi";
 

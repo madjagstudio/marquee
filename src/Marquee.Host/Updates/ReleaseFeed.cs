@@ -4,7 +4,7 @@ using Marquee.Host.Resources;
 
 namespace Marquee.Host.Updates;
 
-/// Reads GitHub's answer to "the latest release of madjagstudios/marquee" (the REST API's release object). A release is
+/// Reads GitHub's answer to "the latest release of madjagstudio/marquee" (the REST API's release object). A release is
 /// offered only when it is published (not a draft or a prerelease), its tag is a plain version (ReleaseVersion), and it
 /// has both files the updater needs, under the fixed names the release workflow gives them:
 ///
@@ -18,10 +18,10 @@ namespace Marquee.Host.Updates;
 public static class ReleaseFeed
 {
     /// The one address the update check asks.
-    public const string LatestReleaseUrl = "https://api.github.com/repos/madjagstudios/marquee/releases/latest";
+    public const string LatestReleaseUrl = "https://api.github.com/repos/madjagstudio/marquee/releases/latest";
 
     /// Marquee's releases on GitHub, for a person to download from in a browser.
-    public const string ReleasesPage = "https://github.com/madjagstudios/marquee/releases";
+    public const string ReleasesPage = "https://github.com/madjagstudio/marquee/releases";
 
     /// The largest installer the updater downloads, far more than Marquee needs, so a release that says more is a
     /// mistake or worse.

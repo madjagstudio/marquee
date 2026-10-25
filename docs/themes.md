@@ -262,7 +262,7 @@ In a repository theme under `themes/my-first-theme`, the first line can be:
 ```
 
 For a theme elsewhere, change that path to your local copy of the schema or
-`https://raw.githubusercontent.com/madjagstudios/marquee/main/docs/layout.schema.json`.
+`https://raw.githubusercontent.com/madjagstudio/marquee/main/docs/layout.schema.json`.
 The [theme reference](themes-reference.md) lists every layout key, allowed
 value and default. The [sensor key reference](keys.md) explains the readings,
 their units and sources.
