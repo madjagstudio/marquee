@@ -3,7 +3,7 @@ using Marquee.Host.Updates;
 
 namespace Marquee.ReleaseTool;
 
-/// The owner's release commands. Passwords come from `askPassword` (the console, without echo, in Program; a fake in the
+/// The maintainer's release commands. Passwords come from `askPassword` (the console, without echo, in Program; a fake in the
 /// tests), are held as char arrays and cleared once used. Exit codes: 0 done, 1 refused or failed, 2 usage.
 ///
 /// `builtInKey` is the public key Marquee is built to trust (ReleaseKey.Public, compiled into the tool from the same
@@ -249,7 +249,7 @@ sealed class ReleaseCommands(TextWriter output, TextWriter error, Func<string, c
 
     int Usage()
     {
-        error.WriteLine("Marquee release tool: the owner's key and signing commands (docs/releasing.md). Not shipped.");
+        error.WriteLine("Marquee release tool: the maintainer's key and signing commands (docs/releasing.md). Not shipped.");
         error.WriteLine();
         error.WriteLine("  check-key                  refuse the placeholder, or print the built-in key's fingerprint");
         error.WriteLine("  hashes <file>...           write SHA256SUMS beside the first file");

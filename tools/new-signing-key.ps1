@@ -1,4 +1,4 @@
-# Makes the release signing key: a P-256 key in a password-encrypted PEM file. Run it once, on the owner's PC, as the
+# Makes the release signing key: a P-256 key in a password-encrypted PEM file. Run it once, on the maintainer's PC, as the
 # key ceremony in docs/releasing.md describes. It asks for the password twice, never overwrites a file, and refuses a
 # path inside a git work tree (this repository included), so the key is written outside it.
 #
