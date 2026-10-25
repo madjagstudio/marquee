@@ -259,11 +259,11 @@ The logon task starts the tray as administrator, which game FPS and the L-Connec
 and web pages open through Explorer with your normal rights. Logs and data use the administrator-only folder
 described in [Logs](#logs).
 
-If Explorer isn't running, the tray can't open files or web pages and shows a balloon instead. The tray won't write `config.yaml`, or make a missing folder, through a junction or
-symbolic link, which could send an administrator's write somewhere else. It won't edit a `config.yaml` that is a
-hard link either, since reading it as administrator could expose a file you can't otherwise read. The balloon and
-log explain a refused write; you can edit the file by hand. An existing themes folder that is a junction can
-still be opened.
+If Explorer isn't running, the tray can't open files or web pages and shows a balloon instead. The tray won't write
+`config.yaml`, or make a missing folder, through a junction or symbolic link, which could send an administrator's
+write somewhere else. It won't edit a `config.yaml` that is a hard link either, since reading it as administrator
+could expose a file you can't otherwise read. The balloon and log explain a refused write; you can edit the file by
+hand. An existing themes folder that is a junction can still be opened.
 
 ### Without administrator rights
 
