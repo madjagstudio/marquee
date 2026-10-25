@@ -1,12 +1,13 @@
 using System.Formats.Asn1;
 using System.Security.Cryptography;
 using Marquee.Host.Updates;
+using Marquee.ReleaseTool.Tests.TestSupport;
 
 namespace Marquee.ReleaseTool.Tests;
 
 public class SigningKeyTests
 {
-    const string Password = "a long test password";
+    static readonly string Password = TestKeys.Password;
 
     static readonly byte[] Installer = "pretend this is an MSI"u8.ToArray();
 
@@ -39,9 +40,9 @@ public class SigningKeyTests
     {
         var created = SigningKey.Create(Password);
 
-        Assert.StartsWith("-----BEGIN ENCRYPTED PRIVATE KEY-----", created.EncryptedPem);
-        Assert.DoesNotContain("-----BEGIN PRIVATE KEY-----", created.EncryptedPem);
-        Assert.DoesNotContain("-----BEGIN EC PRIVATE KEY-----", created.EncryptedPem);
+        Assert.StartsWith(TestKeys.PemHeader("ENCRYPTED PRIVATE KEY"), created.EncryptedPem);
+        Assert.DoesNotContain(TestKeys.PemHeader("PRIVATE KEY"), created.EncryptedPem);
+        Assert.DoesNotContain(TestKeys.PemHeader("EC PRIVATE KEY"), created.EncryptedPem);
         Assert.StartsWith("-----BEGIN PUBLIC KEY-----", created.PublicPem);
         Assert.DoesNotContain("PRIVATE", created.PublicPem);
     }
