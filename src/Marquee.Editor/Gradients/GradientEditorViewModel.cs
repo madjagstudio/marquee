@@ -13,7 +13,7 @@ namespace Marquee.Editor.Gradients;
 /// whether a drag is pulling it off the bar to remove it.
 public sealed record GradientStopView(int Index, string Color, double Position, bool IsSelected, bool IsLeaving);
 
-/// The gradient editor (spec Part B, Gradient editor), over a GradientModel of one paint:
+/// The gradient editor, over a GradientModel of one paint:
 /// - linear or radial;
 /// - a bar of stops: drag one along it (writing `stops`), click the bar to add a stop there in the colour the gradient
 ///   has at that point, remove the chosen one with Del or by dragging it off the bar; recolour the chosen one;

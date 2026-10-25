@@ -161,7 +161,6 @@ public class EditorWorkspaceTests
     [Fact]
     public void A_broken_layout_with_unsaved_changes_left_behind_says_where_they_are() => Sta.Run(() =>
     {
-        // The QA review's R6: recovery is offered only once a theme opens, so a hand-broken file used to hide it.
         using var environment = new TestEnvironment();
         var broken = environment.AddTheme("broken", "widgets: [ { type: shape\n");
         var recovery = environment.Environment.Folders.RecoveryFile(broken);

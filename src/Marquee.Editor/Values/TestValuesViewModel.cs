@@ -3,7 +3,7 @@ using Marquee.Editor.Mvvm;
 
 namespace Marquee.Editor.Values;
 
-/// The test values panel (spec Part D): every key the theme reads, then `now`, each with where its value comes from
+/// The test values panel: every key the theme reads, then `now`, each with where its value comes from
 /// (pinned, the tray, the editor's own readings or a sample) and the value; and a pin for each, to a number on a slider
 /// over the key's range, stale or missing, with a pattern for a key a graph draws; `now` pins to a date and time.
 /// "Unpin all" ends every pin, and the panel says when the tray isn't running. Pins are never saved.

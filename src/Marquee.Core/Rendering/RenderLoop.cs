@@ -92,8 +92,7 @@ public sealed class RenderLoop : IDisposable
 
     /// Makes the next attempt to open the screen come with the next frame instead of after the rest of ReconnectDelay.
     /// Thread-safe. The sending thread wakes for every frame anyway, but while the screen is away it only tries to open
-    /// it every ReconnectDelay; the handover calls this once L-Connect's service has stopped, because every second until
-    /// Marquee has the screen is a second longer that L-Connect isn't running the fans and RGB.
+    /// it every ReconnectDelay; the handover calls this once L-Connect's service has stopped.
     public void RetryNow() => Volatile.Write(ref _retryNow, 1);
 
     /// `--fps` (or config.yaml's fps): the rate for every theme, or null for each theme's canvas.fps. Thread-safe; it

@@ -13,7 +13,6 @@ namespace Marquee.Editor.Model;
 /// Not thread-safe: the session uses it from the UI thread.
 public sealed class UndoStack
 {
-    /// The spec's "last 500 steps".
     public const int DefaultCapacity = 500;
 
     /// Long enough for a slider's changes to arrive as one, short enough that two deliberate edits of a key don't.

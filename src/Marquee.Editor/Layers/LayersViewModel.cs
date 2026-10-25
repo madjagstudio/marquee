@@ -7,7 +7,7 @@ using Marquee.Editor.Resources;
 
 namespace Marquee.Editor.Layers;
 
-/// The layers panel (spec Part B, Layers panel), over LayersModel:
+/// The layers panel, over LayersModel:
 /// - widgets front to back, indented under folding groups, then background layers with their own add menu;
 /// - selection shared with the canvas: a click selects, Ctrl-click adds or removes, Shift-click takes the run of rows
 ///   between; and the canvas's selection shows here;

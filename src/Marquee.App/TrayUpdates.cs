@@ -13,8 +13,8 @@ namespace Marquee.App;
 /// edit, turns it on and off. While the placeholder release key is built in, nothing is checked on schedule, since
 /// nothing found could be installed.
 ///
-/// `stateFile` is UpdateSchedule.FileName in the tray's data folder, `downloads` MarqueePaths.Updates, made admin-only
-/// by `secureFolder` (SecureFolder.Ensure) before each download. `now` and `delay` are the clock and Task.Delay, for
+/// `stateFile` is UpdateSchedule.FileName in the tray's data folder, `downloads` is MarqueePaths.Updates, and
+/// `secureFolder` prepares that folder before each download. `now` and `delay` are the clock and Task.Delay, for
 /// tests. Thread-safe; Offered is raised on a thread-pool thread.
 sealed class TrayUpdates : IDisposable
 {

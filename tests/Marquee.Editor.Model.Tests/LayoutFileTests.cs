@@ -48,8 +48,7 @@ public class LayoutFileTests
     [Fact]
     public void A_replace_that_fails_part_way_puts_layout_yaml_back()
     {
-        // The QA re-review's second defect: File.Replace failing with ERROR_UNABLE_TO_MOVE_REPLACEMENT_2 has moved the
-        // file to the backup name, which Write's clean-up used to delete.
+        // File.Replace failing with ERROR_UNABLE_TO_MOVE_REPLACEMENT_2 has moved the file to the backup name.
         using var setup = new Setup();
         setup.Layout.Replace = (temporary, path, displaced) =>
         {

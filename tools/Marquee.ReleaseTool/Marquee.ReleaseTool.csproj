@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- The owner's release tool (docs/releasing.md): makes the release signing key and signs release files. It is not
-       shipped and nothing that ships references it. Its messages are for the owner alone, so they are written in the
+  <!-- The maintainer's release tool (docs/releasing.md): makes the release signing key and signs release files. It is not
+       shipped and nothing that ships references it. Its messages are for the maintainer alone, so they are written in the
        code rather than in a resource file. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,7 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- The very source Marquee verifies with, compiled in, so the tool writes exactly the format the app reads without
-         pulling the engine and its providers into the owner's tool. -->
+         pulling the engine and its providers into the maintainer's tool. -->
     <Compile Include="..\..\src\Marquee.Host\Updates\ReleaseSignature.cs" Link="ReleaseSignature.cs" />
     <!-- And the key Marquee is built to trust, from the same file under the same resource name, so sign refuses any
          other key and verify checks against it by default: built from the same commit, the tool and Marquee trust the

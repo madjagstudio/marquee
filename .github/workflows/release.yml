@@ -50,7 +50,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.current }}
         run: |
           dotnet run --project tools/Marquee.ReleaseTool -c Release -p:UseSharedCompilation=false -- hashes "artifacts/Marquee-$env:VERSION-x64.msi" "artifacts/marquee-$env:VERSION.zip"
-      # CI has no private key. The owner checks these hashes, signs both files and publishes the draft locally.
+      # CI has no private key. The maintainer checks these hashes, signs both files and publishes the draft locally.
       - name: Create the draft release
         if: github.event_name == 'push'
         shell: pwsh
@@ -60,7 +60,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.current }}
         run: |
           $tag = $env:TAG
-          gh release create $tag --draft --verify-tag --title $tag --notes "Release files await the owner's signature." "artifacts/Marquee-$env:VERSION-x64.msi" "artifacts/marquee-$env:VERSION.zip" artifacts/SHA256SUMS
+          gh release create $tag --draft --verify-tag --title $tag --notes "Release files await the maintainer's signature." "artifacts/Marquee-$env:VERSION-x64.msi" "artifacts/marquee-$env:VERSION.zip" artifacts/SHA256SUMS
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
         with:

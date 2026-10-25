@@ -9,7 +9,7 @@ The updater finds the two files by name, so the names are fixed: the installer i
 that name plus `.sig`. The tag is always `v` and three numbers, with no `-rc.1` or other suffix. A release that is a
 draft or a prerelease, or lacks either file under those names, is never offered (`ReleaseFeed`).
 
-The signature is ECDSA P-256 over the file's SHA-256, made with one private key that only the owner holds. There is no
+The signature is ECDSA P-256 over the file's SHA-256, made with one private key that only the maintainer holds. There is no
 Authenticode: a first install shows Windows SmartScreen's "unknown publisher" prompt, and updates are protected by this
 signature instead. Authenticode can be added later without changing any of this.
 
@@ -21,8 +21,8 @@ The tool for all of it is `tools/Marquee.ReleaseTool`. It is not shipped. The sc
 - The private key lives in a password-encrypted PEM file (AES-256, its key derived from the password with 600,000
   rounds of PBKDF2-SHA256). The key is never written to disk unencrypted. Signing asks for the password and decrypts
   the key in memory only.
-- Two copies are kept: one as an attachment in the owner's password manager, in the same entry as the password, and one
-  on a USB stick kept offline. No other copies.
+- Two copies are kept, both outside any repository: one in the maintainer's password manager, in the same entry as
+  the password, and one on the maintainer's PC. No other copies.
 - The public half is `src/Marquee.Host/Updates/release-key.pub.pem`, built into every Marquee as a resource
   (`ReleaseKey`). A build trusts that key and no other.
 
@@ -39,7 +39,7 @@ copy installed from it would then refuse every update, and its users would have 
 
 ## The key ceremony (once)
 
-On the owner's PC, from the root of the repository:
+On the maintainer's PC, from the root of the repository:
 
 1. Generate a password in the password manager (long and random) and save it in a new entry, "Marquee release signing
    key".
@@ -55,21 +55,22 @@ On the owner's PC, from the root of the repository:
 3. Replace the contents of `src/Marquee.Host/Updates/release-key.pub.pem` with the public key the tool printed (the
    `-----BEGIN PUBLIC KEY-----` block). Leave `ReleaseKey`'s placeholder fingerprint as it is: it is how a build that
    still carries the placeholder knows it has no release key.
-4. Attach `$HOME\marquee-release-key.pem` to the password manager entry. Paste the fingerprint into the entry's notes.
-5. Copy `$HOME\marquee-release-key.pem` to the USB stick, and check that copy and the password together work, outside
-   the repository. The release tool is built from this working tree each time the scripts run it, so it now trusts the
+4. Store `$HOME\marquee-release-key.pem` in the password manager entry: as an attachment, or as its text in the
+   entry's notes if the password manager has no attachments. Add the fingerprint to the entry's notes.
+5. Move `$HOME\marquee-release-key.pem` to its second location, a folder outside every repository, and check that
+   copy and the password together work. The release tool is built from this working tree each time the scripts run it, so it now trusts the
    public key from step 3, as Marquee will: `sign` refuses any key file but that key's (and refuses to sign at all while
    the placeholder is built in), and `verify` checks against it when it is given no public key.
 
    ```powershell
    Set-Content $env:TEMP\scratch.txt 'key check'
-   tools\sign-release.ps1 E:\marquee-release-key.pem $env:TEMP\scratch.txt
+   tools\sign-release.ps1 <second copy>\marquee-release-key.pem $env:TEMP\scratch.txt
    dotnet run --project tools\Marquee.ReleaseTool -c Release -- verify $env:TEMP\scratch.txt
    Remove-Item $env:TEMP\scratch.txt, $env:TEMP\scratch.txt.sig
    ```
 
-6. Delete the working copy: `Remove-Item $HOME\marquee-release-key.pem`. It is encrypted, but the fewer copies the
-   better.
+6. Check the copy in the password manager the same way, then delete any other copy of the key file. It is encrypted,
+   but the fewer copies the better.
 7. Run `dotnet test -c Release`. `ReleaseKeyTests` checks that the embedded key is the one in the file and that
    no private key file is left in the repository, and `IsPlaceholder` turns false on its own.
 8. Commit `release-key.pub.pem`. From then on every build trusts only the new key.
@@ -118,7 +119,7 @@ release with it.
 
 ## Signing a release
 
-1. Get the key file: save the attachment from the password manager to a local folder, or use the USB stick.
+1. Get the key file: the copy on the maintainer's PC, or one saved from the password manager.
 2. Sign the release files:
 
    ```powershell
@@ -129,7 +130,7 @@ release with it.
    signs nothing then. It writes `<file>.sig` beside each file and checks each signature with the public half as soon as
    it is written. It prints the key's fingerprint: compare it with the one in the password manager entry.
 3. Upload each file together with its `.sig` to the GitHub release.
-4. Delete the key file you saved in step 1 (not the USB copy).
+4. Delete any key file you saved from the password manager in step 1.
 
 ## Publishing a release
 
@@ -142,8 +143,8 @@ To rehearse the build before the ceremony, run the workflow manually with `dry_r
 the placeholder and uploads the three files as a `release-dry-run` workflow artifact; it creates no release. Manual
 runs with `dry_run` unchecked are refused: only a tag push creates a release draft. Never publish the rehearsal files.
 
-Once the tag workflow succeeds, use a checkout of that tag on the owner's PC, with the .NET 8 SDK and GitHub CLI
-installed and `gh` authenticated for this repository. Get the encrypted key from the password manager or USB stick,
+Once the tag workflow succeeds, use a checkout of that tag on the maintainer's PC, with the .NET 8 SDK and GitHub CLI
+installed and `gh` authenticated for this repository. Get the encrypted key from the maintainer's PC or the password manager,
 then run from the repository root:
 
 ```powershell
@@ -157,7 +158,7 @@ built-in public key, uploads the two signatures, publishes the draft and prints 
 or bad signature stops it before publication. The hashes detect changed downloads; the signatures protect updates.
 
 The temp folder is printed and retained for inspection. Delete it when finished, and delete any key copy saved from
-the password manager (keep the USB backup). If publishing stops after signatures were uploaded, inspect the draft
+the password manager. If publishing stops after signatures were uploaded, inspect the draft
 before retrying: the script deliberately refuses to overwrite existing signature assets.
 
 ## Checking a signature

@@ -85,8 +85,8 @@ public class GradientModelTests
         Assert.Null(session.LoadError);
     }
 
-    /// The review's fuzz found every gradient write to a widget with a named style refused: each paint row of each
-    /// such widget in the examples now takes one, starting from the gradient it inherits when it has one.
+    /// Each paint row of each widget with a named style in the examples accepts a gradient, starting from the
+    /// inherited gradient when it has one.
     [Theory]
     [MemberData(nameof(Examples))]
     public void Every_paint_row_of_a_widget_with_a_named_style_takes_a_gradient(string example)

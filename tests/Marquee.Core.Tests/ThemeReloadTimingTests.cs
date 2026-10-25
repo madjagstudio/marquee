@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 namespace Marquee.Core.Tests;
 
 /// What a property change costs the theme editor: loading the example's text again through a warm cache, and drawing a
-/// frame of it. The spec's target is under 50 ms for both; the times, and the first load's without a warm cache, are
+/// frame of it. The times, and the first load's without a warm cache, are
 /// written to the test output. That files are reused is ThemeAssetCacheTests' to check, not this test's. It runs alone,
 /// with ValidatorThreadTests, both because it plays the showcase's clip and so that other tests don't skew the times.
 [Collection(nameof(ValidatorThreadTests))]
@@ -17,8 +17,7 @@ public class ThemeReloadTimingTests(ITestOutputHelper output)
 {
     const int Reloads = 20;
 
-    /// The spec's target for the whole update, the reload and the first frame: about 10 ms on a desktop PC, so a busy
-    /// CI runner has room to spare.
+    /// The reload and first frame fail over 50 ms; a desktop PC measures about 10 ms.
     static readonly TimeSpan Limit = TimeSpan.FromMilliseconds(50);
 
     static string ThemeFolder(string name, [CallerFilePath] string file = "") =>

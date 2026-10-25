@@ -152,7 +152,6 @@ public class RecoveryStoreTests
     [Fact]
     public void A_close_after_a_write_that_failed_keeps_the_text_with_no_change_after_it()
     {
-        // The QA review's R2: the failed write's text used to be dropped, so a close with no change after it kept nothing.
         using var saving = new Saving();
         var recovery = new RecoveryStore(saving.Session, saving.Folders, saving.Ui, saving.Clock);
         Directory.CreateDirectory(saving.Folders.Root);

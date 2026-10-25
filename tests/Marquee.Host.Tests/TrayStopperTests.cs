@@ -91,7 +91,7 @@ public class TrayStopperTests
 
     /// A tray taking the screen from L-Connect when it is asked to quit must first start L-Connect's service and watcher
     /// again, which may wait for each of them to finish stopping, after up to the same wait for the stop it had asked
-    /// for. Ending it before then would leave L-Connect stopped, and the fans and RGB with it.
+    /// for.
     [Fact]
     public void The_grace_outlasts_a_handover_starting_L_Connect_again()
     {

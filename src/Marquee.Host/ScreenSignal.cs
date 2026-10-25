@@ -1,7 +1,7 @@
 namespace Marquee.Host;
 
-/// A named event that is set while a Marquee in this Windows session has the screen open: the coexistence spec's
-/// "screen opened" signal. Each engine holds it and sets or resets it as its screen opens and closes. `marquee
+/// A named event that is set while a Marquee in this Windows session has the screen open.
+/// Each engine holds it and sets or resets it as its screen opens and closes. `marquee
 /// claim-screen` stops L-Connect for a Marquee running in another window, and waits on it to know when to start L-Connect
 /// again. The name is in the session's Local namespace, so another signed-in user's Marquee doesn't answer for this one.
 /// A named kernel object lasts only while a process holds it, so a signal that can be opened means a Marquee is running.

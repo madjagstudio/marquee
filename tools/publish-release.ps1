@@ -1,4 +1,4 @@
-# Checks and signs a draft made by release.yml, then publishes it. Run from the owner's checkout of the release tag,
+# Checks and signs a draft made by release.yml, then publishes it. Run from the maintainer's checkout of the release tag,
 # after the key ceremony (docs/releasing.md). The private key and its password stay on this PC; CI never sees them.
 #
 #   tools\publish-release.ps1 -Tag v0.1.0 -Key D:\marquee-release-key.pem
@@ -20,7 +20,7 @@ function Invoke-Native([string] $what, [scriptblock] $command) {
 }
 
 # gh uses this checkout's repository even if the script was called from another folder. Resolve the key first so a
-# relative path still means what the owner typed. No release is edited until every hash and signature has passed.
+# relative path still means what the maintainer typed. No release is edited until every hash and signature has passed.
 Push-Location (Split-Path -Parent $PSScriptRoot)
 try {
     $release = (Invoke-Native 'Reading the release' { gh release view $Tag --json isDraft,url,tagName } | Out-String) | ConvertFrom-Json

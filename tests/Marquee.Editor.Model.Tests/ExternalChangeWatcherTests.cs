@@ -163,7 +163,6 @@ public class ExternalChangeWatcherTests
     [Fact]
     public void Undo_while_the_file_is_not_yaml_is_refused_and_the_hand_edit_is_never_saved_over()
     {
-        // The review's R03: Ctrl+Z on a half-done hand edit used to undo a step and save it over the file.
         using var watching = new Watching();
         watching.Saving.Move(20);
         watching.Saving.Advance(1);

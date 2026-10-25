@@ -28,10 +28,11 @@ public sealed record HandoverResult(HandoverOutcome Outcome, string Message, IRe
 
 /// Takes the screen from L-Connect's background service and keeps L-Connect running the fans and RGB. Whoever opens
 /// the screen first keeps it, and when L-Connect's service starts and finds the screen busy, it tries three times, then
-/// skips the screen and its LED ring and runs everything else normally (the coexistence spec's experiment 1). So the
-/// handover stops the watcher, which would otherwise restart the service, then the service; lets Marquee open the
+/// skips the screen and its LED ring and runs everything else normally. The handover stops the watcher, which would
+/// otherwise restart the service, then the service; lets Marquee open the
 /// screen and the ring; and then always starts the service and the watcher again. Stopping and starting them needs
-/// admin rights, which the elevated engine has.
+/// admin rights, which the elevated engine has. While the service is stopped, fans keep their last speed and
+/// L-Connect pauses its fan and RGB adjustments. Keep the stop brief and back off after failures (EngineHandover).
 public sealed class LConnectHandover(IServiceControl services, ILog log, TimeSpan? stopTimeout = null)
 {
     public const string ServiceName = SystemLConnectStatus.ServiceName;
@@ -39,8 +40,7 @@ public sealed class LConnectHandover(IServiceControl services, ILog log, TimeSpa
 
     public static readonly TimeSpan DefaultStopTimeout = TimeSpan.FromSeconds(15);
 
-    /// How long the engine gets to open the screen once the service has stopped. L-Connect's fans and RGB stand still
-    /// until the service starts again, so this is kept short.
+    /// How long the engine gets to open the screen once the service has stopped.
     public static readonly TimeSpan ScreenTimeout = TimeSpan.FromSeconds(15);
 
     const string RestartHint = "L-Connect didn't start again (see the log); start it from its tray icon's start-service item.";

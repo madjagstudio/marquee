@@ -2,8 +2,7 @@ using System.Security.Cryptography;
 
 namespace Marquee.App.Tests.TestSupport;
 
-/// The placeholder public key, as release-key.pub.pem holds it until the owner's key ceremony (a copy of Marquee.Host's
-/// tests' one), so the tests still know the placeholder after the ceremony replaces that file.
+/// The original placeholder public key, shared with Marquee.Host's tests to check that the tray refuses updates with it.
 static class PlaceholderKey
 {
     public const string Pem = """

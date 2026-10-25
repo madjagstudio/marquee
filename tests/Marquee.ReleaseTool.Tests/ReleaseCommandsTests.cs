@@ -105,7 +105,7 @@ public sealed class ReleaseCommandsTests : IDisposable
 
         Assert.Equal(2, passwords.Prompts.Count);
         var pem = File.ReadAllText(path);
-        Assert.StartsWith(TestKeys.PemHeader("ENCRYPTED PRIVATE KEY"), pem);
+        TestKeys.AssertSinglePem("ENCRYPTED PRIVATE KEY", pem);
         using var key = SigningKey.Open(pem, Password);
         Assert.Contains(key.ExportSubjectPublicKeyInfoPem(), output.ToString());
         Assert.Contains(ReleaseSignature.Fingerprint(key), output.ToString());
@@ -116,13 +116,13 @@ public sealed class ReleaseCommandsTests : IDisposable
     public void Keygen_refuses_an_existing_file_before_asking_anything_and_leaves_it_alone()
     {
         using var dir = new TempDir();
-        var path = dir.Write("release.pem", "the owner's real key");
+        var path = dir.Write("release.pem", "the maintainer's real key");
         var passwords = new FakePasswords();
 
         Assert.Equal(1, Run(passwords, "keygen", path));
 
         Assert.Empty(passwords.Prompts);
-        Assert.Equal("the owner's real key", File.ReadAllText(path));
+        Assert.Equal("the maintainer's real key", File.ReadAllText(path));
         Assert.Contains("already exists", error.ToString());
     }
 

@@ -4,7 +4,7 @@ using Microsoft.Win32;
 namespace Marquee.Providers.Hardware;
 
 /// What stops LibreHardwareMonitor from reading CPU temperatures and motherboard sensors. GPU, memory and load
-/// readings work without either. Marquee doesn't install PawnIO itself; the installer will (milestone 4).
+/// readings work without either. Users install PawnIO themselves; see THIRD-PARTY-NOTICES.md.
 public static class HardwareEnvironment
 {
     public const string PawnIoUrl = "https://pawnio.eu/";

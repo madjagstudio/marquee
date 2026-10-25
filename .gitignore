@@ -6,7 +6,6 @@ obj/
 .vs/
 *.user
 out/
-.superpowers/
 *.received.png
 *.received.txt
 .cache/

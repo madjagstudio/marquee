@@ -12,7 +12,7 @@ public class AutosaverHandEditTests
     [Fact]
     public void A_hand_edit_saved_just_before_the_autosave_is_reloaded_not_written_over()
     {
-        // The review's R01: the hand edit lands 0.1 s before the autosave, whose write used to beat the watcher's read.
+        // The hand edit lands 0.1 s before the autosave, before the watcher reads it.
         using var saving = new Saving();
         using var watcher = new ExternalChangeWatcher(saving.Session, saving.File, saving.Ui, saving.Clock);
         saving.Move(20);
@@ -42,7 +42,6 @@ public class AutosaverHandEditTests
     [Fact]
     public void A_hand_edit_saved_between_the_check_and_the_replace_is_put_back_and_reloaded()
     {
-        // The QA review's blocker: another program's save in the moment between Write's comparison and File.Replace.
         using var saving = new Saving();
         using var watcher = new ExternalChangeWatcher(saving.Session, saving.File, saving.Ui, saving.Clock);
         saving.Move(20);
@@ -69,8 +68,7 @@ public class AutosaverHandEditTests
     [Fact]
     public void A_write_that_lands_after_the_session_took_a_hand_edit_is_not_made()
     {
-        // The review's R02: the autosave has taken its bytes when the watcher reads a hand edit and the UI thread takes
-        // it; the write, landing late, used to put the old text back on disk under "Saved".
+        // The autosave has taken its bytes when the watcher reads a hand edit and the UI thread accepts it.
         using var saving = new Saving();
         using var watcher = new ExternalChangeWatcher(saving.Session, saving.File, saving.Ui, saving.Clock);
         saving.Move(20);

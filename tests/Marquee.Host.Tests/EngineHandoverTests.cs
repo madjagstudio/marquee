@@ -294,8 +294,6 @@ public sealed class EngineHandoverTests : IDisposable
         Assert.Empty(_timers.Pending);
     }
 
-    /// Each failed try pauses L-Connect's fan and RGB control for up to half a minute, so a cause that lasts (a screen
-    /// slow to come back after sleep, say) is tried less and less often.
     [Fact]
     public void Auto_backs_off_to_1_2_5_then_every_10_minutes_while_taking_the_screen_fails()
     {

@@ -3,13 +3,13 @@
 # The change is every file that differs from the base (committed on this branch since it left the base, staged,
 # unstaged, or new). Each changed file belongs to the nearest project above it; a test project is affected when it is
 # that project, or references it directly or through other projects. Files outside the projects map as below. With
-# nothing affected (a plan, worknotes, the installer), no tests run and the script says so.
+# nothing affected (for example, the installer), no tests run and the script says so.
 #
 #   tools\affected-tests.ps1                 # run the affected test projects
 #   tools\affected-tests.ps1 -List           # only say which ones, and why
 #   tools\affected-tests.ps1 -Base origin/main
 #
-# The full suite still runs before a PR (Podium's full check) and on CI; this is the per-change test.
+# The full suite, `dotnet test -c Release`, runs on CI and before a PR; this is the per-change test.
 param(
     [string] $Base = 'origin/main',
     [switch] $List
@@ -62,7 +62,6 @@ foreach ($f in $changed) {
         '^(Directory\.Build\.(props|targets)|global\.json|nuget\.config|[^/]+\.sln)$' { $all = $true; $reasons += "$f affects every project"; break }
         # Example themes, the schema docs and the public docs are checked by Core's tests (themes load, docs drift, links).
         '^themes/' { [void]$forced.Add($coreTests); $reasons += "$f is checked by Core's theme tests"; break }
-        '^docs/(superpowers|worknotes)/' { break }
         '^(docs/|README\.md$|THIRD-PARTY-NOTICES\.md$)' { [void]$forced.Add($coreTests); $reasons += "$f is checked by Core's docs tests"; break }
         default { }   # the installer, CI workflows and other tooling: CI covers them
     }
