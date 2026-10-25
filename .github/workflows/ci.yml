@@ -9,8 +9,9 @@ on:
 permissions:
   contents: read
 concurrency:
-  # A new PR revision cancels the PR's previous run; main and manual runs never share a group.
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  # A new PR revision cancels the previous run with the same draft state, so a skipped draft can't cancel a ready run.
+  # main and manual runs never share a group.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.pull_request.number, github.event.pull_request.draft) || format('run-{0}', github.run_id) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   test:

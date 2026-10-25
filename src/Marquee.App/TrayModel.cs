@@ -17,8 +17,10 @@ namespace Marquee.App;
 /// threads; their balloons go through `host`, which moves them to the UI thread.
 ///
 /// The L-Connect handover's prompt and items are in TrayModel.Handover.cs, the update offer's in TrayModel.Updates.cs.
-sealed partial class TrayModel
+sealed partial class TrayModel : IDisposable
 {
+    static readonly TimeSpan WakeDebounce = TimeSpan.FromSeconds(1);
+
     /// Menu lines are cut to this many characters (the first line only), so a long error doesn't make the menu as
     /// wide as the screen. The log has it in full.
     public const int MenuTextLimit = 100;
@@ -49,9 +51,15 @@ sealed partial class TrayModel
     readonly TrayUpdates _updates;
     readonly ILog _log;
     readonly BalloonLimiter _balloons;
+    readonly IPowerEvents? _powerEvents;
+    readonly TimeProvider _time;
+    readonly object _powerGate = new();
+    long? _lastWake;
+    bool _wakePending;
+    volatile bool _disposed;
 
     public TrayModel(ITrayEngine engine, TrayPaths paths, IShell shell, ITrayHost host, EngineWorker worker, TrayUpdates updates,
-        ILog log, Func<DateTime>? utcNow = null)
+        ILog log, Func<DateTime>? utcNow = null, IPowerEvents? powerEvents = null, TimeProvider? time = null)
     {
         _engine = engine;
         _paths = paths;
@@ -60,6 +68,8 @@ sealed partial class TrayModel
         _worker = worker;
         _updates = updates;
         _log = log;
+        _powerEvents = powerEvents;
+        _time = time ?? TimeProvider.System;
         _balloons = new BalloonLimiter(BalloonEvery, utcNow ?? (() => DateTime.UtcNow));
         engine.ThemeFailed += error => Warn(Strings.ThemeFailedTitle, error);
         engine.ConfigFailed += error => Warn(Strings.ConfigFailedTitle, error);
@@ -68,6 +78,7 @@ sealed partial class TrayModel
         engine.HandoverFinished += OnHandoverFinished;
         engine.ScreenOpened += OnScreenOpened;
         updates.Offered += ShowOffer;
+        if (_powerEvents is not null) _powerEvents.Woke += OnWoke;
     }
 
     /// The version About shows: the assembly's informational version without the commit hash the SDK appends.
@@ -196,9 +207,45 @@ sealed partial class TrayModel
     /// ends the tray.
     public async Task Quit()
     {
+        Dispose();
         _updates.Dispose();
         await Run(_engine.Dispose).ConfigureAwait(false);
         _host.Exit();
+    }
+
+    public void Dispose()
+    {
+        lock (_powerGate)
+        {
+            if (_disposed) return;
+            _disposed = true;
+            if (_powerEvents is not null) _powerEvents.Woke -= OnWoke;
+        }
+    }
+
+    /// Power broadcasts can repeat, including while the worker is still reopening the screen.
+    void OnWoke()
+    {
+        lock (_powerGate)
+        {
+            if (_disposed || _wakePending) return;
+            var now = _time.GetTimestamp();
+            if (_lastWake is { } last && _time.GetElapsedTime(last, now) < WakeDebounce) return;
+            _lastWake = now;
+            _wakePending = true;
+        }
+
+        _ = Run(() =>
+        {
+            try
+            {
+                if (!_disposed) _engine.ReopenAfterSleep();
+            }
+            finally
+            {
+                lock (_powerGate) _wakePending = false;
+            }
+        });
     }
 
     /// The Themes submenu: the user's themes, then the installed ones, each group sorted, with the one on show checked.

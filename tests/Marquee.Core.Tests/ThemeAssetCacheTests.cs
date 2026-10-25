@@ -177,7 +177,9 @@ public class ThemeAssetCacheTests
         using var first = ThemeLoader.Load(folder.Folder, Text, cache);
         using var scaled = ThemeLoader.Load(folder.Folder, Text.Replace("0.5", "0.25"), cache);
         using var faster = ThemeLoader.Load(folder.Folder, Text.Replace("30", "60"), cache);
+        var modified = File.GetLastWriteTimeUtc(Path.Combine(folder.Folder, "s.sksl"));
         folder.AddFile("s.sksl", Encoding.UTF8.GetBytes(Red));
+        File.SetLastWriteTimeUtc(Path.Combine(folder.Folder, "s.sksl"), modified.AddSeconds(2));
         using var changed = ThemeLoader.Load(folder.Folder, Text, cache);
 
         Assert.Equal(4, probe.Calls);

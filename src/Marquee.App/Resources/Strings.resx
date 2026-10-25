@@ -310,6 +310,10 @@ Free for noncommercial use: PolyForm Noncommercial License 1.0.0.</value>
     <value>Marquee's tray stopped.</value>
     <comment>The log's last line from the tray, after Quit.</comment>
   </data>
+  <data name="WindowsResumed" xml:space="preserve">
+    <value>Windows resumed from sleep; reopening the screen.</value>
+    <comment>Logged when Windows wakes from sleep and the tray reopens the screen.</comment>
+  </data>
   <data name="QuitEventTaken" xml:space="preserve">
     <value>Another program made the event the installer uses to close Marquee's tray ({0}) first, so the tray won't listen for it: an install or uninstall will end the tray instead, without saving its state.</value>
     <comment>Logged at start when the tray's quit event already exists. {0} is the event's name. Usually a tray that is still exiting; restarting the tray makes the event again.</comment>

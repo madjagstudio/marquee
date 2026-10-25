@@ -13,6 +13,8 @@ public sealed class TrayModelTests : IDisposable
     readonly FakeShell _shell = new();
     readonly FakeHost _host = new();
     readonly EngineWorker _worker = new();
+    readonly FakePowerEvents _power = new();
+    readonly WakeClock _time = new();
     readonly UpdateRig _updates;
     readonly TrayPaths _paths;
     DateTime _now = new(2026, 10, 19, 12, 0, 0, DateTimeKind.Utc);
@@ -22,13 +24,15 @@ public sealed class TrayModelTests : IDisposable
         _paths = new TrayPaths(_dir.File("config.yaml"), new ThemeLocator([_dir.File("user"), _dir.File("installed")], _dir.Path),
             _dir.File("logs"), _dir.File("data"));
         _updates = new UpdateRig(_dir);
-        Model = new TrayModel(_engine, _paths, _shell, _host, _worker, _updates.Updates, NullLog.Instance, () => _now);
+        Model = new TrayModel(_engine, _paths, _shell, _host, _worker, _updates.Updates, NullLog.Instance, () => _now,
+            _power, _time);
     }
 
     TrayModel Model { get; }
 
     public void Dispose()
     {
+        Model.Dispose();
         _worker.Dispose();
         _updates.Dispose();
         _dir.Dispose();
@@ -40,6 +44,68 @@ public sealed class TrayModelTests : IDisposable
     static TrayMenuItem Item(IEnumerable<TrayMenuItem> items, string key) => Assert.Single(items, item => item.Key == key);
 
     TrayMenuItem Item(string key) => Item(Model.BuildMenu(), key);
+
+    [Fact]
+    public async Task Waking_reopens_once_on_the_engine_worker_and_debounces_repeated_signals()
+    {
+        _engine.Showing(Theme("installed", "example-landscape"));
+        var workerThread = 0;
+        await _worker.Run(() => workerThread = Environment.CurrentManagedThreadId);
+
+        _power.Wake();
+        _power.Wake();
+        await _worker.Run(() => { }).WaitAsync(Wait.Timeout);
+        _power.Wake();
+        await _worker.Run(() => { }).WaitAsync(Wait.Timeout);
+
+        Assert.Equal(("ReopenAfterSleep", workerThread), Assert.Single(_engine.Calls));
+
+        _time.Now += TimeSpan.FromSeconds(4);
+        _power.Wake();
+        await _worker.Run(() => { }).WaitAsync(Wait.Timeout);
+        Assert.Equal(["ReopenAfterSleep", "ReopenAfterSleep"], _engine.CallNames);
+    }
+
+    [Fact]
+    public async Task Waking_does_nothing_after_dispose_even_when_already_queued()
+    {
+        _engine.Showing(Theme("installed", "example-landscape"));
+        using var release = new ManualResetEventSlim();
+        var waiting = _worker.Run(() => release.Wait(Wait.Timeout));
+        try
+        {
+            _power.Wake();
+            Model.Dispose();
+            Assert.False(_power.HasSubscribers);
+            _power.Wake();
+        }
+        finally
+        {
+            release.Set();
+        }
+        await waiting.WaitAsync(Wait.Timeout);
+        await _worker.Run(() => { }).WaitAsync(Wait.Timeout);
+
+        Assert.Empty(_engine.Calls);
+    }
+
+    sealed class FakePowerEvents : IPowerEvents
+    {
+        public event Action? Woke;
+
+        public bool HasSubscribers => Woke is not null;
+
+        public void Wake() => Woke?.Invoke();
+    }
+
+    sealed class WakeClock : TimeProvider
+    {
+        public TimeSpan Now { get; set; }
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp() => Now.Ticks;
+    }
 
     [Fact]
     public void Running_the_status_line_says_theme_fps_and_screen()

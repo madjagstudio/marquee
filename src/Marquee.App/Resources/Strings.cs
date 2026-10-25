@@ -159,6 +159,8 @@ internal static class Strings
 
     public static string TrayStopped => Get(nameof(TrayStopped));
 
+    public static string WindowsResumed => Get(nameof(WindowsResumed));
+
     public static string QuitEventTaken(string name) => Format(nameof(QuitEventTaken), name);
 
     // The user's UI language picks the text. A .resx is XML, which reads every line break as "\n"; multi-line

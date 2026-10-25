@@ -193,6 +193,18 @@ sealed class TrayRuntime : ITrayEngine
         }
     }
 
+    public void ReopenAfterSleep()
+    {
+        lock (_gate)
+        {
+            if (_disposed || _engine is not { IsPaused: false } engine) return;
+            _log.Info(Strings.WindowsResumed);
+            engine.Pause();
+            engine.Resume();
+            if (!engine.IsRunning) engine.Start();
+        }
+    }
+
     /// MarqueeEngine.TakeOverScreen, which takes no engine lock and returns at once.
     public bool TakeOverScreen()
     {

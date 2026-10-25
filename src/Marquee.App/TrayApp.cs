@@ -38,7 +38,8 @@ sealed class TrayApp : ApplicationContext, ITrayHost
     {
         _runtime = runtime;
         _ui = new WindowsFormsSynchronizationContext();
-        _model = new TrayModel(runtime, paths, shell, this, worker, updates, log);
+        _devices = new DeviceChangeWindow(runtime.RetrySoon);
+        _model = new TrayModel(runtime, paths, shell, this, worker, updates, log, powerEvents: _devices);
 
         // Explorer broadcasts TaskbarCreated when it starts again (after a crash, or a restart from Task Manager), and
         // NotifyIcon adds its icon again when it hears it. But Windows keeps messages from a lower integrity level away
@@ -72,7 +73,6 @@ sealed class TrayApp : ApplicationContext, ITrayHost
         _icon.BalloonTipClosed += (_, _) => _clicks.Closed();
         _icon.Visible = true;
 
-        _devices = new DeviceChangeWindow(runtime.RetrySoon);
         _tooltip.Tick += (_, _) => _icon.Text = _model.Tooltip;
         _tooltip.Start();
         instance.OnShowRequested(() => _ui.Post(_ => PopMenu(), null));
@@ -110,6 +110,7 @@ sealed class TrayApp : ApplicationContext, ITrayHost
     protected override void ExitThreadCore()
     {
         SystemEvents.SessionEnded -= OnSessionEnded;
+        _model.Dispose();
         _tooltip.Dispose();
         _preview?.Dispose();
         _icon.Visible = false; // gone at once, not when the pointer next passes over it

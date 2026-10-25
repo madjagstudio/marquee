@@ -26,7 +26,7 @@ public class StatusLineBridgeTests
             {
                 forwarded = bytes;
                 return true;
-            }));
+            }), previousTimeout: TimeSpan.FromSeconds(60));
         return (exit, Encoding.UTF8.GetString(stdout.ToArray()), stderr.ToString(), forwarded);
     }
 

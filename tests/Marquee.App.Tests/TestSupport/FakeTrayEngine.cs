@@ -72,6 +72,8 @@ sealed class FakeTrayEngine : ITrayEngine
 
     public void Resume() => Record("Resume");
 
+    public void ReopenAfterSleep() => Record("ReopenAfterSleep");
+
     public bool TakeOverScreen()
     {
         Record("TakeOverScreen");

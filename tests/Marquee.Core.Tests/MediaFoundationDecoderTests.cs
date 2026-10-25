@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text;
 using Marquee.Core.Tests.TestSupport;
 using Marquee.Core.Video;
@@ -188,9 +189,20 @@ public sealed class MediaFoundationDecoderTests : IDisposable
     [Fact]
     public void A_portrait_4k_clip_is_within_the_limit()
     {
+        const int MF_E_SINK_NO_SAMPLES_PROCESSED = unchecked((int)0xC00D4A44);
         if (!CanDecode()) return;
         var path = _folder.File("portrait4k.mp4");
-        ClipWriter.Write(path, 2160, 3840, Red);
+        try
+        {
+            ClipWriter.Write(path, 2160, 3840, Red);
+        }
+        catch (COMException ex) when (ex.HResult == MF_E_SINK_NO_SAMPLES_PROCESSED)
+        {
+            // The encoder sometimes finishes without a sample. Its writer is released, so delete the fixture and
+            // write it once more.
+            File.Delete(path);
+            ClipWriter.Write(path, 2160, 3840, Red);
+        }
 
         using var decoder = new MediaFoundationDecoder(path);
         Assert.Equal(new SKSizeI(2160, 3840), decoder.Size);

@@ -8,9 +8,10 @@ from Claude Code and Codex. L-Connect can keep managing your fans, pump and othe
 
 ## Install
 
-Download and run `Marquee-<version>-x64.msi` from [GitHub
-Releases](https://github.com/madjagstudio/marquee/releases). It installs for every user and asks for
-administrator rights once; the .NET runtime is included.
+Open the [latest release](https://github.com/madjagstudio/marquee/releases/latest), download
+**`Marquee-<version>-x64.msi`** and run it. It's the only file you need: the release's other files (signatures,
+checksums, a standalone `marquee` zip, and GitHub's "Source code") are optional. It installs for every user and
+asks for administrator rights once; the .NET runtime is included.
 
 The MSI has no Authenticode signature yet, so an "unknown publisher" prompt from Windows is expected. If
 SmartScreen appears, choose **More info → Run anyway**. The separate signature used to verify Marquee updates is

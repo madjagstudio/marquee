@@ -118,6 +118,12 @@ sealed class FakeScreen(int width, int height, Func<bool>? inUse = null) : IDisp
 {
     int _frames;
     int _open;
+    int _opens;
+    int _closes;
+
+    public int Opens => Volatile.Read(ref _opens);
+
+    public int Closes => Volatile.Read(ref _closes);
 
     public DeviceInfo Info { get; } = new("Fake screen", width, height);
 
@@ -129,13 +135,18 @@ sealed class FakeScreen(int width, int height, Func<bool>? inUse = null) : IDisp
     {
         if (inUse?.Invoke() == true) throw new DeviceBusyException("Another program is using the screen.");
         Volatile.Write(ref _open, 1);
+        Interlocked.Increment(ref _opens);
     }
 
     public void PushFrame(SKImage frame) => Interlocked.Increment(ref _frames);
 
     public void SetBrightness(int percent) { }
 
-    public void Close() => Volatile.Write(ref _open, 0);
+    public void Close()
+    {
+        Volatile.Write(ref _open, 0);
+        Interlocked.Increment(ref _closes);
+    }
 
     public void Dispose() => Volatile.Write(ref _open, 0);
 }

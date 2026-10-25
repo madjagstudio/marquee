@@ -11,8 +11,8 @@ public class VideoLoadingTests
 {
     static readonly SKColor[] Rgb = [SKColors.Red, SKColors.Lime, SKColors.Blue];
 
-    static byte[] Gif() => GifWriter.Write(16, 4, Rgb,
-        GifFrame.Solid(SKRectI.Create(16, 4), 0, 10), GifFrame.Solid(SKRectI.Create(16, 4), 1, 10));
+    static byte[] Gif(int delay = 10) => GifWriter.Write(16, 4, Rgb,
+        GifFrame.Solid(SKRectI.Create(16, 4), 0, delay), GifFrame.Solid(SKRectI.Create(16, 4), 1, delay));
 
     static TempTheme Theme(string clip, byte[]? contents = null)
     {
@@ -146,8 +146,8 @@ public class VideoLoadingTests
     [Fact]
     public void The_real_measurement_keeps_a_small_clip()
     {
-        // The real probe. A 16×4 GIF decodes and scales in a small fraction of its 100 ms frames on any machine.
-        using var folder = Theme("clips/rain.gif", Gif());
+        // The real probe. Two-second frames leave a busy runner plenty of time to decode and scale a 16×4 frame.
+        using var folder = Theme("clips/rain.gif", Gif(delay: 200));
         using var theme = ThemeLoader.Load(folder.Folder);
 
         Assert.Empty(theme.Warnings);

@@ -16,10 +16,12 @@ public static class StatusLineBridge
 
     /// Returns the exit code: the previous command's, or 0 when there is none (the status line stays blank, as it was).
     /// Returns 1 when the shell can't start or the command times out.
-    public static int Run(Stream stdin, Stream stdout, TextWriter stderr, string? previousCommand, ShellCommand shell, Func<byte[], bool> forward)
+    public static int Run(Stream stdin, Stream stdout, TextWriter stderr, string? previousCommand, ShellCommand shell,
+        Func<byte[], bool> forward, TimeSpan? previousTimeout = null)
     {
+        var timeout = previousTimeout ?? PreviousTimeout;
         var input = ReadCapped(stdin);
-        var previous = previousCommand is null ? null : Task.Run(() => shell.Run(previousCommand, input, PreviousTimeout));
+        var previous = previousCommand is null ? null : Task.Run(() => shell.Run(previousCommand, input, timeout));
 
         try
         {
@@ -47,7 +49,7 @@ public static class StatusLineBridge
         stdout.Flush();
         if (!result.TimedOut) return result.ExitCode;
 
-        stderr.WriteLine($"marquee statusline: the previous status-line command took longer than {PreviousTimeout.TotalSeconds:0} s and was stopped.");
+        stderr.WriteLine($"marquee statusline: the previous status-line command took longer than {timeout.TotalSeconds:0} s and was stopped.");
         return 1;
     }
 

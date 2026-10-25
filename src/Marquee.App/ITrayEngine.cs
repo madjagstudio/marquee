@@ -59,6 +59,9 @@ interface ITrayEngine : IDisposable
 
     void Resume();
 
+    /// Reopens the screen and ring after Windows wakes, unless they are paused.
+    void ReopenAfterSleep();
+
     /// Takes the screen from L-Connect on a thread of its own, whatever `lconnect.handover` says (the tray's "Take over"
     /// item and Ask's balloon); HandoverFinished says how it went. False when it doesn't start: one is under way, the
     /// engine is paused or not running, or the tray isn't elevated. Returns at once.

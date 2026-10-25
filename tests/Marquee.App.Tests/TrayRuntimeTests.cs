@@ -19,6 +19,7 @@ public sealed class TrayRuntimeTests : IDisposable
     readonly ConcurrentQueue<string> _configErrors = new();
     readonly ConcurrentQueue<ScreenBusyInfo> _busy = new();
     readonly ConcurrentQueue<HandoverResult> _handovers = new();
+    readonly ListLog _log = new();
     int _configsApplied;
     TrayRuntime? _runtime;
 
@@ -41,7 +42,7 @@ public sealed class TrayRuntimeTests : IDisposable
 
     TrayRuntime Start(TimeSpan? retryEvery = null)
     {
-        _runtime = new TrayRuntime(_paths, NullLog.Instance, _services, _marker, retryEvery);
+        _runtime = new TrayRuntime(_paths, _log, _services, _marker, retryEvery);
         _runtime.ConfigFailed += _configErrors.Enqueue;
         _runtime.ConfigApplied += () => Interlocked.Increment(ref _configsApplied);
         _runtime.ScreenBusy += _busy.Enqueue;
@@ -52,6 +53,48 @@ public sealed class TrayRuntimeTests : IDisposable
 
     /// config.yaml as a user's editor saves it: written, then picked up by the watcher.
     void WriteConfig(string yaml) => File.WriteAllText(_paths.ConfigFile, yaml);
+
+    [Fact]
+    public void Reopening_after_sleep_keeps_the_theme_settings_and_screen_marker()
+    {
+        WriteConfig("orientation: portrait\nbrightness: 65\n");
+        var runtime = Start();
+        var settings = runtime.Settings;
+        var screen = _services.LastScreen;
+        Assert.True(Wait.Until(() => screen.Frames > 0));
+
+        runtime.ReopenAfterSleep();
+
+        Assert.True(Wait.Until(() => screen.Opens == 2));
+        Assert.Equal(1, screen.Closes);
+        Assert.False(runtime.IsPaused);
+        Assert.Equal(settings, runtime.Settings);
+        Assert.Same(screen, _services.LastScreen);
+        Assert.True(TrayScreen.IsHeld(_marker));
+        Assert.Equal("info: Windows resumed from sleep; reopening the screen.",
+            Assert.Single(_log.Entries, entry => entry.Contains("Windows resumed", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void Reopening_after_sleep_leaves_a_paused_or_disposed_runtime_alone()
+    {
+        var runtime = Start();
+        var screen = _services.LastScreen;
+        Assert.True(Wait.Until(() => screen.Frames > 0));
+        runtime.Pause();
+
+        runtime.ReopenAfterSleep();
+
+        Assert.True(runtime.IsPaused);
+        Assert.False(screen.IsOpen);
+        Assert.Equal(1, screen.Opens);
+        Assert.False(TrayScreen.IsHeld(_marker));
+
+        runtime.Dispose();
+        runtime.ReopenAfterSleep();
+        Assert.Equal(1, screen.Opens);
+        Assert.DoesNotContain(_log.Entries, entry => entry.Contains("Windows resumed", StringComparison.Ordinal));
+    }
 
     [Fact]
     public void With_no_config_yaml_it_shows_example_landscape_from_the_installed_themes()
