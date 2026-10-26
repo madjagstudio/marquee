@@ -19,8 +19,6 @@ namespace Marquee.App;
 /// The L-Connect handover's prompt and items are in TrayModel.Handover.cs, the update offer's in TrayModel.Updates.cs.
 sealed partial class TrayModel : IDisposable
 {
-    static readonly TimeSpan WakeDebounce = TimeSpan.FromSeconds(1);
-
     /// Menu lines are cut to this many characters (the first line only), so a long error doesn't make the menu as
     /// wide as the screen. The log has it in full.
     public const int MenuTextLimit = 100;
@@ -52,14 +50,12 @@ sealed partial class TrayModel : IDisposable
     readonly ILog _log;
     readonly BalloonLimiter _balloons;
     readonly IPowerEvents? _powerEvents;
-    readonly TimeProvider _time;
     readonly object _powerGate = new();
-    long? _lastWake;
     bool _wakePending;
     volatile bool _disposed;
 
     public TrayModel(ITrayEngine engine, TrayPaths paths, IShell shell, ITrayHost host, EngineWorker worker, TrayUpdates updates,
-        ILog log, Func<DateTime>? utcNow = null, IPowerEvents? powerEvents = null, TimeProvider? time = null)
+        ILog log, Func<DateTime>? utcNow = null, IPowerEvents? powerEvents = null)
     {
         _engine = engine;
         _paths = paths;
@@ -69,7 +65,6 @@ sealed partial class TrayModel : IDisposable
         _updates = updates;
         _log = log;
         _powerEvents = powerEvents;
-        _time = time ?? TimeProvider.System;
         _balloons = new BalloonLimiter(BalloonEvery, utcNow ?? (() => DateTime.UtcNow));
         engine.ThemeFailed += error => Warn(Strings.ThemeFailedTitle, error);
         engine.ConfigFailed += error => Warn(Strings.ConfigFailedTitle, error);
@@ -223,15 +218,12 @@ sealed partial class TrayModel : IDisposable
         }
     }
 
-    /// Power broadcasts can repeat, including while the worker is still reopening the screen.
+    /// A wake signal that arrives while a reopen is queued or running is dropped.
     void OnWoke()
     {
         lock (_powerGate)
         {
             if (_disposed || _wakePending) return;
-            var now = _time.GetTimestamp();
-            if (_lastWake is { } last && _time.GetElapsedTime(last, now) < WakeDebounce) return;
-            _lastWake = now;
             _wakePending = true;
         }
 

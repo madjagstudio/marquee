@@ -57,6 +57,15 @@ public class LogonTaskTests
     }
 
     [Fact]
+    public void Users_can_read_and_run_the_task_while_SYSTEM_and_administrators_keep_full_control()
+    {
+        var registration = Parse(Tray).Element(Task + "RegistrationInfo")!;
+        var descriptor = Text(registration, "SecurityDescriptor");
+
+        Assert.Equal("D:(A;;FA;;;SY)(A;;FA;;;BA)(A;;GRGX;;;BU)", descriptor);
+    }
+
+    [Fact]
     public void It_starts_at_the_logon_of_any_user_without_a_delay()
     {
         var trigger = Assert.Single(Parse(Tray).Element(Task + "Triggers")!.Elements());
@@ -286,8 +295,54 @@ public class LogonTaskTests
 
         var status = LogonTask.Status(schtasks);
 
-        Assert.Equal(new LogonTaskStatus(Installed: true, TrayExePath: Tray), status);
+        Assert.Equal(new LogonTaskStatus(Installed: true, TrayExePath: Tray, Enabled: true, StartsOnDemand: true, RunsHighest: true), status);
         Assert.Equal(["/Query", "/TN", @"\Marquee\Marquee", "/XML"], Assert.Single(schtasks.Calls));
+    }
+
+    [Theory]
+    [InlineData("Enabled", "false", false, true)]
+    [InlineData("AllowStartOnDemand", "false", true, false)]
+    [InlineData("Enabled", null, true, true)]
+    [InlineData("AllowStartOnDemand", null, true, true)]
+    [InlineData("Enabled", "unreadable", false, true)]
+    [InlineData("AllowStartOnDemand", "unreadable", true, false)]
+    public void Status_reads_start_settings_with_their_schema_defaults(string setting, string? value, bool enabled, bool startsOnDemand)
+    {
+        var task = Parse(Tray);
+        var element = task.Element(Task + "Settings")!.Element(Task + setting)!;
+        if (value is null) element.Remove();
+        else element.Value = value;
+
+        var status = LogonTask.Status(new FakeSchTasks(0, task.ToString()));
+
+        Assert.Equal(new LogonTaskStatus(true, Tray, enabled, startsOnDemand, RunsHighest: true), status);
+    }
+
+    [Theory]
+    [InlineData("LeastPrivilege")]
+    [InlineData(null)]
+    [InlineData("unreadable")]
+    public void Status_requires_explicit_highest_privileges(string? runLevel)
+    {
+        var task = Parse(Tray);
+        var element = task.Element(Task + "Principals")!.Element(Task + "Principal")!.Element(Task + "RunLevel")!;
+        if (runLevel is null) element.Remove();
+        else element.Value = runLevel;
+
+        var status = LogonTask.Status(new FakeSchTasks(0, task.ToString()));
+
+        Assert.Equal(new LogonTaskStatus(true, Tray, Enabled: true, StartsOnDemand: true, RunsHighest: false), status);
+    }
+
+    [Fact]
+    public void Status_trims_an_empty_quoted_command()
+    {
+        var task = Parse(Tray);
+        task.Element(Task + "Actions")!.Element(Task + "Exec")!.Element(Task + "Command")!.Value = "\"\"";
+
+        var status = LogonTask.Status(new FakeSchTasks(0, task.ToString()));
+
+        Assert.Equal("", status.TrayExePath);
     }
 
     [Fact]

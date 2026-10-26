@@ -18,7 +18,8 @@ public interface ITaskRunner
 /// TASK_RUN_USE_SESSION_ID and no user, IRegisteredTask.RunEx starts the task "interactively as the user who is logged
 /// on to the specified session", with the task's run level, so a task that runs with highest privileges starts elevated
 /// there. And schtasks deletes tasks but never the folder they were in. Running a task and deleting a folder need the
-/// rights to them, which the installer (SYSTEM) and administrators have.
+/// rights to them, which the installer (SYSTEM) and administrators have; the logon task's descriptor (LogonTask.Sddl)
+/// lets the Users group run it too.
 public sealed class TaskRunner : ITaskRunner
 {
     const int TASK_RUN_USE_SESSION_ID = 0x4;

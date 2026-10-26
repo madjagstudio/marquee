@@ -25,6 +25,10 @@ public static class LogonTask
     /// BUILTIN\Users by its well-known SID, which is the same in every language (the group's name is translated).
     const string UsersGroup = "S-1-5-32-545";
 
+    // SYSTEM and Administrators keep full control; Users may read and run (GRGX), so an unelevated tray can start
+    // the task in its own session, as logon does anyway. Users still can't change or delete it.
+    internal const string Sddl = "D:(A;;FA;;;SY)(A;;FA;;;BA)(A;;GRGX;;;BU)";
+
     static readonly XNamespace Ns = "http://schemas.microsoft.com/windows/2004/02/mit/task";
 
     /// The task in Task Scheduler's XML (schema 1.2, Windows 7 and later), for `schtasks /Create /XML`.
@@ -32,6 +36,7 @@ public static class LogonTask
     {
         var task = new XElement(Ns + "Task", new XAttribute("version", "1.2"),
             new XElement(Ns + "RegistrationInfo",
+                new XElement(Ns + "SecurityDescriptor", Sddl),
                 new XElement(Ns + "Author", "Marquee"),
                 new XElement(Ns + "Description", Strings.LogonTaskDescription)),
             // Any user's logon, with no delay: at logon the screen may not be enumerated yet and Explorer's notification
@@ -143,13 +148,27 @@ public static class LogonTask
         return active;
     }
 
-    /// Whether the task exists, and the exe it starts when its XML says.
+    /// Whether the task exists, the exe it starts, and its start settings as its XML says.
     public static LogonTaskStatus Status(ISchTasks schtasks)
     {
         var result = schtasks.Run(["/Query", "/TN", TaskName, "/XML"]);
         if (IsMissing(result, schtasks)) return new LogonTaskStatus(Installed: false, TrayExePath: null);
         Check(result);
-        return new LogonTaskStatus(Installed: true, TrayExePath: Command(result.Output));
+        try
+        {
+            var task = XDocument.Parse(result.Output.Trim()).Root;
+            var command = task?.Element(Ns + "Actions")?.Element(Ns + "Exec")?.Element(Ns + "Command");
+            var settings = task?.Element(Ns + "Settings");
+            var runLevel = task?.Element(Ns + "Principals")?.Element(Ns + "Principal")?.Element(Ns + "RunLevel");
+            return new LogonTaskStatus(Installed: true, TrayExePath: command?.Value.Trim().Trim('"'),
+                Enabled: EnabledByDefault(settings?.Element(Ns + "Enabled")),
+                StartsOnDemand: EnabledByDefault(settings?.Element(Ns + "AllowStartOnDemand")),
+                RunsHighest: runLevel?.Value.Trim() == "HighestAvailable");
+        }
+        catch (XmlException)
+        {
+            return new LogonTaskStatus(Installed: true, TrayExePath: null);
+        }
     }
 
     /// Whether schtasks failed because the task, or its folder, isn't there.
@@ -181,18 +200,8 @@ public static class LogonTask
         return missing.ExitCode == result.ExitCode && missing.Output.Trim() == result.Output.Trim();
     }
 
-    static string? Command(string xml)
-    {
-        try
-        {
-            var command = XDocument.Parse(xml.Trim()).Root?.Element(Ns + "Actions")?.Element(Ns + "Exec")?.Element(Ns + "Command");
-            return command is null ? null : command.Value.Trim().Trim('"');
-        }
-        catch (XmlException)
-        {
-            return null;
-        }
-    }
+    // Both settings default to true in the task schema.
+    static bool EnabledByDefault(XElement? setting) => setting is null || setting.Value.Trim() is "true" or "1";
 
     static void Check(SchTasksResult result)
     {
@@ -200,8 +209,9 @@ public static class LogonTask
     }
 }
 
-/// Whether the logon task exists, and the exe it starts (null when that couldn't be read).
-public sealed record LogonTaskStatus(bool Installed, string? TrayExePath);
+/// Whether the logon task exists, the exe it starts (null when that couldn't be read), and whether it is enabled,
+/// can be started on demand and runs with highest privileges. The flags are false when its XML couldn't be read.
+public sealed record LogonTaskStatus(bool Installed, string? TrayExePath, bool Enabled = false, bool StartsOnDemand = false, bool RunsHighest = false);
 
 /// schtasks failed; the message has its exit code and what it printed.
 public sealed class LogonTaskException(string message) : Exception(message);

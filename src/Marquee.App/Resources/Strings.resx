@@ -306,6 +306,10 @@ Free for noncommercial use: PolyForm Noncommercial License 1.0.0.</value>
     <value>Marquee's tray {0} started.</value>
     <comment>The log's first line from the tray. {0} is the version.</comment>
   </data>
+  <data name="LogonTaskHandoffFailed" xml:space="preserve">
+    <value>Couldn't start Marquee's logon task to run as administrator ({0}), so this tray runs without administrator rights.</value>
+    <comment>Logged at start, after the handoff to the logon task failed. {0} is Task Scheduler's reason.</comment>
+  </data>
   <data name="TrayStopped" xml:space="preserve">
     <value>Marquee's tray stopped.</value>
     <comment>The log's last line from the tray, after Quit.</comment>

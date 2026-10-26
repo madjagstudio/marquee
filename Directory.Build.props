@@ -9,6 +9,6 @@
          version (which the update check reads; the SDK adds "+<commit>", which ReleaseVersion drops), and the installer
          reads it from this file for the MSI's ProductVersion and file name (installer/Marquee.Installer.wixproj). Three
          numbers, as release tags and MSI versions have. -->
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
   </PropertyGroup>
 </Project>

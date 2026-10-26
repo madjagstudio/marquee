@@ -157,6 +157,8 @@ internal static class Strings
 
     public static string TrayStarted(string version) => Format(nameof(TrayStarted), version);
 
+    public static string LogonTaskHandoffFailed(string reason) => Format(nameof(LogonTaskHandoffFailed), reason);
+
     public static string TrayStopped => Get(nameof(TrayStopped));
 
     public static string WindowsResumed => Get(nameof(WindowsResumed));

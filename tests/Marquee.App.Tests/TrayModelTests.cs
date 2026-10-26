@@ -14,7 +14,6 @@ public sealed class TrayModelTests : IDisposable
     readonly FakeHost _host = new();
     readonly EngineWorker _worker = new();
     readonly FakePowerEvents _power = new();
-    readonly WakeClock _time = new();
     readonly UpdateRig _updates;
     readonly TrayPaths _paths;
     DateTime _now = new(2026, 10, 19, 12, 0, 0, DateTimeKind.Utc);
@@ -25,7 +24,7 @@ public sealed class TrayModelTests : IDisposable
             _dir.File("logs"), _dir.File("data"));
         _updates = new UpdateRig(_dir);
         Model = new TrayModel(_engine, _paths, _shell, _host, _worker, _updates.Updates, NullLog.Instance, () => _now,
-            _power, _time);
+            _power);
     }
 
     TrayModel Model { get; }
@@ -46,21 +45,29 @@ public sealed class TrayModelTests : IDisposable
     TrayMenuItem Item(string key) => Item(Model.BuildMenu(), key);
 
     [Fact]
-    public async Task Waking_reopens_once_on_the_engine_worker_and_debounces_repeated_signals()
+    public async Task Waking_reopens_once_on_the_engine_worker_and_drops_signals_while_one_is_queued()
     {
         _engine.Showing(Theme("installed", "example-landscape"));
         var workerThread = 0;
         await _worker.Run(() => workerThread = Environment.CurrentManagedThreadId);
 
-        _power.Wake();
-        _power.Wake();
-        await _worker.Run(() => { }).WaitAsync(Wait.Timeout);
-        _power.Wake();
+        using var release = new ManualResetEventSlim();
+        var waiting = _worker.Run(() => release.Wait(Wait.Timeout));
+        try
+        {
+            _power.Wake();
+            _power.Wake();
+            _power.Wake();
+        }
+        finally
+        {
+            release.Set();
+        }
+        await waiting.WaitAsync(Wait.Timeout);
         await _worker.Run(() => { }).WaitAsync(Wait.Timeout);
 
         Assert.Equal(("ReopenAfterSleep", workerThread), Assert.Single(_engine.Calls));
 
-        _time.Now += TimeSpan.FromSeconds(4);
         _power.Wake();
         await _worker.Run(() => { }).WaitAsync(Wait.Timeout);
         Assert.Equal(["ReopenAfterSleep", "ReopenAfterSleep"], _engine.CallNames);
@@ -96,15 +103,6 @@ public sealed class TrayModelTests : IDisposable
         public bool HasSubscribers => Woke is not null;
 
         public void Wake() => Woke?.Invoke();
-    }
-
-    sealed class WakeClock : TimeProvider
-    {
-        public TimeSpan Now { get; set; }
-
-        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
-
-        public override long GetTimestamp() => Now.Ticks;
     }
 
     [Fact]

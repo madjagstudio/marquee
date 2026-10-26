@@ -8,6 +8,10 @@ namespace Marquee.Core.Processes;
 /// right for UAC's split tokens: an administrator's unelevated processes are not elevated.
 public static class ProcessElevation
 {
+    public const int TokenElevationTypeDefault = 1;
+    public const int TokenElevationTypeFull = 2;
+    public const int TokenElevationTypeLimited = 3;
+
     static readonly Lazy<bool> Current = new(() =>
     {
         if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, out var token))
@@ -17,6 +21,14 @@ public static class ProcessElevation
 
     /// Whether Marquee itself runs elevated. A process's elevation never changes, so it is read once.
     public static bool IsCurrentProcessElevated() => Current.Value;
+
+    /// The current process's TokenElevationType (see ElevationType).
+    public static int CurrentElevationType()
+    {
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, out var token))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "OpenProcessToken failed");
+        using (token) return ElevationType(token);
+    }
 
     public static bool IsElevated(KernelHandle token)
     {

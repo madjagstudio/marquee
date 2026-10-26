@@ -245,9 +245,8 @@ settings are `config.yaml`'s, and what `marquee run` would print goes to its [lo
   off. **Resume** takes it back.
 - **Check for updates**, or **Install Marquee <version>…** once there is one (see [Updates](#updates)).
 - **About Marquee** and **Quit.** Quit lets go of the screen, darkens the ring, saves the Claude Code limits and ends
-  the tray until you next sign in. The Start menu's "Marquee" starts it again, but without administrator rights (see
-  [below](#without-administrator-rights)); `marquee task start` in an administrator terminal starts it as signing in
-  does.
+  the tray until you next sign in. The Start menu's "Marquee" starts it again as signing in does: elevated through the
+  logon task for an administrator, with a user's own rights otherwise (see [below](#without-administrator-rights)).
 
 The first time, with no `config.yaml`, the tray shows `example-landscape` and a balloon says to pick your theme and the
 screen's orientation from its menu. That balloon shows once; it waits for a later start if L-Connect has the screen
@@ -268,12 +267,17 @@ hand. An existing themes folder that is a junction can still be opened.
 
 ### Without administrator rights
 
-For a user who isn't an administrator, the logon task starts the tray with their own rights; so does the Start menu
-when no tray is running. That tray shows themes as usual, but game FPS and the L-Connect handover are off, and its menu
-says why: "Game FPS is off: Marquee isn't running as administrator." and, while L-Connect has the screen, that Marquee
-can take it only as administrator. It can't install updates either: its update offer opens the release's page.
-`marquee claim-screen` in an administrator terminal still hands it the screen once. To have an administrator's tray
-back, quit this one and run `marquee task start` in an administrator terminal.
+For an administrator, starting Marquee from the Start menu, taskbar or Explorer while no tray is running starts it through
+the logon task, elevated as at logon, as long as the task is still set up as the installer left it. Otherwise, or if
+Task Scheduler can't be asked about the task, the tray starts with the user's own rights; when Task Scheduler refuses to
+start the task, the log has its reason.
+A user who isn't an administrator always gets a tray with their own rights. A tray without administrator rights shows
+themes as usual, but game FPS and the L-Connect handover are off, and its menu says why: "Game FPS is off: Marquee isn't
+running as administrator." and, while L-Connect has the screen, that Marquee can take it only as administrator. It can't
+install updates either: its update offer opens the release's page. `marquee claim-screen` in an administrator terminal
+still hands it the screen once. To have an administrator's elevated tray back, quit this one, then sign out and in again or
+run `marquee task start` in an administrator terminal. If the task was turned off or changed, run `marquee task install`
+in that terminal first: it sets the task up again as the installer does.
 
 ### More than one user
 
@@ -707,7 +711,7 @@ administrator) and Marquee makes it again, safely.
 | Same screen, video and game FPS | `lianli88_0001_0023` | Config reload, MP4 background, PresentMon readings and cleanup | ~30 fps; render ~7 ms, send ~28 ms |
 | Same screen, `example-showcase` v2 and v2.1; Ryzen 7 9800X3D, RX 7800 XT | `lianli88_0001_0023` | Widgets, text, clock locale/time-zone changes, voltages, GPU fan | FPS not measured |
 | Same screen and LED ring (`0416:8050`), theme editor | `lianli88_0001_0023` | Editing, undo, recovery, layers, styles, rules, gallery, sensor bindings and ring effects | Saves reach screen in about 1 s; FPS not measured |
-| Same screen and LED ring (`0416:8050`), tray and MSI | `lianli88_0001_0023` | Install, elevated logon, L-Connect handover, ring, theme switching, sleep/wake, reconnect, upgrade, uninstall | 22 fps; send ~28–29 ms; handover ~10 s after tray start; 0.1.0 → 0.1.1 upgrade restarts tray in 2 s |
+| Same screen and LED ring (`0416:8050`), tray and MSI | `lianli88_0001_0023` | Install, elevated logon, elevated start from the Start menu, L-Connect handover, ring, theme switching, sleep/wake, reconnect, upgrade, uninstall | 22 fps; send ~28–29 ms; handover ~10 s after tray start; 0.1.0 → 0.1.1 upgrade restarts tray in 2 s |
 
 Known limitations:
 

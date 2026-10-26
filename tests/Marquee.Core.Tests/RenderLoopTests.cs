@@ -348,8 +348,9 @@ public class RenderLoopTests
 
         Assert.True(Wait.Until(() => device.FramesPushed >= pushed + 3), "No frames after the restart.");
         loop.Stop();
-        // The theme asks for 30 fps; uneven frame timing on a busy runner has read up to about 50. A clock reset by Stop
-        // would mix the new frames' timestamps with the old ones and put the rate outside this range.
+        // The theme asks for 30 fps, and on a busy runner uneven frame timing has made this read as high as about 50. A
+        // clock reset by Stop would start the new frames' timestamps below the old ones still in the window, and the
+        // rate would read in the hundreds or as 0.
         Assert.InRange(loop.Stats.Fps, 1, 100);
         Assert.Equal((2, 2), (device.Opens, device.Closes));
         Pixels.AssertNear(SKColors.Red, device.LastFrame!.GetPixel(10, 10), 0);
