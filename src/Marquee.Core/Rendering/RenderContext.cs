@@ -20,6 +20,9 @@ sealed class RenderContext(SKCanvas canvas, SensorSnapshot sensors, TimeSpan tim
     /// The time zone and culture that `time` placeholders and formats write in.
     public TimeLocale Locale { get; init; } = TimeLocale.Pc;
 
+    /// Null draws shader layers on the CPU.
+    public ShaderGpu? Gpu { get; init; }
+
     /// For the theme editor's drag preview: each widget drawn in place of one of the theme's, mapped (by reference) to
     /// the widget it stands in for. Empty for any other frame.
     public IReadOnlyDictionary<WidgetSpec, WidgetSpec> StandIns { get; init; } = NoStandIns;

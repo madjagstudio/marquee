@@ -126,6 +126,7 @@ public sealed class RingSender(Func<ILedRing?> find, SensorStore sensors, ILog l
 
     void Run(CancellationToken token)
     {
+        using var timer = new FrameTimer();
         var next = _clock.Elapsed;
         while (!token.IsCancellationRequested)
         {
@@ -148,7 +149,7 @@ public sealed class RingSender(Func<ILedRing?> find, SensorStore sensors, ILog l
             next += Interval;
             var now = _clock.Elapsed;
             if (next < now) next = now; // running behind: carry on from here rather than bursting to catch up
-            else token.WaitHandle.WaitOne(next - now);
+            else timer.Wait(next - now, token);
         }
     }
 

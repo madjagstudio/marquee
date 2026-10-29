@@ -52,4 +52,25 @@ public class FrameScalerTests
         Assert.Equal(SKColors.Red, scaled.GetPixelColor(900, 240));
         Assert.Equal(SKColors.Blue, scaled.GetPixelColor(1020, 240));
     }
+
+    [Fact]
+    public void A_frame_cropped_at_its_own_size_is_copied_pixel_for_pixel()
+    {
+        // A tall clip covering a shorter box at 1:1, as a 480×1920 clip in a 480×448 widget: the middle rows show.
+        var random = new Random(7);
+        using var bitmap = new SKBitmap(new SKImageInfo(480, 1920, SKColorType.Bgra8888, SKAlphaType.Opaque));
+        bitmap.Pixels = Enumerable.Range(0, 480 * 1920)
+            .Select(_ => new SKColor((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256)))
+            .ToArray();
+        using var pixels = bitmap.PeekPixels();
+        var scaler = new FrameScaler(ImageFit.Cover, new SKSizeI(480, 1920), SKRect.Create(480, 448));
+
+        using var buffers = new FrameBuffers(scaler);
+        using var frame = buffers.Scale(pixels);
+
+        using var scaled = frame.PeekPixels();
+        const int top = (1920 - 448) / 2;
+        foreach (var (x, y) in new[] { (0, 0), (17, 100), (240, 223), (479, 447) })
+            Assert.Equal(bitmap.GetPixel(x, top + y), scaled.GetPixelColor(x, y));
+    }
 }

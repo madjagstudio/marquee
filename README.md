@@ -461,10 +461,14 @@ background:
     blend: screen
 ```
 
-Shaders run on the CPU. A smooth full-canvas shader costs about 10–15 ms per frame at `scale: 0.5`; Marquee draws the
-next frame while the last one goes to the screen, so 30 fps holds, and it prints a warning if a theme can't keep up.
-A shader that takes too long would freeze the screen, so when a theme loads Marquee renders each shader layer once at
-1/8 of its size each way and estimates what a full frame costs. A layer whose estimate is over the frame budget
+On the screen (the tray and `marquee run`), shaders draw on the graphics card through OpenGL, which ships with
+Windows: a full-canvas starfield costs under 1 ms of CPU a frame there. Without a usable graphics card (no OpenGL
+driver, or only Windows' software OpenGL) or if the graphics card fails, they draw on the CPU instead, where a smooth
+full-canvas shader costs about 10–15 ms per frame at `scale: 0.5`; the log says which. The theme editor and its
+preview always draw shaders on the CPU. Marquee draws the next frame while the last one goes to the screen, so 30 fps
+holds, and it prints a warning if a theme can't keep up.
+A shader that takes too long would freeze the screen, so when a theme loads Marquee renders each shader layer once, on
+the CPU, at 1/8 of its size each way and estimates what a full frame costs. A layer whose estimate is over the frame budget
 (1000 ms divided by the fps, from `canvas.fps` or `--fps`) is skipped, with its estimated cost in the console and the
 preview; lower its `scale` or the fps, or simplify the shader. The budget is per layer, and the test frame runs with
 `time`, `day` and bound uniforms at 0. Marquee never lowers a layer's scale on its own.
@@ -712,6 +716,7 @@ administrator) and Marquee makes it again, safely.
 | Same screen, `example-showcase` v2 and v2.1; Ryzen 7 9800X3D, RX 7800 XT | `lianli88_0001_0023` | Widgets, text, clock locale/time-zone changes, voltages, GPU fan | FPS not measured |
 | Same screen and LED ring (`0416:8050`), theme editor | `lianli88_0001_0023` | Editing, undo, recovery, layers, styles, rules, gallery, sensor bindings and ring effects | Saves reach screen in about 1 s; FPS not measured |
 | Same screen and LED ring (`0416:8050`), tray and MSI | `lianli88_0001_0023` | Install, elevated logon, elevated start from the Start menu, L-Connect handover, ring, theme switching, sleep/wake, reconnect, upgrade, uninstall | 22 fps; send ~28–29 ms; handover ~10 s after tray start; 0.1.0 → 0.1.1 upgrade restarts tray in 2 s |
+| Same screen, tray with a starfield shader and a 480×1920 MP4; Ryzen 7 9800X3D, RX 7800 XT | `lianli88_0001_0023` | Shaders on the graphics card, hardware video decoding, Windows' JPEG encoder | MarqueeTray 31% of one core at 30 fps (0.1.2: 116%); no frame-rate warning |
 
 Known limitations:
 

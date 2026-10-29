@@ -22,7 +22,7 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
 
     public bool IsElevated { get; set; }
 
-    public IDisplayDevice? CreateDevice(EngineSettings settings)
+    public IDisplayDevice? CreateDevice(EngineSettings settings, ILog log)
     {
         if (!ScreenPluggedIn) return null;
         var size = settings.Orientation.CanvasSize();

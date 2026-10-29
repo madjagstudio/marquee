@@ -30,9 +30,12 @@ jobs:
         run: |
           if ((Get-WindowsFeature Server-Media-Foundation).InstallState -ne 'Installed') { Install-WindowsFeature Server-Media-Foundation }
           if (-not (Test-Path "$env:WINDIR\System32\mfreadwrite.dll")) { throw 'Media Foundation is missing; the video tests would only check the error path' }
+      - run: dotnet build --configuration Release
+      # One test project at a time (-m:1): the runner has 4 cores, and all twelve at once starved the tests that time
+      # themselves or wait on a watcher, a pipe or a clip writer, so they failed on changes that didn't touch them.
       # A test that hangs for 10 minutes is stopped with a minidump, and the log names it, instead of the job running
       # into GitHub's 6-hour limit with nothing to show.
-      - run: dotnet test --configuration Release --blame-hang-timeout 10m --blame-hang-dump-type mini
+      - run: dotnet test --configuration Release --no-build -m:1 --blame-hang-timeout 10m --blame-hang-dump-type mini
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

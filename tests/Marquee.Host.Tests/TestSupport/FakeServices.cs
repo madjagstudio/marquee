@@ -28,7 +28,7 @@ sealed class FakeServices(string claudeLimitsPath) : IEngineServices
 
     public IReadOnlyList<FakeServer> HttpServers => Servers.Where(s => s.Kind == "http").ToList();
 
-    public IDisplayDevice? CreateDevice(EngineSettings settings)
+    public IDisplayDevice? CreateDevice(EngineSettings settings, ILog log)
     {
         DeviceRequests.Add(settings);
         var device = Device(settings);

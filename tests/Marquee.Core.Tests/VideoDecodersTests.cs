@@ -29,6 +29,20 @@ public sealed class VideoDecodersTests : IDisposable
         Assert.IsType<SkiaAnimatedDecoder>(decoder);
     }
 
+    [Fact]
+    public void Media_Foundation_clips_decode_in_software_while_UseHardware_is_off()
+    {
+        // The test assembly turns it off at startup (SoftwareVideo).
+        Assert.False(VideoDecoders.UseHardware);
+        if (!MediaFoundation.IsAvailable) return;
+        var path = _folder.File("clip.mp4");
+        ClipWriter.Write(path, 128, 72, SKColors.Red);
+
+        using var decoder = Assert.IsType<MediaFoundationDecoder>(VideoDecoders.Open(path));
+
+        Assert.False(decoder.UsesHardware);
+    }
+
     [Theory]
     [InlineData("clip.mp4")]
     [InlineData("clip.m4v")]

@@ -11,8 +11,8 @@ namespace Marquee.Host;
 public interface IEngineServices
 {
     /// The screen the settings ask for (a FileSinkDevice for a sink folder), not opened yet, or null when no supported
-    /// screen is plugged in.
-    IDisplayDevice? CreateDevice(EngineSettings settings);
+    /// screen is plugged in. `log` gets what the screen reports while it runs.
+    IDisplayDevice? CreateDevice(EngineSettings settings, ILog log);
 
     /// The hardware provider for a SensorSourceNames source, or null for "none".
     ISensorProvider? CreateHardwareProvider(string source, ILog log);

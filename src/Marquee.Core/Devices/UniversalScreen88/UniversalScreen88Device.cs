@@ -1,11 +1,13 @@
 using System.Text;
+using Marquee.Core.Logging;
 using Marquee.Core.Usb;
 using SkiaSharp;
 
 namespace Marquee.Core.Devices.UniversalScreen88;
 
 /// The 8.8" Universal Screen (USB 1CBE:A088): a 480×1920 or 1920×480 canvas depending on mount orientation,
-/// sent as 480×1920 panel JPEGs behind encrypted command headers.
+/// sent as 480×1920 panel JPEGs behind encrypted command headers. A frame identical to the last one sent is skipped
+/// (see RepeatedFrames), because the panel conversion and JPEG encode cost more than drawing most themes.
 public sealed class UniversalScreen88Device : IDisplayDevice
 {
     public const ushort VendorId = 0x1CBE;
@@ -20,13 +22,18 @@ public sealed class UniversalScreen88Device : IDisplayDevice
     readonly Orientation _orientation;
     readonly HeaderBuilder _headers;
     readonly Func<DateTime> _now;
+    readonly RepeatedFrames _repeats;
+    readonly ILog _log;
     IUsbTransport? _usb;
+    WicJpeg? _jpeg; // made by the first frame after Open and let go by Close, both on the thread that pushes frames
 
     public UniversalScreen88Device(
         Func<IUsbTransport> openTransport,
         Orientation orientation = Orientation.Landscape,
         HeaderBuilder? headers = null,
-        Func<DateTime>? now = null)
+        Func<DateTime>? now = null,
+        TimeProvider? time = null,
+        ILog? log = null)
     {
         _openTransport = openTransport;
         _orientation = orientation;
@@ -34,6 +41,8 @@ public sealed class UniversalScreen88Device : IDisplayDevice
         Info = new("Universal Screen 8.8\"", canvas.Width, canvas.Height);
         _headers = headers ?? new HeaderBuilder();
         _now = now ?? (() => DateTime.Now);
+        _repeats = new RepeatedFrames(time);
+        _log = log ?? NullLog.Instance;
     }
 
     public DeviceInfo Info { get; }
@@ -44,6 +53,7 @@ public sealed class UniversalScreen88Device : IDisplayDevice
     {
         Close();
         FirmwareVersion = null;
+        _repeats.Forget(); // Open clears the panel to black
         _usb = _openTransport();
 
         try
@@ -72,8 +82,13 @@ public sealed class UniversalScreen88Device : IDisplayDevice
     public void PushFrame(SKImage frame)
     {
         EnsureOpen();
-        using var panel = FrameEncoder.ToPanel(frame, _orientation);
-        SendWithPayload(Command.PushJpg, FrameEncoder.EncodeJpeg(panel), FrameReplyTimeoutMs);
+        if (_repeats.IsRepeat(frame)) return;
+        _jpeg ??= new WicJpeg(_log);
+        var reply = SendWithPayload(Command.PushJpg, FrameEncoder.EncodePanel(frame, _orientation, _jpeg), FrameReplyTimeoutMs);
+
+        // A frame the screen refused goes again, even if the next one is identical. No reply at all still counts as
+        // sent, so the skip doesn't rest on every frame being answered in time; the refresh covers a frame lost that way.
+        if (reply is not { Ok: false }) _repeats.Sent(frame);
     }
 
     public void SetBrightness(int percent) =>
@@ -83,6 +98,8 @@ public sealed class UniversalScreen88Device : IDisplayDevice
     {
         _usb?.Dispose();
         _usb = null;
+        _jpeg?.Dispose();
+        _jpeg = null;
     }
 
     public void Dispose() => Close();

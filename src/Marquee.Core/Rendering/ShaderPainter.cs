@@ -22,6 +22,12 @@ static class ShaderPainter
         using var shader = Shader(effect, layer, width, height, ctx.Time, ctx.Sensors);
         using var paint = new SKPaint { BlendMode = layer.Blend, Color = SKColors.White.WithAlpha(Paints.Alpha(layer.Opacity)) };
 
+        if (ctx.Gpu?.Render(shader, width, height) is { } drawn)
+        {
+            using (drawn) ctx.Canvas.DrawImage(drawn, area, Sampling, paint);
+            return;
+        }
+
         if (width == (int)area.Width && height == (int)area.Height)
         {
             paint.Shader = shader;

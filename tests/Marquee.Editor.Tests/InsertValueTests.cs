@@ -12,8 +12,25 @@ namespace Marquee.Editor.Tests;
 
 public class InsertValueTests
 {
+    /// These tests use the real Windows clipboard, which any other program can write to between a copy and a paste, so
+    /// each gets up to three tries.
+    static void WithClipboard(Action test)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                test();
+                return;
+            }
+            catch (Exception) when (attempt < 3)
+            {
+            }
+        }
+    }
+
     [Fact]
-    public void Cutting_and_pasting_a_chip_preserves_the_template() => Sta.Run(() =>
+    public void Cutting_and_pasting_a_chip_preserves_the_template() => Sta.Run(() => WithClipboard(() =>
     {
         const string template = "CPU {cpu.temp:0} end";
         var box = new TemplateTextBox { Text = template };
@@ -32,13 +49,13 @@ public class InsertValueTests
             Assert.Equal(template, box.Text);
             Assert.Single(((Paragraph)input.Document.Blocks.FirstBlock).Inlines.OfType<InlineUIContainer>());
         });
-    });
+    }));
 
     [Theory]
     [InlineData("CPU {cpu.temp:0}°", "CPU {cpu.temp:0}°", 1)]
     [InlineData("CPU temperature", "CPU temperature", 0)]
     [InlineData("CPU {not a token}", "CPU {{not a token}}", 0)]
-    public void Pasting_external_text_parses_tokens_and_keeps_literal_text(string text, string expected, int chips) => Sta.Run(() =>
+    public void Pasting_external_text_parses_tokens_and_keeps_literal_text(string text, string expected, int chips) => Sta.Run(() => WithClipboard(() =>
     {
         var box = new TemplateTextBox();
         WithWindow(box, () =>
@@ -49,7 +66,7 @@ public class InsertValueTests
             Assert.Equal(expected, box.Text);
             Assert.Equal(chips, ((Paragraph)input.Document.Blocks.FirstBlock).Inlines.OfType<InlineUIContainer>().Count());
         });
-    });
+    }));
 
     [Fact]
     public void Inserting_a_reading_keeps_the_literal_and_writes_default_decimals() => Sta.Run(() =>

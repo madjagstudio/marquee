@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace Marquee.Core.Rendering;
 
 /// Windows rounds sleeps up to its timer tick (about 15.6 ms by default), which would make 30 fps pacing uneven.
-/// The render loop asks for 1 ms ticks while it runs.
+/// FrameTimer asks for 1 ms ticks while it lives, but only on Windows without a high-resolution waitable timer.
 static class TimerResolution
 {
     [DllImport("winmm.dll")]

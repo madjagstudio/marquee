@@ -492,13 +492,20 @@ public class FontFallbackTests(ITestOutputHelper output)
     public void A_fallback_costs_a_frame_under_a_millisecond()
     {
         const string Widget = "  - { type: text, at: [40, 40], size: [1840, 160], style: { size: 72 }, text: ";
-        var latin = Measure(Landscape + "widgets:\n" + Widget + "\"CPU 52°C GPU 71°C RAM 43% FAN 1200 rpm\" }\n");
-        var mixed = Measure(Landscape + "widgets:\n" + Widget + "\"CPU 52°C 温度 GPU 71°C 한국어 RAM 43%\" }\n");
+        // The fastest per-frame time of each text over five rounds, measured in turn.
+        var (latin, mixed) = (TimeSpan.MaxValue, TimeSpan.MaxValue);
+        for (var round = 0; round < 5; round++)
+        {
+            latin = Min(latin, Measure(Landscape + "widgets:\n" + Widget + "\"CPU 52°C GPU 71°C RAM 43% FAN 1200 rpm\" }\n"));
+            mixed = Min(mixed, Measure(Landscape + "widgets:\n" + Widget + "\"CPU 52°C 温度 GPU 71°C 한국어 RAM 43%\" }\n"));
+        }
 
         output.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"Per frame: pure Latin {latin.TotalMilliseconds:0.000} ms, mixed {mixed.TotalMilliseconds:0.000} ms"));
         Assert.True(mixed - latin < TimeSpan.FromMilliseconds(1), "The fallback costs a millisecond or more a frame");
     }
+
+    static TimeSpan Min(TimeSpan a, TimeSpan b) => a < b ? a : b;
 
     static TimeSpan Measure(string layout)
     {

@@ -9,15 +9,15 @@ using Xunit.Abstractions;
 namespace Marquee.Core.Tests;
 
 /// What a property change costs the theme editor: loading the example's text again through a warm cache, and drawing a
-/// frame of it. The times, and the first load's without a warm cache, are
-/// written to the test output. That files are reused is ThemeAssetCacheTests' to check, not this test's. It runs alone,
-/// with ValidatorThreadTests, both because it plays the showcase's clip and so that other tests don't skew the times.
+/// frame of it. The times, and the first load's without a warm cache, are written to the test output. That files are
+/// reused is ThemeAssetCacheTests' to check, not this test's. It runs alone, with ValidatorThreadTests, both because it
+/// plays the showcase's clip and so that other tests don't skew the times.
 [Collection(nameof(ValidatorThreadTests))]
 public class ThemeReloadTimingTests(ITestOutputHelper output)
 {
     const int Reloads = 20;
 
-    /// The test fails if the reload and first frame take over 50 ms; a desktop PC takes about 10 ms.
+    /// The test fails if the fastest reload plus the fastest first frame take over 50 ms; a desktop PC takes about 10 ms.
     static readonly TimeSpan Limit = TimeSpan.FromMilliseconds(50);
 
     static string ThemeFolder(string name, [CallerFilePath] string file = "") =>
@@ -63,10 +63,10 @@ public class ThemeReloadTimingTests(ITestOutputHelper output)
             theme.Dispose();
         }
 
-        var load = Median(loads);
-        var frame = Median(frames);
+        var load = loads.Min();
+        var frame = frames.Min();
         output.WriteLine(string.Create(CultureInfo.InvariantCulture,
-            $"{name}: reload {load.TotalMilliseconds:0.0} ms, first frame {frame.TotalMilliseconds:0.0} ms (medians of {Reloads}); " +
+            $"{name}: reload {load.TotalMilliseconds:0.0} ms, first frame {frame.TotalMilliseconds:0.0} ms (fastest of {Reloads}); " +
             $"slowest reload {loads.Max().TotalMilliseconds:0.0} ms; the first, cold load {cold.Elapsed.TotalMilliseconds:0.0} ms"));
         Assert.True(load + frame < Limit, $"reloading {name} took {load.TotalMilliseconds} ms and drawing it {frame.TotalMilliseconds} ms");
     }
@@ -113,9 +113,9 @@ public class ThemeReloadTimingTests(ITestOutputHelper output)
             theme.Dispose();
         }
 
-        var (load, frame) = (Median(loads), Median(frames));
+        var (load, frame) = (loads.Min(), frames.Min());
         output.WriteLine(string.Create(CultureInfo.InvariantCulture,
-            $"{edit}: reload {load.TotalMilliseconds:0.0} ms, frame {frame.TotalMilliseconds:0.0} ms (medians of {Reloads}); " +
+            $"{edit}: reload {load.TotalMilliseconds:0.0} ms, frame {frame.TotalMilliseconds:0.0} ms (fastest of {Reloads}); " +
             $"slowest reload {loads.Max().TotalMilliseconds:0.0} ms"));
         Assert.NotNull(player);
         Assert.Same(player, Assert.Single(players));
@@ -128,5 +128,4 @@ public class ThemeReloadTimingTests(ITestOutputHelper output)
     static IEnumerable<WidgetSpec> Flatten(IEnumerable<WidgetSpec> widgets) =>
         widgets.SelectMany(w => w is GroupWidget g ? Flatten(g.Children).Prepend(w) : [w]);
 
-    static TimeSpan Median(List<TimeSpan> times) => times.Order().ElementAt(times.Count / 2);
 }

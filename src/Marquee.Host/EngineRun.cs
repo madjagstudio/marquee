@@ -168,7 +168,7 @@ sealed class EngineRun : IDisposable
     bool TryStart(IEngineServices services)
     {
         // The screen and the theme come first: they are what can fail, and when they do nothing has started yet.
-        _device = services.CreateDevice(Settings);
+        _device = services.CreateDevice(Settings, _log);
         if (_device is null)
         {
             _log.Error(Strings.NoScreenFound);
@@ -244,7 +244,7 @@ sealed class EngineRun : IDisposable
     /// (loaded again: the old loop disposes its own) come first; the old screen closes only once both are ready.
     bool ReplaceScreen(EngineSettings next, IEngineServices services)
     {
-        if (services.CreateDevice(next) is not { } device)
+        if (services.CreateDevice(next, _log) is not { } device)
         {
             _log.Error(Strings.NoScreenFound);
             return false;

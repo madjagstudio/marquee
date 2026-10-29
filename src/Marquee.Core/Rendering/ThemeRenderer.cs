@@ -30,6 +30,10 @@ public sealed class ThemeRenderer : IDisposable
     /// read each frame; tests set a fixed one so clocks draw the same on every machine.
     public TimeLocale? Locale { get; set; }
 
+    /// Draws shader layers on the GPU when set (see ShaderGpu), on the render thread that owns it. Null, the default,
+    /// draws them on the CPU.
+    public ShaderGpu? Gpu { get; set; }
+
     /// One frame. `time` is animation time (pulse, smoothing); `sensors.Now` is the wall clock seen by expressions.
     public SKImage Render(SensorSnapshot sensors, TimeSpan time) =>
         Render(sensors, time, _theme.Spec.Widgets, RenderContext.NoStandIns);
@@ -48,6 +52,7 @@ public sealed class ThemeRenderer : IDisposable
         {
             Locale = Locale ?? TimeLocale.Pc,
             StandIns = standIns,
+            Gpu = Gpu,
         };
         BackgroundPainter.Paint(ctx, _theme.Spec.Background, SKRect.Create(Size.Width, Size.Height));
         canvas.Save();

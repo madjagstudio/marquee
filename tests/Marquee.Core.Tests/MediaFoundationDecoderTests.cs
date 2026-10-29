@@ -82,6 +82,61 @@ public sealed class MediaFoundationDecoderTests : IDisposable
     }
 
     [Fact]
+    public void Without_hardware_the_clip_decodes_in_software()
+    {
+        if (!CanDecode()) return;
+        using var decoder = new MediaFoundationDecoder(Clip(Red, Blue), hardware: false);
+
+        Assert.False(decoder.UsesHardware);
+        Pixels.AssertNear(Red, Center(decoder.Next()!.Value), Tolerance);
+        Pixels.AssertNear(Blue, Center(decoder.Next()!.Value), Tolerance);
+    }
+
+    /// Where the PC has a graphics card that decodes video; elsewhere the clip decodes in software, and this compares
+    /// software with itself.
+    [Fact]
+    public void On_the_graphics_card_frames_match_software_ones_in_size_timing_and_color()
+    {
+        if (!CanDecode()) return;
+        var path = Clip(Red, Green, Blue, Red);
+        using var software = new MediaFoundationDecoder(path, hardware: false);
+        using var hardware = new MediaFoundationDecoder(path, hardware: true);
+
+        Assert.Equal(software.Size, hardware.Size);
+        var (expected, actual) = (ReadAll(software), ReadAll(hardware));
+        Assert.Equal(expected.Select(f => (f.Start, f.Duration)), actual.Select(f => (f.Start, f.Duration)));
+        foreach (var (s, h) in expected.Zip(actual))
+        {
+            Assert.Equal((s.Pixels.Width, s.Pixels.Height, s.Pixels.ColorType, s.Pixels.AlphaType),
+                (h.Pixels.Width, h.Pixels.Height, h.Pixels.ColorType, h.Pixels.AlphaType));
+            Pixels.AssertNear(Center(s), Center(h), 8);
+        }
+    }
+
+    [Fact]
+    public void When_the_graphics_card_stops_partway_the_clip_carries_on_in_software_from_the_next_frame()
+    {
+        if (!CanDecode()) return;
+        using var decoder = new MediaFoundationDecoder(Clip(Red, Green, Blue, Green, Red, Blue), hardware: true);
+        if (!decoder.UsesHardware) return; // no graphics card here that decodes video
+        decoder.Next();
+        var second = decoder.Next()!.Value.Start;
+
+        decoder.FailNextHardwareRead = true;
+        var rest = new List<(TimeSpan Start, SKColor Color)>();
+        while (decoder.Next() is { } frame) rest.Add((frame.Start, Center(frame)));
+
+        Assert.False(decoder.UsesHardware);
+        Assert.Equal(4, rest.Count);
+        Assert.True(rest[0].Start > second, "A frame already shown came again.");
+        foreach (var ((_, color), expected) in rest.Zip(new[] { Blue, Green, Red, Blue }))
+            Pixels.AssertNear(expected, color, Tolerance);
+
+        decoder.Rewind(); // and the whole clip plays from the start, in software
+        Pixels.AssertNear(Red, Center(decoder.Next()!.Value), Tolerance);
+    }
+
+    [Fact]
     public void Frames_are_opaque_32_bit_pixels()
     {
         if (!CanDecode()) return;

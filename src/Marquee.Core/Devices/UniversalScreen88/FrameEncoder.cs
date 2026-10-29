@@ -39,6 +39,21 @@ public static class FrameEncoder
         return surface.Snapshot();
     }
 
+    /// The JPEG the panel is sent for a canvas image: ToPanel, then EncodeJpeg. A portrait canvas is already the panel's
+    /// shape, so it is encoded as it is instead of being copied first, which gives the same picture: the copy only drew it
+    /// onto black, and EncodeJpeg drops alpha the same way.
+    public static byte[] EncodePanel(SKImage canvasImage, Orientation orientation) =>
+        EncodePanel(canvasImage, orientation, wic: null);
+
+    internal static byte[] EncodePanel(SKImage canvasImage, Orientation orientation, WicJpeg? wic)
+    {
+        if (orientation == Orientation.Portrait && canvasImage.Width == PanelWidth && canvasImage.Height == PanelHeight)
+            return EncodeJpeg(canvasImage, wic);
+
+        using var panel = ToPanel(canvasImage, orientation);
+        return EncodeJpeg(panel, wic);
+    }
+
     public static SKImage Blank(SKColor color)
     {
         using var surface = CreatePanelSurface();
@@ -46,16 +61,26 @@ public static class FrameEncoder
         return surface.Snapshot();
     }
 
-    public static byte[] EncodeJpeg(SKImage panel, int maxBytes = MaxJpegBytes, int quality = 90)
+    public static byte[] EncodeJpeg(SKImage panel, int maxBytes = MaxJpegBytes, int quality = 90) =>
+        EncodeJpeg(panel, wic: null, maxBytes, quality);
+
+    /// With `wic`, Windows' encoder makes the JPEG (much faster), and Skia's when it can't.
+    internal static byte[] EncodeJpeg(SKImage panel, WicJpeg? wic, int maxBytes = MaxJpegBytes, int quality = 90)
     {
         for (var q = quality; q >= MinQuality; q -= 10)
         {
-            using var data = panel.Encode(SKEncodedImageFormat.Jpeg, q);
-            if (data.Size <= maxBytes)
-                return data.ToArray();
+            var jpeg = wic?.Encode(panel, q) ?? SkiaJpeg(panel, q);
+            if (jpeg.Length <= maxBytes)
+                return jpeg;
         }
 
         throw new InvalidOperationException($"Frame does not fit in {maxBytes} bytes even at JPEG quality {MinQuality}.");
+    }
+
+    static byte[] SkiaJpeg(SKImage panel, int quality)
+    {
+        using var data = panel.Encode(SKEncodedImageFormat.Jpeg, quality);
+        return data.ToArray();
     }
 
     public static byte[] EncodePng(SKImage panel)

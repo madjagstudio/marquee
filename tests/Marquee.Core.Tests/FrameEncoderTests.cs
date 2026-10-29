@@ -94,6 +94,32 @@ public class FrameEncoderTests
     }
 
     [Fact]
+    public void EncodePanel_in_portrait_matches_encoding_the_panel_copy()
+    {
+        // Half-transparent red over transparent: the copy draws it onto black, and EncodeJpeg drops the alpha.
+        using var surface = SKSurface.Create(new SKImageInfo(480, 1920));
+        surface.Canvas.Clear(SKColors.Transparent);
+        using var paint = new SKPaint { Color = new SKColor(255, 0, 0, 128) };
+        surface.Canvas.DrawRect(0, 0, 240, 960, paint);
+        using var canvas = surface.Snapshot();
+        using var panel = FrameEncoder.ToPanel(canvas, Orientation.Portrait);
+
+        Assert.Equal(FrameEncoder.EncodeJpeg(panel), FrameEncoder.EncodePanel(canvas, Orientation.Portrait));
+    }
+
+    [Theory]
+    [InlineData(Orientation.PortraitFlipped)]
+    [InlineData(Orientation.Landscape)]
+    [InlineData(Orientation.LandscapeFlipped)]
+    public void EncodePanel_turns_other_orientations_into_the_panel_first(Orientation orientation)
+    {
+        using var canvas = orientation.IsPortrait() ? Images.Portrait(SKColors.Red) : Images.Landscape(SKColors.Red);
+        using var panel = FrameEncoder.ToPanel(canvas, orientation);
+
+        Assert.Equal(FrameEncoder.EncodeJpeg(panel), FrameEncoder.EncodePanel(canvas, orientation));
+    }
+
+    [Fact]
     public void Blank_is_a_full_panel_of_one_color()
     {
         using var blank = FrameEncoder.Blank(SKColors.Black);

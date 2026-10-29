@@ -11,9 +11,14 @@ namespace Marquee.Core.Video;
 public sealed class FrameScaler
 {
     /// Mipmaps keep a 4K clip shrunk to the canvas from shimmering, which plain linear sampling would do past 2:1.
-    static readonly SKSamplingOptions Sampling = new(SKFilterMode.Linear, SKMipmapMode.Linear);
+    static readonly SKSamplingOptions Shrinking = new(SKFilterMode.Linear, SKMipmapMode.Linear);
+
+    /// For a frame drawn at its own size or larger. Skia builds mipmaps afresh for every frame, at several times the cost
+    /// of the draw, and at these sizes it samples only the full-size level anyway, so leaving them out changes nothing.
+    static readonly SKSamplingOptions Plain = new(SKFilterMode.Linear, SKMipmapMode.None);
 
     readonly SKRect _source;
+    readonly SKSamplingOptions _sampling;
 
     /// `fit` places a clip of `clip` pixels in `area` as it would an image.
     public FrameScaler(ImageFit fit, SKSizeI clip, SKRect area)
@@ -36,6 +41,7 @@ public sealed class FrameScaler
         var rounded = SKRectI.Round(visible);
         Destination = new SKRectI(rounded.Left, rounded.Top, Math.Max(rounded.Right, rounded.Left + 1),
             Math.Max(rounded.Bottom, rounded.Top + 1));
+        _sampling = Destination.Width < _source.Width || Destination.Height < _source.Height ? Shrinking : Plain;
     }
 
     /// How the clip is placed, its size, and the box it is placed in.
@@ -56,6 +62,6 @@ public sealed class FrameScaler
             ?? throw new InvalidOperationException("Could not read a decoded video frame.");
         using var canvas = new SKCanvas(target);
         canvas.Clear(SKColors.Transparent); // a GIF frame can be transparent; a reused buffer holds an older frame
-        canvas.DrawImage(frame, _source, SKRect.Create(target.Width, target.Height), Sampling);
+        canvas.DrawImage(frame, _source, SKRect.Create(target.Width, target.Height), _sampling);
     }
 }

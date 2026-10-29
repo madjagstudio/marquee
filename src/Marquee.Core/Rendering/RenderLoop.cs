@@ -45,6 +45,7 @@ public sealed class RenderLoop : IDisposable
     ThemeRenderer? _renderer;
     SKSurface? _fitSurface;
     TimeSpan _themeStart;
+    ShaderGpu? _gpu; // set only while Run's thread runs, so Step draws shaders on the CPU
 
     // Sending side (the sending thread, or the Step caller): the device and the stats.
     bool _deviceOpen;
@@ -171,7 +172,8 @@ public sealed class RenderLoop : IDisposable
     /// The render thread: renders at the target rate and hands each frame to the sending thread.
     void Run()
     {
-        using var resolution = TimerResolution.Begin();
+        using var timer = new FrameTimer();
+        using var gpu = _gpu = new ShaderGpu(_log); // its OpenGL context lives on this thread
         var token = _stop!.Token;
         var clock = _clock;
         var sender = new Thread(() => SendLoop(clock, token)) { IsBackground = true, Name = "Marquee screen sender" };
@@ -192,13 +194,15 @@ public sealed class RenderLoop : IDisposable
             {
                 ReportRender($"Rendering a frame failed: {ex.Message}");
             }
+            gpu.Pump();
 
             next += TimeSpan.FromSeconds(1.0 / Fps);
             var now = clock.Elapsed;
             if (next < now) next = now; // Running behind: carry on from here rather than bursting to catch up.
-            else token.WaitHandle.WaitOne(next - now);
+            else timer.Wait(next - now, token);
         }
 
+        _gpu = null;
         sender.Join();
     }
 
@@ -249,6 +253,7 @@ public sealed class RenderLoop : IDisposable
         foreach (var error in _theme!.Assets.TakeVideoErrors()) _log.Warn(error); // each once, not every frame
 
         var clock = Stopwatch.StartNew();
+        _renderer.Gpu = _gpu;
         var rendered = _renderer.Render(_sensors.Snapshot(), time);
         SKImage image;
         try

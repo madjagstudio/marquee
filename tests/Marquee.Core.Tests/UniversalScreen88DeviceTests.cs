@@ -12,9 +12,10 @@ public class UniversalScreen88DeviceTests
     static readonly DateTime FixedNow = new(2026, 10, 16, 18, 30, 5);
 
     readonly FakeUsbTransport _usb = new();
+    readonly ManualTime _time = new();
 
     UniversalScreen88Device CreateDevice() =>
-        new(() => _usb, Orientation.Landscape, new HeaderBuilder(() => 1), () => FixedNow);
+        new(() => _usb, Orientation.Landscape, new HeaderBuilder(() => 1), () => FixedNow, _time);
 
     static byte Cmd(byte[] write) => Packets.DecryptHeader(write)[0];
     static byte[] Params(byte[] write) => Packets.DecryptHeader(write)[8..];
@@ -155,6 +156,55 @@ public class UniversalScreen88DeviceTests
         using var image = SKImage.FromEncodedData(Payload(_usb.Writes[^1]));
         var pixel = Images.PixelAt(image, 50, 50);
         Assert.True(pixel.Red > 200 && pixel.Green < 50 && pixel.Blue < 50);
+    }
+
+    [Fact]
+    public void PushFrame_skips_a_frame_identical_to_the_last_one_until_the_refresh_is_due()
+    {
+        using var device = CreateDevice();
+        device.Open();
+        var before = _usb.Writes.Count;
+
+        device.PushFrame(Images.Landscape(SKColors.Red));
+        device.PushFrame(Images.Landscape(SKColors.Red));
+        Assert.Equal(before + 1, _usb.Writes.Count);
+
+        device.PushFrame(Images.Landscape(SKColors.Blue));
+        Assert.Equal(before + 2, _usb.Writes.Count);
+
+        _time.Advance(RepeatedFrames.RefreshEvery);
+        device.PushFrame(Images.Landscape(SKColors.Blue));
+        Assert.Equal(before + 3, _usb.Writes.Count);
+    }
+
+    [Fact]
+    public void A_frame_the_screen_refused_is_sent_again_even_if_the_next_is_identical()
+    {
+        using var device = CreateDevice();
+        device.Open();
+        var before = _usb.Writes.Count;
+
+        _usb.Responder = write => [Cmd(write), 0x01]; // not 0xC8: refused
+        device.PushFrame(Images.Landscape(SKColors.Red));
+        _usb.Responder = _ => null;
+        device.PushFrame(Images.Landscape(SKColors.Red));
+
+        Assert.Equal(before + 2, _usb.Writes.Count);
+    }
+
+    [Fact]
+    public void After_Open_the_next_frame_is_sent_even_if_it_matches_the_last_one()
+    {
+        using var device = CreateDevice();
+        device.Open();
+        device.PushFrame(Images.Landscape(SKColors.Red));
+
+        device.Open(); // clears the panel to black
+        var before = _usb.Writes.Count;
+        device.PushFrame(Images.Landscape(SKColors.Red));
+
+        Assert.Equal(before + 1, _usb.Writes.Count);
+        Assert.Equal(0x65, Cmd(_usb.Writes[^1]));
     }
 
     [Fact]

@@ -19,12 +19,12 @@ public sealed class MachineServices : IEngineServices
     {
     }
 
-    public IDisplayDevice? CreateDevice(EngineSettings settings)
+    public IDisplayDevice? CreateDevice(EngineSettings settings, ILog log)
     {
         var size = settings.Orientation.CanvasSize();
         return settings.Sink is not null
             ? new FileSinkDevice(settings.Sink, size.Width, size.Height)
-            : Screens.Find(settings.Orientation);
+            : Screens.Find(settings.Orientation, log);
     }
 
     public ISensorProvider? CreateHardwareProvider(string source, ILog log) => SensorSources.Create(source, log);

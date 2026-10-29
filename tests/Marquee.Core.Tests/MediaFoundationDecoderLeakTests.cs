@@ -12,7 +12,9 @@ public class MeasuresProcessMemoryCollection;
 /// A decoder releases each frame's Media Foundation objects when it moves on, not when the garbage collector next runs.
 /// The clip is 640×360, so each decoded frame holds about 1 MB of native memory behind a small managed wrapper: frames
 /// left for the collector would pile up by about 1.4 GB over 1,500 frames, while no managed allocation asks it to run.
-/// The limits are far below that and far above the noise.
+/// The limits are far below that and far above the noise. Releasing frames is the same on both decode paths, so these
+/// measure the software one: the graphics driver's own threads and handles come and go by the dozen as other tests'
+/// clips open and close, which is noise here, not a leak.
 [Collection("Measures process memory")]
 public sealed class MediaFoundationDecoderLeakTests : IDisposable
 {
@@ -55,7 +57,7 @@ public sealed class MediaFoundationDecoderLeakTests : IDisposable
     public void Rewinding_and_reading_a_clip_many_times_doesnt_leak()
     {
         if (!MediaFoundation.IsAvailable) return; // MediaFoundationDecoderTests checks the error there.
-        using var decoder = new MediaFoundationDecoder(Clip());
+        using var decoder = new MediaFoundationDecoder(Clip(), hardware: false);
         for (var i = 0; i < 3; i++)
         {
             decoder.Rewind();
@@ -79,17 +81,42 @@ public sealed class MediaFoundationDecoderLeakTests : IDisposable
         var path = Clip();
         for (var i = 0; i < 3; i++)
         {
-            using var decoder = new MediaFoundationDecoder(path);
+            using var decoder = new MediaFoundationDecoder(path, hardware: false);
             ReadAll(decoder);
         }
 
         var before = Measure();
         for (var i = 0; i < Reads; i++)
         {
-            using var decoder = new MediaFoundationDecoder(path);
+            using var decoder = new MediaFoundationDecoder(path, hardware: false);
             Assert.Equal(30, ReadAll(decoder));
         }
 
         AssertBounded(before, Measure());
+    }
+
+    /// On the graphics card each frame is a GPU surface copied out to memory: the same frames-released check, on memory
+    /// alone (see the class comment for handles). Where there is no graphics card, the clip decodes in software and the
+    /// check runs on that path again.
+    [Fact]
+    public void Decoding_on_the_graphics_card_many_times_doesnt_leak_memory()
+    {
+        if (!MediaFoundation.IsAvailable) return;
+        var path = Clip();
+        for (var i = 0; i < 3; i++)
+        {
+            using var decoder = new MediaFoundationDecoder(path, hardware: true);
+            ReadAll(decoder);
+        }
+
+        var before = Measure().Memory;
+        for (var i = 0; i < Reads; i++)
+        {
+            using var decoder = new MediaFoundationDecoder(path, hardware: true);
+            Assert.Equal(30, ReadAll(decoder));
+        }
+
+        var grew = Measure().Memory - before;
+        Assert.True(grew < MemoryLimit, $"Private memory grew by {grew / (1024 * 1024)} MB");
     }
 }

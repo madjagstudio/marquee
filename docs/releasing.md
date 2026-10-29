@@ -93,6 +93,11 @@ The version is `<Version>` in `Directory.Build.props`, the only place it is set:
 After the MSI, it zips `artifacts\publish\cli` into `artifacts\marquee-<version>.zip`, with `marquee.exe` at the root.
 `artifacts\` is ignored by git.
 
+To try a local build on a PC that has a CI-built MSI of the same version installed, uninstall first (settings and
+themes stay). Installing over it fails and rolls back with error 1603 when this PC's .NET SDK is older than CI's:
+Windows Installer keeps the installed runtime files as newer, removes them with the old product, and `marquee.exe`
+then can't start for the logon-task step. Releases come from CI, so they aren't affected.
+
 `build.ps1` also checks the notices. Every staged file other than Marquee's own, the themes and PresentMon must be one
 that `marquee.deps.json` or `MarqueeTray.deps.json` lists, and every NuGet package (or .NET runtime pack) those files
 came from must be named in `THIRD-PARTY-NOTICES.md`, as must PresentMon's exe. Each package's own license and notices

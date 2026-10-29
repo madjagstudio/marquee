@@ -23,11 +23,32 @@ static class ClipWriter
     public static void Write(string path, int width, int height, int frameCount, Action<SKCanvas, int> paint) =>
         Write(path, width, height, frameCount, paint, Fps, Bitrate);
 
+    /// MF_E_SINK_NO_SAMPLES_PROCESSED: now and then, on a busy CI runner, the encoder finishes a clip having handed the
+    /// sink nothing. Writing the clip again has always worked, so a few tries are allowed.
+    const int NoSamplesProcessed = unchecked((int)0xC00D4A44);
+    const int Tries = 3;
+
     /// The same at fps frames a second, encoded at an average of bitrate bits a second, which sets the file's size.
     public static void Write(string path, int width, int height, int frameCount, Action<SKCanvas, int> paint, int fps,
         int bitrate)
     {
         if (!IsAvailable) throw new InvalidOperationException("Media Foundation isn't available to write a clip.");
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                WriteOnce(path, width, height, frameCount, paint, fps, bitrate);
+                return;
+            }
+            catch (COMException ex) when (ex.HResult == NoSamplesProcessed && attempt < Tries)
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    static void WriteOnce(string path, int width, int height, int frameCount, Action<SKCanvas, int> paint, int fps, int bitrate)
+    {
         IMFSinkWriter? writer = null;
         try
         {
